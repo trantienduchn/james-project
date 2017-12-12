@@ -8,8 +8,11 @@ pipeline {
   stages {
     stage('build') {
       steps {
-        sh '''mvn package -DskipTests
+        dir(path: 'dockerfiles/compilation/java-8/') {
+          sh '''mvn package -DskipTests
 '''
+        }
+        
       }
     }
   }
