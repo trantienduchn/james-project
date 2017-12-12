@@ -1,7 +1,7 @@
 pipeline {
   agent {
-    dockerfile {
-      filename 'dockerfiles/compilation/java-8/Dockerfile'
+    docker {
+      image 'maven:3.5.2-jdk-9'
     }
     
   }
