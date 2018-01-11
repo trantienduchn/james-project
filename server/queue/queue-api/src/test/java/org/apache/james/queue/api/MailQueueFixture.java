@@ -25,17 +25,6 @@ import javax.mail.internet.MimeMessage;
 import org.apache.mailet.base.test.MimeMessageBuilder;
 
 public interface MailQueueFixture {
-    String NAME0 = "name0";
-    String NAME1 = "name1";
-    String NAME2 = "name2";
-    String NAME3 = "name3";
-    String NAME4 = "name4";
-    String NAME5 = "name5";
-    String NAME6 = "name6";
-    String NAME7 = "name7";
-    String NAME8 = "name8";
-    String NAME9 = "name9";
-    String NAME10 = "name10";
 
     static MimeMessage createMimeMessage() throws MessagingException {
         return MimeMessageBuilder.mimeMessageBuilder()
