@@ -26,6 +26,8 @@ import org.apache.activemq.broker.BrokerService;
 import org.apache.activemq.broker.region.policy.PolicyEntry;
 import org.apache.activemq.broker.region.policy.PolicyMap;
 import org.apache.james.metrics.api.NoopMetricFactory;
+import org.apache.james.queue.api.DelayedMailQueueContract;
+import org.apache.james.queue.api.DelayedManageableMailQueueContract;
 import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.MailQueueContract;
 import org.apache.james.queue.api.ManageableMailQueue;
@@ -37,7 +39,8 @@ import org.junit.jupiter.api.Disabled;
 
 import com.google.common.collect.ImmutableList;
 
-public class JMSMailQueueTest implements MailQueueContract, ManageableMailQueueContract {
+public class JMSMailQueueTest implements MailQueueContract, ManageableMailQueueContract, DelayedMailQueueContract,
+    DelayedManageableMailQueueContract {
 
     private final static String QUEUE_NAME = "test";
 
