@@ -38,7 +38,7 @@ import org.apache.mailet.Mail;
 import org.apache.mailet.PerRecipientHeaders;
 import org.apache.mailet.base.MailAddressFixture;
 import org.apache.mailet.base.test.FakeMail;
-import org.apache.mailet.base.test.MimeMessageBuilder;
+import org.apache.mailet.base.test.MimeMessageUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -97,8 +97,8 @@ public interface MailQueueContract {
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
-        assertThat(MimeMessageBuilder.asString(mailQueueItem.getMail().getMessage()))
-            .isEqualTo(MimeMessageBuilder.asString(originalMimeMessage));
+        assertThat(MimeMessageUtil.asString(mailQueueItem.getMail().getMessage()))
+            .isEqualTo(MimeMessageUtil.asString(originalMimeMessage));
     }
 
     @Test
