@@ -243,6 +243,7 @@ public class MailImpl implements Disposable, Mail {
         setRemoteHost(mail.getRemoteHost());
         setRemoteAddr(mail.getRemoteAddr());
         setLastUpdated(mail.getLastUpdated());
+        setErrorMessage(mail.getErrorMessage());
         try {
             if (mail instanceof MailImpl) {
                 setAttributesRaw((HashMap<String, Object>) cloneSerializableObject(((MailImpl) mail).getAttributesRaw()));
