@@ -32,6 +32,8 @@ import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.MailQueueContract;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.queue.api.ManageableMailQueueContract;
+import org.apache.james.queue.api.PriorityMailQueueContract;
+import org.apache.james.queue.api.PriorityManageableMailQueueContract;
 import org.apache.james.queue.api.RawMailQueueItemDecoratorFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +42,7 @@ import org.junit.jupiter.api.Disabled;
 import com.google.common.collect.ImmutableList;
 
 public class JMSMailQueueTest implements MailQueueContract, ManageableMailQueueContract, DelayedMailQueueContract,
-    DelayedManageableMailQueueContract {
+    DelayedManageableMailQueueContract, PriorityMailQueueContract, PriorityManageableMailQueueContract {
 
     private final static String QUEUE_NAME = "test";
 
