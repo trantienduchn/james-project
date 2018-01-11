@@ -19,8 +19,6 @@
 
 package org.apache.james.queue.api;
 
-import static org.apache.james.queue.api.MailQueueFixture.NAME1;
-import static org.apache.james.queue.api.MailQueueFixture.NAME2;
 import static org.apache.james.queue.api.MailQueueFixture.createMimeMessage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -62,7 +60,7 @@ public interface MailQueueContract {
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME1)
+            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -77,7 +75,7 @@ public interface MailQueueContract {
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME1)
+            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -93,7 +91,7 @@ public interface MailQueueContract {
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME1)
+            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -111,7 +109,7 @@ public interface MailQueueContract {
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
             .attribute(attributeName, attributeValue)
-            .name(NAME1)
+            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -128,7 +126,7 @@ public interface MailQueueContract {
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
             .errorMessage(errorMessage)
-            .name(NAME1)
+            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -145,7 +143,7 @@ public interface MailQueueContract {
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
             .state(state)
-            .name(NAME1)
+            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -162,7 +160,7 @@ public interface MailQueueContract {
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
             .remoteAddr(remoteAddress)
-            .name(NAME1)
+            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -179,7 +177,7 @@ public interface MailQueueContract {
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
             .remoteHost(remoteHost)
-            .name(NAME1)
+            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -195,7 +193,7 @@ public interface MailQueueContract {
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(lastUpdated)
-            .name(NAME1)
+            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -210,12 +208,12 @@ public interface MailQueueContract {
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME1)
+            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
         assertThat(mailQueueItem.getMail().getName())
-            .isEqualTo(NAME1);
+            .isEqualTo("name");
     }
 
     @Test
@@ -229,7 +227,7 @@ public interface MailQueueContract {
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME1)
+            .name("name")
             .addHeaderForRecipient(header, MailAddressFixture.ANY_AT_JAMES)
             .build());
 
@@ -246,22 +244,22 @@ public interface MailQueueContract {
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME1)
+            .name("name1")
             .build());
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME2)
+            .name("name2")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem1 = getMailQueue().deQueue();
         mailQueueItem1.done(true);
         MailQueue.MailQueueItem mailQueueItem2 = getMailQueue().deQueue();
         mailQueueItem2.done(true);
-        assertThat(mailQueueItem1.getMail().getName()).isEqualTo(NAME1);
-        assertThat(mailQueueItem2.getMail().getName()).isEqualTo(NAME2);
+        assertThat(mailQueueItem1.getMail().getName()).isEqualTo("name1");
+        assertThat(mailQueueItem2.getMail().getName()).isEqualTo("name2");
     }
 
     @Test
@@ -271,22 +269,22 @@ public interface MailQueueContract {
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME1)
+            .name("name1")
             .build());
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME2)
+            .name("name2")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem1 = getMailQueue().deQueue();
         MailQueue.MailQueueItem mailQueueItem2 = getMailQueue().deQueue();
         mailQueueItem1.done(true);
         mailQueueItem2.done(true);
-        assertThat(mailQueueItem1.getMail().getName()).isEqualTo(NAME1);
-        assertThat(mailQueueItem2.getMail().getName()).isEqualTo(NAME2);
+        assertThat(mailQueueItem1.getMail().getName()).isEqualTo("name1");
+        assertThat(mailQueueItem2.getMail().getName()).isEqualTo("name2");
     }
 
     @Test
@@ -296,22 +294,22 @@ public interface MailQueueContract {
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME1)
+            .name("name1")
             .build());
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME1)
+            .name("name1")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem1 = getMailQueue().deQueue();
         mailQueueItem1.done(false);
         MailQueue.MailQueueItem mailQueueItem2 = getMailQueue().deQueue();
         mailQueueItem2.done(true);
-        assertThat(mailQueueItem1.getMail().getName()).isEqualTo(NAME1);
-        assertThat(mailQueueItem2.getMail().getName()).isEqualTo(NAME1);
+        assertThat(mailQueueItem1.getMail().getName()).isEqualTo("name1");
+        assertThat(mailQueueItem2.getMail().getName()).isEqualTo("name1");
     }
 
     @Test
@@ -321,7 +319,7 @@ public interface MailQueueContract {
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME1)
+            .name("name")
             .build());
 
         getMailQueue().deQueue();
@@ -346,12 +344,12 @@ public interface MailQueueContract {
             .sender(MailAddressFixture.OTHER_AT_LOCAL)
             .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
             .lastUpdated(new Date())
-            .name(NAME1)
+            .name("name")
             .build();
         Future<MailQueue.MailQueueItem> tryDequeue = EXECUTOR_SERVICE.submit(() -> getMailQueue().deQueue());
         EXECUTOR_SERVICE.submit(Throwing.runnable(() -> getMailQueue().enQueue(mail)));
 
-        assertThat(tryDequeue.get().getMail().getName()).isEqualTo(NAME1);
+        assertThat(tryDequeue.get().getMail().getName()).isEqualTo("name");
     }
 
 }
