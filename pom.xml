@@ -1747,6 +1747,12 @@
                 <version>${junit.jupiter.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-migration-support</artifactId>
+                <version>5.0.0-M4</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
                 <version>${junit.vintage.version}</version>
