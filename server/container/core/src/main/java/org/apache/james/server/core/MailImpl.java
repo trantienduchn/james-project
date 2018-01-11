@@ -623,4 +623,8 @@ public class MailImpl implements Disposable, Mail {
     public void addSpecificHeaderForRecipient(Header header, MailAddress recipient) {
         perRecipientSpecificHeaders.addHeaderForRecipient(header, recipient);
     }
+
+    public void addAllSpecificHeaderForRecipient(PerRecipientHeaders perRecipientHeaders) {
+        perRecipientSpecificHeaders.addAll(perRecipientHeaders);
+    }
 }
