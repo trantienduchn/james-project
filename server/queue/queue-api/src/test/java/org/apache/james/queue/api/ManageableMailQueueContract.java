@@ -74,7 +74,7 @@ public interface ManageableMailQueueContract extends MailQueueContract {
     }
 
     @Test
-    default void nackShouldNotDecreaseSize() throws Exception {
+    default void noAckShouldNotDecreaseSize() throws Exception {
         getManageableMailQueue().enQueue(defaultMail().build());
 
         getManageableMailQueue().deQueue().done(false);
