@@ -20,6 +20,7 @@
 package org.apache.james.queue.api;
 
 import static org.apache.james.queue.api.MailQueueFixture.createMimeMessage;
+import static org.apache.mailet.base.test.MimeMessageUtil.asString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -95,8 +96,8 @@ public interface MailQueueContract {
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
-        assertThat(MimeMessageUtil.asString(mailQueueItem.getMail().getMessage()))
-            .isEqualTo(MimeMessageUtil.asString(originalMimeMessage));
+        assertThat(asString(mailQueueItem.getMail().getMessage()))
+            .isEqualTo(asString(originalMimeMessage));
     }
 
     @Test
