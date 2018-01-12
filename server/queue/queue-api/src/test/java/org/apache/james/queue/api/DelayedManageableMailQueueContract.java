@@ -23,27 +23,20 @@ import static org.apache.james.queue.api.MailQueueFixture.defaultMail;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.mailet.Mail;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+@ExtendWith(ExecutorExtension.class)
 public interface DelayedManageableMailQueueContract extends DelayedMailQueueContract, ManageableMailQueueContract {
 
     ManageableMailQueue getManageableMailQueue();
 
-    ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(2);
-
-    @AfterAll
-    static void afterAllTests() {
-        EXECUTOR_SERVICE.shutdownNow();
-    }
-
     @Test
-    default void flushShouldRemoveDelays() throws Exception {
+    default void flushShouldRemoveDelays(ExecutorService executorService) throws Exception {
         getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
             .build(),
@@ -52,7 +45,7 @@ public interface DelayedManageableMailQueueContract extends DelayedMailQueueCont
 
         getManageableMailQueue().flush();
 
-        Future<MailQueue.MailQueueItem> tryDequeue = EXECUTOR_SERVICE.submit(() -> getManageableMailQueue().deQueue());
+        Future<MailQueue.MailQueueItem> tryDequeue = executorService.submit(() -> getManageableMailQueue().deQueue());
         assertThat(tryDequeue.get(1, TimeUnit.SECONDS).getMail().getName())
             .isEqualTo("name1");
     }

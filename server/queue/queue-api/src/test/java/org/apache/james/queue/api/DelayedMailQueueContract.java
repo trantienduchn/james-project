@@ -24,34 +24,27 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.github.fge.lambdas.Throwing;
 import com.google.common.base.Stopwatch;
 
+@ExtendWith(ExecutorExtension.class)
 public interface DelayedMailQueueContract {
-
-    ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(2);
 
     MailQueue getMailQueue();
 
-    @AfterAll
-    static void afterAllTests() {
-        EXECUTOR_SERVICE.shutdownNow();
-    }
-
     @Test
-    default void enqueueShouldDelayMailsWhenSpecified() throws Exception {
+    default void enqueueShouldDelayMailsWhenSpecified(ExecutorService executorService) throws Exception {
         getMailQueue().enQueue(defaultMail()
             .build(), 2L, TimeUnit.SECONDS);
 
-        Future<?> future = EXECUTOR_SERVICE.submit(Throwing.runnable(() -> getMailQueue().deQueue()));
+        Future<?> future = executorService.submit(Throwing.runnable(() -> getMailQueue().deQueue()));
         assertThatThrownBy(() -> future.get(1, TimeUnit.SECONDS))
             .isInstanceOf(TimeoutException.class);
     }
