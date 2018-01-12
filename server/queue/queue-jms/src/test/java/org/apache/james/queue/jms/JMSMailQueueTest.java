@@ -32,6 +32,7 @@ import org.apache.james.queue.api.RawMailQueueItemDecoratorFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
 
@@ -83,6 +84,12 @@ public class JMSMailQueueTest implements MailQueueContract {
     @Override
     @Disabled("JAMES-2295 Disabled as test was dead-locking")
     public void dequeueCouldBeInterleaving() {
+
+    }
+
+    @Override
+    @Disabled("JAMES-2295 Disabled as test was dead-locking")
+    public void dequeueCouldBeInterleavingWithOutOfOrderAck() {
 
     }
 

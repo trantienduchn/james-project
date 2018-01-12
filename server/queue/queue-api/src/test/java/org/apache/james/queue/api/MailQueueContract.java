@@ -223,6 +223,24 @@ public interface MailQueueContract {
         assertThat(mailQueueItem2.getMail().getName()).isEqualTo("name2");
     }
 
+
+    @Test
+    default void dequeueCouldBeInterleavingWithOutOfOrderAck() throws Exception {
+        getMailQueue().enQueue(defaultMail()
+            .name("name1")
+            .build());
+        getMailQueue().enQueue(defaultMail()
+            .name("name2")
+            .build());
+
+        MailQueue.MailQueueItem mailQueueItem1 = getMailQueue().deQueue();
+        MailQueue.MailQueueItem mailQueueItem2 = getMailQueue().deQueue();
+        mailQueueItem2.done(true);
+        mailQueueItem1.done(true);
+        assertThat(mailQueueItem1.getMail().getName()).isEqualTo("name1");
+        assertThat(mailQueueItem2.getMail().getName()).isEqualTo("name2");
+    }
+
     @Test
     default void dequeueShouldAllowRetrieveFailItems() throws Exception {
         getMailQueue().enQueue(defaultMail()
