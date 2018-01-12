@@ -20,6 +20,9 @@
 package org.apache.james.queue.api;
 
 import static org.apache.james.queue.api.MailQueueFixture.createMimeMessage;
+import static org.apache.mailet.base.MailAddressFixture.RECIPIENT1;
+import static org.apache.mailet.base.MailAddressFixture.RECIPIENT2;
+import static org.apache.mailet.base.MailAddressFixture.SENDER;
 import static org.apache.mailet.base.test.MimeMessageUtil.asString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -58,30 +61,30 @@ public interface MailQueueContract {
     default void queueShouldPreserveMailRecipients() throws Exception {
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
         assertThat(mailQueueItem.getMail().getRecipients())
-            .containsOnly(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES);
+            .containsOnly(RECIPIENT1, RECIPIENT2);
     }
 
     @Test
     default void queueShouldPreserveMailSender() throws Exception {
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
         assertThat(mailQueueItem.getMail().getSender())
-            .isEqualTo(MailAddressFixture.OTHER_AT_LOCAL);
+            .isEqualTo(SENDER);
     }
 
     @Test
@@ -89,8 +92,8 @@ public interface MailQueueContract {
         MimeMessage originalMimeMessage = createMimeMessage();
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(originalMimeMessage)
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name")
             .build());
@@ -106,8 +109,8 @@ public interface MailQueueContract {
         String attributeValue = "value";
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .attribute(attributeName, attributeValue)
             .name("name")
@@ -123,8 +126,8 @@ public interface MailQueueContract {
         String errorMessage = "ErrorMessage";
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .errorMessage(errorMessage)
             .name("name")
@@ -140,8 +143,8 @@ public interface MailQueueContract {
         String state = "state";
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .state(state)
             .name("name")
@@ -157,8 +160,8 @@ public interface MailQueueContract {
         String remoteAddress = "remote";
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .remoteAddr(remoteAddress)
             .name("name")
@@ -174,8 +177,8 @@ public interface MailQueueContract {
         String remoteHost = "remote";
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .remoteHost(remoteHost)
             .name("name")
@@ -191,8 +194,8 @@ public interface MailQueueContract {
         Date lastUpdated = new Date();
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(lastUpdated)
             .name("name")
             .build());
@@ -206,8 +209,8 @@ public interface MailQueueContract {
     default void queueShouldPreserveName() throws Exception {
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name")
             .build());
@@ -225,16 +228,16 @@ public interface MailQueueContract {
             .build();
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name")
-            .addHeaderForRecipient(header, MailAddressFixture.ANY_AT_JAMES)
+            .addHeaderForRecipient(header, RECIPIENT1)
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
         assertThat(mailQueueItem.getMail().getPerRecipientSpecificHeaders()
-            .getHeadersForRecipient(MailAddressFixture.ANY_AT_JAMES))
+            .getHeadersForRecipient(RECIPIENT1))
             .containsOnly(header);
     }
 
@@ -242,15 +245,15 @@ public interface MailQueueContract {
     default void dequeueShouldBeFifo() throws Exception {
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name1")
             .build());
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name2")
             .build());
@@ -267,15 +270,15 @@ public interface MailQueueContract {
     default void dequeueCouldBeInterleaving() throws Exception {
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name1")
             .build());
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name2")
             .build());
@@ -292,15 +295,15 @@ public interface MailQueueContract {
     default void dequeueShouldAllowRetrieveFailItems() throws Exception {
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name1")
             .build());
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name1")
             .build());
@@ -317,8 +320,8 @@ public interface MailQueueContract {
     default void dequeueShouldNotReturnInProcessingEmails() throws Exception {
         getMailQueue().enQueue(FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name")
             .build());
@@ -342,8 +345,8 @@ public interface MailQueueContract {
     default void deQueueShouldWaitForAMailToBeEnqueued() throws Exception {
         Mail mail = FakeMail.builder()
             .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
             .lastUpdated(new Date())
             .name("name")
             .build();
