@@ -19,12 +19,28 @@
 
 package org.apache.james.queue.api;
 
+import static org.apache.mailet.base.MailAddressFixture.RECIPIENT1;
+import static org.apache.mailet.base.MailAddressFixture.RECIPIENT2;
+import static org.apache.mailet.base.MailAddressFixture.SENDER;
+
+import java.util.Date;
+
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.mailet.base.test.FakeMail;
 import org.apache.mailet.base.test.MimeMessageBuilder;
 
 public interface MailQueueFixture {
+
+    static FakeMail.Builder defaultMail() throws MessagingException {
+        return FakeMail.builder()
+            .name("name")
+            .mimeMessage(createMimeMessage())
+            .sender(SENDER)
+            .recipients(RECIPIENT1, RECIPIENT2)
+            .lastUpdated(new Date());
+    }
 
     static MimeMessage createMimeMessage() throws MessagingException {
         return MimeMessageBuilder.mimeMessageBuilder()

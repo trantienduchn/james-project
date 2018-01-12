@@ -20,6 +20,7 @@
 package org.apache.james.queue.api;
 
 import static org.apache.james.queue.api.MailQueueFixture.createMimeMessage;
+import static org.apache.james.queue.api.MailQueueFixture.defaultMail;
 import static org.apache.mailet.base.MailAddressFixture.RECIPIENT1;
 import static org.apache.mailet.base.MailAddressFixture.RECIPIENT2;
 import static org.apache.mailet.base.MailAddressFixture.SENDER;
@@ -38,9 +39,6 @@ import javax.mail.internet.MimeMessage;
 
 import org.apache.mailet.Mail;
 import org.apache.mailet.PerRecipientHeaders;
-import org.apache.mailet.base.MailAddressFixture;
-import org.apache.mailet.base.test.FakeMail;
-import org.apache.mailet.base.test.MimeMessageUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -59,12 +57,8 @@ public interface MailQueueContract {
 
     @Test
     default void queueShouldPreserveMailRecipients() throws Exception {
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
+        getMailQueue().enQueue(defaultMail()
             .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
-            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -74,12 +68,8 @@ public interface MailQueueContract {
 
     @Test
     default void queueShouldPreserveMailSender() throws Exception {
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
+        getMailQueue().enQueue(defaultMail()
             .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
-            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -90,12 +80,8 @@ public interface MailQueueContract {
     @Test
     default void queueShouldPreserveMimeMessage() throws Exception {
         MimeMessage originalMimeMessage = createMimeMessage();
-        getMailQueue().enQueue(FakeMail.builder()
+        getMailQueue().enQueue(defaultMail()
             .mimeMessage(originalMimeMessage)
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
-            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -107,13 +93,8 @@ public interface MailQueueContract {
     default void queueShouldPreserveMailAttribute() throws Exception {
         String attributeName = "any";
         String attributeValue = "value";
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .attribute(attributeName, attributeValue)
-            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -124,13 +105,8 @@ public interface MailQueueContract {
     @Test
     default void queueShouldPreserveErrorMessage() throws Exception {
         String errorMessage = "ErrorMessage";
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .errorMessage(errorMessage)
-            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -141,13 +117,8 @@ public interface MailQueueContract {
     @Test
     default void queueShouldPreserveState() throws Exception {
         String state = "state";
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .state(state)
-            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -158,13 +129,8 @@ public interface MailQueueContract {
     @Test
     default void queueShouldPreserveRemoteAddress() throws Exception {
         String remoteAddress = "remote";
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .remoteAddr(remoteAddress)
-            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -175,13 +141,8 @@ public interface MailQueueContract {
     @Test
     default void queueShouldPreserveRemoteHost() throws Exception {
         String remoteHost = "remote";
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .remoteHost(remoteHost)
-            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -192,12 +153,8 @@ public interface MailQueueContract {
     @Test
     default void queueShouldPreserveLastUpdated() throws Exception {
         Date lastUpdated = new Date();
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
+        getMailQueue().enQueue(defaultMail()
             .lastUpdated(lastUpdated)
-            .name("name")
             .build());
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
@@ -207,11 +164,7 @@ public interface MailQueueContract {
 
     @Test
     default void queueShouldPreserveName() throws Exception {
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .name("name")
             .build());
 
@@ -226,12 +179,7 @@ public interface MailQueueContract {
             .name("any")
             .value("any")
             .build();
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
-            .name("name")
+        getMailQueue().enQueue(defaultMail()
             .addHeaderForRecipient(header, RECIPIENT1)
             .build());
 
@@ -243,18 +191,10 @@ public interface MailQueueContract {
 
     @Test
     default void dequeueShouldBeFifo() throws Exception {
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .name("name1")
             .build());
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .name("name2")
             .build());
 
@@ -268,18 +208,10 @@ public interface MailQueueContract {
 
     @Test
     default void dequeueCouldBeInterleaving() throws Exception {
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .name("name1")
             .build());
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .name("name2")
             .build());
 
@@ -293,18 +225,10 @@ public interface MailQueueContract {
 
     @Test
     default void dequeueShouldAllowRetrieveFailItems() throws Exception {
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .name("name1")
             .build());
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .name("name1")
             .build());
 
@@ -318,11 +242,7 @@ public interface MailQueueContract {
 
     @Test
     default void dequeueShouldNotReturnInProcessingEmails() throws Exception {
-        getMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        getMailQueue().enQueue(defaultMail()
             .name("name")
             .build());
 
@@ -343,11 +263,7 @@ public interface MailQueueContract {
 
     @Test
     default void deQueueShouldWaitForAMailToBeEnqueued() throws Exception {
-        Mail mail = FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(SENDER)
-            .recipients(RECIPIENT1, RECIPIENT2)
-            .lastUpdated(new Date())
+        Mail mail = defaultMail()
             .name("name")
             .build();
         Future<MailQueue.MailQueueItem> tryDequeue = EXECUTOR_SERVICE.submit(() -> getMailQueue().deQueue());
