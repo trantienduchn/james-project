@@ -19,14 +19,17 @@
 
 package org.apache.james.queue.api;
 
-import static org.apache.james.queue.api.MailQueueFixture.createMimeMessage;
+import static org.apache.james.queue.api.MailQueueFixture.defaultMail;
+import static org.apache.james.queue.api.MailQueueFixture.defaultMailNoRecipient;
+import static org.apache.mailet.base.MailAddressFixture.OTHER_AT_LOCAL;
+import static org.apache.mailet.base.MailAddressFixture.RECIPIENT1;
+import static org.apache.mailet.base.MailAddressFixture.RECIPIENT2;
+import static org.apache.mailet.base.MailAddressFixture.RECIPIENT3;
+import static org.apache.mailet.base.MailAddressFixture.SENDER;
 import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.Date;
 
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.MailAddressFixture;
-import org.apache.mailet.base.test.FakeMail;
 import org.junit.jupiter.api.Test;
 
 public interface ManageableMailQueueContract extends MailQueueContract {
@@ -42,12 +45,7 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void getSizeShouldReturnMessageCount() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
-            .build());
+        getManageableMailQueue().enQueue(defaultMail().build());
 
         long size = getManageableMailQueue().getSize();
 
@@ -56,12 +54,7 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void dequeueShouldDecreaseQueueSize() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
-            .build());
+        getManageableMailQueue().enQueue(defaultMail().build());
 
         getManageableMailQueue().deQueue().done(true);
 
@@ -72,12 +65,7 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void nackShouldNotDecreaseSize() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
-            .build());
+        getManageableMailQueue().enQueue(defaultMail().build());
 
         getManageableMailQueue().deQueue().done(false);
 
@@ -88,12 +76,7 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void processedMailsShouldNotDecreaseSize() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
-            .build());
+        getManageableMailQueue().enQueue(defaultMail().build());
 
         getManageableMailQueue().deQueue();
 
@@ -111,12 +94,8 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void browseShouldReturnSingleElement() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
@@ -128,90 +107,56 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void browseShouldReturnOrderElements() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name3")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
 
-        assertThat(items).extracting(ManageableMailQueue.MailQueueItemView::getMail)
+        assertThat(items)
+            .extracting(ManageableMailQueue.MailQueueItemView::getMail)
             .extracting(Mail::getName)
             .containsExactly("name1", "name2", "name3");
     }
 
     @Test
     default void concurrentDequeueShouldNotAlterBrowsing() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name3")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
 
         getManageableMailQueue().deQueue();
 
-        assertThat(items).extracting(ManageableMailQueue.MailQueueItemView::getMail)
+        assertThat(items)
+            .extracting(ManageableMailQueue.MailQueueItemView::getMail)
             .extracting(Mail::getName)
             .containsExactly("name1", "name2", "name3");
     }
 
     @Test
     default void concurrentDequeueShouldNotAlterBrowsingWhenDequeueWhileIterating() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name3")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
@@ -221,33 +166,22 @@ public interface ManageableMailQueueContract extends MailQueueContract {
         getManageableMailQueue().deQueue();
 
         assertThat(firstItem.getMail().getName()).isEqualTo("name1");
-        assertThat(items).extracting(ManageableMailQueue.MailQueueItemView::getMail)
+        assertThat(items)
+            .extracting(ManageableMailQueue.MailQueueItemView::getMail)
             .extracting(Mail::getName)
             .containsExactly("name2", "name3");
     }
 
     @Test
     default void browsingShouldNotAffectDequeue() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name3")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
@@ -260,31 +194,19 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void concurrentEnqueueShouldNotAlterBrowsingWhenDequeueWhileIterating() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
 
         ManageableMailQueue.MailQueueItemView firstItem = items.next();
 
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name3")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         assertThat(firstItem.getMail().getName()).isEqualTo("name1");
@@ -295,29 +217,17 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void concurrentDequeueShouldNotAlterBrowsingWhileIterating() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
 
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name3")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         assertThat(items).extracting(ManageableMailQueue.MailQueueItemView::getMail)
@@ -327,19 +237,11 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void concurrentFlushShouldNotAlterBrowsingWhenDequeueWhileIterating() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
@@ -356,19 +258,11 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void concurrentFlushShouldNotAlterBrowsing() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
@@ -382,19 +276,11 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void concurrentClearShouldNotAlterBrowsingWhenDequeue() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
@@ -408,19 +294,11 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void concurrentRemoveShouldNotAlterBrowsingWhenDequeue() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
@@ -434,19 +312,11 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void concurrentClearShouldNotAlterBrowsingWhenDequeueWhileIterating() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
@@ -462,19 +332,11 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void concurrentRemoveShouldNotAlterBrowsingWhenDequeueWhileIterating() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         ManageableMailQueue.MailQueueIterator items = getManageableMailQueue().browse();
@@ -490,19 +352,11 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void removeByNameShouldRemoveSpecificEmail() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         getManageableMailQueue().remove(ManageableMailQueue.Type.Name, "name2");
@@ -515,22 +369,16 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void removeBySenderShouldRemoveSpecificEmail() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
+            .sender(OTHER_AT_LOCAL)
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
+            .sender(SENDER)
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.ANY_AT_JAMES)
-            .recipients(MailAddressFixture.OTHER_AT_LOCAL, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
-        getManageableMailQueue().remove(ManageableMailQueue.Type.Sender, MailAddressFixture.OTHER_AT_LOCAL.asString());
+        getManageableMailQueue().remove(ManageableMailQueue.Type.Sender, OTHER_AT_LOCAL.asString());
 
         assertThat(getManageableMailQueue().browse())
             .extracting(ManageableMailQueue.MailQueueItemView::getMail)
@@ -540,22 +388,16 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void removeByRecipientShouldRemoveSpecificEmail() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMailNoRecipient()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES)
-            .lastUpdated(new Date())
+            .recipient(RECIPIENT1)
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMailNoRecipient()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.ANY_AT_JAMES)
-            .recipients(MailAddressFixture.OTHER_AT_LOCAL)
-            .lastUpdated(new Date())
+            .recipient(RECIPIENT2)
             .build());
 
-        getManageableMailQueue().remove(ManageableMailQueue.Type.Recipient, MailAddressFixture.OTHER_AT_LOCAL.asString());
+        getManageableMailQueue().remove(ManageableMailQueue.Type.Recipient, RECIPIENT2.asString());
 
         assertThat(getManageableMailQueue().browse())
             .extracting(ManageableMailQueue.MailQueueItemView::getMail)
@@ -565,22 +407,16 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void removeByRecipientShouldRemoveSpecificEmailWhenMultipleRecipients() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMailNoRecipient()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
+            .recipients(RECIPIENT1, RECIPIENT2)
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMailNoRecipient()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.ANY_AT_JAMES)
-            .recipients(MailAddressFixture.OTHER_AT_LOCAL, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
+            .recipients(RECIPIENT1, RECIPIENT3)
             .build());
 
-        getManageableMailQueue().remove(ManageableMailQueue.Type.Recipient, MailAddressFixture.OTHER_AT_LOCAL.asString());
+        getManageableMailQueue().remove(ManageableMailQueue.Type.Recipient, RECIPIENT2.asString());
 
         assertThat(getManageableMailQueue().browse())
             .extracting(ManageableMailQueue.MailQueueItemView::getMail)
@@ -615,19 +451,11 @@ public interface ManageableMailQueueContract extends MailQueueContract {
 
     @Test
     default void clearShouldRemoveAllElements() throws Exception {
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.OTHER_AT_LOCAL)
-            .recipients(MailAddressFixture.ANY_AT_JAMES, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
-        getManageableMailQueue().enQueue(FakeMail.builder()
+        getManageableMailQueue().enQueue(defaultMail()
             .name("name2")
-            .mimeMessage(createMimeMessage())
-            .sender(MailAddressFixture.ANY_AT_JAMES)
-            .recipients(MailAddressFixture.OTHER_AT_LOCAL, MailAddressFixture.OTHER_AT_JAMES)
-            .lastUpdated(new Date())
             .build());
 
         getManageableMailQueue().clear();
