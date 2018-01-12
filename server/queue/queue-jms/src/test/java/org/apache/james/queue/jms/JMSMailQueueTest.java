@@ -81,18 +81,21 @@ public class JMSMailQueueTest implements MailQueueContract {
         return mailQueue;
     }
 
+    @Test
     @Override
     @Disabled("JAMES-2295 Disabled as test was dead-locking")
     public void dequeueCouldBeInterleaving() {
 
     }
 
+    @Test
     @Override
     @Disabled("JAMES-2295 Disabled as test was dead-locking")
     public void dequeueCouldBeInterleavingWithOutOfOrderAck() {
 
     }
 
+    @Test
     @Override
     @Disabled("JAMES-2301 Per recipients headers are not attached to the message.")
     public void queueShouldPreservePerRecipientHeaders() {
