@@ -53,6 +53,16 @@ public interface ManageableMailQueueContract extends MailQueueContract {
     }
 
     @Test
+    default void getSizeShouldReturnMessageCountWhenSeveralMails() throws Exception {
+        getManageableMailQueue().enQueue(defaultMail().build());
+        getManageableMailQueue().enQueue(defaultMail().build());
+
+        long size = getManageableMailQueue().getSize();
+
+        assertThat(size).isEqualTo(2L);
+    }
+
+    @Test
     default void dequeueShouldDecreaseQueueSize() throws Exception {
         getManageableMailQueue().enQueue(defaultMail().build());
 
