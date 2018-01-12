@@ -30,7 +30,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -39,21 +38,15 @@ import javax.mail.internet.MimeMessage;
 
 import org.apache.mailet.Mail;
 import org.apache.mailet.PerRecipientHeaders;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.github.fge.lambdas.Throwing;
 
+@ExtendWith(ExecutorExtension.class)
 public interface MailQueueContract {
 
-    ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(2);
-
     MailQueue getMailQueue();
-
-    @AfterAll
-    static void afterAllTests() {
-        EXECUTOR_SERVICE.shutdownNow();
-    }
 
     @Test
     default void queueShouldPreserveMailRecipients() throws Exception {
@@ -259,33 +252,33 @@ public interface MailQueueContract {
     }
 
     @Test
-    default void dequeueShouldNotReturnInProcessingEmails() throws Exception {
+    default void dequeueShouldNotReturnInProcessingEmails(ExecutorService executorService) throws Exception {
         getMailQueue().enQueue(defaultMail()
             .name("name")
             .build());
 
         getMailQueue().deQueue();
 
-        Future<?> future = EXECUTOR_SERVICE.submit(Throwing.runnable(() -> getMailQueue().deQueue()));
+        Future<?> future = executorService.submit(Throwing.runnable(() -> getMailQueue().deQueue()));
         assertThatThrownBy(() -> future.get(2, TimeUnit.SECONDS))
             .isInstanceOf(TimeoutException.class);
     }
 
     @Test
-    default void deQueueShouldFreezeWhenNoMail() throws Exception {
-        Future<?> future = EXECUTOR_SERVICE.submit(Throwing.runnable(() -> getMailQueue().deQueue()));
+    default void deQueueShouldFreezeWhenNoMail(ExecutorService executorService) throws Exception {
+        Future<?> future = executorService.submit(Throwing.runnable(() -> getMailQueue().deQueue()));
 
         assertThatThrownBy(() -> future.get(2, TimeUnit.SECONDS))
             .isInstanceOf(TimeoutException.class);
     }
 
     @Test
-    default void deQueueShouldWaitForAMailToBeEnqueued() throws Exception {
+    default void deQueueShouldWaitForAMailToBeEnqueued(ExecutorService executorService) throws Exception {
         Mail mail = defaultMail()
             .name("name")
             .build();
-        Future<MailQueue.MailQueueItem> tryDequeue = EXECUTOR_SERVICE.submit(() -> getMailQueue().deQueue());
-        EXECUTOR_SERVICE.submit(Throwing.runnable(() -> getMailQueue().enQueue(mail)));
+        Future<MailQueue.MailQueueItem> tryDequeue = executorService.submit(() -> getMailQueue().deQueue());
+        executorService.submit(Throwing.runnable(() -> getMailQueue().enQueue(mail)));
 
         assertThat(tryDequeue.get().getMail().getName()).isEqualTo("name");
     }
