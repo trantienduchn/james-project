@@ -116,7 +116,7 @@ public interface ManageableMailQueueContract extends MailQueueContract {
     }
 
     @Test
-    default void browseShouldReturnOrderElements() throws Exception {
+    default void browseShouldReturnElementsInOrder() throws Exception {
         getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
             .build());
