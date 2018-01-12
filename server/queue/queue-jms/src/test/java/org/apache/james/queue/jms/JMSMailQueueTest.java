@@ -108,6 +108,8 @@ public class JMSMailQueueTest implements ManageableMailQueueContract {
 
     }
 
+    @Test
+    @Override
     @Disabled("JAMES-2296 Not handled by JMS mailqueue. Only single recipient per-recipient removal works")
     public void removeByRecipientShouldRemoveSpecificEmailWhenMultipleRecipients() {
 
