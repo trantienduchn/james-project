@@ -45,7 +45,7 @@ public interface MailQueueFixture {
     static MimeMessage createMimeMessage() throws MessagingException {
         return MimeMessageBuilder.mimeMessageBuilder()
             .setText("test")
-            .addHeader("testheader", "testvalie")
+            .addHeader("testheader", "testvalue")
             .build();
     }
 }
