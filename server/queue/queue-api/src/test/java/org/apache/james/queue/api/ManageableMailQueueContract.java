@@ -226,7 +226,7 @@ public interface ManageableMailQueueContract extends MailQueueContract {
     }
 
     @Test
-    default void concurrentDequeueShouldNotAlterBrowsingWhileIterating() throws Exception {
+    default void concurrentEnqueueShouldNotAlterBrowsing() throws Exception {
         getManageableMailQueue().enQueue(defaultMail()
             .name("name1")
             .build());
