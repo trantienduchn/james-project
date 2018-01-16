@@ -52,6 +52,41 @@ public interface DelayedMailQueueContract {
     }
 
     @Test
+    default void enqueueShouldNegativeDelayShouldNotDelayDelivery(ExecutorService executorService) throws Exception {
+        getMailQueue().enQueue(defaultMail()
+            .build(),
+            -30L,
+            TimeUnit.SECONDS);
+
+        Future<?> future = executorService.submit(Throwing.runnable(() -> getMailQueue().deQueue()));
+        future.get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    default void enqueueWithReasonablyLongDelayShouldDelayMail(ExecutorService executorService) throws Exception {
+        getMailQueue().enQueue(defaultMail()
+            .build(),
+            365*1000,
+            TimeUnit.DAYS);
+
+        Future<?> future = executorService.submit(Throwing.runnable(() -> getMailQueue().deQueue()));
+        assertThatThrownBy(() -> future.get(1, TimeUnit.SECONDS))
+            .isInstanceOf(TimeoutException.class);
+    }
+
+    @Test
+    default void enqueueWithVeryLongDelayShouldDelayMail(ExecutorService executorService) throws Exception {
+        getMailQueue().enQueue(defaultMail()
+            .build(),
+            Long.MAX_VALUE / (3600 * 24),
+            TimeUnit.DAYS);
+
+        Future<?> future = executorService.submit(Throwing.runnable(() -> getMailQueue().deQueue()));
+        assertThatThrownBy(() -> future.get(1, TimeUnit.SECONDS))
+            .isInstanceOf(TimeoutException.class);
+    }
+
+    @Test
     default void delayedMailCanBeRetrievedFromTheQueue() throws Exception {
         getMailQueue().enQueue(defaultMail()
             .name("name1")

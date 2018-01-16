@@ -19,6 +19,8 @@
 
 package org.apache.james.queue.jms;
 
+import java.util.concurrent.ExecutorService;
+
 import javax.jms.ConnectionFactory;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -122,6 +124,13 @@ public class JMSMailQueueTest implements DelayedManageableMailQueueContract, Pri
     @Disabled("JAMES-2308 Flushing JMS mail queue randomly re-order them" +
         "Random test failing around 1% of the time")
     public void flushShouldPreserveBrowseOrder() {
+
+    }
+
+    @Test
+    @Override
+    @Disabled("JAMES-2309 Long overflow in JMS delays")
+    public void enqueueWithVeryLongDelayShouldDelayMail(ExecutorService executorService) {
 
     }
 }
