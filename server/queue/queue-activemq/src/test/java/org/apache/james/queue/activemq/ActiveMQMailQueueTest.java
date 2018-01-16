@@ -18,6 +18,8 @@
  ****************************************************************/
 package org.apache.james.queue.activemq;
 
+import java.util.concurrent.ExecutorService;
+
 import javax.jms.ConnectionFactory;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -59,21 +61,6 @@ public class ActiveMQMailQueueTest implements DelayedManageableMailQueueContract
 
     }
 
-    @AfterEach
-    public void tearDown() throws Exception {
-        broker.stop();
-    }
-
-    @Override
-    public MailQueue getMailQueue() {
-        return mailQueue;
-    }
-
-    @Override
-    public ManageableMailQueue getManageableMailQueue() {
-        return mailQueue;
-    }
-
     protected static BrokerService createBroker() throws Exception {
         BrokerService broker = new BrokerService();
         broker.setPersistent(false);
@@ -92,6 +79,21 @@ public class ActiveMQMailQueueTest implements DelayedManageableMailQueueContract
         broker.setEnableStatistics(true);
 
         return broker;
+    }
+
+    @AfterEach
+    public void tearDown() throws Exception {
+        broker.stop();
+    }
+
+    @Override
+    public MailQueue getMailQueue() {
+        return mailQueue;
+    }
+
+    @Override
+    public ManageableMailQueue getManageableMailQueue() {
+        return mailQueue;
     }
 
     @Test
@@ -127,6 +129,13 @@ public class ActiveMQMailQueueTest implements DelayedManageableMailQueueContract
     @Disabled("JAMES-2308 Flushing JMS mail queue randomly re-order them" +
         "Random test failing around 1% of the time")
     public void flushShouldPreserveBrowseOrder() {
+
+    }
+
+    @Test
+    @Override
+    @Disabled("JAMES-2309 Long overflow in JMS delays")
+    public void enqueueWithVeryLongDelayShouldDelayMail(ExecutorService executorService) {
 
     }
 }

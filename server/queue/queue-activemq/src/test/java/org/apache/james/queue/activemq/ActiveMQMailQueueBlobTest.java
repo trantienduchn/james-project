@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.ExecutorService;
 
 import javax.jms.ConnectionFactory;
 
@@ -72,22 +73,6 @@ public class ActiveMQMailQueueBlobTest implements DelayedManageableMailQueueCont
 
     }
 
-    @AfterEach
-    public void tearDown() throws Exception {
-        fileSystem.destroy();
-        broker.stop();
-    }
-
-    @Override
-    public MailQueue getMailQueue() {
-        return mailQueue;
-    }
-
-    @Override
-    public ManageableMailQueue getManageableMailQueue() {
-        return mailQueue;
-    }
-
     protected static BrokerService createBroker() throws Exception {
         BrokerService broker = new BrokerService();
         broker.setPersistent(false);
@@ -106,6 +91,22 @@ public class ActiveMQMailQueueBlobTest implements DelayedManageableMailQueueCont
         broker.setEnableStatistics(true);
 
         return broker;
+    }
+
+    @AfterEach
+    public void tearDown() throws Exception {
+        fileSystem.destroy();
+        broker.stop();
+    }
+
+    @Override
+    public MailQueue getMailQueue() {
+        return mailQueue;
+    }
+
+    @Override
+    public ManageableMailQueue getManageableMailQueue() {
+        return mailQueue;
     }
 
     @Test
@@ -141,6 +142,13 @@ public class ActiveMQMailQueueBlobTest implements DelayedManageableMailQueueCont
     @Disabled("JAMES-2308 Flushing JMS mail queue randomly re-order them" +
         "Random test failing around 1% of the time")
     public void flushShouldPreserveBrowseOrder() {
+
+    }
+
+    @Test
+    @Override
+    @Disabled("JAMES-2309 Long overflow in JMS delays")
+    public void enqueueWithVeryLongDelayShouldDelayMail(ExecutorService executorService) {
 
     }
 
