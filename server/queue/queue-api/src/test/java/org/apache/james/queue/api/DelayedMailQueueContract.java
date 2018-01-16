@@ -42,7 +42,9 @@ public interface DelayedMailQueueContract {
     @Test
     default void enqueueShouldDelayMailsWhenSpecified(ExecutorService executorService) throws Exception {
         getMailQueue().enQueue(defaultMail()
-            .build(), 2L, TimeUnit.SECONDS);
+            .build(),
+            2L,
+            TimeUnit.SECONDS);
 
         Future<?> future = executorService.submit(Throwing.runnable(() -> getMailQueue().deQueue()));
         assertThatThrownBy(() -> future.get(1, TimeUnit.SECONDS))
@@ -53,7 +55,9 @@ public interface DelayedMailQueueContract {
     default void delayedMailCanBeRetrievedFromTheQueue() throws Exception {
         getMailQueue().enQueue(defaultMail()
             .name("name1")
-            .build(), 1L, TimeUnit.SECONDS);
+            .build(),
+            1L,
+            TimeUnit.SECONDS);
 
         MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
         assertThat(mailQueueItem.getMail().getName()).isEqualTo("name1");
@@ -66,7 +70,9 @@ public interface DelayedMailQueueContract {
         Stopwatch started = Stopwatch.createStarted();
 
         getMailQueue().enQueue(defaultMail()
-            .build(), delay, unit);
+            .build(),
+            delay,
+            unit);
 
         getMailQueue().deQueue();
         assertThat(started.elapsed(TimeUnit.MILLISECONDS))
