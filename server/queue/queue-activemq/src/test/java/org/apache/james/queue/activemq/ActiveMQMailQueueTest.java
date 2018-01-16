@@ -121,4 +121,12 @@ public class ActiveMQMailQueueTest implements DelayedManageableMailQueueContract
     public void removeByRecipientShouldRemoveSpecificEmailWhenMultipleRecipients() {
 
     }
+
+    @Test
+    @Override
+    @Disabled("JAMES-2308 Flushing JMS mail queue randomly re-order them" +
+        "Random test failing around 1% of the time")
+    public void flushShouldPreserveBrowseOrder() {
+
+    }
 }
