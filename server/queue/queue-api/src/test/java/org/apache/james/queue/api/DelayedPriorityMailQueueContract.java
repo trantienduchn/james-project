@@ -42,7 +42,9 @@ public interface DelayedPriorityMailQueueContract extends DelayedMailQueueContra
         getMailQueue().enQueue(defaultMail()
             .name("name2")
             .attribute(MailPrioritySupport.MAIL_PRIORITY, MailPrioritySupport.HIGH_PRIORITY)
-            .build(), delay, unit);
+            .build(),
+            delay,
+            unit);
 
         Thread.sleep(unit.toMillis(2 * delay));
 
