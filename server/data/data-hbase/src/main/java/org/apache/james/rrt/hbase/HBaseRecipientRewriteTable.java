@@ -154,7 +154,7 @@ public class HBaseRecipientRewriteTable extends AbstractRecipientRewriteTable {
     }
 
     @Override
-    protected String mapAddressInternal(String user, Domain domain) throws RecipientRewriteTableException {
+    protected Mappings mapAddress(String user, Domain domain) throws RecipientRewriteTableException {
         HTableInterface table = null;
         String mappings = null;
         try {
@@ -178,7 +178,7 @@ public class HBaseRecipientRewriteTable extends AbstractRecipientRewriteTable {
                 }
             }
         }
-        return mappings;
+        return MappingsImpl.fromRawString(mappings);
     }
 
     private String getMapping(HTableInterface table, String user, Domain domain) throws IOException {

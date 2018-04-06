@@ -404,28 +404,7 @@ public abstract class AbstractRecipientRewriteTable implements RecipientRewriteT
      *            the mapping of virtual to real recipients, as
      *            <code>MailAddress</code>es to <code>String</code>s.
      */
-    protected abstract String mapAddressInternal(String user, Domain domain) throws RecipientRewriteTableException;
-
-    /**
-     * Get all mappings for the given user and domain. If a aliasdomain mapping
-     * was found get sure it is in the map as first mapping.
-     * 
-     * @param user
-     *            the username
-     * @param domain
-     *            the domain
-     * @return the mappings
-     */
-    private Mappings mapAddress(String user, Domain domain) throws RecipientRewriteTableException {
-
-        String mappings = mapAddressInternal(user, domain);
-
-        if (mappings != null) {
-            return MappingsImpl.fromRawString(mappings);
-        } else {
-            return null;
-        }
-    }
+    protected abstract Mappings mapAddress(String user, Domain domain) throws RecipientRewriteTableException;
 
     private void checkMapping(String user, Domain domain, Mapping mapping) throws RecipientRewriteTableException {
         Mappings mappings = getUserDomainMappings(user, domain);

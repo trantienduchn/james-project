@@ -92,7 +92,8 @@ public abstract class AbstractRecipientRewriteTableTest {
         String regex2 = "(.+)@test";
         String invalidRegex = ".*):";
 
-        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping").isNull();
+        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping")
+            .isEqualTo(MappingsImpl.empty());
 
         addMapping(user, domain, regex, Type.Regex);
         addMapping(user, domain, regex2, Type.Regex);
@@ -108,7 +109,8 @@ public abstract class AbstractRecipientRewriteTableTest {
         removeMapping(user, domain, regex2, Type.Regex);
 
 
-        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping").isNull();
+        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping")
+            .isEqualTo(MappingsImpl.empty());
         assertThat(virtualUserTable.getAllMappings()).describedAs("No mapping").isNull();
     }
 
@@ -120,7 +122,8 @@ public abstract class AbstractRecipientRewriteTableTest {
         String address = "test@localhost2";
         String address2 = "test@james";
 
-        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping").isNull();
+        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping")
+            .isEqualTo(MappingsImpl.empty());
 
         addMapping(user, domain, address, Type.Address);
         addMapping(user, domain, address2, Type.Address);
@@ -132,7 +135,8 @@ public abstract class AbstractRecipientRewriteTableTest {
 
         removeMapping(user, domain, address2, Type.Address);
 
-        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping").isNull();
+        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping")
+            .isEqualTo(MappingsImpl.empty());
         assertThat(virtualUserTable.getAllMappings()).describedAs("No mapping").isNull();
     }
 
@@ -142,7 +146,8 @@ public abstract class AbstractRecipientRewriteTableTest {
         Domain domain = Domain.LOCALHOST;
         String error = "bounce!";
 
-        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping").isNull();
+        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping")
+            .isEqualTo(MappingsImpl.empty());
 
         addMapping(user, domain, error, Type.Error);
         assertThat(virtualUserTable.getAllMappings()).describedAs("One mappingline").hasSize(1);
@@ -154,7 +159,8 @@ public abstract class AbstractRecipientRewriteTableTest {
 
         removeMapping(user, domain, error, Type.Error);
 
-        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping").isNull();
+        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping")
+            .isEqualTo(MappingsImpl.empty());
         assertThat(virtualUserTable.getAllMappings()).describedAs("No mapping").isNull();
     }
 
@@ -166,7 +172,8 @@ public abstract class AbstractRecipientRewriteTableTest {
         String address = "test@localhost2";
         String address2 = "test@james";
 
-        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping").isNull();
+        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping")
+            .isEqualTo(MappingsImpl.empty());
 
         addMapping(RecipientRewriteTable.WILDCARD, domain, address, Type.Address);
         addMapping(user, domain, address2, Type.Address);
@@ -177,8 +184,10 @@ public abstract class AbstractRecipientRewriteTableTest {
         removeMapping(user, domain, address2, Type.Address);
         removeMapping(RecipientRewriteTable.WILDCARD, domain, address, Type.Address);
 
-        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping").isNull();
-        assertThat(virtualUserTable.getMappings(user2, domain)).describedAs("No mapping").isNull();
+        assertThat(virtualUserTable.getMappings(user, domain)).describedAs("No mapping")
+            .isEqualTo(MappingsImpl.empty());
+        assertThat(virtualUserTable.getMappings(user2, domain)).describedAs("No mapping")
+            .isEqualTo(MappingsImpl.empty());
     }
 
     @Test
@@ -284,7 +293,8 @@ public abstract class AbstractRecipientRewriteTableTest {
         removeMapping(user, domain, address, Type.Forward);
         removeMapping(user, domain, address2, Type.Forward);
 
-        assertThat(virtualUserTable.getMappings(user, domain)).isNull();
+        assertThat(virtualUserTable.getMappings(user, domain))
+            .isEqualTo(MappingsImpl.empty());
     }
 
     protected abstract AbstractRecipientRewriteTable getRecipientRewriteTable() throws Exception;
