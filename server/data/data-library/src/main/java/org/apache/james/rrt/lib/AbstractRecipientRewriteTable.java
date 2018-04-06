@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.fge.lambdas.Throwing;
+import com.google.common.base.Preconditions;
 
 public abstract class AbstractRecipientRewriteTable implements RecipientRewriteTable, Configurable {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRecipientRewriteTable.class);
@@ -336,15 +337,9 @@ public abstract class AbstractRecipientRewriteTable implements RecipientRewriteT
      * @return fixedUser the fixed user String
      */
     protected String getFixedUser(String user) {
-        if (user != null) {
-            if (user.equals(WILDCARD) || !user.contains("@")) {
-                return user;
-            } else {
-                throw new IllegalArgumentException("Invalid user: " + user);
-            }
-        } else {
-            return WILDCARD;
-        }
+        String sanitizedUser = Optional.ofNullable(user).orElse(WILDCARD);
+        Preconditions.checkArgument(sanitizedUser.equals(WILDCARD) || !sanitizedUser.contains("@"));
+        return sanitizedUser;
     }
 
     /**
