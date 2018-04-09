@@ -49,9 +49,6 @@ import org.slf4j.LoggerFactory;
  */
 public class HBaseRecipientRewriteTable extends AbstractRecipientRewriteTable {
 
-    /**
-     * The Logger.
-     */
     private static final Logger log = LoggerFactory.getLogger(HBaseRecipientRewriteTable.class.getName());
     private static final String ROW_SEPARATOR = "@";
 
@@ -60,7 +57,7 @@ public class HBaseRecipientRewriteTable extends AbstractRecipientRewriteTable {
         String fixedUser = getFixedUser(user);
         Domain fixedDomain = getFixedDomain(domain);
         Mappings map = getUserDomainMappings(fixedUser, fixedDomain);
-        if (map != null && map.size() != 0) {
+        if (!map.isEmpty()) {
             Mappings updatedMappings = MappingsImpl.from(map).add(mapping).build();
             doUpdateMapping(fixedUser, fixedDomain, updatedMappings.serialize());
         } else {
@@ -108,7 +105,7 @@ public class HBaseRecipientRewriteTable extends AbstractRecipientRewriteTable {
     protected Map<String, Mappings> getAllMappingsInternal() throws RecipientRewriteTableException {
         HTableInterface table = null;
         ResultScanner resultScanner = null;
-        Map<String, Mappings> map = null;
+        Map<String, Mappings> map = new HashMap<>();
         try {
             table = TablePool.getInstance().getRecipientRewriteTable();
             Scan scan = new Scan();
@@ -121,9 +118,6 @@ public class HBaseRecipientRewriteTable extends AbstractRecipientRewriteTable {
                 if (keyValues != null) {
                     for (KeyValue keyValue : keyValues) {
                         String email = Bytes.toString(keyValue.getRow());
-                        if (map == null) {
-                            map = new HashMap<>();
-                        }
                         Mappings mappings = 
                                 MappingsImpl.from(
                                     Optional.ofNullable(
@@ -156,7 +150,7 @@ public class HBaseRecipientRewriteTable extends AbstractRecipientRewriteTable {
     @Override
     protected Mappings mapAddress(String user, Domain domain) throws RecipientRewriteTableException {
         HTableInterface table = null;
-        String mappings = null;
+        String mappings;
         try {
             table = TablePool.getInstance().getRecipientRewriteTable();
             mappings = getMapping(table, user, domain);
@@ -178,7 +172,7 @@ public class HBaseRecipientRewriteTable extends AbstractRecipientRewriteTable {
                 }
             }
         }
-        return MappingsImpl.fromRawString(mappings);
+        return MappingsImpl.fromRawString(Optional.ofNullable(mappings).orElse(""));
     }
 
     private String getMapping(HTableInterface table, String user, Domain domain) throws IOException {
@@ -198,11 +192,11 @@ public class HBaseRecipientRewriteTable extends AbstractRecipientRewriteTable {
         String fixedUser = getFixedUser(user);
         Domain fixedDomain = getFixedDomain(domain);
         Mappings map = getUserDomainMappings(fixedUser, fixedDomain);
-        if (map != null && map.size() > 1) {
+        if (!map.isEmpty() && map.size() > 1) {
             Mappings updatedMappings = map.remove(mapping);
             doUpdateMapping(fixedUser, fixedDomain, updatedMappings.serialize());
         } else {
-            doRemoveMapping(fixedUser, fixedDomain, mapping.asString());
+            doRemoveMapping(fixedUser, fixedDomain);
         }
     }
 
@@ -225,10 +219,9 @@ public class HBaseRecipientRewriteTable extends AbstractRecipientRewriteTable {
      * 
      * @param user the user
      * @param domain the domain
-     * @param mapping the mapping
      * @throws RecipientRewriteTableException
      */
-    private void doRemoveMapping(String user, Domain domain, String mapping) throws RecipientRewriteTableException {
+    private void doRemoveMapping(String user, Domain domain) throws RecipientRewriteTableException {
         HTableInterface table = null;
         try {
             table = TablePool.getInstance().getRecipientRewriteTable();
