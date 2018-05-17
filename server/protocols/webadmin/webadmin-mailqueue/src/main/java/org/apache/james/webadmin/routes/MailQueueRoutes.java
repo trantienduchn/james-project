@@ -298,7 +298,7 @@ public class MailQueueRoutes implements Routes {
         value = "Delete mails from the MailQueue"
     )
     @ApiResponses(value = {
-        @ApiResponse(code = HttpStatus.CREATED_201, message = "OK, the deleting mails task is created"),
+        @ApiResponse(code = HttpStatus.CREATED_201, message = "OK, the task for deleting mails is created"),
         @ApiResponse(code = HttpStatus.NOT_FOUND_404, message = "The MailQueue does not exist."),
         @ApiResponse(code = HttpStatus.BAD_REQUEST_400, message = "Invalid request for deleting mails from the mail queue."),
         @ApiResponse(code = HttpStatus.INTERNAL_SERVER_ERROR_500, message = "Internal server error - Something went bad on the server side.")

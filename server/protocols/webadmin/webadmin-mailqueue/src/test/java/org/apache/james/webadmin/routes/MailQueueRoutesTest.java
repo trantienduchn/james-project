@@ -52,7 +52,6 @@ import org.apache.james.webadmin.service.DeleteMailsFromMailQueueTask;
 import org.apache.james.webadmin.utils.JsonTransformer;
 import org.apache.mailet.base.test.FakeMail;
 import org.eclipse.jetty.http.HttpStatus;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,8 +72,10 @@ public class MailQueueRoutesTest {
     static final String SENDER_2_JAMES_ORG = "sender2@james.org";
     static final String RECIPIENT_JAMES_ORG = "recipient@james.org";
     static final String RECIPIENT_1_JAMES_ORG = "recipient1@james.org";
+    static final String RECIPIENT_2_JAMES_ORG = "recipient2@james.org";
     static final String FAKE_MAIL_NAME_1 = "fake mail name 1";
     static final String FAKE_MAIL_NAME_2 = "fake mail name 2";
+    static final String FAKE_MAIL_NAME_3 = "fake mail name 3";
 
     WebAdminServer webAdminServer;
     MemoryMailQueueFactory mailQueueFactory;
@@ -534,6 +535,124 @@ public class MailQueueRoutesTest {
         .when()
             .get(taskId + "/await")
         .then()
+            .body("status", is("completed"));
+
+        assertThat(queue.browse())
+            .hasSize(1)
+            .first()
+            .satisfies(mailView -> {
+                assertThat(mailView.getMail().getName()).isEqualTo(FAKE_MAIL_NAME_2);
+                assertThat(mailView.getMail().getSender().asString()).isEqualTo(SENDER_2_JAMES_ORG);
+            });
+
+    }
+
+    @Test
+    public void deleteMailsShouldDeleteMailsWhenNameIsGiven() throws Exception {
+        MemoryMailQueue queue = mailQueueFactory.createQueue(FIRST_QUEUE);
+
+        queue.enQueue(FakeMail.builder()
+            .name(FAKE_MAIL_NAME_1)
+            .build());
+
+        queue.enQueue(FakeMail.builder()
+            .name(FAKE_MAIL_NAME_2)
+            .build());
+
+        String taskId = with()
+            .param("name", FAKE_MAIL_NAME_1)
+            .delete(FIRST_QUEUE + "/mails")
+            .jsonPath()
+            .getString("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+        .when()
+            .get(taskId + "/await")
+        .then()
+            .body("status", is("completed"));
+
+        assertThat(queue.browse())
+            .hasSize(1)
+            .first()
+            .satisfies(mailView -> assertThat(mailView.getMail().getName()).isEqualTo(FAKE_MAIL_NAME_2));
+    }
+
+    @Test
+    public void deleteMailsShouldDeleteMailsWhenRecipientIsGiven() throws Exception {
+        MemoryMailQueue queue = mailQueueFactory.createQueue(FIRST_QUEUE);
+
+        queue.enQueue(FakeMail.builder()
+            .name(FAKE_MAIL_NAME_1)
+            .recipient(RECIPIENT_JAMES_ORG)
+            .build());
+
+        queue.enQueue(FakeMail.builder()
+            .name(FAKE_MAIL_NAME_2)
+            .recipient(RECIPIENT_1_JAMES_ORG)
+            .build());
+
+        queue.enQueue(FakeMail.builder()
+            .name(FAKE_MAIL_NAME_3)
+            .recipient(RECIPIENT_2_JAMES_ORG)
+            .build());
+
+        String taskId = with()
+            .param("recipient", RECIPIENT_JAMES_ORG)
+            .delete(FIRST_QUEUE + "/mails")
+            .jsonPath()
+            .getString("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+        .when()
+            .get(taskId + "/await")
+        .then()
+            .body("status", is("completed"));
+
+        assertThat(queue.browse()).hasSize(2);
+        assertThat(queue.browse())
+            .anySatisfy(mailView -> {
+                assertThat(mailView.getMail().getName()).isEqualTo(FAKE_MAIL_NAME_2);
+                assertThat(mailView.getMail().getRecipients())
+                    .hasSize(1)
+                    .first()
+                    .satisfies(recipient -> assertThat(recipient.asString()).isEqualTo(RECIPIENT_1_JAMES_ORG));
+            })
+            .anySatisfy(mailView -> {
+                assertThat(mailView.getMail().getName()).isEqualTo(FAKE_MAIL_NAME_3);
+                assertThat(mailView.getMail().getRecipients())
+                    .hasSize(1)
+                    .first()
+                    .satisfies(recipient -> assertThat(recipient.asString()).isEqualTo(RECIPIENT_2_JAMES_ORG));
+            });
+    }
+
+    @Test
+    public void deleteMailsTaskShouldHasDetailsWhenSenderIsGiven() throws Exception {
+        MemoryMailQueue queue = mailQueueFactory.createQueue(FIRST_QUEUE);
+
+        queue.enQueue(FakeMail.builder()
+            .name(FAKE_MAIL_NAME_1)
+            .sender(SENDER_1_JAMES_ORG)
+            .build());
+
+        queue.enQueue(FakeMail.builder()
+            .name(FAKE_MAIL_NAME_2)
+            .sender(SENDER_2_JAMES_ORG)
+            .build());
+
+        String taskId = with()
+            .param("sender", SENDER_1_JAMES_ORG)
+            .delete(FIRST_QUEUE + "/mails")
+            .jsonPath()
+            .getString("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+        .when()
+            .get(taskId + "/await")
+        .then()
             .body("status", is("completed"))
             .body("taskId", is(notNullValue()))
             .body("type", is(DeleteMailsFromMailQueueTask.TYPE))
@@ -547,22 +666,22 @@ public class MailQueueRoutesTest {
     }
 
     @Test
-    public void deleteMailsShouldDeleteMailsWhenNameIsGiven() throws Exception {
+    public void deleteMailsTaskShouldHasDetailsWhenNameIsGiven() throws Exception {
         MemoryMailQueue queue = mailQueueFactory.createQueue(FIRST_QUEUE);
 
         queue.enQueue(FakeMail.builder()
-                .name(FAKE_MAIL_NAME_1)
-                .build());
+            .name(FAKE_MAIL_NAME_1)
+            .build());
 
         queue.enQueue(FakeMail.builder()
-                .name(FAKE_MAIL_NAME_2)
-                .build());
+            .name(FAKE_MAIL_NAME_2)
+            .build());
 
         String taskId = with()
-                .param("name", FAKE_MAIL_NAME_1)
-                .delete(FIRST_QUEUE + "/mails")
-                .jsonPath()
-                .getString("taskId");
+            .param("name", FAKE_MAIL_NAME_1)
+            .delete(FIRST_QUEUE + "/mails")
+            .jsonPath()
+            .getString("taskId");
 
         given()
             .basePath(TasksRoutes.BASE)
@@ -582,29 +701,29 @@ public class MailQueueRoutesTest {
     }
 
     @Test
-    public void deleteMailsShouldDeleteMailsWhenRecipientIsGiven() throws Exception {
+    public void deleteMailsTaskShouldHasDetailWhenRecipientIsGiven() throws Exception {
         MemoryMailQueue queue = mailQueueFactory.createQueue(FIRST_QUEUE);
 
         queue.enQueue(FakeMail.builder()
-                .name(FAKE_MAIL_NAME_1)
-                .recipient(RECIPIENT_JAMES_ORG)
-                .build());
+            .name(FAKE_MAIL_NAME_1)
+            .recipient(RECIPIENT_JAMES_ORG)
+            .build());
 
         queue.enQueue(FakeMail.builder()
-                .name(FAKE_MAIL_NAME_2)
-                .recipient(RECIPIENT_JAMES_ORG)
-                .build());
+            .name(FAKE_MAIL_NAME_2)
+            .recipient(RECIPIENT_JAMES_ORG)
+            .build());
 
         queue.enQueue(FakeMail.builder()
-                .name(FAKE_MAIL_NAME_2)
-                .recipient(RECIPIENT_1_JAMES_ORG)
-                .build());
+            .name(FAKE_MAIL_NAME_2)
+            .recipient(RECIPIENT_1_JAMES_ORG)
+            .build());
 
         String taskId = with()
-                .param("recipient", RECIPIENT_JAMES_ORG)
-                .delete(FIRST_QUEUE + "/mails")
-                .jsonPath()
-                .getString("taskId");
+            .param("recipient", RECIPIENT_JAMES_ORG)
+            .delete(FIRST_QUEUE + "/mails")
+            .jsonPath()
+            .getString("taskId");
 
         given()
             .basePath(TasksRoutes.BASE)
