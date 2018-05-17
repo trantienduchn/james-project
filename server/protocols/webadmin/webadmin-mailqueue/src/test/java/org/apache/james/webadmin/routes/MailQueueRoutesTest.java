@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
+
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -50,6 +51,7 @@ import org.apache.james.webadmin.WebAdminServer;
 import org.apache.james.webadmin.WebAdminUtils;
 import org.apache.james.webadmin.service.DeleteMailsFromMailQueueTask;
 import org.apache.james.webadmin.utils.JsonTransformer;
+import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.After;
@@ -540,11 +542,7 @@ public class MailQueueRoutesTest {
         assertThat(queue.browse())
             .hasSize(1)
             .first()
-            .satisfies(mailView -> {
-                assertThat(mailView.getMail().getName()).isEqualTo(FAKE_MAIL_NAME_2);
-                assertThat(mailView.getMail().getSender().asString()).isEqualTo(SENDER_2_JAMES_ORG);
-            });
-
+            .satisfies(mailView -> assertThat(mailView.getMail().getName()).isEqualTo(FAKE_MAIL_NAME_2));
     }
 
     @Test
@@ -610,22 +608,11 @@ public class MailQueueRoutesTest {
         .then()
             .body("status", is("completed"));
 
-        assertThat(queue.browse()).hasSize(2);
         assertThat(queue.browse())
-            .anySatisfy(mailView -> {
-                assertThat(mailView.getMail().getName()).isEqualTo(FAKE_MAIL_NAME_2);
-                assertThat(mailView.getMail().getRecipients())
-                    .hasSize(1)
-                    .first()
-                    .satisfies(recipient -> assertThat(recipient.asString()).isEqualTo(RECIPIENT_1_JAMES_ORG));
-            })
-            .anySatisfy(mailView -> {
-                assertThat(mailView.getMail().getName()).isEqualTo(FAKE_MAIL_NAME_3);
-                assertThat(mailView.getMail().getRecipients())
-                    .hasSize(1)
-                    .first()
-                    .satisfies(recipient -> assertThat(recipient.asString()).isEqualTo(RECIPIENT_2_JAMES_ORG));
-            });
+            .hasSize(2)
+            .extracting(ManageableMailQueue.MailQueueItemView::getMail)
+            .extracting(Mail::getName)
+            .contains(FAKE_MAIL_NAME_2, FAKE_MAIL_NAME_3);
     }
 
     @Test
