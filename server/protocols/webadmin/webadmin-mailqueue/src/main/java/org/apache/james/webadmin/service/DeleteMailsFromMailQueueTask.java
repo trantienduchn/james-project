@@ -19,17 +19,18 @@
 
 package org.apache.james.webadmin.service;
 
-import com.github.fge.lambdas.Throwing;
-import com.google.common.base.Preconditions;
-import com.google.common.primitives.Booleans;
+import java.util.Optional;
+import java.util.function.Supplier;
+
 import org.apache.james.core.MailAddress;
 import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.task.Task;
 import org.apache.james.task.TaskExecutionDetails;
 
-import java.util.Optional;
-import java.util.function.Supplier;
+import com.github.fge.lambdas.Throwing;
+import com.google.common.base.Preconditions;
+import com.google.common.primitives.Booleans;
 
 public class DeleteMailsFromMailQueueTask implements Task {
 
