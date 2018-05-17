@@ -24,13 +24,20 @@ import static spark.Spark.halt;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 import spark.HaltException;
+import spark.Response;
 
 public class ErrorResponder {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ErrorResponder.class);
+
     public enum ErrorType {
         INVALID_ARGUMENT("InvalidArgument"),
         NOT_FOUND("notFound"),
@@ -89,9 +96,25 @@ public class ErrorResponder {
             return halt(statusCode, new JsonTransformer().render(new ErrorDetail(statusCode,
                 type.getType(),
                 message,
-                cause.map(e -> Optional.ofNullable(e.getMessage())).orElse(Optional.empty()))));
+                cause.map(Throwable::getMessage))));
         } catch (JsonProcessingException e) {
             return halt(statusCode);
+        }
+    }
+
+    public String toResponse(Response response) {
+        response.status(statusCode);
+        try {
+            String body = new JsonTransformer().render(new ErrorDetail(
+                    statusCode,
+                    type.getType(),
+                    message,
+                    cause.map(Throwable::getMessage)));
+            response.body(body);
+            return body;
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Failed handling Error response formatting", e);
+            throw new RuntimeException(e);
         }
     }
 
