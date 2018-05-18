@@ -32,7 +32,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 import spark.HaltException;
-import spark.Response;
 
 public class ErrorResponder {
 
@@ -99,16 +98,13 @@ public class ErrorResponder {
         }
     }
 
-    public String asString(Response response) {
+    public String asString() {
         Preconditions.checkNotNull(statusCode, "statusCode must not be null in case of error");
         Preconditions.checkNotNull(type, "type must not be null in case of error");
         Preconditions.checkNotNull(message, "message must not be null in case of error");
 
-        response.status(statusCode);
         try {
-            String body = generateBody();
-            response.body(body);
-            return body;
+            return generateBody();
         } catch (JsonProcessingException e) {
             LOGGER.error("Failed handling Error response formatting", e);
             throw new RuntimeException(e);
