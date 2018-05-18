@@ -99,7 +99,7 @@ public class ErrorResponder {
         }
     }
 
-    public String toResponse(Response response) {
+    public String asString(Response response) {
         Preconditions.checkNotNull(statusCode, "statusCode must not be null in case of error");
         Preconditions.checkNotNull(type, "type must not be null in case of error");
         Preconditions.checkNotNull(message, "message must not be null in case of error");

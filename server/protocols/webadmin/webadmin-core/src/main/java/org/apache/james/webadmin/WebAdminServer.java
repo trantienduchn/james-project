@@ -131,20 +131,20 @@ public class WebAdminServer implements Configurable {
             .statusCode(NOT_FOUND_404)
             .type(NOT_FOUND)
             .message(String.format("%s %s can not be found", req.requestMethod(), req.pathInfo()))
-            .toResponse(res));
+            .asString(res));
 
         service.internalServerError((req, res) -> ErrorResponder.builder()
             .statusCode(INTERNAL_SERVER_ERROR_500)
             .type(SERVER_ERROR)
-            .message("WebAdmin encountered an unexpected internal error. Please check logs for more details.")
-            .toResponse(res));
+            .message("WebAdmin encountered an unexpected internal error")
+            .asString(res));
 
         service.exception(JsonExtractException.class, (ex, req, res) -> ErrorResponder.builder()
             .statusCode(BAD_REQUEST_400)
             .type(INVALID_ARGUMENT)
             .message("JSON payload of the request is not valid")
             .cause(ex)
-            .toResponse(res));
+            .asString(res));
     }
 
     @PreDestroy

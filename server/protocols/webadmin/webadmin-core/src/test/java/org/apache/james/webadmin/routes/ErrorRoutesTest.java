@@ -72,7 +72,7 @@ public class ErrorRoutesTest {
             .statusCode(INTERNAL_SERVER_ERROR_500)
             .body("statusCode", equalTo(INTERNAL_SERVER_ERROR_500))
             .body("type", equalTo(SERVER_ERROR.getType()))
-            .body("message", equalTo("WebAdmin encountered an unexpected internal error. Please check logs for more details."));
+            .body("message", equalTo("WebAdmin encountered an unexpected internal error"));
     }
 
     @Test
