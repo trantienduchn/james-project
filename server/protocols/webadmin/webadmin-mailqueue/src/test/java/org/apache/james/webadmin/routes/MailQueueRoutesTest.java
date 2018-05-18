@@ -375,12 +375,12 @@ public class MailQueueRoutesTest {
     }
 
     @Test
-    public void deleteMailsTaskShouldCompleteWhenSenderIsValid() throws Exception{
+    public void deleteMailsTasksShouldCompleteWhenSenderIsValid() throws Exception{
         mailQueueFactory.createQueue(FIRST_QUEUE);
 
         String taskId = with()
             .param("sender", SENDER_1_JAMES_ORG)
-            .delete(FIRST_QUEUE + "/mails")
+        .delete(FIRST_QUEUE + "/mails")
             .jsonPath()
             .getString("taskId");
 
@@ -398,9 +398,9 @@ public class MailQueueRoutesTest {
 
         String taskId = with()
             .param("name", "mailName")
-            .delete(FIRST_QUEUE + "/mails")
+        .delete(FIRST_QUEUE + "/mails")
             .jsonPath()
-                .getString("taskId");
+            .getString("taskId");
 
         given()
             .basePath(TasksRoutes.BASE)
@@ -416,7 +416,7 @@ public class MailQueueRoutesTest {
 
         String taskId = with()
             .param("recipient", RECIPIENT_JAMES_ORG)
-            .delete(FIRST_QUEUE + "/mails")
+        .delete(FIRST_QUEUE + "/mails")
             .jsonPath()
             .getString("taskId");
 
@@ -528,7 +528,7 @@ public class MailQueueRoutesTest {
 
         String taskId = with()
             .param("sender", SENDER_1_JAMES_ORG)
-            .delete(FIRST_QUEUE + "/mails")
+        .delete(FIRST_QUEUE + "/mails")
             .jsonPath()
             .getString("taskId");
 
@@ -559,7 +559,7 @@ public class MailQueueRoutesTest {
 
         String taskId = with()
             .param("name", FAKE_MAIL_NAME_1)
-            .delete(FIRST_QUEUE + "/mails")
+        .delete(FIRST_QUEUE + "/mails")
             .jsonPath()
             .getString("taskId");
 
@@ -597,7 +597,7 @@ public class MailQueueRoutesTest {
 
         String taskId = with()
             .param("recipient", RECIPIENT_JAMES_ORG)
-            .delete(FIRST_QUEUE + "/mails")
+        .delete(FIRST_QUEUE + "/mails")
             .jsonPath()
             .getString("taskId");
 
@@ -616,7 +616,7 @@ public class MailQueueRoutesTest {
     }
 
     @Test
-    public void deleteMailsTaskShouldHasDetailsWhenSenderIsGiven() throws Exception {
+    public void deleteMailsTasksShouldHaveDetailsWhenSenderIsGiven() throws Exception {
         MemoryMailQueue queue = mailQueueFactory.createQueue(FIRST_QUEUE);
 
         queue.enQueue(FakeMail.builder()
@@ -631,7 +631,7 @@ public class MailQueueRoutesTest {
 
         String taskId = with()
             .param("sender", SENDER_1_JAMES_ORG)
-            .delete(FIRST_QUEUE + "/mails")
+        .delete(FIRST_QUEUE + "/mails")
             .jsonPath()
             .getString("taskId");
 
@@ -653,7 +653,7 @@ public class MailQueueRoutesTest {
     }
 
     @Test
-    public void deleteMailsTaskShouldHasDetailsWhenNameIsGiven() throws Exception {
+    public void deleteMailsTasksShouldHaveDetailsWhenNameIsGiven() throws Exception {
         MemoryMailQueue queue = mailQueueFactory.createQueue(FIRST_QUEUE);
 
         queue.enQueue(FakeMail.builder()
@@ -666,7 +666,7 @@ public class MailQueueRoutesTest {
 
         String taskId = with()
             .param("name", FAKE_MAIL_NAME_1)
-            .delete(FIRST_QUEUE + "/mails")
+        .delete(FIRST_QUEUE + "/mails")
             .jsonPath()
             .getString("taskId");
 
@@ -688,7 +688,7 @@ public class MailQueueRoutesTest {
     }
 
     @Test
-    public void deleteMailsTaskShouldHasDetailWhenRecipientIsGiven() throws Exception {
+    public void deleteMailsTasksShouldHaveDetailsWhenRecipientIsGiven() throws Exception {
         MemoryMailQueue queue = mailQueueFactory.createQueue(FIRST_QUEUE);
 
         queue.enQueue(FakeMail.builder()
@@ -708,7 +708,7 @@ public class MailQueueRoutesTest {
 
         String taskId = with()
             .param("recipient", RECIPIENT_JAMES_ORG)
-            .delete(FIRST_QUEUE + "/mails")
+        .delete(FIRST_QUEUE + "/mails")
             .jsonPath()
             .getString("taskId");
 
@@ -834,7 +834,7 @@ public class MailQueueRoutesTest {
 
         String taskId = with()
             .param("recipient", recipient)
-            .delete(FIRST_QUEUE + "/mails")
+        .delete(FIRST_QUEUE + "/mails")
             .jsonPath()
             .getString("taskId");
 
