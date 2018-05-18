@@ -93,29 +93,34 @@ public class ErrorResponder {
         Preconditions.checkNotNull(type, "type must not be null in case of error");
         Preconditions.checkNotNull(message, "message must not be null in case of error");
         try {
-            return halt(statusCode, new JsonTransformer().render(new ErrorDetail(statusCode,
-                type.getType(),
-                message,
-                cause.map(Throwable::getMessage))));
+            return halt(statusCode, generateBody());
         } catch (JsonProcessingException e) {
             return halt(statusCode);
         }
     }
 
     public String toResponse(Response response) {
+        Preconditions.checkNotNull(statusCode, "statusCode must not be null in case of error");
+        Preconditions.checkNotNull(type, "type must not be null in case of error");
+        Preconditions.checkNotNull(message, "message must not be null in case of error");
+
         response.status(statusCode);
         try {
-            String body = new JsonTransformer().render(new ErrorDetail(
-                    statusCode,
-                    type.getType(),
-                    message,
-                    cause.map(Throwable::getMessage)));
+            String body = generateBody();
             response.body(body);
             return body;
         } catch (JsonProcessingException e) {
             LOGGER.error("Failed handling Error response formatting", e);
             throw new RuntimeException(e);
         }
+    }
+
+    private String generateBody() throws JsonProcessingException {
+        return new JsonTransformer().render(new ErrorDetail(
+            statusCode,
+            type.getType(),
+            message,
+            cause.map(Throwable::getMessage)));
     }
 
     static class ErrorDetail {
