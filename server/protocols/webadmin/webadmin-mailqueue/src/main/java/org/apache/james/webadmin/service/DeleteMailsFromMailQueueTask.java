@@ -39,9 +39,9 @@ public class DeleteMailsFromMailQueueTask implements Task {
         private final Supplier<Long> countSupplier;
         private final long initialCount;
 
-        private final String sender;
-        private final String name;
-        private final String recipient;
+        private final Optional<String> sender;
+        private final Optional<String> name;
+        private final Optional<String> recipient;
 
         public AdditionalInformation(String mailQueueName, Supplier<Long> countSupplier,
                                      Optional<MailAddress> maybeSender, Optional<String> maybeName,
@@ -50,9 +50,9 @@ public class DeleteMailsFromMailQueueTask implements Task {
             this.initialCount = countSupplier.get();
             this.countSupplier = countSupplier;
 
-            sender = maybeSender.map(MailAddress::asString).orElse(null);
-            name = maybeName.orElse(null);
-            recipient = maybeRecipient.map(MailAddress::asString).orElse(null);
+            sender = maybeSender.map(MailAddress::asString);
+            name = maybeName;
+            recipient = maybeRecipient.map(MailAddress::asString);
         }
 
         public String getMailQueueName() {
@@ -67,15 +67,15 @@ public class DeleteMailsFromMailQueueTask implements Task {
             return initialCount;
         }
 
-        public String getSender() {
+        public Optional<String> getSender() {
             return sender;
         }
 
-        public String getName() {
+        public Optional<String> getName() {
             return name;
         }
 
-        public String getRecipient() {
+        public Optional<String> getRecipient() {
             return recipient;
         }
     }
