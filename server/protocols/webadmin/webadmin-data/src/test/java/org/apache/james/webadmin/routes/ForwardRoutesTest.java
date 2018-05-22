@@ -50,6 +50,7 @@ import org.apache.james.user.api.UsersRepository;
 import org.apache.james.user.memory.MemoryUsersRepository;
 import org.apache.james.webadmin.WebAdminServer;
 import org.apache.james.webadmin.WebAdminUtils;
+import org.apache.james.webadmin.utils.ErrorResponder;
 import org.apache.james.webadmin.utils.JsonTransformer;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -430,7 +431,8 @@ class ForwardRoutesTest {
                 .put(ALICE_WITH_SLASH + SEPARATOR + "targets" + SEPARATOR + BOB)
             .then()
                 .statusCode(HttpStatus.NOT_FOUND_404)
-                .body(containsString("404 Not found"));
+                .body("statusCode", is(HttpStatus.NOT_FOUND_404))
+                .body("type", is(ErrorResponder.ErrorType.NOT_FOUND.getType()));
         }
 
         @Test
@@ -439,7 +441,8 @@ class ForwardRoutesTest {
                 .put(ALICE + SEPARATOR + "targets" + SEPARATOR + ALICE_WITH_SLASH)
             .then()
                 .statusCode(HttpStatus.NOT_FOUND_404)
-                .body(containsString("404 Not found"));
+                .body("statusCode", is(HttpStatus.NOT_FOUND_404))
+                .body("type", is(ErrorResponder.ErrorType.NOT_FOUND.getType()));
         }
 
         @Test
@@ -531,7 +534,8 @@ class ForwardRoutesTest {
                 .put(ALICE + SEPARATOR + "targets" + SEPARATOR + BOB)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -544,7 +548,8 @@ class ForwardRoutesTest {
                 .put(ALICE + SEPARATOR + "targets" + SEPARATOR + BOB)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -557,7 +562,8 @@ class ForwardRoutesTest {
                 .put(ALICE + SEPARATOR + "targets" + SEPARATOR + BOB)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -570,7 +576,8 @@ class ForwardRoutesTest {
                 .get()
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -583,7 +590,8 @@ class ForwardRoutesTest {
                 .get()
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -596,7 +604,8 @@ class ForwardRoutesTest {
                 .get()
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -609,7 +618,8 @@ class ForwardRoutesTest {
                 .delete(ALICE + SEPARATOR + "targets" + SEPARATOR + BOB)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -622,7 +632,8 @@ class ForwardRoutesTest {
                 .delete(ALICE + SEPARATOR + "targets" + SEPARATOR + BOB)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -635,7 +646,8 @@ class ForwardRoutesTest {
                 .delete(ALICE + SEPARATOR + "targets" + SEPARATOR + BOB)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -648,7 +660,8 @@ class ForwardRoutesTest {
                 .get(ALICE)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -661,7 +674,8 @@ class ForwardRoutesTest {
                 .get(ALICE)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -674,7 +688,8 @@ class ForwardRoutesTest {
                 .get(ALICE)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
     }
 

@@ -48,6 +48,7 @@ import org.apache.james.user.api.UsersRepositoryException;
 import org.apache.james.user.memory.MemoryUsersRepository;
 import org.apache.james.webadmin.WebAdminServer;
 import org.apache.james.webadmin.WebAdminUtils;
+import org.apache.james.webadmin.utils.ErrorResponder;
 import org.apache.james.webadmin.utils.JsonTransformer;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -437,7 +438,8 @@ class GroupsRoutesTest {
                 .put(GROUP_WITH_SLASH + SEPARATOR + USER_A)
             .then()
                 .statusCode(HttpStatus.NOT_FOUND_404)
-                .body(containsString("404 Not found"));
+                .body("statusCode", is(HttpStatus.NOT_FOUND_404))
+                .body("type", is(ErrorResponder.ErrorType.NOT_FOUND.getType()));
         }
 
         @Test
@@ -446,7 +448,8 @@ class GroupsRoutesTest {
                 .put(GROUP1 + SEPARATOR + USER_WITH_SLASH)
             .then()
                 .statusCode(HttpStatus.NOT_FOUND_404)
-                .body(containsString("404 Not found"));
+                .body("statusCode", is(HttpStatus.NOT_FOUND_404))
+                .body("type", is(ErrorResponder.ErrorType.NOT_FOUND.getType()));
         }
 
         @Test
@@ -534,7 +537,8 @@ class GroupsRoutesTest {
                 .put(GROUP1 + SEPARATOR + GROUP2)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -547,7 +551,8 @@ class GroupsRoutesTest {
                 .put(GROUP1 + SEPARATOR + GROUP2)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -560,7 +565,8 @@ class GroupsRoutesTest {
                 .put(GROUP1 + SEPARATOR + GROUP2)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -573,7 +579,8 @@ class GroupsRoutesTest {
                 .get()
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -586,7 +593,8 @@ class GroupsRoutesTest {
                 .get()
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -599,7 +607,8 @@ class GroupsRoutesTest {
                 .get()
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -612,7 +621,8 @@ class GroupsRoutesTest {
                 .delete(GROUP1 + SEPARATOR + GROUP2)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -625,7 +635,8 @@ class GroupsRoutesTest {
                 .delete(GROUP1 + SEPARATOR + GROUP2)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -638,7 +649,8 @@ class GroupsRoutesTest {
                 .delete(GROUP1 + SEPARATOR + GROUP2)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -651,7 +663,8 @@ class GroupsRoutesTest {
                 .get(GROUP1)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -664,7 +677,8 @@ class GroupsRoutesTest {
                 .get(GROUP1)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
 
         @Test
@@ -677,7 +691,8 @@ class GroupsRoutesTest {
                 .get(GROUP1)
             .then()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body(containsString("500 Internal Server Error"));
+                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
+                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
         }
     }
 
