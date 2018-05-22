@@ -24,7 +24,6 @@ import static com.jayway.restassured.RestAssured.when;
 import static org.apache.james.webadmin.Constants.SEPARATOR;
 import static org.apache.james.webadmin.WebAdminServer.NO_CONFIGURATION;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -48,7 +47,6 @@ import org.apache.james.user.api.UsersRepositoryException;
 import org.apache.james.user.memory.MemoryUsersRepository;
 import org.apache.james.webadmin.WebAdminServer;
 import org.apache.james.webadmin.WebAdminUtils;
-import org.apache.james.webadmin.utils.ErrorResponder;
 import org.apache.james.webadmin.utils.JsonTransformer;
 import org.eclipse.jetty.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -437,9 +435,7 @@ class GroupsRoutesTest {
             when()
                 .put(GROUP_WITH_SLASH + SEPARATOR + USER_A)
             .then()
-                .statusCode(HttpStatus.NOT_FOUND_404)
-                .body("statusCode", is(HttpStatus.NOT_FOUND_404))
-                .body("type", is(ErrorResponder.ErrorType.NOT_FOUND.getType()));
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
         @Test
@@ -447,9 +443,7 @@ class GroupsRoutesTest {
             when()
                 .put(GROUP1 + SEPARATOR + USER_WITH_SLASH)
             .then()
-                .statusCode(HttpStatus.NOT_FOUND_404)
-                .body("statusCode", is(HttpStatus.NOT_FOUND_404))
-                .body("type", is(ErrorResponder.ErrorType.NOT_FOUND.getType()));
+                .statusCode(HttpStatus.NOT_FOUND_404);
         }
 
         @Test
@@ -536,9 +530,7 @@ class GroupsRoutesTest {
             when()
                 .put(GROUP1 + SEPARATOR + GROUP2)
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
@@ -550,9 +542,7 @@ class GroupsRoutesTest {
             when()
                 .put(GROUP1 + SEPARATOR + GROUP2)
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
@@ -564,9 +554,7 @@ class GroupsRoutesTest {
             when()
                 .put(GROUP1 + SEPARATOR + GROUP2)
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
@@ -578,9 +566,7 @@ class GroupsRoutesTest {
             when()
                 .get()
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
@@ -592,9 +578,7 @@ class GroupsRoutesTest {
             when()
                 .get()
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
@@ -606,9 +590,7 @@ class GroupsRoutesTest {
             when()
                 .get()
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
@@ -620,9 +602,7 @@ class GroupsRoutesTest {
             when()
                 .delete(GROUP1 + SEPARATOR + GROUP2)
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
@@ -634,9 +614,7 @@ class GroupsRoutesTest {
             when()
                 .delete(GROUP1 + SEPARATOR + GROUP2)
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
@@ -648,9 +626,7 @@ class GroupsRoutesTest {
             when()
                 .delete(GROUP1 + SEPARATOR + GROUP2)
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
@@ -662,9 +638,7 @@ class GroupsRoutesTest {
             when()
                 .get(GROUP1)
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
@@ -676,9 +650,7 @@ class GroupsRoutesTest {
             when()
                 .get(GROUP1)
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
 
         @Test
@@ -690,9 +662,7 @@ class GroupsRoutesTest {
             when()
                 .get(GROUP1)
             .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-                .body("statusCode", is(HttpStatus.INTERNAL_SERVER_ERROR_500))
-                .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()));
+                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
         }
     }
 
