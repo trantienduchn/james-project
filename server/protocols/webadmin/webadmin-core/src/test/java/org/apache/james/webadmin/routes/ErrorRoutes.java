@@ -20,7 +20,7 @@
 package org.apache.james.webadmin.routes;
 
 import org.apache.james.webadmin.Routes;
-import org.apache.james.webadmin.utils.JsonExtractException;
+import org.apache.james.webadmin.utils.JsonExtractor;
 
 import spark.Service;
 
@@ -45,8 +45,6 @@ public class ErrorRoutes implements Routes {
 
     private void defineJsonExtractException(Service service) {
         service.get(BASE_URL + JSON_EXTRACT_EXCEPTION,
-            (req, res) -> {
-                throw new JsonExtractException(new Exception("error while parsing object"));
-            });
+            (req, res) -> new JsonExtractor<>(Long.class).parse("a non valid JSON"));
     }
 }
