@@ -119,14 +119,14 @@ public class ErrorResponder {
         private final int statusCode;
         private final String type;
         private final String message;
-        private final Optional<String> cause;
+        private final Optional<String> details;
 
         @VisibleForTesting
-        ErrorDetail(int statusCode, String type, String message, Optional<String> cause) {
+        ErrorDetail(int statusCode, String type, String message, Optional<String> details) {
             this.statusCode = statusCode;
             this.type = type;
             this.message = message;
-            this.cause = cause;
+            this.details = details;
         }
 
         public int getStatusCode() {
@@ -141,8 +141,8 @@ public class ErrorResponder {
             return message;
         }
 
-        public Optional<String> getCause() {
-            return cause;
+        public Optional<String> getDetails() {
+            return details;
         }
 
         @Override
@@ -153,14 +153,14 @@ public class ErrorResponder {
                 return Objects.equals(this.statusCode, that.statusCode)
                     && Objects.equals(this.type, that.type)
                     && Objects.equals(this.message, that.message)
-                    && Objects.equals(this.cause, that.cause);
+                    && Objects.equals(this.details, that.details);
             }
             return false;
         }
 
         @Override
         public final int hashCode() {
-            return Objects.hash(statusCode, type, message, cause);
+            return Objects.hash(statusCode, type, message, details);
         }
     }
 }

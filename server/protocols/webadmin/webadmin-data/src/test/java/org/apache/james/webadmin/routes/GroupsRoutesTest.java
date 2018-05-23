@@ -408,7 +408,7 @@ class GroupsRoutesTest {
                 .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
                 .containsEntry("type", "InvalidArgument")
                 .containsEntry("message", "The group is not an email address")
-                .containsEntry("cause", "Out of data at position 1 in 'not-an-address'");
+                .containsEntry("details", "Out of data at position 1 in 'not-an-address'");
         }
 
         @Test
@@ -427,7 +427,7 @@ class GroupsRoutesTest {
                 .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
                 .containsEntry("type", "InvalidArgument")
                 .containsEntry("message", "The group is not an email address")
-                .containsEntry("cause", "Out of data at position 1 in 'not-an-address'");
+                .containsEntry("details", "Out of data at position 1 in 'not-an-address'");
         }
 
         @Test
@@ -462,7 +462,7 @@ class GroupsRoutesTest {
                 .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
                 .containsEntry("type", "InvalidArgument")
                 .containsEntry("message", "The group is not an email address")
-                .containsEntry("cause", "Out of data at position 1 in 'not-an-address'");
+                .containsEntry("details", "Out of data at position 1 in 'not-an-address'");
         }
 
         @Test
@@ -490,7 +490,7 @@ class GroupsRoutesTest {
                 .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
                 .containsEntry("type", "InvalidArgument")
                 .containsEntry("message", "The group is not an email address")
-                .containsEntry("cause", "Out of data at position 1 in 'not-an-address'");
+                .containsEntry("details", "Out of data at position 1 in 'not-an-address'");
         }
 
         @Test
@@ -509,7 +509,7 @@ class GroupsRoutesTest {
                 .containsEntry("statusCode", HttpStatus.BAD_REQUEST_400)
                 .containsEntry("type", "InvalidArgument")
                 .containsEntry("message", "The group is not an email address")
-                .containsEntry("cause", "Out of data at position 1 in 'not-an-address'");
+                .containsEntry("details", "Out of data at position 1 in 'not-an-address'");
         }
 
         @Test
