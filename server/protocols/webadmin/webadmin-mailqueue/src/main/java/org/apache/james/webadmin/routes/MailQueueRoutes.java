@@ -24,7 +24,6 @@ import static org.apache.james.webadmin.Constants.SEPARATOR;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
@@ -306,8 +305,8 @@ public class MailQueueRoutes implements Routes {
         @ApiResponse(code = HttpStatus.INTERNAL_SERVER_ERROR_500, message = "Internal server error - Something went bad on the server side.")
     })
     public void deleteMails(Service service) {
-        service.delete(BASE_URL + SEPARATOR + MAIL_QUEUE_NAME + MAILS, 
-                (request, response) -> deleteMails(request, response),
+        service.delete(BASE_URL + SEPARATOR + MAIL_QUEUE_NAME + MAILS,
+                this::deleteMails,
                 jsonTransformer);
     }
 

@@ -1595,7 +1595,6 @@ Response codes:
 curl -XDELETE http://ip:port/mailQueues/mailQueueName/mails?sender=senderMailAddress
 ```
 
-##### For deleting emails in a mail queue by conditions:
 This request should have exactly one query parameter from the following list:
 
 * sender: which is a mail address (i.e. sender@james.org)
@@ -1603,8 +1602,6 @@ This request should have exactly one query parameter from the following list:
 * recipient: which is a mail address (i.e. recipient@james.org)
 
 The mails from the given mail queue matching the query parameter will be deleted.
-##### For deleting all emails in a mail queue:
-* Pass no parameter in the url
 
 
 Response codes:
@@ -1624,6 +1621,32 @@ The scheduled task will have the following type `deleteMailsFromMailQueue` and t
   "sender": "sender@james.org",
   "name": "Java Developer",
   "recipient: "recipient@james.org"
+}
+```
+
+### Clearing a mail queue
+
+```
+curl -XDELETE http://ip:port/mailQueues/mailQueueName/mails
+```
+
+All mails from the given mail queue will be deleted.
+
+
+Response codes:
+
+ - 201: Success. Corresponding task id is returned.
+ - 400: Invalid request
+ - 404: The mail queue does not exist
+ - 500: Internal error
+
+The scheduled task will have the following type `clearMailQueue` and the following `additionalInformation`:
+
+```
+{
+  "mailQueueName":"outgoing",
+  "initialCount":10,
+  "remainingCount": 0
 }
 ```
 
