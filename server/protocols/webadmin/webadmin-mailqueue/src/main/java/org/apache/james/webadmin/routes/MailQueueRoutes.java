@@ -24,6 +24,7 @@ import static org.apache.james.webadmin.Constants.SEPARATOR;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.ws.rs.DELETE;
@@ -45,6 +46,7 @@ import org.apache.james.webadmin.dto.ForceDelivery;
 import org.apache.james.webadmin.dto.MailQueueDTO;
 import org.apache.james.webadmin.dto.MailQueueItemDTO;
 import org.apache.james.webadmin.dto.TaskIdDto;
+import org.apache.james.webadmin.service.ClearMailQueueTask;
 import org.apache.james.webadmin.service.DeleteMailsFromMailQueueTask;
 import org.apache.james.webadmin.utils.ErrorResponder;
 import org.apache.james.webadmin.utils.ErrorResponder.ErrorType;
@@ -433,15 +435,18 @@ public class MailQueueRoutes implements Routes {
     }
 
     private Task deleteMailsTask(ManageableMailQueue queue, Optional<MailAddress> maybeSender, Optional<String> maybeName, Optional<MailAddress> maybeRecipient) {
-        if (Booleans.countTrue(maybeSender.isPresent(), maybeName.isPresent(), maybeRecipient.isPresent()) != 1) {
+        if (countAvailableParams(maybeSender, maybeName, maybeRecipient) == 0) {
+            return new ClearMailQueueTask(queue);
+        } else if (countAvailableParams(maybeSender, maybeName, maybeRecipient) == 1) {
+            return new DeleteMailsFromMailQueueTask(queue, maybeSender, maybeName, maybeRecipient);
+        } else {
             throw ErrorResponder.builder()
                 .statusCode(HttpStatus.BAD_REQUEST_400)
                 .type(ErrorType.INVALID_ARGUMENT)
-                .message("You should provide one and only one of the query parameters 'sender', 'name' or 'recipient'.")
+                .message("You should provide only one of the query parameters 'sender', 'name', 'recipient' " +
+                        "for deleting mails by condition or no parameter for deleting all mails in the mail queue.")
                 .haltError();
         }
-        
-        return new DeleteMailsFromMailQueueTask(queue, maybeSender, maybeName, maybeRecipient);
     }
 
     private void assertDelayedParamIsTrue(Request request) {
@@ -454,4 +459,7 @@ public class MailQueueRoutes implements Routes {
         }
     }
 
+    private int countAvailableParams(Optional<MailAddress> maybeSender, Optional<String> maybeName, Optional<MailAddress> maybeRecipient) {
+        return Booleans.countTrue(maybeSender.isPresent(), maybeName.isPresent(), maybeRecipient.isPresent());
+    }
 }

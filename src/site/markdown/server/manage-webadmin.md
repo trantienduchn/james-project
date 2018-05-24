@@ -1595,6 +1595,7 @@ Response codes:
 curl -XDELETE http://ip:port/mailQueues/mailQueueName/mails?sender=senderMailAddress
 ```
 
+##### For deleting emails in a mail queue by conditions:
 This request should have exactly one query parameter from the following list:
 
 * sender: which is a mail address (i.e. sender@james.org)
@@ -1602,6 +1603,8 @@ This request should have exactly one query parameter from the following list:
 * recipient: which is a mail address (i.e. recipient@james.org)
 
 The mails from the given mail queue matching the query parameter will be deleted.
+##### For deleting all emails in a mail queue:
+* Pass no parameter in the url
 
 
 Response codes:
