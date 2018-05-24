@@ -434,17 +434,19 @@ public class MailQueueRoutes implements Routes {
     }
 
     private Task deleteMailsTask(ManageableMailQueue queue, Optional<MailAddress> maybeSender, Optional<String> maybeName, Optional<MailAddress> maybeRecipient) {
-        if (countAvailableParams(maybeSender, maybeName, maybeRecipient) == 0) {
-            return new ClearMailQueueTask(queue);
-        } else if (countAvailableParams(maybeSender, maybeName, maybeRecipient) == 1) {
-            return new DeleteMailsFromMailQueueTask(queue, maybeSender, maybeName, maybeRecipient);
-        } else {
-            throw ErrorResponder.builder()
-                .statusCode(HttpStatus.BAD_REQUEST_400)
-                .type(ErrorType.INVALID_ARGUMENT)
-                .message("You should provide only one of the query parameters 'sender', 'name', 'recipient' " +
-                        "for deleting mails by condition or no parameter for deleting all mails in the mail queue.")
-                .haltError();
+        int paramCount = Booleans.countTrue(maybeSender.isPresent(), maybeName.isPresent(), maybeRecipient.isPresent());
+        switch (paramCount) {
+            case 0:
+                return new ClearMailQueueTask(queue);
+            case 1:
+                return new DeleteMailsFromMailQueueTask(queue, maybeSender, maybeName, maybeRecipient);
+            default:
+                throw ErrorResponder.builder()
+                    .statusCode(HttpStatus.BAD_REQUEST_400)
+                    .type(ErrorType.INVALID_ARGUMENT)
+                    .message("You should provide only one of the query parameters 'sender', 'name', 'recipient' " +
+                            "for deleting mails by condition or no parameter for deleting all mails in the mail queue.")
+                    .haltError();
         }
     }
 
@@ -456,9 +458,5 @@ public class MailQueueRoutes implements Routes {
                 .message("This request requires delayed param to be set to true")
                 .haltError();
         }
-    }
-
-    private int countAvailableParams(Optional<MailAddress> maybeSender, Optional<String> maybeName, Optional<MailAddress> maybeRecipient) {
-        return Booleans.countTrue(maybeSender.isPresent(), maybeName.isPresent(), maybeRecipient.isPresent());
     }
 }
