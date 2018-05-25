@@ -95,6 +95,6 @@ public class ErrorRoutesTest {
             .body("statusCode", equalTo(BAD_REQUEST_400))
             .body("type", equalTo(INVALID_ARGUMENT.getType()))
             .body("message", equalTo("JSON payload of the request is not valid"))
-            .body("details", equalTo("com.fasterxml.jackson.core.JsonParseException: Unrecognized token 'a': was expecting ('true', 'false' or 'null')\n at [Source: a non valid JSON; line: 1, column: 2]"));
+            .body("details", equalTo("Unrecognized token 'a': was expecting ('true', 'false' or 'null')\n at [Source: a non valid JSON; line: 1, column: 2]"));
     }
 }
