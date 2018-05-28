@@ -21,8 +21,11 @@ package org.apache.james.webadmin.routes;
 
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.RestAssured.when;
+import static net.javacrumbs.jsonunit.core.Option.IGNORING_ARRAY_ORDER;
+import static net.javacrumbs.jsonunit.fluent.JsonFluentAssert.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -210,6 +213,189 @@ class UserQuotaRoutesTest {
                     JACK.asString(),
                     BOB.asString()));
         }
+
+        @Test
+        default void minOccupationRatioShouldNotBeNegative() {
+            given()
+                .param("minOccupationRatio", -0.5)
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .body("message", equalTo("minOccupationRatio can not be negative"));
+        }
+
+        @Test
+        default void minOccupationRatioShouldAcceptZero() {
+            given()
+                .param("minOccupationRatio", 0)
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.OK_200);
+        }
+
+        @Test
+        default void minOccupationRatioShouldBeDouble() {
+            given()
+                .param("minOccupationRatio", "invalid")
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .body("message", equalTo("Can not parse minOccupationRatio"))
+                .body("details", equalTo("For input string: \"invalid\""));
+        }
+
+        @Test
+        default void maxOccupationRatioShouldNotBeNegative() {
+            given()
+                .param("maxOccupationRatio", -0.5)
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .body("message", equalTo("maxOccupationRatio can not be negative"));
+        }
+
+        @Test
+        default void maxOccupationRatioShouldAcceptZero() {
+            given()
+                .param("maxOccupationRatio", 0)
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.OK_200);
+        }
+
+        @Test
+        default void maxOccupationRatioShouldBeDouble() {
+            given()
+                .param("maxOccupationRatio", "invalid")
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .body("message", equalTo("Can not parse maxOccupationRatio"))
+                .body("details", equalTo("For input string: \"invalid\""));
+        }
+
+        @Test
+        default void limitShouldNotBeNegative() {
+            given()
+                .param("limit", -2)
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .body("message", equalTo("limit can not be negative"));
+        }
+
+        @Test
+        default void limitShouldNotBeZero() {
+            given()
+                .param("limit", 0)
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .body("message", equalTo("limit can not be equal to zero"));
+        }
+
+        @Test
+        default void limitShouldBeAnInteger() {
+            given()
+                .param("limit", "invalid")
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .body("message", equalTo("Can not parse limit"))
+                .body("details", equalTo("For input string: \"invalid\""));
+        }
+
+        @Test
+        default void offsetShouldNotBeNegative() {
+            given()
+                .param("offset", -2)
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .body("message", equalTo("offset can not be negative"));
+        }
+
+        @Test
+        default void offsetShouldAcceptZero() {
+            given()
+                .param("offset", 0)
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.OK_200);
+        }
+
+        @Test
+        default void offsetShouldBeAnInteger() {
+            given()
+                .param("offset", "invalid")
+                .get("/quota/users")
+            .then()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .contentType(ContentType.JSON)
+                .body("message", equalTo("Can not parse offset"))
+                .body("details", equalTo("For input string: \"invalid\""));
+        }
+
+
+        @Test
+        default void getUsersQuotaShouldReturnUserDetails(RestQuotaSearchTestSystem testSystem) throws Exception {
+            MaxQuotaManager maxQuotaManager = testSystem.getQuotaSearchTestSystem().getMaxQuotaManager();
+
+            maxQuotaManager.setGlobalMaxStorage(QuotaSize.size(100));
+            appendMessage(testSystem.getQuotaSearchTestSystem(), BOB, withSize(10));
+            appendMessage(testSystem.getQuotaSearchTestSystem(), JACK, withSize(11));
+            appendMessage(testSystem.getQuotaSearchTestSystem(), THE_GUY_WITH_STRANGE_DOMAIN, withSize(50));
+
+            testSystem.getQuotaSearchTestSystem().await();
+
+            String jsonAsString =
+                given()
+                    .param("minOccupationRatio", 0.5)
+                    .get("/quota/users")
+                .then()
+                    .statusCode(HttpStatus.OK_200)
+                    .extract()
+                    .body()
+                    .asString();
+
+            assertThatJson(jsonAsString)
+                .when(IGNORING_ARRAY_ORDER)
+                    .isEqualTo("[" +
+                            "    {" +
+                            "        \"detail\": {" +
+                            "            \"global\": {" +
+                            "                \"count\": null," +
+                            "                \"size\": 100" +
+                            "            }," +
+                            "            \"domain\": null," +
+                            "            \"user\": null," +
+                            "            \"computed\": {" +
+                            "                \"count\": null," +
+                            "                \"size\": 100" +
+                            "            }," +
+                            "            \"occupation\": {" +
+                            "                \"size\": 50," +
+                            "                \"count\": 1," +
+                            "                \"ratio\": {" +
+                            "                    \"size\": 0.5," +
+                            "                    \"count\": 0.0," +
+                            "                    \"max\": 0.5" +
+                            "                }" +
+                            "            }" +
+                            "        }," +
+                            "        \"username\": \"guy@strange.org\"" +
+                            "    }" +
+                            "]");
+        }
+
 
         default void appendMessage(QuotaSearchTestSystem testSystem, User user, MessageManager.AppendCommand appendCommand) throws MailboxException, UsersRepositoryException, DomainListException {
             MailboxManager mailboxManager = testSystem.getMailboxManager();
