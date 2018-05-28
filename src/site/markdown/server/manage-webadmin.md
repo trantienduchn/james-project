@@ -269,6 +269,7 @@ Response codes:
  - [Getting the quota size for a user](#getting-the-quota-size-for-a-user)
  - [Updating the quota size for a user](#updating-the-quota-size-for-a-user)
  - [Deleting the quota size for a user](#deleting-the-quota-size-for-a-user)
+ - [Searching user by quota ratio](#searching-user-by-quota-ratio)
 
 ### Getting the quota for a user
 
@@ -472,6 +473,68 @@ Response codes:
  - 400: The body is not a positive integer neither an unlimited value (-1).
  - 404: The user does not exist
  - 409: The requested restriction can’t be enforced right now.
+ - 500: Internal server error - Something went bad on the server side.
+
+### Searching user by quota ratio
+
+```
+curl -XGET http://ip:port/quota/users?minOccupationRatio=0.8&maxOccupationRatio=0.99&limit=100&offset=200&domain=oppen-paas.org
+```
+
+Will return:
+
+```
+[
+  {
+    "username":"user@open-paas.org",
+    "detail": {
+      "global": {
+        "count":252,
+        "size":242
+      },
+      "domain": {
+        "count":152,
+        "size":142
+      },
+      "user": {
+        "count":52,
+        "size":42
+      },
+      "computed": {
+        "count":52,
+        "size":42
+      },
+      "occupation": {
+        "size":1000,
+        "count":10000,
+        "ratio": {
+          "size":0.8,
+          "count":0.6,
+          "max":0.8
+        }
+      }
+    }
+  },
+  ...
+]
+```
+
+Where:
+
+ - **minOccupationRatio** is a URL parameter determining the minimum occupation ratio of users to be returned.
+ - **maxOccupationRatio** is a URL parameter determining the maximum occupation ratio of users to be returned.
+ - **domain** is a URL parameter determining the domain of users to be returned.
+ - **limit** is a URL parameter determining the maximum number of users to be returned.
+ - **offset** is a URL parameter determining the number of users to skip.
+
+Please note that users are alphabetically ordered.
+
+The answer is a list of usernames, with attached quota details as defined [here](#getting-the-quota-for-a-user).
+
+Response codes:
+
+ - 200: List of users had successfully been returned.
+ - 400: Validation issues with parameters
  - 500: Internal server error - Something went bad on the server side.
 
 ## Administrating quotas by domains
