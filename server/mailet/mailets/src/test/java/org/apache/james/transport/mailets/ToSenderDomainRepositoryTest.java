@@ -147,7 +147,7 @@ class ToSenderDomainRepositoryTest {
     }
 
     @Test
-    void initShouldSetNotPassThroughWhenPassThroughtIsNotBooleans() throws Exception {
+    void initShouldSetNotPassThroughWhenPassThroughIsNotSet() throws Exception {
         MailRepositoryStore mailRepositoryStore = mock(MailRepositoryStore.class);
         ToSenderDomainRepository mailet = new ToSenderDomainRepository(mailRepositoryStore);
         when(mailRepositoryStore.select(any()))
@@ -166,7 +166,7 @@ class ToSenderDomainRepositoryTest {
     }
 
     @Test
-    void initShouldSetNotPassThroughWhenPassThroughtIsNotBoolean() throws Exception {
+    void initShouldSetNotPassThroughWhenPassThroughIsNotBoolean() throws Exception {
         FakeMailetConfig mailetConfig = FakeMailetConfig.builder()
             .mailetName("TestConfig")
             .setProperty("urlPrefix", "memory://var/mail/dlp/")
