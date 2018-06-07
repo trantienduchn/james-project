@@ -129,6 +129,17 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
+    public void putMailRepositoryShouldReturnOkWhenRepositoryIsAlreadyExisted() throws Exception {
+        when()
+            .put(URL_ESCAPED_MY_REPO)
+        .then()
+            .statusCode(HttpStatus.NO_CONTENT_204);
+
+        verify(mailRepositoryStore).select(URL_MY_REPO);
+        verifyNoMoreInteractions(mailRepositoryStore);
+    }
+
+    @Test
     public void putMailRepositoryShouldReturnServerErrorWhenCannotCreateRepository() throws Exception {
         when(mailRepositoryStore.select(anyString()))
             .thenThrow(new MailRepositoryStore.MailRepositoryStoreException("Error while select repository url://myRepo"));

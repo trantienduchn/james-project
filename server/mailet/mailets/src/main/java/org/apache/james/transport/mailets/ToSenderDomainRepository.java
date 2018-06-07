@@ -85,8 +85,8 @@ public class ToSenderDomainRepository extends GenericMailet {
 
     @Override
     public void service(Mail mail) throws MessagingException {
-        String url = urlPrefix + mail.getSender().getDomain().asString();
-        store(mail, url);
+        String repositoryUrl = urlPrefix + mail.getSender().getDomain().asString();
+        store(mail, repositoryUrl);
         if (!passThrough) {
             mail.setState(Mail.GHOST);
         }
