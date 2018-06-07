@@ -34,8 +34,8 @@ import org.apache.mailet.base.GenericMailet;
  * Supported configuration parameters:
  *
  *  - "urlPrefix" mandatory: defines the prefix for the per sender's domain repository.
- *  For example for the value 'cassandra://var/mail/sendersRepositories/', a mail sent by 'user@domain.tld'
- *  will be stored in 'cassandra://var/mail/sendersRepositories/domain.tld'.
+ *  For example for the value 'cassandra://var/mail/sendersRepositories/', a mail sent by 'user@james.org'
+ *  will be stored in 'cassandra://var/mail/sendersRepositories/james.org'.
  *  - "passThrough" optional, defaults to false. If true, the processing of the mail continues. If false it stops.
  *
  *  Example:
