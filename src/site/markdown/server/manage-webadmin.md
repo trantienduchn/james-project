@@ -1246,6 +1246,7 @@ Response codes:
 
 ## Administrating mail repositories
 
+ - [Create a mail repository](#create-a-mail-repository)
  - [Listing mail repositories](#listing-mail-repositories)
  - [Getting additional information for a mail repository](#getting-additional-information-for-a-mail-repository)
  - [Listing mails contained in a mail repository](#listing-mails-contained-in-a-mail-repository)
@@ -1254,6 +1255,23 @@ Response codes:
  - [Removing all mails from a mail repository](#removing-all-mails-from-a-mail-repository)
  - [Reprocessing mails from a mail repository](#reprocessing-mails-from-a-mail-repository)
  - [Reprocessing a specific mail from a mail repository](#reprocessing-a-specific-mail-from-a-mail-repository)
+
+### Create a mail repository
+
+```
+curl -XPUT http://ip:port/mailRepositories/encodedUrlOfTheRepository
+```
+
+Resource name `encodedUrlOfTheRepository` should be the resource id of the created mail repository. Example:
+
+```
+curl -XPUT http://ip:port/mailRepositories/file%3A%2F%2FmailRepo
+```
+
+Response codes:
+
+ - 204: The repository is created
+ - 500: Internal error
 
 ### Listing mail repositories
 

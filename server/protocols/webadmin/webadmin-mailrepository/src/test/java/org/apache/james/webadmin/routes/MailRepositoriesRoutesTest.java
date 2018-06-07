@@ -32,7 +32,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -106,11 +109,38 @@ public class MailRepositoriesRoutesTest {
         RestAssured.requestSpecification = WebAdminUtils.buildRequestSpecification(webAdminServer)
             .setBasePath(MailRepositoriesRoutes.MAIL_REPOSITORIES)
             .build();
+        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
     }
 
     @After
     public void tearDown() {
         webAdminServer.destroy();
+    }
+
+    @Test
+    public void putMailRepositoryShouldReturnOkWhenRepositoryIsCreated() throws Exception {
+        when()
+            .put(URL_ESCAPED_MY_REPO)
+        .then()
+            .statusCode(HttpStatus.NO_CONTENT_204);
+
+        verify(mailRepositoryStore).select(URL_MY_REPO);
+        verifyNoMoreInteractions(mailRepositoryStore);
+    }
+
+    @Test
+    public void putMailRepositoryShouldReturnServerErrorWhenCannotCreateRepository() throws Exception {
+        when(mailRepositoryStore.select(anyString()))
+            .thenThrow(new MailRepositoryStore.MailRepositoryStoreException("Error while select repository url://myRepo"));
+
+        when()
+            .put(URL_ESCAPED_MY_REPO)
+        .then()
+            .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
+            .body("statusCode", is(500))
+            .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()))
+            .body("message", is("Error while creating a mail repository with url 'url://myRepo'"))
+            .body("details", is("Error while select repository url://myRepo"));
     }
 
     @Test
