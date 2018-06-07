@@ -57,7 +57,7 @@ public class MailRepositoryStoreService {
     }
 
     public MailRepository createMailRepository(String repositoryUrl) throws MailRepositoryStore.MailRepositoryStoreException {
-        return mailRepositoryStore.select(repositoryUrl);
+        return mailRepositoryStore.create(repositoryUrl);
     }
 
     public Optional<List<MailKey>> listMails(String url, Offset offset, Limit limit) throws MailRepositoryStore.MailRepositoryStoreException, MessagingException {

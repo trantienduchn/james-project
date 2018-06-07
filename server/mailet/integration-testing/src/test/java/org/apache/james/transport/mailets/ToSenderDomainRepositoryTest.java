@@ -64,7 +64,7 @@ public class ToSenderDomainRepositoryTest {
 
     @Test
     public void incomingMailShouldBeStoredInCorrespondingMailRepository() throws Exception {
-        initializeJamesServer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
+        startJamesServerWithMailetContainer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
             .putProcessor(ProcessorConfiguration.root()
                 .addMailet(MailetConfiguration.builder()
                     .matcher(All.class)
@@ -81,7 +81,7 @@ public class ToSenderDomainRepositoryTest {
 
     @Test
     public void incomingMailShouldBeStoredWhenRepositoryDoNotExistAndAllowedToCreateRepository() throws Exception {
-        initializeJamesServer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
+        startJamesServerWithMailetContainer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
             .putProcessor(ProcessorConfiguration.root()
                 .addMailet(MailetConfiguration.builder()
                     .matcher(All.class)
@@ -99,7 +99,7 @@ public class ToSenderDomainRepositoryTest {
 
     @Test
     public void incomingMailShouldBeStoredWhenRepositoryExistsAndAllowedToCreateRepository() throws Exception {
-        initializeJamesServer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
+        startJamesServerWithMailetContainer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
             .putProcessor(ProcessorConfiguration.root()
                 .addMailet(MailetConfiguration.builder()
                     .matcher(All.class)
@@ -119,7 +119,7 @@ public class ToSenderDomainRepositoryTest {
 
     @Test
     public void incomingMailShouldBeIgnoredWhenRepositoryDoNotExistAndNotAllowedToCreateRepository() throws Exception {
-        initializeJamesServer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
+        startJamesServerWithMailetContainer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
             .putProcessor(ProcessorConfiguration.root()
                 .addMailet(MailetConfiguration.builder()
                     .matcher(All.class)
@@ -145,7 +145,7 @@ public class ToSenderDomainRepositoryTest {
 
     @Test
     public void incomingMailShouldBeStoredWhenRepositoryExistsAndNotAllowedToCreateRepository() throws Exception {
-        initializeJamesServer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
+        startJamesServerWithMailetContainer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
             .putProcessor(ProcessorConfiguration.root()
                 .addMailet(MailetConfiguration.builder()
                     .matcher(All.class)
@@ -165,7 +165,7 @@ public class ToSenderDomainRepositoryTest {
 
     @Test
     public void incomingMailsShouldBeStoredInCorrespondingMailRepository() throws Exception {
-        initializeJamesServer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
+        startJamesServerWithMailetContainer(TemporaryJamesServer.SIMPLE_MAILET_CONTAINER_CONFIGURATION
             .putProcessor(ProcessorConfiguration.root()
                 .addMailet(MailetConfiguration.builder()
                     .matcher(All.class)
@@ -181,7 +181,7 @@ public class ToSenderDomainRepositoryTest {
                 .getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN) == 2);
     }
 
-    private void initializeJamesServer(MailetContainer.Builder mailetContainer) throws Exception {
+    private void startJamesServerWithMailetContainer(MailetContainer.Builder mailetContainer) throws Exception {
         jamesServer = TemporaryJamesServer.builder()
             .withMailetContainer(mailetContainer)
             .build(temporaryFolder);

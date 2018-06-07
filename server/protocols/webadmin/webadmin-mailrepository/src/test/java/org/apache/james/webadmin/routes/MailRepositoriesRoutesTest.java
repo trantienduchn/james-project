@@ -34,6 +34,7 @@ import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -124,7 +125,7 @@ public class MailRepositoriesRoutesTest {
         .then()
             .statusCode(HttpStatus.NO_CONTENT_204);
 
-        verify(mailRepositoryStore).select(URL_MY_REPO);
+        verify(mailRepositoryStore).create(URL_MY_REPO);
         verifyNoMoreInteractions(mailRepositoryStore);
     }
 
@@ -135,13 +136,18 @@ public class MailRepositoriesRoutesTest {
         .then()
             .statusCode(HttpStatus.NO_CONTENT_204);
 
-        verify(mailRepositoryStore).select(URL_MY_REPO);
+        when()
+            .put(URL_ESCAPED_MY_REPO)
+        .then()
+            .statusCode(HttpStatus.NO_CONTENT_204);
+
+        verify(mailRepositoryStore, times(2)).create(URL_MY_REPO);
         verifyNoMoreInteractions(mailRepositoryStore);
     }
 
     @Test
     public void putMailRepositoryShouldReturnServerErrorWhenCannotCreateRepository() throws Exception {
-        when(mailRepositoryStore.select(anyString()))
+        when(mailRepositoryStore.create(anyString()))
             .thenThrow(new MailRepositoryStore.MailRepositoryStoreException("Error while select repository url://myRepo"));
 
         when()
