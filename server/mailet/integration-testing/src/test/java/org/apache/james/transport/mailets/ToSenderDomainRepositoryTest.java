@@ -202,7 +202,8 @@ public class ToSenderDomainRepositoryTest {
             .build(temporaryFolder);
 
         jamesServer.getProbe(DataProbeImpl.class)
-            .fluentAddDomain(DEFAULT_DOMAIN)
-            .fluentAddUser(RECIPIENT, PASSWORD);
+            .fluent()
+            .addDomain(DEFAULT_DOMAIN)
+            .addUser(RECIPIENT, PASSWORD);
     }
 }
