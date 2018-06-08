@@ -70,13 +70,16 @@ public class ToSenderDomainRepositoryTest {
                     .matcher(All.class)
                     .mailet(ToSenderDomainRepository.class)
                     .addProperty("urlPrefix", CUSTOM_REPOSITORY_PREFIX))));
+        MailRepositoryProbeImpl probe = jamesServer.getProbe(MailRepositoryProbeImpl.class);
 
         messageSender.connect(LOCALHOST_IP, SMTP_PORT)
             .sendMessage(RECIPIENT, RECIPIENT);
 
         awaitAtMostOneMinute.until(
-            () -> jamesServer.getProbe(MailRepositoryProbeImpl.class)
-                .getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN) == 1);
+            () -> probe.getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN) == 1);
+
+        assertThat(probe.getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN))
+            .isEqualTo(1);
     }
 
     @Test
@@ -88,13 +91,16 @@ public class ToSenderDomainRepositoryTest {
                     .mailet(ToSenderDomainRepository.class)
                     .addProperty("urlPrefix", CUSTOM_REPOSITORY_PREFIX)
                     .addProperty("allowRepositoryCreation", "true"))));
+        MailRepositoryProbeImpl probe = jamesServer.getProbe(MailRepositoryProbeImpl.class);
 
         messageSender.connect(LOCALHOST_IP, SMTP_PORT)
             .sendMessage(RECIPIENT, RECIPIENT);
 
         awaitAtMostOneMinute.until(
-            () -> jamesServer.getProbe(MailRepositoryProbeImpl.class)
-                .getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN) == 1);
+            () -> probe.getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN) == 1);
+
+        assertThat(probe.getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN))
+            .isEqualTo(1);
     }
 
     @Test
@@ -106,15 +112,18 @@ public class ToSenderDomainRepositoryTest {
                     .mailet(ToSenderDomainRepository.class)
                     .addProperty("urlPrefix", CUSTOM_REPOSITORY_PREFIX)
                     .addProperty("allowRepositoryCreation", "true"))));
-        jamesServer.getProbe(MailRepositoryProbeImpl.class)
-            .createRepository(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN);
+        MailRepositoryProbeImpl probe = jamesServer.getProbe(MailRepositoryProbeImpl.class);
+
+        probe.createRepository(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN);
 
         messageSender.connect(LOCALHOST_IP, SMTP_PORT)
             .sendMessage(RECIPIENT, RECIPIENT);
 
         awaitAtMostOneMinute.until(
-            () -> jamesServer.getProbe(MailRepositoryProbeImpl.class)
-                .getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN) == 1);
+            () -> probe.getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN) == 1);
+
+        assertThat(probe.getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN))
+            .isEqualTo(1);
     }
 
     @Test
@@ -152,15 +161,18 @@ public class ToSenderDomainRepositoryTest {
                     .mailet(ToSenderDomainRepository.class)
                     .addProperty("urlPrefix", CUSTOM_REPOSITORY_PREFIX)
                     .addProperty("allowRepositoryCreation", "false"))));
-        jamesServer.getProbe(MailRepositoryProbeImpl.class)
-            .createRepository(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN);
+        MailRepositoryProbeImpl probe = jamesServer.getProbe(MailRepositoryProbeImpl.class);
+
+        probe.createRepository(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN);
 
         messageSender.connect(LOCALHOST_IP, SMTP_PORT)
             .sendMessage(RECIPIENT, RECIPIENT);
 
         awaitAtMostOneMinute.until(
-            () -> jamesServer.getProbe(MailRepositoryProbeImpl.class)
-                .getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN) == 1);
+            () -> probe.getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN) == 1);
+
+        assertThat(probe.getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN))
+            .isEqualTo(1);
     }
 
     @Test
@@ -171,14 +183,17 @@ public class ToSenderDomainRepositoryTest {
                     .matcher(All.class)
                     .mailet(ToSenderDomainRepository.class)
                     .addProperty("urlPrefix", CUSTOM_REPOSITORY_PREFIX))));
+        MailRepositoryProbeImpl probe = jamesServer.getProbe(MailRepositoryProbeImpl.class);
 
         messageSender.connect(LOCALHOST_IP, SMTP_PORT)
             .sendMessage(RECIPIENT, RECIPIENT)
             .sendMessage(RECIPIENT, RECIPIENT);
 
         awaitAtMostOneMinute.until(
-            () -> jamesServer.getProbe(MailRepositoryProbeImpl.class)
-                .getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN) == 2);
+            () -> probe.getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN) == 2);
+
+        assertThat(probe.getRepositoryMailCount(CUSTOM_REPOSITORY_PREFIX + DEFAULT_DOMAIN))
+            .isEqualTo(2);
     }
 
     private void startJamesServerWithMailetContainer(MailetContainer.Builder mailetContainer) throws Exception {
