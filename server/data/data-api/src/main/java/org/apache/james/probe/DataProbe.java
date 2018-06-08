@@ -26,11 +26,11 @@ import org.apache.james.rrt.lib.Mappings;
 
 public interface DataProbe {
 
-    class DataProbeFluent {
+    class FluentDataProbe {
 
         private final DataProbe dataProbe;
 
-        private DataProbeFluent(DataProbe dataProbe) {
+        private FluentDataProbe(DataProbe dataProbe) {
             this.dataProbe = dataProbe;
         }
 
@@ -38,19 +38,19 @@ public interface DataProbe {
             return dataProbe;
         }
 
-        public DataProbeFluent addUser(String userName, String password) throws Exception {
+        public FluentDataProbe addUser(String userName, String password) throws Exception {
             dataProbe.addUser(userName, password);
             return this;
         }
 
-        public DataProbeFluent addDomain(String domain) throws Exception {
+        public FluentDataProbe addDomain(String domain) throws Exception {
             dataProbe.addDomain(domain);
             return this;
         }
     }
 
-    default DataProbeFluent fluent() {
-        return new DataProbeFluent(this);
+    default FluentDataProbe fluent() {
+        return new FluentDataProbe(this);
     }
 
     void addUser(String userName, String password) throws Exception;
