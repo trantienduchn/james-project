@@ -72,12 +72,12 @@ import com.jayway.restassured.http.ContentType;
 
 public class MailRepositoriesRoutesTest {
 
-    public static final String URL_MY_REPO = "url://myRepo";
-    public static final String URL_ESCAPED_MY_REPO = "url%3A%2F%2FmyRepo";
-    public static final String MY_REPO_MAILS = "url%3A%2F%2FmyRepo/mails";
-    public static final String CUSTOM_QUEUE = "customQueue";
-    public static final String NAME_1 = "name1";
-    public static final String NAME_2 = "name2";
+    private static final String URL_MY_REPO = "url://myRepo";
+    private static final String URL_ESCAPED_MY_REPO = "url%3A%2F%2FmyRepo";
+    private static final String MY_REPO_MAILS = "url%3A%2F%2FmyRepo/mails";
+    private static final String CUSTOM_QUEUE = "customQueue";
+    private static final String NAME_1 = "name1";
+    private static final String NAME_2 = "name2";
     private WebAdminServer webAdminServer;
     private MailRepositoryStore mailRepositoryStore;
     private MemoryMailRepository mailRepository;
@@ -130,7 +130,7 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
-    public void putMailRepositoryShouldReturnOkWhenRepositoryIsAlreadyExisted() throws Exception {
+    public void putMailRepositoryShouldReturnOkWhenRepositoryAlreadyExists() throws Exception {
         when()
             .put(URL_ESCAPED_MY_REPO)
         .then()
@@ -148,7 +148,7 @@ public class MailRepositoriesRoutesTest {
     @Test
     public void putMailRepositoryShouldReturnServerErrorWhenCannotCreateRepository() throws Exception {
         when(mailRepositoryStore.create(anyString()))
-            .thenThrow(new MailRepositoryStore.MailRepositoryStoreException("Error while select repository url://myRepo"));
+            .thenThrow(new MailRepositoryStore.MailRepositoryStoreException("Error while selecting repository url://myRepo"));
 
         when()
             .put(URL_ESCAPED_MY_REPO)
@@ -157,7 +157,7 @@ public class MailRepositoriesRoutesTest {
             .body("statusCode", is(500))
             .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()))
             .body("message", is("Error while creating a mail repository with url 'url://myRepo'"))
-            .body("details", is("Error while select repository url://myRepo"));
+            .body("details", is("Error while selecting repository url://myRepo"));
     }
 
     @Test

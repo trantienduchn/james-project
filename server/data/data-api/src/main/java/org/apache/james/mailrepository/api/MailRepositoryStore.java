@@ -34,7 +34,7 @@ public interface MailRepositoryStore {
     MailRepository select(String url) throws MailRepositoryStoreException;
 
     /**
-     * Create the {@link MailRepository} for the given url and return it self. If the repository is already existed,
+     * Create the {@link MailRepository} for the given url and return it. If the repository already exists,
      * then no new repository is created, the old one will be returned.
      */
     default MailRepository create(String url) throws MailRepositoryStoreException {
