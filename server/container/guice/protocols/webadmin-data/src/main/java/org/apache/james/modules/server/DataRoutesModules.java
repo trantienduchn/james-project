@@ -34,7 +34,6 @@ public class DataRoutesModules extends AbstractModule {
     @Override
     protected void configure() {
         Multibinder<Routes> routesMultibinder = Multibinder.newSetBinder(binder(), Routes.class);
-        routesMultibinder.addBinding().to(DLPConfigurationRoutes.class);
         routesMultibinder.addBinding().to(DomainsRoutes.class);
         routesMultibinder.addBinding().to(ForwardRoutes.class);
         routesMultibinder.addBinding().to(GroupsRoutes.class);

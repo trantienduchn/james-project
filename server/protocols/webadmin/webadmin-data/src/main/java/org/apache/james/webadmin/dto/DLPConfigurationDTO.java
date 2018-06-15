@@ -24,21 +24,13 @@ import java.util.List;
 import org.apache.james.dlp.api.DLPConfigurationItem;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.steveash.guavate.Guavate;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 public class DLPConfigurationDTO {
-
-    public static List<DLPConfigurationItem> toDLPConfigurations(DLPConfigurationDTO dto) {
-        Preconditions.checkNotNull(dto);
-
-        return dto.rules
-            .stream()
-            .map(DLPConfigurationItemDTO::toDLPConfiguration)
-            .collect(Guavate.toImmutableList());
-    }
 
     public static DLPConfigurationDTO toDTO(List<DLPConfigurationItem> dlpConfigurations) {
         Preconditions.checkNotNull(dlpConfigurations);
@@ -60,5 +52,13 @@ public class DLPConfigurationDTO {
 
     public ImmutableList<DLPConfigurationItemDTO> getRules() {
         return rules;
+    }
+
+    @JsonIgnore
+    public List<DLPConfigurationItem> toDLPConfigurations() {
+        return rules
+            .stream()
+            .map(DLPConfigurationItemDTO::toDLPConfiguration)
+            .collect(Guavate.toImmutableList());
     }
 }
