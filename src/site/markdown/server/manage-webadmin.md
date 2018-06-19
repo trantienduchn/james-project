@@ -1757,12 +1757,12 @@ Response codes:
 
 ## Administrating DLP Configuration
 
-DLP (stands for Data Lost Prevention) is supported by James. A DLP matcher will, on incoming emails,
+DLP (stands for Data Leak Prevention) is supported by James. A DLP matcher will, on incoming emails,
 execute regular expressions on email sender, recipients or content, in order to report suspicious emails to
 an administrator. WebAdmin can be used to manage these DLP rules on a per `senderDomain` basis.
 
 `senderDomain` is domain of the sender of incoming emails, for example: `apache.org`, `james.org`,...
-Each `senderDomain` correspond to a distinct a DLP configuration.
+Each `senderDomain` correspond to a distinct DLP configuration.
 
 - [List DLP configuration by sender domain](List_dlp_configuration_by_sender_domain)
 - [Store DLP configuration by sender domain](Store_dlp_configuration_by_sender_domain)
@@ -1770,7 +1770,7 @@ Each `senderDomain` correspond to a distinct a DLP configuration.
 
 ### List DLP configuration by sender domain
 
-Retrieve a DLP configuration for corresponding `senderDomain`, a configuration contains list of configuration item
+Retrieve a DLP configuration for corresponding `senderDomain`, a configuration contains list of configuration items
 
 ```
 curl -XGET http://ip:port/dlp/rules/senderDomain
@@ -1783,7 +1783,7 @@ Response codes:
  - 404: The domain does not exist.
  - 500: Internal error
 
-This is an example of returned body. The rules field is a list of rule as described below.
+This is an example of returned body. The rules field is a list of rules as described below.
 
 ```
 {"rules : [
@@ -1808,22 +1808,22 @@ This is an example of returned body. The rules field is a list of rule as descri
 
 ### Store DLP configuration by sender domain
 
-Store DLP a configuration for corresponding `senderDomain`, if any item of DLP configuration in the request is stored before, 
-it will not be stored again
+Store a DLP configuration for corresponding `senderDomain`, if any item of DLP configuration in the request is stored before, 
+it will not be stored anymore
 
 ```
 curl -XPUT http://ip:port/dlp/rules/senderDomain
 ```
 
-The body can containing a list of DLP configuration items formed by those fields: 
+The body can contain a list of DLP configuration items formed by those fields: 
 - `id`(String) is mandatory, unique identifier of the configuration item
 - `expression`(String) is mandatory, regular expression to match contents of targets
 - `explanation`(String) is optional, description of the configuration item
-- `targetsSender`(boolean) is optional and defaults to false. If true, `expression` will be applied to sender of the mail
-- `targetsContent`(boolean) is optional and defaults to false. If true, `expression` will be applied to content of the mail
+- `targetsSender`(boolean) is optional and defaults to false. If true, `expression` will be applied to Sender and to From headers of the mail
+- `targetsContent`(boolean) is optional and defaults to false. If true, `expression` will be applied to Subject headers and textual bodies (text/plain and text/html) of the mail
 - `targetsRecipients`(boolean) is optional and defaults to false. If true, `expression` will be applied to recipients of the mail
 
-This is an example of returned body. The rules field is a list of rule as described below.
+This is an example of returned body. The rules field is a list of rules as described below.
 
 ```
 {"rules": [

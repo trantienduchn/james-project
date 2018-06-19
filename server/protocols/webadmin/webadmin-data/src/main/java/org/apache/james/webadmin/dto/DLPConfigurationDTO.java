@@ -46,7 +46,7 @@ public class DLPConfigurationDTO {
 
     @JsonCreator
     public DLPConfigurationDTO(
-        @JsonProperty("rules") ImmutableList<DLPConfigurationItemDTO> rules) {
+            @JsonProperty("rules") ImmutableList<DLPConfigurationItemDTO> rules) {
         this.rules = rules;
     }
 

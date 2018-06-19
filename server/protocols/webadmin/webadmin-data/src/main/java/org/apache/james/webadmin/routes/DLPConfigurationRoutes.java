@@ -60,7 +60,7 @@ import spark.Request;
 import spark.Service;
 
 @Api(tags = "DLPRules")
-@ApiModel(description = "DLP (stands for Data Lost Prevention) is supported by James. A DLP matcher will, on incoming emails, " +
+@ApiModel(description = "DLP (stands for Data Leak Prevention) is supported by James. A DLP matcher will, on incoming emails, " +
         "execute regular expressions on email sender, recipients or content, in order to report suspicious emails to" +
         "an administrator. WebAdmin can be used to manage these DLP rules on a per sender-domain basis.")
 @Path(DLPConfigurationRoutes.BASE_PATH)
