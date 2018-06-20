@@ -28,21 +28,21 @@ import java.util.zip.ZipException;
 import org.apache.commons.compress.archivers.zip.ZipExtraField;
 import org.apache.commons.compress.archivers.zip.ZipShort;
 
-public class UIDExtraField implements ZipExtraField {
+public class UidExtraField implements ZipExtraField {
 
     public static final ZipShort ID = new ZipShort(0x6B61); // "ak" in little-endian
 
     private Optional<Long> uid;
 
-    public UIDExtraField() {
+    public UidExtraField() {
         this(Optional.empty());
     }
 
-    public UIDExtraField(long uid) {
+    public UidExtraField(long uid) {
         this(Optional.of(uid));
     }
 
-    public UIDExtraField(Optional<Long> uid) {
+    public UidExtraField(Optional<Long> uid) {
         this.uid = uid;
     }
 
@@ -78,7 +78,7 @@ public class UIDExtraField implements ZipExtraField {
     @Override
     public void parseFromLocalFileData(byte[] buffer, int offset, int length) throws ZipException {
         if (length != Long.BYTES) {
-            throw new ZipException("Unexpected data length for UIDExtraField. Expected " + Long.BYTES + " but got " + length + ".");
+            throw new ZipException("Unexpected data length for UidExtraField. Expected " + Long.BYTES + " but got " + length + ".");
         }
         uid = Optional.of(ByteBuffer
                 .wrap(buffer, offset, Long.BYTES)
@@ -97,8 +97,8 @@ public class UIDExtraField implements ZipExtraField {
 
     @Override
     public final boolean equals(Object o) {
-        if (o instanceof UIDExtraField) {
-            UIDExtraField that = (UIDExtraField) o;
+        if (o instanceof UidExtraField) {
+            UidExtraField that = (UidExtraField) o;
 
             return Objects.equals(this.uid, that.uid);
         }

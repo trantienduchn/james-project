@@ -26,31 +26,25 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.zip.ZipException;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.org.bouncycastle.util.Arrays;
 
 import com.google.common.base.Charsets;
 
-public class UIDExtraFieldTest {
+public class UidExtraFieldTest {
     private static final byte[] ZERO_AS_BYTE_ARRAY = {0, 0, 0, 0, 0, 0, 0, 0};
     private static final byte[] _123456789ABCDEF0_AS_LE_BYTE_ARRAY = new byte[] {(byte) 0xF0, (byte) 0xDE, (byte) 0xBC, (byte) 0x9A, 0x78, 0x56, 0x34, 0x12};
     private static final byte[] FEDCBA9876543210_AS_LE_BYTE_ARRAY = new byte[] {0x10, 0x32, 0x54, 0x76, (byte) 0x98, (byte) 0xBA, (byte) 0xDC, (byte) 0xFE};
     private static final byte[] UNUSED = new byte[] {(byte) 0xDE, (byte) 0xAD};
-
-    private UIDExtraField testee;
-
-    @BeforeEach
-    void setUp() {
-        testee = new UIDExtraField();
-    }
 
     @Nested
     class GetHeaderId {
 
         @Test
         void getHeaderIdShouldReturnSpecificStringInLittleEndian() {
+            UidExtraField testee = new UidExtraField();
+
             ByteBuffer byteBuffer = ByteBuffer.wrap(testee.getHeaderId().getBytes())
                 .order(ByteOrder.LITTLE_ENDIAN);
             assertThat(Charsets.US_ASCII.decode(byteBuffer).toString())
@@ -62,6 +56,8 @@ public class UIDExtraFieldTest {
     class GetLocalFileDataLength {
         @Test
         void getLocalFileDataLengthShouldReturnIntegerSize() {
+            UidExtraField testee = new UidExtraField();
+
             assertThat(testee.getLocalFileDataLength().getValue())
                 .isEqualTo(Long.BYTES);
         }
@@ -72,6 +68,8 @@ public class UIDExtraFieldTest {
 
         @Test
         void getCentralDirectoryLengthShouldReturnIntegerSize() {
+            UidExtraField testee = new UidExtraField();
+
             assertThat(testee.getCentralDirectoryLength().getValue())
                 .isEqualTo(Long.BYTES);
         }
@@ -79,25 +77,27 @@ public class UIDExtraFieldTest {
 
         @Test
         void getCentralDirectoryDataShouldThrowWhenNoValue() {
+            UidExtraField testee = new UidExtraField();
+
             assertThatThrownBy(() -> testee.getCentralDirectoryData())
                 .isInstanceOf(RuntimeException.class);
         }
 
         @Test
         void getCentralDirectoryDataShouldReturnZeroWhenZero() {
-            byte[] actual = new UIDExtraField(0).getCentralDirectoryData();
+            byte[] actual = new UidExtraField(0).getCentralDirectoryData();
             assertThat(actual).isEqualTo(ZERO_AS_BYTE_ARRAY);
         }
 
         @Test
         void getCentralDirectoryDataShouldReturnValueInLittleIndianWhen123456789ABCDEF0() {
-            byte[] actual = new UIDExtraField(0x123456789ABCDEF0L).getCentralDirectoryData();
+            byte[] actual = new UidExtraField(0x123456789ABCDEF0L).getCentralDirectoryData();
             assertThat(actual).isEqualTo(_123456789ABCDEF0_AS_LE_BYTE_ARRAY);
         }
 
         @Test
         void getCentralDirectoryDataShouldReturnValueInLittleIndianWhenFEDCBA9876543210() {
-            byte[] actual = new UIDExtraField(0xFEDCBA9876543210L).getCentralDirectoryData();
+            byte[] actual = new UidExtraField(0xFEDCBA9876543210L).getCentralDirectoryData();
             assertThat(actual).isEqualTo(FEDCBA9876543210_AS_LE_BYTE_ARRAY);
         }
     }
@@ -107,25 +107,27 @@ public class UIDExtraFieldTest {
 
         @Test
         void getLocalFileDataDataShouldThrowWhenNoValue() {
+            UidExtraField testee = new UidExtraField();
+
             assertThatThrownBy(() -> testee.getLocalFileDataData())
                 .isInstanceOf(RuntimeException.class);
         }
 
         @Test
         void getLocalFileDataDataShouldReturnZeroWhenZero() {
-            byte[] actual = new UIDExtraField(0).getLocalFileDataData();
+            byte[] actual = new UidExtraField(0).getLocalFileDataData();
             assertThat(actual).isEqualTo(ZERO_AS_BYTE_ARRAY);
         }
 
         @Test
         void getLocalFileDataDataShouldReturnValueInLittleIndianWhen123456789ABCDEF0() {
-            byte[] actual = new UIDExtraField(0x123456789ABCDEF0L).getLocalFileDataData();
+            byte[] actual = new UidExtraField(0x123456789ABCDEF0L).getLocalFileDataData();
             assertThat(actual).isEqualTo(_123456789ABCDEF0_AS_LE_BYTE_ARRAY);
         }
 
         @Test
         void getLocalFileDataDataShouldReturnValueInLittleIndianWhenFEDCBA9876543210() {
-            byte[] actual = new UIDExtraField(0xFEDCBA9876543210L).getLocalFileDataData();
+            byte[] actual = new UidExtraField(0xFEDCBA9876543210L).getLocalFileDataData();
             assertThat(actual).isEqualTo(FEDCBA9876543210_AS_LE_BYTE_ARRAY);
         }
     }
@@ -135,6 +137,8 @@ public class UIDExtraFieldTest {
 
         @Test
         void parseFromLocalFileDataShouldThrownWhenLengthIsSmallerThan8() {
+            UidExtraField testee = new UidExtraField();
+
             byte[] input = new byte[] {0, 0, 0, 0, 0, 0, 0};
             assertThatThrownBy(() -> testee.parseFromLocalFileData(input, 0, 7))
                 .isInstanceOf(ZipException.class);
@@ -142,6 +146,8 @@ public class UIDExtraFieldTest {
 
         @Test
         void parseFromLocalFileDataShouldThrownWhenLengthIsBiggerThan8() {
+            UidExtraField testee = new UidExtraField();
+
             byte[] input = new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0};
             assertThatThrownBy(() -> testee.parseFromLocalFileData(input, 0, 9))
                 .isInstanceOf(ZipException.class);
@@ -149,6 +155,8 @@ public class UIDExtraFieldTest {
 
         @Test
         void parseFromLocalFileDataShouldParseWhenZero() throws Exception {
+            UidExtraField testee = new UidExtraField();
+
             testee.parseFromLocalFileData(ZERO_AS_BYTE_ARRAY, 0, 8);
             assertThat(testee.getUid())
                 .contains(0L);
@@ -156,6 +164,8 @@ public class UIDExtraFieldTest {
 
         @Test
         void parseFromLocalFileDataShouldParseWhen123456789ABCDEF0InLittleEndian() throws Exception {
+            UidExtraField testee = new UidExtraField();
+
             testee.parseFromLocalFileData(_123456789ABCDEF0_AS_LE_BYTE_ARRAY, 0, 8);
             assertThat(testee.getUid())
                 .contains(0x123456789ABCDEF0L);
@@ -163,6 +173,8 @@ public class UIDExtraFieldTest {
 
         @Test
         void parseFromLocalFileDataShouldParseWhenFEDCBA9876543210InLittleEndian() throws Exception {
+            UidExtraField testee = new UidExtraField();
+
             byte[] input = FEDCBA9876543210_AS_LE_BYTE_ARRAY;
             testee.parseFromLocalFileData(input, 0, 8);
             assertThat(testee.getUid())
@@ -171,6 +183,8 @@ public class UIDExtraFieldTest {
 
         @Test
         void parseFromLocalFileDataShouldHandleOffset() throws Exception {
+            UidExtraField testee = new UidExtraField();
+
             byte[] input = Arrays.concatenate(UNUSED, _123456789ABCDEF0_AS_LE_BYTE_ARRAY);
             testee.parseFromLocalFileData(input, 2, 8);
             assertThat(testee.getUid())
@@ -183,20 +197,26 @@ public class UIDExtraFieldTest {
 
         @Test
         void parseFromCentralDirectoryDataShouldThrownWhenLengthIsSmallerThan8() {
+            UidExtraField testee = new UidExtraField();
             byte[] input = new byte[7];
+
             assertThatThrownBy(() -> testee.parseFromCentralDirectoryData(input, 0, 7))
                 .isInstanceOf(ZipException.class);
         }
 
         @Test
         void parseFromCentralDirectoryDataShouldThrownWhenLengthIsBiggerThan8() {
+            UidExtraField testee = new UidExtraField();
             byte[] input = new byte[9];
+
             assertThatThrownBy(() -> testee.parseFromCentralDirectoryData(input, 0, 9))
                 .isInstanceOf(ZipException.class);
         }
 
         @Test
         void parseFromCentralDirectoryDataShouldParseWhenZero() throws Exception {
+            UidExtraField testee = new UidExtraField();
+
             testee.parseFromCentralDirectoryData(ZERO_AS_BYTE_ARRAY, 0, 8);
             assertThat(testee.getUid())
                 .contains(0L);
@@ -204,6 +224,8 @@ public class UIDExtraFieldTest {
 
         @Test
         void parseFromCentralDirectoryDataShouldParseWhen123456789ABCDEF0InLittleEndian() throws Exception {
+            UidExtraField testee = new UidExtraField();
+
             testee.parseFromCentralDirectoryData(_123456789ABCDEF0_AS_LE_BYTE_ARRAY, 0, 8);
             assertThat(testee.getUid())
                 .contains(0x123456789ABCDEF0L);
@@ -211,7 +233,9 @@ public class UIDExtraFieldTest {
 
         @Test
         void parseFromCentralDirectoryDataShouldParseWhenFEDCBA9876543210InLittleEndian() throws Exception {
+            UidExtraField testee = new UidExtraField();
             byte[] input = FEDCBA9876543210_AS_LE_BYTE_ARRAY;
+
             testee.parseFromCentralDirectoryData(input, 0, 8);
             assertThat(testee.getUid())
                 .contains(0xFEDCBA9876543210L);
@@ -219,7 +243,9 @@ public class UIDExtraFieldTest {
 
         @Test
         void parseFromCentralDirectoryDataShouldHandleOffset() throws Exception {
+            UidExtraField testee = new UidExtraField();
             byte[] input = Arrays.concatenate(UNUSED, _123456789ABCDEF0_AS_LE_BYTE_ARRAY);
+
             testee.parseFromCentralDirectoryData(input, 2, 8);
             assertThat(testee.getUid())
                 .contains(0x123456789ABCDEF0L);

@@ -37,7 +37,6 @@ import org.apache.commons.compress.archivers.zip.ExtraFieldUtils;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.james.junit.TemporaryFolderExtension;
 import org.apache.james.junit.TemporaryFolderExtension.TemporaryFolder;
-import org.apache.james.mailbox.model.TestId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -106,49 +105,16 @@ public class ZipperTest {
     }
 
     @Test
-    void archiveShouldWriteSizeMetadata() throws Exception {
+    void archiveShouldWriteMetadata() throws Exception {
         testee.archive(ImmutableList.of(MESSAGE_1), new FileOutputStream(destination));
 
         try (ZipFile zipFile = new ZipFile(destination)) {
             assertThatZip(zipFile)
                 .containsOnlyEntriesMatching(
                     hasName(MESSAGE_ID_1.serialize())
-                        .containsExtraFields(new SizeExtraField(SIZE_1)));
-        }
-    }
-
-    @Test
-    void archiveShouldWriteUIDMetadata() throws Exception {
-        testee.archive(ImmutableList.of(MESSAGE_1), new FileOutputStream(destination));
-
-        try (ZipFile zipFile = new ZipFile(destination)) {
-            assertThatZip(zipFile)
-                .containsOnlyEntriesMatching(
-                    hasName(MESSAGE_ID_1.serialize())
-                        .containsExtraFields(new UIDExtraField(MESSAGE_UID_1_VALUE)));
-        }
-    }
-
-    @Test
-    void archiveShouldWriteMessageIdMetadata() throws Exception {
-        testee.archive(ImmutableList.of(MESSAGE_1), new FileOutputStream(destination));
-
-        try (ZipFile zipFile = new ZipFile(destination)) {
-            assertThatZip(zipFile)
-                .containsOnlyEntriesMatching(
-                    hasName(MESSAGE_ID_1.serialize())
-                        .containsExtraFields(new MessageIdExtraField(MESSAGE_ID_1.serialize())));
-        }
-    }
-
-    @Test
-    void archiveShouldWriteMailboxIdMetadata() throws Exception {
-        testee.archive(ImmutableList.of(MESSAGE_1), new FileOutputStream(destination));
-
-        try (ZipFile zipFile = new ZipFile(destination)) {
-            assertThatZip(zipFile)
-                .containsOnlyEntriesMatching(
-                    hasName(MESSAGE_ID_1.serialize())
+                        .containsExtraFields(new SizeExtraField(SIZE_1))
+                        .containsExtraFields(new UidExtraField(MESSAGE_UID_1_VALUE))
+                        .containsExtraFields(new MessageIdExtraField(MESSAGE_ID_1.serialize()))
                         .containsExtraFields(new MailboxIdExtraField(MAILBOX_ID_1.serialize())));
         }
     }

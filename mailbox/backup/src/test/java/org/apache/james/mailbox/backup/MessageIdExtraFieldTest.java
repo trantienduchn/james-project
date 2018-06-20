@@ -26,7 +26,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -38,20 +37,15 @@ public class MessageIdExtraFieldTest {
     private static final byte[] DEFAULT_MESSAGE_ID_BYTE_ARRAY = new byte[] {0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x30};
     private static final byte [] EMPTY_BYTE_ARRAY = {};
 
-    private MessageIdExtraField testee;
-
-    @BeforeEach
-    void setUp() {
-        testee = new MessageIdExtraField();
-    }
-
     @Nested
     class GetHeaderId {
 
         @Test
         void getHeaderIdShouldReturnSpecificStringInLittleEndian() {
+            MessageIdExtraField testee = new MessageIdExtraField();
             ByteBuffer byteBuffer = ByteBuffer.wrap(testee.getHeaderId().getBytes())
                 .order(ByteOrder.LITTLE_ENDIAN);
+
             assertThat(Charsets.US_ASCII.decode(byteBuffer).toString())
                 .isEqualTo("al");
         }
@@ -62,13 +56,15 @@ public class MessageIdExtraFieldTest {
 
         @Test
         void getLocalFileDataLengthShouldThrowWhenNoValue() {
+            MessageIdExtraField testee = new MessageIdExtraField();
+
             assertThatThrownBy(() -> testee.getLocalFileDataLength().getValue())
                 .isInstanceOf(RuntimeException.class);
         }
 
         @Test
         void getLocalFileDataLengthShouldReturnIntegerSize() {
-            testee = new MessageIdExtraField(DEFAULT_MESSAGE_ID);
+            MessageIdExtraField testee = new MessageIdExtraField(DEFAULT_MESSAGE_ID);
 
             assertThat(testee.getLocalFileDataLength().getValue())
                 .isEqualTo(16);
@@ -80,13 +76,15 @@ public class MessageIdExtraFieldTest {
 
         @Test
         void getCentralDirectoryLengthShouldThrowWhenNoValue() {
+            MessageIdExtraField testee = new MessageIdExtraField();
+
             assertThatThrownBy(() -> testee.getCentralDirectoryLength().getValue())
                 .isInstanceOf(RuntimeException.class);
         }
 
         @Test
         void getCentralDirectoryLengthShouldReturnIntegerSize() {
-            testee = new MessageIdExtraField(DEFAULT_MESSAGE_ID);
+            MessageIdExtraField testee = new MessageIdExtraField(DEFAULT_MESSAGE_ID);
 
             assertThat(testee.getCentralDirectoryLength().getValue())
                 .isEqualTo(16);
@@ -98,19 +96,25 @@ public class MessageIdExtraFieldTest {
 
         @Test
         void getLocalFileDataDataShouldThrowWhenNoValue() {
+            MessageIdExtraField testee = new MessageIdExtraField();
+
             assertThatThrownBy(() -> testee.getLocalFileDataData())
                 .isInstanceOf(RuntimeException.class);
         }
 
         @Test
         void getLocalFileDataDataShouldReturnEmptyArrayWhenValueIsEmpty() {
+            MessageIdExtraField testee = new MessageIdExtraField();
             byte[] actual = new MessageIdExtraField(EMPTY).getLocalFileDataData();
+
             assertThat(actual).isEqualTo(EMPTY_BYTE_ARRAY);
         }
 
         @Test
         void getLocalFileDataDataShouldReturnValueInByteArray() {
+            MessageIdExtraField testee = new MessageIdExtraField();
             byte[] actual = new MessageIdExtraField(DEFAULT_MESSAGE_ID).getLocalFileDataData();
+
             assertThat(actual).isEqualTo(DEFAULT_MESSAGE_ID_BYTE_ARRAY);
         }
     }
@@ -120,6 +124,8 @@ public class MessageIdExtraFieldTest {
 
         @Test
         void getCentralDirectoryDataShouldThrowWhenNoValue() {
+            MessageIdExtraField testee = new MessageIdExtraField();
+
             assertThatThrownBy(() -> testee.getCentralDirectoryData())
                 .isInstanceOf(RuntimeException.class);
         }
@@ -142,6 +148,8 @@ public class MessageIdExtraFieldTest {
 
         @Test
         void parseFromLocalFileDataShouldParseWhenZero() {
+            MessageIdExtraField testee = new MessageIdExtraField();
+
             testee.parseFromLocalFileData(EMPTY_BYTE_ARRAY, 0, 0);
 
             assertThat(testee.getMessageId().get())
@@ -150,14 +158,20 @@ public class MessageIdExtraFieldTest {
 
         @Test
         void parseFromLocalFileDataShouldParseByteArray() {
+            MessageIdExtraField testee = new MessageIdExtraField();
+
             testee.parseFromLocalFileData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 0, 16);
+
             assertThat(testee.getMessageId().get())
                 .isEqualTo(DEFAULT_MESSAGE_ID);
         }
 
         @Test
         void parseFromLocalFileDataShouldHandleOffset() {
+            MessageIdExtraField testee = new MessageIdExtraField();
+
             testee.parseFromLocalFileData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 2, 14);
+
             assertThat(testee.getMessageId().get())
                 .isEqualTo("3456789ABCDEF0");
         }
@@ -168,6 +182,8 @@ public class MessageIdExtraFieldTest {
 
         @Test
         void parseFromCentralDirectoryDataShouldParseWhenZero() {
+            MessageIdExtraField testee = new MessageIdExtraField();
+
             testee.parseFromCentralDirectoryData(EMPTY_BYTE_ARRAY, 0, 0);
 
             assertThat(testee.getMessageId().get())
@@ -176,14 +192,20 @@ public class MessageIdExtraFieldTest {
 
         @Test
         void parseFromCentralDirectoryDataShouldParseByteArray() {
+            MessageIdExtraField testee = new MessageIdExtraField();
+
             testee.parseFromCentralDirectoryData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 0, 16);
+
             assertThat(testee.getMessageId().get())
                 .isEqualTo(DEFAULT_MESSAGE_ID);
         }
 
         @Test
         void parseFromCentralDirectoryDataShouldHandleOffset() {
+            MessageIdExtraField testee = new MessageIdExtraField();
+
             testee.parseFromCentralDirectoryData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 2, 14);
+
             assertThat(testee.getMessageId().get())
                 .isEqualTo("3456789ABCDEF0");
         }

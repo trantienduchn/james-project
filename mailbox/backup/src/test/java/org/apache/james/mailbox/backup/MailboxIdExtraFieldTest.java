@@ -38,20 +38,15 @@ public class MailboxIdExtraFieldTest {
     private static final byte[] DEFAULT_MAILBOX_ID_BYTE_ARRAY = new byte[] {0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x30};
     private static final byte [] EMPTY_BYTE_ARRAY = {};
 
-    private MailboxIdExtraField testee;
-
-    @BeforeEach
-    void setUp() {
-        testee = new MailboxIdExtraField();
-    }
-
     @Nested
     class GetHeaderId {
 
         @Test
         void getHeaderIdShouldReturnSpecificStringInLittleEndian() {
+            MailboxIdExtraField testee = new MailboxIdExtraField();
             ByteBuffer byteBuffer = ByteBuffer.wrap(testee.getHeaderId().getBytes())
                 .order(ByteOrder.LITTLE_ENDIAN);
+
             assertThat(Charsets.US_ASCII.decode(byteBuffer).toString())
                 .isEqualTo("am");
         }
@@ -62,13 +57,14 @@ public class MailboxIdExtraFieldTest {
 
         @Test
         void getLocalFileDataLengthShouldThrowWhenNoValue() {
+            MailboxIdExtraField testee = new MailboxIdExtraField();
             assertThatThrownBy(() -> testee.getLocalFileDataLength().getValue())
                 .isInstanceOf(RuntimeException.class);
         }
 
         @Test
         void getLocalFileDataLengthShouldReturnIntegerSize() {
-            testee = new MailboxIdExtraField(DEFAULT_MAILBOX_ID);
+            MailboxIdExtraField testee = new MailboxIdExtraField(DEFAULT_MAILBOX_ID);
 
             assertThat(testee.getLocalFileDataLength().getValue())
                 .isEqualTo(16);
@@ -80,13 +76,14 @@ public class MailboxIdExtraFieldTest {
 
         @Test
         void getCentralDirectoryLengthShouldThrowWhenNoValue() {
+            MailboxIdExtraField testee = new MailboxIdExtraField();
             assertThatThrownBy(() -> testee.getCentralDirectoryLength().getValue())
                 .isInstanceOf(RuntimeException.class);
         }
 
         @Test
         void getCentralDirectoryLengthShouldReturnIntegerSize() {
-            testee = new MailboxIdExtraField(DEFAULT_MAILBOX_ID);
+            MailboxIdExtraField testee = new MailboxIdExtraField(DEFAULT_MAILBOX_ID);
 
             assertThat(testee.getCentralDirectoryLength().getValue())
                 .isEqualTo(16);
@@ -98,6 +95,8 @@ public class MailboxIdExtraFieldTest {
 
         @Test
         void getLocalFileDataDataShouldThrowWhenNoValue() {
+            MailboxIdExtraField testee = new MailboxIdExtraField();
+
             assertThatThrownBy(() -> testee.getLocalFileDataData())
                 .isInstanceOf(RuntimeException.class);
         }
@@ -120,6 +119,8 @@ public class MailboxIdExtraFieldTest {
 
         @Test
         void getCentralDirectoryDataShouldThrowWhenNoValue() {
+            MailboxIdExtraField testee = new MailboxIdExtraField();
+
             assertThatThrownBy(() -> testee.getCentralDirectoryData())
                 .isInstanceOf(RuntimeException.class);
         }
@@ -142,6 +143,8 @@ public class MailboxIdExtraFieldTest {
 
         @Test
         void parseFromLocalFileDataShouldParseWhenZero() {
+            MailboxIdExtraField testee = new MailboxIdExtraField();
+
             testee.parseFromLocalFileData(EMPTY_BYTE_ARRAY, 0, 0);
 
             assertThat(testee.getMailboxId().get())
@@ -150,14 +153,20 @@ public class MailboxIdExtraFieldTest {
 
         @Test
         void parseFromLocalFileDataShouldParseByteArray() {
+            MailboxIdExtraField testee = new MailboxIdExtraField();
+
             testee.parseFromLocalFileData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 0, 16);
+
             assertThat(testee.getMailboxId().get())
                 .isEqualTo(DEFAULT_MAILBOX_ID);
         }
 
         @Test
         void parseFromLocalFileDataShouldHandleOffset() {
+            MailboxIdExtraField testee = new MailboxIdExtraField();
+
             testee.parseFromLocalFileData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 2, 14);
+
             assertThat(testee.getMailboxId().get())
                 .isEqualTo("3456789ABCDEF0");
         }
@@ -168,6 +177,8 @@ public class MailboxIdExtraFieldTest {
 
         @Test
         void parseFromCentralDirectoryDataShouldParseWhenZero() {
+            MailboxIdExtraField testee = new MailboxIdExtraField();
+
             testee.parseFromCentralDirectoryData(EMPTY_BYTE_ARRAY, 0, 0);
 
             assertThat(testee.getMailboxId().get())
@@ -176,14 +187,20 @@ public class MailboxIdExtraFieldTest {
 
         @Test
         void parseFromCentralDirectoryDataShouldParseByteArray() {
+            MailboxIdExtraField testee = new MailboxIdExtraField();
+
             testee.parseFromCentralDirectoryData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 0, 16);
+
             assertThat(testee.getMailboxId().get())
                 .isEqualTo(DEFAULT_MAILBOX_ID);
         }
 
         @Test
         void parseFromCentralDirectoryDataShouldHandleOffset() {
+            MailboxIdExtraField testee = new MailboxIdExtraField();
+
             testee.parseFromCentralDirectoryData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 2, 14);
+
             assertThat(testee.getMailboxId().get())
                 .isEqualTo("3456789ABCDEF0");
         }
