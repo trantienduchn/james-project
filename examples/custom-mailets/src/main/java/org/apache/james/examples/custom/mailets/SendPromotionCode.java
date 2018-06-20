@@ -63,4 +63,9 @@ public class SendPromotionCode extends GenericMailet {
             throw new MessagingException("'promotionCode' is compulsory");
         }
     }
+
+    @Override
+    public String getMailetName() {
+        return "SendPromotionCode";
+    }
 }

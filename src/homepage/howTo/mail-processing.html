@@ -56,26 +56,26 @@ layout: default
                     <h2><b>Mail processing component overview</b></h2>
                 </header>
               <p class="align-left">At the heart of James lies the Mailet container, which allows mail processing. This is
-              split in smaller units, with specific responsibilities:
+              splitted into smaller units, with specific responsibilities:
 
               </p>
 
               <ul class="no-padding">
                 <li><b>Mailets:</b> Are operations performed with the mail: modifying it, performing a side-effect, etc...</li>
-                <li><b>Matchers:</b> Are per-recipient conditions for mailet execution</li>
+                <li><b>Matchers:</b> Are per-recipient conditions for mailet executions</li>
                 <li><b>Processors:</b> Are matcher/mailet pair execution threads</li>
               </ul>
 
               <p> Read <a href="/server/feature-mailetcontainer.html">this</a> for more explanations of mailet container concepts.</p>
 
-              <p>One can define the mailet container content through the <a href="/server/config-mailetcontainer.html">mailetcontailer.xml</a> file.
-              Hence, we can arrange James standard components listed <a href="/server/dev-provided-mailets.html">here</a> to achieve basic logic. But what if our goal are more
+              <p>Once we define the mailet container content through the <a href="/server/config-mailetcontainer.html">mailetcontailer.xml</a> file.
+              Hence, we can arrange James standard components listed <a href="/server/dev-provided-mailets.html">here</a> to achieve basic logic. But what if our goals are more
               complex? What if we need our own processing components?</p>
 
               <p>This page will propose a 'hands on practice' how-to using James 3.0.1. We will implement a custom mailet and a custom matcher,
               then deploy it in a James server.</p>
 
-              <p>We need to choose our use case. We will, when a mail is older than a day, write a mail to the original sender
+              <p>We need to choose our use case. We will, when a mail is delayed over one day, write a mail to the original sender
               to inform him about the delay, say that we are sorry, and send him a promotion code...<pre></pre></p>
 
 
@@ -86,10 +86,10 @@ layout: default
               <p>None of the matchers and mailets available in James allows us to implement what we want. We will have to
               write our own mailet and matcher in a separated maven project depending on James Mailet API.</p>
 
-              <p>We will write a <b>IsDelayedForMoreThan</b> mathcer with a configurable delay. If the Sent Date of incoming emails is older than specified delay, then we
-              should match (return all mail recipients). Otherwise, we just return empty.</p>
+              <p>We will write a <b>IsDelayedForMoreThan</b> matcher with a configurable delay. If the Sent Date of incoming emails is older than specified delay, then the emails
+              should be matched (return all mail recipients). Otherwise, we just return an empty list of recipients.</p>
 
-              <p>To ease our Job, we can rely on the <b>org.apache.james apache-mailet-base</b> maven project, which provided us a <b>GenericMatcher</b> that we can extend.</p>
+              <p>To ease our Job, we can rely on the <b>org.apache.james.apache-mailet-base</b> maven project, which provides us a <b>GenericMatcher</b> that we can extend.</p>
 
               <p>Here is the dependency:</p>
 
@@ -110,9 +110,8 @@ layout: default
     @Override
     public Collection&lt;MailAddress&gt; match(Mail mail) throws MessagingException {
         Date sentDate = mail.getMessage().getSentDate();
-        Date limit = new Date(sentDate.getTime() + maxDelay.toMillis());
 
-        if (clock.instant().isAfter(limit.toInstant())) {
+        if (clock.instant().isAfter(sentDate.toInstant().plusMillis(maxDelay.toMillis()))) {
             return ImmutableList.copyOf(mail.getRecipients());
         }
         return ImmutableList.of();
@@ -221,7 +220,7 @@ layout: default
 
             <p>Finally, we will start a James server using that. We will rely on docker default image for simplicity.
                 We need to be using the <b>mailetcontainer.xml</b> configuration that we had been writing and position
-                the jar in the <b>extensions-jars</b> folder (specific to guice). This can be achieve with the following command:</p>
+                the jar in the <b>extensions-jars</b> folder (specific to guice). This can be achieved with the following command:</p>
 
             <pre><code>docker run -p "25:25" -p "143:143" \
                    -v "$PWD/src/main/resources/mailetcontainer.xml:/root/conf/mailetcontainer.xml" \
