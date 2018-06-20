@@ -152,8 +152,8 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromLocalFileData(EMPTY_BYTE_ARRAY, 0, 0);
 
-            assertThat(testee.getMessageId().get())
-                .isEmpty();
+            assertThat(testee.getMessageId())
+                .contains(EMPTY);
         }
 
         @Test
@@ -162,8 +162,8 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromLocalFileData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 0, 16);
 
-            assertThat(testee.getMessageId().get())
-                .isEqualTo(DEFAULT_MESSAGE_ID);
+            assertThat(testee.getMessageId())
+                .contains(DEFAULT_MESSAGE_ID);
         }
 
         @Test
@@ -172,8 +172,8 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromLocalFileData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 2, 14);
 
-            assertThat(testee.getMessageId().get())
-                .isEqualTo("3456789ABCDEF0");
+            assertThat(testee.getMessageId())
+                .contains("3456789ABCDEF0");
         }
     }
 
@@ -186,8 +186,8 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(EMPTY_BYTE_ARRAY, 0, 0);
 
-            assertThat(testee.getMessageId().get())
-                .isEmpty();
+            assertThat(testee.getMessageId())
+                .contains(EMPTY);
         }
 
         @Test
@@ -196,8 +196,8 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 0, 16);
 
-            assertThat(testee.getMessageId().get())
-                .isEqualTo(DEFAULT_MESSAGE_ID);
+            assertThat(testee.getMessageId())
+                .contains(DEFAULT_MESSAGE_ID);
         }
 
         @Test
@@ -206,8 +206,8 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 2, 14);
 
-            assertThat(testee.getMessageId().get())
-                .isEqualTo("3456789ABCDEF0");
+            assertThat(testee.getMessageId())
+                .contains("3456789ABCDEF0");
         }
     }
     

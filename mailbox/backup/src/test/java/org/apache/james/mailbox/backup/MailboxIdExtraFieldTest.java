@@ -26,7 +26,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -147,8 +146,8 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromLocalFileData(EMPTY_BYTE_ARRAY, 0, 0);
 
-            assertThat(testee.getMailboxId().get())
-                .isEmpty();
+            assertThat(testee.getMailboxId())
+                .contains(EMPTY);
         }
 
         @Test
@@ -157,8 +156,8 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromLocalFileData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 0, 16);
 
-            assertThat(testee.getMailboxId().get())
-                .isEqualTo(DEFAULT_MAILBOX_ID);
+            assertThat(testee.getMailboxId())
+                .contains(DEFAULT_MAILBOX_ID);
         }
 
         @Test
@@ -167,8 +166,8 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromLocalFileData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 2, 14);
 
-            assertThat(testee.getMailboxId().get())
-                .isEqualTo("3456789ABCDEF0");
+            assertThat(testee.getMailboxId())
+                .contains("3456789ABCDEF0");
         }
     }
 
@@ -181,8 +180,8 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(EMPTY_BYTE_ARRAY, 0, 0);
 
-            assertThat(testee.getMailboxId().get())
-                .isEmpty();
+            assertThat(testee.getMailboxId())
+                .contains(EMPTY);
         }
 
         @Test
@@ -191,8 +190,8 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 0, 16);
 
-            assertThat(testee.getMailboxId().get())
-                .isEqualTo(DEFAULT_MAILBOX_ID);
+            assertThat(testee.getMailboxId())
+                .contains(DEFAULT_MAILBOX_ID);
         }
 
         @Test
@@ -201,8 +200,8 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 2, 14);
 
-            assertThat(testee.getMailboxId().get())
-                .isEqualTo("3456789ABCDEF0");
+            assertThat(testee.getMailboxId())
+                .contains("3456789ABCDEF0");
         }
     }
 }

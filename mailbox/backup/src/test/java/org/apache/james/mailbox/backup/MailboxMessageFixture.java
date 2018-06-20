@@ -54,7 +54,7 @@ public interface MailboxMessageFixture {
     long SIZE_1 = 1000;
     long SIZE_2 = 2000;
     long MESSAGE_UID_1_VALUE = 1111L;
-    long MESSAGE_UID_2_VALUE = 1111L;
+    long MESSAGE_UID_2_VALUE = 2222L;
     MessageUid MESSAGE_UID_1 = MessageUid.of(MESSAGE_UID_1_VALUE);
     MessageUid MESSAGE_UID_2 = MessageUid.of(MESSAGE_UID_2_VALUE);
     MailboxId MAILBOX_ID_1 = TestId.of(1L);

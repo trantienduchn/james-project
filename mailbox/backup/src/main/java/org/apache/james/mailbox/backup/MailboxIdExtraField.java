@@ -52,7 +52,7 @@ public class MailboxIdExtraField implements ZipExtraField {
     @Override
     public ZipShort getLocalFileDataLength() {
         return mailboxId
-            .map(String::length)
+            .map(value -> value.getBytes(StandardCharsets.UTF_8).length)
             .map(ZipShort::new)
             .orElseThrow(() -> new RuntimeException("Value must by initialized"));
     }
