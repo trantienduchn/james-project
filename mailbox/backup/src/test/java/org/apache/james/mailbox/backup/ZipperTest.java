@@ -169,7 +169,9 @@ class ZipperTest {
             assertThatZip(zipFile)
                 .containsOnlyEntriesMatching(
                     hasName(MAILBOX_1.getName() + "/")
-                        .containsExtraFields(new MailboxIdExtraField(MAILBOX_1.getMailboxId().serialize())));
+                        .containsExtraFields(
+                            new MailboxIdExtraField(MAILBOX_1.getMailboxId().serialize()),
+                            new UidValidityExtraField(MAILBOX_1.getUidValidity())));
         }
     }
 
