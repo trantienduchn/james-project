@@ -19,8 +19,9 @@
 
 package org.apache.james.mailbox.backup;
 
-import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Optional;
 
@@ -34,14 +35,15 @@ public class InternalDateExtraField extends StringExtraField {
         super();
     }
 
-    public InternalDateExtraField(Date date) {
-        super(Optional.of(date.toInstant().toString()));
-    }
-
     public InternalDateExtraField(Optional<Date> date) {
         super(date
             .map(Date::toInstant)
-            .map(Instant::toString));
+            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.systemDefault()))
+            .map(DateTimeFormatter.ISO_OFFSET_DATE_TIME::format));
+    }
+
+    public InternalDateExtraField(Date date) {
+        this(Optional.of(date));
     }
 
     @Override
@@ -51,7 +53,7 @@ public class InternalDateExtraField extends StringExtraField {
 
     public Optional<Date> getDateValue() {
         return getValue()
-            .map(ZonedDateTime::parse)
+            .map(time -> ZonedDateTime.parse(time, DateTimeFormatter.ISO_OFFSET_DATE_TIME))
             .map(ZonedDateTime::toInstant)
             .map(Date::from);
     }

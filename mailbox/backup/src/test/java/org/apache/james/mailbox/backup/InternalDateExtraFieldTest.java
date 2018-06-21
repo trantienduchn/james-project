@@ -20,14 +20,14 @@
 package org.apache.james.mailbox.backup;
 
 import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static org.apache.james.mailbox.backup.MailboxMessageFixture.DATE_1;
-import static org.apache.james.mailbox.backup.MailboxMessageFixture.DATE_STRING_1;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 import org.junit.jupiter.api.Nested;
@@ -40,6 +40,8 @@ import nl.jqno.equalsverifier.Warning;
 
 public class InternalDateExtraFieldTest {
 
+    public static final String DATE_STRING_1 = "2018-02-15T22:54:02+07:00";
+    private static final ZonedDateTime DATE_1 = ZonedDateTime.parse(DATE_STRING_1, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     private static final byte[] DATE_STRING_1_BYTE_ARRAY = DATE_STRING_1.getBytes(StandardCharsets.UTF_8);
 
     private static final String DEFAULT_MAILBOX_ID = "123456789ABCDEF0";
@@ -208,7 +210,7 @@ public class InternalDateExtraFieldTest {
         void parseFromLocalFileDataShouldReturnDateWhenPassDateByteArray() {
             InternalDateExtraField testee = new InternalDateExtraField();
 
-            testee.parseFromLocalFileData(DATE_STRING_1_BYTE_ARRAY, 0, 20);
+            testee.parseFromLocalFileData(DATE_STRING_1_BYTE_ARRAY, 0, 25);
 
             assertThat(testee.getDateValue())
                 .contains(Date.from(DATE_1.toInstant()));
@@ -252,7 +254,7 @@ public class InternalDateExtraFieldTest {
         void parseFromCentralDirectoryDataShouldReturnDateWhenPassDateByteArray() {
             InternalDateExtraField testee = new InternalDateExtraField();
 
-            testee.parseFromCentralDirectoryData(DATE_STRING_1_BYTE_ARRAY, 0, 20);
+            testee.parseFromCentralDirectoryData(DATE_STRING_1_BYTE_ARRAY, 0, 25);
 
             assertThat(testee.getDateValue())
                 .contains(Date.from(DATE_1.toInstant()));
