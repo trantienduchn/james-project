@@ -85,7 +85,7 @@ layout: default
                     </p>
 
                     <ol>
-                        <li>Ask <code>company.com</code> DNS server its MX entries</li>
+                        <li>Ask its DNS server <code>company.com</code> MX entries</li>
                         <li><code>company.com</code> respond that it is <code>mx.company.com</code></li>
                         <li>Bob resolves <code>mx.company.com</code> ip address...</li>
                         <li>And can establish a connection to <code>mx.company.com</code> to send an email to Alice</li>
@@ -99,7 +99,7 @@ layout: default
 
                     <p>JPA guice docker image relies on an embedded derby database for storing data. Note that Apache Lucene library
                         is used for email search. A mail queue is implemented on top of an embedded Apache ActiveMQ. Hence James do not need
-                        any external service for being running.
+                        any external service for being run.
                     </p>
 
                     <img src="/images/guice-jpa-architecture-overview.png">
