@@ -33,6 +33,9 @@ import org.testcontainers.shaded.org.bouncycastle.util.Arrays;
 
 import com.google.common.base.Charsets;
 
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
+
 public class InternalDateExtraFieldTest {
     private static final byte[] ZERO_AS_BYTE_ARRAY = {0, 0, 0, 0, 0, 0, 0, 0};
     private static final byte[] _123456789ABCDEF0_AS_LE_BYTE_ARRAY = new byte[] {(byte) 0xF0, (byte) 0xDE, (byte) 0xBC, (byte) 0x9A, 0x78, 0x56, 0x34, 0x12};
@@ -42,6 +45,13 @@ public class InternalDateExtraFieldTest {
     private static final byte[] DEFAULT_DATE_BYTE_ARRAY = {(byte) 0xdd, (byte) 0xf2, (byte) 0xdc, 0x20, 0x64, 0x01, 0x00, 0x00 };
     private static final long DEFAULT_DATE_TIMESTAMP = 1529559708381L;
     private static final Date DEFAULT_DATE = new Date(DEFAULT_DATE_TIMESTAMP);
+
+    @Test
+    public void shouldMatchBeanContract() {
+        EqualsVerifier.forClass(InternalDateExtraField.class)
+            .suppress(Warning.NONFINAL_FIELDS)
+            .verify();
+    }
 
     @Nested
     class GetHeaderId {

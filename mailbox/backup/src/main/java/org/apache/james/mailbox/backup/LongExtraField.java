@@ -90,7 +90,7 @@ public abstract class LongExtraField implements ZipExtraField {
 
     @Override
     public final boolean equals(Object o) {
-        if (this.getClass() == o.getClass()) {
+        if (o instanceof LongExtraField) {
             LongExtraField that = (LongExtraField) o;
 
             return Objects.equals(this.value, that.value)
@@ -101,6 +101,6 @@ public abstract class LongExtraField implements ZipExtraField {
 
     @Override
     public final int hashCode() {
-        return Objects.hash(value);
+        return Objects.hash(value, getHeaderId());
     }
 }

@@ -34,10 +34,6 @@ public abstract class StringExtraField implements ZipExtraField {
         this(Optional.empty());
     }
 
-    public StringExtraField(String value) {
-        this(Optional.of(value));
-    }
-
     public StringExtraField(Optional<String> value) {
         this.value = value;
     }
@@ -83,12 +79,17 @@ public abstract class StringExtraField implements ZipExtraField {
 
     @Override
     public final boolean equals(Object o) {
-        if (this.getClass() == o.getClass()) {
+        if (o instanceof StringExtraField) {
             StringExtraField that = (StringExtraField) o;
 
             return Objects.equals(this.getValue(), that.getValue())
                 && Objects.equals(this.getHeaderId(), that.getHeaderId());
         }
         return false;
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(value, getHeaderId());
     }
 }

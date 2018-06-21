@@ -33,7 +33,7 @@ public class MessageIdExtraField extends StringExtraField {
     }
 
     public MessageIdExtraField(String value) {
-        super(value);
+        super(Optional.of(value));
     }
 
     public MessageIdExtraField(Optional<String> value) {
@@ -41,7 +41,7 @@ public class MessageIdExtraField extends StringExtraField {
     }
 
     public MessageIdExtraField(MessageId messageId) {
-        super(messageId.serialize());
+        super(Optional.of(messageId.serialize()));
     }
 
     @Override
