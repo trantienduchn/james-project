@@ -30,8 +30,8 @@ import static org.apache.james.mailbox.backup.MailboxMessageFixture.MESSAGE_ID_1
 import static org.apache.james.mailbox.backup.MailboxMessageFixture.MESSAGE_ID_2;
 import static org.apache.james.mailbox.backup.MailboxMessageFixture.MESSAGE_UID_1_VALUE;
 import static org.apache.james.mailbox.backup.MailboxMessageFixture.SIZE_1;
-import static org.apache.james.mailbox.backup.ZipAssert.assertThatZip;
 import static org.apache.james.mailbox.backup.ZipAssert.EntryChecks.hasName;
+import static org.apache.james.mailbox.backup.ZipAssert.assertThatZip;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -100,8 +100,8 @@ class ZipperTest {
                     hasName(MESSAGE_ID_1.serialize())
                         .containsExtraFields(new SizeExtraField(SIZE_1))
                         .containsExtraFields(new UidExtraField(MESSAGE_UID_1_VALUE))
-                        .containsExtraFields(new MessageIdExtraField(MESSAGE_ID_1.serialize()))
-                        .containsExtraFields(new MailboxIdExtraField(MAILBOX_ID_1.serialize())));
+                        .containsExtraFields(new MessageIdExtraField(MESSAGE_ID_1))
+                        .containsExtraFields(new MailboxIdExtraField(MAILBOX_ID_1)));
         }
     }
 
@@ -170,7 +170,7 @@ class ZipperTest {
                 .containsOnlyEntriesMatching(
                     hasName(MAILBOX_1.getName() + "/")
                         .containsExtraFields(
-                            new MailboxIdExtraField(MAILBOX_1.getMailboxId().serialize()),
+                            new MailboxIdExtraField(MAILBOX_1.getMailboxId()),
                             new UidValidityExtraField(MAILBOX_1.getUidValidity())));
         }
     }

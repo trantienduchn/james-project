@@ -150,7 +150,7 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromLocalFileData(EMPTY_BYTE_ARRAY, 0, 0);
 
-            assertThat(testee.getMessageId())
+            assertThat(testee.getValue())
                 .contains(EMPTY);
         }
 
@@ -160,7 +160,7 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromLocalFileData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 0, 16);
 
-            assertThat(testee.getMessageId())
+            assertThat(testee.getValue())
                 .contains(DEFAULT_MESSAGE_ID);
         }
 
@@ -170,7 +170,7 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromLocalFileData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 2, 14);
 
-            assertThat(testee.getMessageId())
+            assertThat(testee.getValue())
                 .contains("3456789ABCDEF0");
         }
     }
@@ -184,7 +184,7 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(EMPTY_BYTE_ARRAY, 0, 0);
 
-            assertThat(testee.getMessageId())
+            assertThat(testee.getValue())
                 .contains(EMPTY);
         }
 
@@ -194,7 +194,7 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 0, 16);
 
-            assertThat(testee.getMessageId())
+            assertThat(testee.getValue())
                 .contains(DEFAULT_MESSAGE_ID);
         }
 
@@ -204,7 +204,7 @@ public class MessageIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(DEFAULT_MESSAGE_ID_BYTE_ARRAY, 2, 14);
 
-            assertThat(testee.getMessageId())
+            assertThat(testee.getValue())
                 .contains("3456789ABCDEF0");
         }
     }

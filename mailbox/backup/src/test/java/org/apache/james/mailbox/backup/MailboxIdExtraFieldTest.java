@@ -146,7 +146,7 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromLocalFileData(EMPTY_BYTE_ARRAY, 0, 0);
 
-            assertThat(testee.getMailboxId())
+            assertThat(testee.getValue())
                 .contains(EMPTY);
         }
 
@@ -156,7 +156,7 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromLocalFileData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 0, 16);
 
-            assertThat(testee.getMailboxId())
+            assertThat(testee.getValue())
                 .contains(DEFAULT_MAILBOX_ID);
         }
 
@@ -166,7 +166,7 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromLocalFileData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 2, 14);
 
-            assertThat(testee.getMailboxId())
+            assertThat(testee.getValue())
                 .contains("3456789ABCDEF0");
         }
     }
@@ -180,7 +180,7 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(EMPTY_BYTE_ARRAY, 0, 0);
 
-            assertThat(testee.getMailboxId())
+            assertThat(testee.getValue())
                 .contains(EMPTY);
         }
 
@@ -190,7 +190,7 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 0, 16);
 
-            assertThat(testee.getMailboxId())
+            assertThat(testee.getValue())
                 .contains(DEFAULT_MAILBOX_ID);
         }
 
@@ -200,7 +200,7 @@ public class MailboxIdExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(DEFAULT_MAILBOX_ID_BYTE_ARRAY, 2, 14);
 
-            assertThat(testee.getMailboxId())
+            assertThat(testee.getValue())
                 .contains("3456789ABCDEF0");
         }
     }
