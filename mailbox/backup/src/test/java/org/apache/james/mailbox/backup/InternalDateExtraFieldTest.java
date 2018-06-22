@@ -40,7 +40,7 @@ import nl.jqno.equalsverifier.Warning;
 
 public class InternalDateExtraFieldTest {
 
-    public static final String DATE_STRING_1 = "2018-02-15T22:54:02+07:00";
+    public static final String DATE_STRING_1 = "2018-02-15T22:54:02Z";
     private static final ZonedDateTime DATE_1 = ZonedDateTime.parse(DATE_STRING_1, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
     private static final byte[] DATE_STRING_1_BYTE_ARRAY = DATE_STRING_1.getBytes(StandardCharsets.UTF_8);
 
@@ -210,7 +210,7 @@ public class InternalDateExtraFieldTest {
         void parseFromLocalFileDataShouldReturnDateWhenPassDateByteArray() {
             InternalDateExtraField testee = new InternalDateExtraField();
 
-            testee.parseFromLocalFileData(DATE_STRING_1_BYTE_ARRAY, 0, 25);
+            testee.parseFromLocalFileData(DATE_STRING_1_BYTE_ARRAY, 0, 20);
 
             assertThat(testee.getDateValue())
                 .contains(Date.from(DATE_1.toInstant()));
@@ -254,7 +254,7 @@ public class InternalDateExtraFieldTest {
         void parseFromCentralDirectoryDataShouldReturnDateWhenPassDateByteArray() {
             InternalDateExtraField testee = new InternalDateExtraField();
 
-            testee.parseFromCentralDirectoryData(DATE_STRING_1_BYTE_ARRAY, 0, 25);
+            testee.parseFromCentralDirectoryData(DATE_STRING_1_BYTE_ARRAY, 0, 20);
 
             assertThat(testee.getDateValue())
                 .contains(Date.from(DATE_1.toInstant()));

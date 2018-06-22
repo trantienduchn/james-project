@@ -38,7 +38,7 @@ public class InternalDateExtraField extends StringExtraField {
     public InternalDateExtraField(Optional<Date> date) {
         super(date
             .map(Date::toInstant)
-            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.systemDefault()))
+            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.of("UTC")))
             .map(DateTimeFormatter.ISO_OFFSET_DATE_TIME::format));
     }
 
