@@ -46,7 +46,10 @@ public class InternalDateExtraFieldTest {
 
     private static final long DEFAULT_DATE_TIMESTAMP = 1529559708381L;
     private static final byte[] DEFAULT_DATE_BYTE_ARRAY = {(byte) 0xdd, (byte) 0xf2, (byte) 0xdc, 0x20, 0x64, 0x01, 0x00, 0x00 };
-    private static final Date DEFAULT_DATE = new Date(DEFAULT_DATE_TIMESTAMP);
+    private static final Date DEFAULT_DATE_LOCAL = new Date(DEFAULT_DATE_TIMESTAMP);
+    private static final Date DEFAULT_DATE_UTC = Date.from(ZonedDateTime
+            .ofInstant(DEFAULT_DATE_LOCAL.toInstant(), ZoneId.systemDefault())
+            .withZoneSameInstant(ZoneId.of("UTC")).toInstant());
 
     @Test
     public void shouldMatchBeanContract() {
@@ -214,17 +217,17 @@ public class InternalDateExtraFieldTest {
 
             testee.parseFromLocalFileData(ZERO_AS_BYTE_ARRAY, 0, 8);
 
-            assertThat(testee.getUTCDateValue())
+            assertThat(testee.getDateValue())
                 .contains(new Date(0L));
         }
 
         @Test
-        void parseFromLocalFileDataShouldReturnDefaultDateWhenPassDefaultDateByteArray() throws Exception {
-            InternalDateExtraField testee = new InternalDateExtraField(new Date());
+        void parseFromLocalFileDataShouldReturnDefaultDateWhenPassDefaultUTCDateByteArray() throws Exception {
+            InternalDateExtraField testee = new InternalDateExtraField();
             testee.parseFromLocalFileData(DEFAULT_DATE_BYTE_ARRAY, 0, 8);
 
-            assertThat(testee.getUTCDateValue())
-                .contains(DEFAULT_DATE);
+            assertThat(testee.getDateValue())
+                .contains(DEFAULT_DATE_UTC);
         }
 
         @Test
@@ -232,12 +235,8 @@ public class InternalDateExtraFieldTest {
             InternalDateExtraField testee = new InternalDateExtraField();
             testee.parseFromLocalFileData(DEFAULT_DATE_BYTE_ARRAY, 0, 8);
 
-            Date expectedTimeZonedDate = Date.from(ZonedDateTime
-                .ofInstant(DEFAULT_DATE.toInstant(), ZoneId.systemDefault())
-                .toInstant());
-
             assertThat(testee.getLocalDateValue())
-                .contains(expectedTimeZonedDate);
+                .contains(DEFAULT_DATE_LOCAL);
         }
     }
 
@@ -306,17 +305,17 @@ public class InternalDateExtraFieldTest {
 
             testee.parseFromCentralDirectoryData(ZERO_AS_BYTE_ARRAY, 0, 8);
 
-            assertThat(testee.getUTCDateValue())
+            assertThat(testee.getDateValue())
                 .contains(new Date(0L));
         }
 
         @Test
-        void parseFromCentralDirectoryDataShouldReturnDefaultDateWhenPassDefaultDateByteArray() throws Exception {
+        void parseFromCentralDirectoryDataShouldReturnDefaultDateWhenPassDefaultUTCDateByteArray() throws Exception {
             InternalDateExtraField testee = new InternalDateExtraField();
             testee.parseFromCentralDirectoryData(DEFAULT_DATE_BYTE_ARRAY, 0, 8);
 
-            assertThat(testee.getUTCDateValue())
-                .contains(DEFAULT_DATE);
+            assertThat(testee.getDateValue())
+                .contains(DEFAULT_DATE_UTC);
         }
 
         @Test
@@ -324,12 +323,8 @@ public class InternalDateExtraFieldTest {
             InternalDateExtraField testee = new InternalDateExtraField();
             testee.parseFromCentralDirectoryData(DEFAULT_DATE_BYTE_ARRAY, 0, 8);
 
-            Date expectedTimeZonedDate = Date.from(ZonedDateTime
-                .ofInstant(DEFAULT_DATE.toInstant(), ZoneId.systemDefault())
-                .toInstant());
-
             assertThat(testee.getLocalDateValue())
-                .contains(expectedTimeZonedDate);
+                .contains(DEFAULT_DATE_LOCAL);
         }
     }
 }

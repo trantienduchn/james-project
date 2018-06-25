@@ -37,11 +37,11 @@ public class InternalDateExtraField extends LongExtraField {
 
     public InternalDateExtraField(Optional<Date> date) {
         super(date
-            .map(Date::toInstant) // convert to Instant, prepare to synchronize Instant to UTC
-            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.of("UTC")))  // convert to UTC time
-            .map(ZonedDateTime::toInstant) // get UTC Instant
-            .map(Date::from) // get time in millisecond of UTC time
-            .map(Date::getTime));
+            .map(Date::toInstant)
+            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.systemDefault()))
+            .map(locateZonedDateTime -> locateZonedDateTime.withZoneSameInstant(ZoneId.of("UTC")))
+            .map(ZonedDateTime::toInstant)
+            .map(Instant::toEpochMilli));
     }
 
     public InternalDateExtraField(Date date) {
@@ -57,14 +57,15 @@ public class InternalDateExtraField extends LongExtraField {
         return ID;
     }
 
-    public Optional<Date> getUTCDateValue() {
+    public Optional<Date> getDateValue() {
         return getValue().map(Date::new);
     }
 
     public Optional<Date> getLocalDateValue() {
         return getValue()
-            .map(Instant::ofEpochMilli) // now instant is UTC based by default
-            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.systemDefault())) // convert UTC time to local time
+            .map(Instant::ofEpochMilli)
+            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.of("UTC")))
+            .map(utcTime -> utcTime.withZoneSameInstant(ZoneId.systemDefault()))
             .map(ZonedDateTime::toInstant)
             .map(Date::from);
     }
