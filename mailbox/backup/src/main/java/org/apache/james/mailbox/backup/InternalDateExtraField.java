@@ -19,15 +19,15 @@
 
 package org.apache.james.mailbox.backup;
 
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Optional;
 
 import org.apache.commons.compress.archivers.zip.ZipShort;
 
-public class InternalDateExtraField extends StringExtraField {
+public class InternalDateExtraField extends LongExtraField {
 
     public static final ZipShort ID = new ZipShort(0x6F61); // "ao" in little-endian
 
@@ -37,13 +37,19 @@ public class InternalDateExtraField extends StringExtraField {
 
     public InternalDateExtraField(Optional<Date> date) {
         super(date
-            .map(Date::toInstant)
-            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.of("UTC")))
-            .map(DateTimeFormatter.ISO_OFFSET_DATE_TIME::format));
+            .map(Date::toInstant) // convert to Instant, prepare to synchronize Instant to UTC
+            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.of("UTC")))  // convert to UTC time
+            .map(ZonedDateTime::toInstant) // get UTC Instant
+            .map(Date::from) // get time in millisecond of UTC time
+            .map(Date::getTime));
     }
 
     public InternalDateExtraField(Date date) {
         this(Optional.of(date));
+    }
+
+    public InternalDateExtraField(long timestamp) {
+        this(Optional.of(new Date(timestamp)));
     }
 
     @Override
@@ -51,9 +57,14 @@ public class InternalDateExtraField extends StringExtraField {
         return ID;
     }
 
-    public Optional<Date> getDateValue() {
+    public Optional<Date> getUTCDateValue() {
+        return getValue().map(Date::new);
+    }
+
+    public Optional<Date> getLocalDateValue() {
         return getValue()
-            .map(time -> ZonedDateTime.parse(time, DateTimeFormatter.ISO_OFFSET_DATE_TIME))
+            .map(Instant::ofEpochMilli) // now instant is UTC based by default
+            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.systemDefault())) // convert UTC time to local time
             .map(ZonedDateTime::toInstant)
             .map(Date::from);
     }
