@@ -24,8 +24,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.zip.ZipException;
 
@@ -45,11 +43,8 @@ public class InternalDateExtraFieldTest {
     private static final byte[] UNUSED = new byte[] {(byte) 0xDE, (byte) 0xAD};
 
     private static final long DEFAULT_DATE_TIMESTAMP = 1529559708381L;
-    private static final byte[] DEFAULT_DATE_BYTE_ARRAY = {(byte) 0xdd, (byte) 0xf2, (byte) 0xdc, 0x20, 0x64, 0x01, 0x00, 0x00 };
-    private static final Date DEFAULT_DATE_LOCAL = new Date(DEFAULT_DATE_TIMESTAMP);
-    private static final Date DEFAULT_DATE_UTC = Date.from(ZonedDateTime
-            .ofInstant(DEFAULT_DATE_LOCAL.toInstant(), ZoneId.systemDefault())
-            .withZoneSameInstant(ZoneId.of("UTC")).toInstant());
+    private static final byte[] DEFAULT_DATE_LE_BYTE_ARRAY = {(byte) 0xdd, (byte) 0xf2, (byte) 0xdc, 0x20, 0x64, 0x01, 0x00, 0x00 };
+    private static final Date DEFAULT_DATE = new Date(DEFAULT_DATE_TIMESTAMP);
 
     @Test
     public void shouldMatchBeanContract() {
@@ -120,6 +115,13 @@ public class InternalDateExtraFieldTest {
             byte[] actual = new InternalDateExtraField(0xFEDCBA9876543210L).getCentralDirectoryData();
             assertThat(actual).isEqualTo(FEDCBA9876543210_AS_LE_BYTE_ARRAY);
         }
+
+        @Test
+        void getCentralDirectoryDataShouldReturnDefaultDateWhenPassDefaultDateInByteArray() {
+            byte[] actual = new InternalDateExtraField(DEFAULT_DATE).getCentralDirectoryData();
+
+            assertThat(actual).isEqualTo(DEFAULT_DATE_LE_BYTE_ARRAY);
+        }
     }
 
     @Nested
@@ -149,6 +151,13 @@ public class InternalDateExtraFieldTest {
         void getLocalFileDataDataShouldReturnValueInLittleIndianWhenFEDCBA9876543210() {
             byte[] actual = new InternalDateExtraField(0xFEDCBA9876543210L).getLocalFileDataData();
             assertThat(actual).isEqualTo(FEDCBA9876543210_AS_LE_BYTE_ARRAY);
+        }
+
+        @Test
+        void getLocalFileDataDataShouldReturnDefaultDateWhenPassDefaultDateInByteArray() {
+            byte[] actual = new InternalDateExtraField(DEFAULT_DATE).getLocalFileDataData();
+
+            assertThat(actual).isEqualTo(DEFAULT_DATE_LE_BYTE_ARRAY);
         }
     }
 
@@ -224,19 +233,10 @@ public class InternalDateExtraFieldTest {
         @Test
         void parseFromLocalFileDataShouldReturnDefaultDateWhenPassDefaultUTCDateByteArray() throws Exception {
             InternalDateExtraField testee = new InternalDateExtraField();
-            testee.parseFromLocalFileData(DEFAULT_DATE_BYTE_ARRAY, 0, 8);
+            testee.parseFromLocalFileData(DEFAULT_DATE_LE_BYTE_ARRAY, 0, 8);
 
             assertThat(testee.getDateValue())
-                .contains(DEFAULT_DATE_UTC);
-        }
-
-        @Test
-        void parseFromLocalFileDataShouldReturnLocalDateWhenPassDefaultDateByteArray() throws Exception {
-            InternalDateExtraField testee = new InternalDateExtraField();
-            testee.parseFromLocalFileData(DEFAULT_DATE_BYTE_ARRAY, 0, 8);
-
-            assertThat(testee.getLocalDateValue())
-                .contains(DEFAULT_DATE_LOCAL);
+                .contains(DEFAULT_DATE);
         }
     }
 
@@ -312,19 +312,10 @@ public class InternalDateExtraFieldTest {
         @Test
         void parseFromCentralDirectoryDataShouldReturnDefaultDateWhenPassDefaultUTCDateByteArray() throws Exception {
             InternalDateExtraField testee = new InternalDateExtraField();
-            testee.parseFromCentralDirectoryData(DEFAULT_DATE_BYTE_ARRAY, 0, 8);
+            testee.parseFromCentralDirectoryData(DEFAULT_DATE_LE_BYTE_ARRAY, 0, 8);
 
             assertThat(testee.getDateValue())
-                .contains(DEFAULT_DATE_UTC);
-        }
-
-        @Test
-        void parseFromCentralDirectoryDataShouldReturnLocalDateWhenPassDefaultDateByteArray() throws Exception {
-            InternalDateExtraField testee = new InternalDateExtraField();
-            testee.parseFromCentralDirectoryData(DEFAULT_DATE_BYTE_ARRAY, 0, 8);
-
-            assertThat(testee.getLocalDateValue())
-                .contains(DEFAULT_DATE_LOCAL);
+                .contains(DEFAULT_DATE);
         }
     }
 }

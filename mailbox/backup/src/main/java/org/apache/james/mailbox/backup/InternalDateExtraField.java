@@ -19,9 +19,6 @@
 
 package org.apache.james.mailbox.backup;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Optional;
 
@@ -37,11 +34,7 @@ public class InternalDateExtraField extends LongExtraField {
 
     public InternalDateExtraField(Optional<Date> date) {
         super(date
-            .map(Date::toInstant)
-            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.systemDefault()))
-            .map(locateZonedDateTime -> locateZonedDateTime.withZoneSameInstant(ZoneId.of("UTC")))
-            .map(ZonedDateTime::toInstant)
-            .map(Instant::toEpochMilli));
+            .map(Date::getTime));
     }
 
     public InternalDateExtraField(Date date) {
@@ -59,14 +52,5 @@ public class InternalDateExtraField extends LongExtraField {
 
     public Optional<Date> getDateValue() {
         return getValue().map(Date::new);
-    }
-
-    public Optional<Date> getLocalDateValue() {
-        return getValue()
-            .map(Instant::ofEpochMilli)
-            .map(instant -> ZonedDateTime.ofInstant(instant, ZoneId.of("UTC")))
-            .map(utcTime -> utcTime.withZoneSameInstant(ZoneId.systemDefault()))
-            .map(ZonedDateTime::toInstant)
-            .map(Date::from);
     }
 }
