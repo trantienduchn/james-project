@@ -26,6 +26,7 @@ import static org.apache.james.mailets.configuration.MailetConfiguration.LOCAL_D
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
+import java.net.InetAddress;
 import java.util.List;
 
 import org.apache.james.dnsservice.api.DNSService;
@@ -57,6 +58,9 @@ public class DirectResolutionRemoteDeliveryIntegrationTest {
     private static final String FROM = "from@" + DEFAULT_DOMAIN;
     private static final String RECIPIENT = "touser@" + JAMES_ANOTHER_DOMAIN;
 
+    private static final ImmutableList<InetAddress> ADDRESS_EMPTY_LIST = ImmutableList.of();
+    private static final ImmutableList<String> RECORD_EMPTY_LIST = ImmutableList.of();
+
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
     @Rule
@@ -65,6 +69,8 @@ public class DirectResolutionRemoteDeliveryIntegrationTest {
     public SMTPMessageSender messageSender = new SMTPMessageSender(DEFAULT_DOMAIN);
     @Rule
     public FakeSmtp fakeSmtp = new FakeSmtp();
+    @Rule
+    public FakeSmtp fakeSmtpOnPort26 = FakeSmtp.withSmtpPort(26);
 
     private TemporaryJamesServer jamesServer;
     private DataProbe dataProbe;
@@ -72,6 +78,7 @@ public class DirectResolutionRemoteDeliveryIntegrationTest {
     @Before
     public void setup() {
         fakeSmtp.awaitStarted(awaitAtMostOneMinute);
+        fakeSmtpOnPort26.awaitStarted(awaitAtMostOneMinute);
     }
 
     @After
@@ -109,8 +116,8 @@ public class DirectResolutionRemoteDeliveryIntegrationTest {
     @Test
     public void directResolutionShouldFailoverOnSecondMxWhenFirstMxFailed() throws Exception {
         InMemoryDNSService inMemoryDNSService = new InMemoryDNSService()
-            .registerRecord(JAMES_ANOTHER_DOMAIN, ImmutableList.of(), JAMES_ANOTHER_MX_DOMAINS, ImmutableList.of())
-            .registerMxRecord(JAMES_ANOTHER_MX_DOMAIN_1, LOCALHOST_IP) // TODO find another IP address
+            .registerRecord(JAMES_ANOTHER_DOMAIN, ADDRESS_EMPTY_LIST, JAMES_ANOTHER_MX_DOMAINS, RECORD_EMPTY_LIST)
+            .registerMxRecord(JAMES_ANOTHER_MX_DOMAIN_1, fakeSmtpOnPort26.getContainer().getContainerIp())
             .registerMxRecord(JAMES_ANOTHER_MX_DOMAIN_2, fakeSmtp.getContainer().getContainerIp());
 
         jamesServer = TemporaryJamesServer.builder()
@@ -136,7 +143,7 @@ public class DirectResolutionRemoteDeliveryIntegrationTest {
     @Test
     public void directResolutionShouldBounceUponUnreachableMxRecords() throws Exception {
         InMemoryDNSService inMemoryDNSService = new InMemoryDNSService()
-            .registerRecord(JAMES_ANOTHER_DOMAIN, ImmutableList.of(), ImmutableList.of("unknown"), ImmutableList.of());
+            .registerRecord(JAMES_ANOTHER_DOMAIN, ADDRESS_EMPTY_LIST, ImmutableList.of("unknown"), RECORD_EMPTY_LIST);
 
         jamesServer = TemporaryJamesServer.builder()
             .withBase(SMTP_AND_IMAP_MODULE)
@@ -164,7 +171,7 @@ public class DirectResolutionRemoteDeliveryIntegrationTest {
     @Test
     public void directResolutionShouldBounceWhenNoMxRecord() throws Exception {
         InMemoryDNSService inMemoryDNSService = new InMemoryDNSService()
-            .registerRecord(JAMES_ANOTHER_DOMAIN, ImmutableList.of(), ImmutableList.of(), ImmutableList.of());
+            .registerRecord(JAMES_ANOTHER_DOMAIN, ADDRESS_EMPTY_LIST, RECORD_EMPTY_LIST, RECORD_EMPTY_LIST);
 
         jamesServer = TemporaryJamesServer.builder()
             .withBase(SMTP_AND_IMAP_MODULE)
