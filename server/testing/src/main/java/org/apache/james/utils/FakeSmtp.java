@@ -44,13 +44,18 @@ import com.jayway.restassured.specification.ResponseSpecification;
 public class FakeSmtp implements TestRule {
 
     public static FakeSmtp withSmtpPort(Integer smtpPort) {
-        SwarmGenericContainer container = new SwarmGenericContainer(Images.FAKE_SMTP)
-                .withAffinityToContainer()
-                .withCommands("node", "cli", "--listen", "80", "--smtp", smtpPort.toString())
-                .waitingFor(new HostPortWaitStrategy());
+        SwarmGenericContainer container = fakeSmtpContainer()
+            .withCommands("node", "cli", "--listen", "80", "--smtp", smtpPort.toString());
 
         return new FakeSmtp(container, smtpPort);
     }
+
+    private static SwarmGenericContainer fakeSmtpContainer() {
+        return new SwarmGenericContainer(Images.FAKE_SMTP)
+            .withAffinityToContainer()
+            .waitingFor(new HostPortWaitStrategy());
+    }
+
 
     private static final int SMTP_PORT = 25;
     private static final ResponseSpecification RESPONSE_SPECIFICATION = new ResponseSpecBuilder().build();
@@ -58,11 +63,7 @@ public class FakeSmtp implements TestRule {
     private final Integer smtpPort;
 
     public FakeSmtp() {
-        this(new SwarmGenericContainer(Images.FAKE_SMTP)
-                .withExposedPorts(SMTP_PORT)
-                .withAffinityToContainer()
-                .waitingFor(new HostPortWaitStrategy()),
-            SMTP_PORT);
+        this(fakeSmtpContainer().withExposedPorts(SMTP_PORT), SMTP_PORT);
     }
 
     public FakeSmtp(SwarmGenericContainer container, Integer smtpPort) {
