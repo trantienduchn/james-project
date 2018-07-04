@@ -19,6 +19,13 @@
 
 package org.apache.james.utils.mountebank;
 
+import static com.jayway.restassured.RestAssured.given;
+import static com.jayway.restassured.config.EncoderConfig.encoderConfig;
+import static com.jayway.restassured.config.RestAssuredConfig.newConfig;
+
+import java.nio.charset.StandardCharsets;
+
+import org.apache.http.HttpStatus;
 import org.apache.james.util.docker.Images;
 import org.apache.james.util.docker.SwarmGenericContainer;
 import org.junit.rules.TestRule;
@@ -26,16 +33,24 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.jayway.awaitility.core.ConditionFactory;
+import com.jayway.restassured.builder.RequestSpecBuilder;
+import com.jayway.restassured.builder.ResponseSpecBuilder;
+import com.jayway.restassured.http.ContentType;
+import com.jayway.restassured.specification.RequestSpecification;
+import com.jayway.restassured.specification.ResponseSpecification;
 
 public class MounteBankDocker implements TestRule {
 
-    private static int MOUTEBANK_API = 2525;
+    public static final int IMPOSER_SMTP_PORT = 25;
+
+    private static final int MOUTEBANK_API_PORT = 2525;
+    private static final ResponseSpecification RESPONSE_SPECIFICATION = new ResponseSpecBuilder().build();
     private final SwarmGenericContainer container;
 
     public MounteBankDocker() {
         container = new SwarmGenericContainer(Images.MOUNTE_BANK)
-            .portBinding(MOUTEBANK_API, MOUTEBANK_API)
             .withAffinityToContainer()
             .waitingFor(new HostPortWaitStrategy());
     }
@@ -46,10 +61,30 @@ public class MounteBankDocker implements TestRule {
     }
 
     public void awaitStarted(ConditionFactory calmyAwait) {
-        calmyAwait.until(() -> container.tryConnect(MOUTEBANK_API));
+        calmyAwait.until(() -> container.tryConnect(MOUTEBANK_API_PORT));
     }
 
     public SwarmGenericContainer getContainer() {
         return container;
+    }
+
+    public void createImposer(Contract contract) throws JsonProcessingException {
+        String contractJson = ContractSerializer.write(contract);
+
+        given(requestSpecification(contractJson), RESPONSE_SPECIFICATION)
+            .post("/imposters")
+        .then()
+            .statusCode(HttpStatus.SC_CREATED);
+    }
+
+    private RequestSpecification requestSpecification(String requestBody) {
+        return new RequestSpecBuilder()
+            .setContentType(ContentType.JSON)
+            .setAccept(ContentType.JSON)
+            .setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(StandardCharsets.UTF_8)))
+            .setPort(MOUTEBANK_API_PORT)
+            .setBaseUri("http://" + container.getContainerIp())
+            .setBody(requestBody)
+            .build();
     }
 }

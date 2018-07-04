@@ -23,6 +23,7 @@ import static org.apache.james.MemoryJamesServerMain.SMTP_AND_IMAP_MODULE;
 import static org.apache.james.MemoryJamesServerMain.SMTP_ONLY_MODULE;
 import static org.apache.james.mailets.configuration.Constants.*;
 import static org.apache.james.mailets.configuration.MailetConfiguration.LOCAL_DELIVERY;
+import static org.apache.james.utils.mountebank.MounteBankDocker.IMPOSER_SMTP_PORT;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
@@ -41,6 +42,12 @@ import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.FakeSmtp;
 import org.apache.james.utils.IMAPMessageReader;
 import org.apache.james.utils.SMTPMessageSender;
+import org.apache.james.utils.mountebank.Contract;
+import org.apache.james.utils.mountebank.MounteBankDocker;
+import org.apache.james.utils.mountebank.Stub;
+import org.apache.james.utils.mountebank.predicate.StringPredicate;
+import org.apache.james.utils.mountebank.protocol.Protocol;
+import org.apache.james.utils.mountebank.response.TCPResponse;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -71,6 +78,8 @@ public class DirectResolutionRemoteDeliveryIntegrationTest {
     public FakeSmtp fakeSmtp = new FakeSmtp();
     @Rule
     public FakeSmtp fakeSmtpOnPort26 = FakeSmtp.withSmtpPort(26);
+    @Rule
+    public MounteBankDocker mountebankDocker = new MounteBankDocker();
 
     private TemporaryJamesServer jamesServer;
     private DataProbe dataProbe;
@@ -79,6 +88,7 @@ public class DirectResolutionRemoteDeliveryIntegrationTest {
     public void setup() {
         fakeSmtp.awaitStarted(awaitAtMostOneMinute);
         fakeSmtpOnPort26.awaitStarted(awaitAtMostOneMinute);
+        mountebankDocker.awaitStarted(awaitAtMostOneMinute);
     }
 
     @After
@@ -188,6 +198,51 @@ public class DirectResolutionRemoteDeliveryIntegrationTest {
         dataProbe.addUser(FROM, PASSWORD);
 
         messageSender.connect(LOCALHOST_IP, SMTP_PORT)
+            .sendMessage(FROM, RECIPIENT);
+
+        imapMessageReader.connect(LOCALHOST_IP, IMAP_PORT)
+            .login(FROM, PASSWORD)
+            .select(IMAPMessageReader.INBOX)
+            .awaitMessage(awaitAtMostOneMinute);
+    }
+
+    @Test
+    public void directResolutionShouldBounceWhenGot5XXError() throws Exception {
+        Contract contract = Contract.builder()
+            .port(IMPOSER_SMTP_PORT)
+            .protocol(Protocol.tcp)
+            .addStub(Stub.builder()
+                .predicateToResponse(
+                    StringPredicate.builder().startsWith("HELO"),
+                    TCPResponse.builder().data("500 Syntax error, command unrecognised")))
+            .addStub(Stub.builder()
+                .predicateToResponse(
+                    StringPredicate.builder().startsWith("EHLO"),
+                    TCPResponse.builder().data("500 Syntax error, command unrecognised")))
+            .buidContract();
+
+        mountebankDocker.createImposer(contract);
+
+        InMemoryDNSService inMemoryDNSService = new InMemoryDNSService()
+                .registerRecord(JAMES_ANOTHER_DOMAIN, ADDRESS_EMPTY_LIST, ImmutableList.of(JAMES_ANOTHER_MX_DOMAIN_1), RECORD_EMPTY_LIST)
+                .registerMxRecord(JAMES_ANOTHER_MX_DOMAIN_1, mountebankDocker.getContainer().getContainerIp());
+
+        jamesServer = TemporaryJamesServer.builder()
+            .withBase(SMTP_AND_IMAP_MODULE)
+            .withOverrides(binder -> binder.bind(DNSService.class).toInstance(inMemoryDNSService))
+            .withMailetContainer(MailetContainer.builder()
+                .putProcessor(CommonProcessors.simpleRoot())
+                .putProcessor(CommonProcessors.error())
+                .putProcessor(transport())
+                .putProcessor(CommonProcessors.bounces()))
+            .build(temporaryFolder);
+
+        dataProbe = jamesServer.getProbe(DataProbeImpl.class);
+        dataProbe.addDomain(DEFAULT_DOMAIN);
+        dataProbe.addUser(FROM, PASSWORD);
+
+        messageSender
+            .connect(LOCALHOST_IP, SMTP_PORT)
             .sendMessage(FROM, RECIPIENT);
 
         imapMessageReader.connect(LOCALHOST_IP, IMAP_PORT)
