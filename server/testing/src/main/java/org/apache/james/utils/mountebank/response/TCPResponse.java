@@ -17,14 +17,43 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.util.docker;
+package org.apache.james.utils.mountebank.response;
 
-public interface Images {
-    String MOUNTE_BANK = "expert360/mountebank:latest";
-    String FAKE_SMTP = "weave/rest-smtp-sink:latest";
-    String RABBITMQ = "rabbitmq:3.7.5";
-    String ELASTICSEARCH = "elasticsearch:2.2.2";
-    String NGINX = "nginx:1.7.1";
-    String TIKA = "logicalspark/docker-tikaserver:1.15rc2";
-    String SPAMASSASSIN = "dinkel/spamassassin:3.4.0";
+import org.apache.james.utils.mountebank.NodeBuilder;
+import org.apache.james.utils.mountebank.Data;
+
+import com.google.common.base.Preconditions;
+
+public class TCPResponse implements Response {
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder implements NodeBuilder<Response> {
+
+        private String data;
+
+        public Builder data(String data) {
+            this.data = data;
+            return this;
+        }
+
+        @Override
+        public TCPResponse build() {
+            return new TCPResponse(Data.from(data));
+        }
+    }
+
+    private final Data is;
+
+    private TCPResponse(Data is) {
+        Preconditions.checkNotNull(is);
+
+        this.is = is;
+    }
+
+    public Data getIs() {
+        return is;
+    }
 }

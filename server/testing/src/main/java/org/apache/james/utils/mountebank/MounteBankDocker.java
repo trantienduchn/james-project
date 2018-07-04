@@ -17,14 +17,39 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.util.docker;
+package org.apache.james.utils.mountebank;
 
-public interface Images {
-    String MOUNTE_BANK = "expert360/mountebank:latest";
-    String FAKE_SMTP = "weave/rest-smtp-sink:latest";
-    String RABBITMQ = "rabbitmq:3.7.5";
-    String ELASTICSEARCH = "elasticsearch:2.2.2";
-    String NGINX = "nginx:1.7.1";
-    String TIKA = "logicalspark/docker-tikaserver:1.15rc2";
-    String SPAMASSASSIN = "dinkel/spamassassin:3.4.0";
+import org.apache.james.util.docker.Images;
+import org.apache.james.util.docker.SwarmGenericContainer;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
+import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
+
+import com.jayway.awaitility.core.ConditionFactory;
+
+public class MounteBankDocker implements TestRule {
+
+    private static int MOUTEBANK_API = 2525;
+    private final SwarmGenericContainer container;
+
+    public MounteBankDocker() {
+        container = new SwarmGenericContainer(Images.MOUNTE_BANK)
+            .portBinding(MOUTEBANK_API, MOUTEBANK_API)
+            .withAffinityToContainer()
+            .waitingFor(new HostPortWaitStrategy());
+    }
+
+    @Override
+    public Statement apply(Statement statement, Description description) {
+        return container.apply(statement, description);
+    }
+
+    public void awaitStarted(ConditionFactory calmyAwait) {
+        calmyAwait.until(() -> container.tryConnect(MOUTEBANK_API));
+    }
+
+    public SwarmGenericContainer getContainer() {
+        return container;
+    }
 }

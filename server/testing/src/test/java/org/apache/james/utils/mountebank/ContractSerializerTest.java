@@ -17,14 +17,28 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.util.docker;
+package org.apache.james.utils.mountebank;
 
-public interface Images {
-    String MOUNTE_BANK = "expert360/mountebank:latest";
-    String FAKE_SMTP = "weave/rest-smtp-sink:latest";
-    String RABBITMQ = "rabbitmq:3.7.5";
-    String ELASTICSEARCH = "elasticsearch:2.2.2";
-    String NGINX = "nginx:1.7.1";
-    String TIKA = "logicalspark/docker-tikaserver:1.15rc2";
-    String SPAMASSASSIN = "dinkel/spamassassin:3.4.0";
+import static org.apache.james.utils.mountebank.protocol.Protocol.tcp;
+
+import org.apache.james.utils.mountebank.predicate.StringPredicate;
+import org.apache.james.utils.mountebank.response.TCPResponse;
+import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+
+class ContractSerializerTest {
+
+    @Test
+    void ahihi() throws JsonProcessingException {
+        Contract contract = Contract.builder()
+            .port(9000)
+            .protocol(tcp)
+            .addStub(Stub.builder()
+                .predicateToResponse(StringPredicate.builder().startsWith("HELO"), TCPResponse.builder().data("250 OK")))
+            .buidContract();
+
+        String result = ContractSerializer.write(contract);
+        System.out.println(result);
+    }
 }

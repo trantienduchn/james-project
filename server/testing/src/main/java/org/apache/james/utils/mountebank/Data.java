@@ -17,14 +17,25 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.util.docker;
+package org.apache.james.utils.mountebank;
 
-public interface Images {
-    String MOUNTE_BANK = "expert360/mountebank:latest";
-    String FAKE_SMTP = "weave/rest-smtp-sink:latest";
-    String RABBITMQ = "rabbitmq:3.7.5";
-    String ELASTICSEARCH = "elasticsearch:2.2.2";
-    String NGINX = "nginx:1.7.1";
-    String TIKA = "logicalspark/docker-tikaserver:1.15rc2";
-    String SPAMASSASSIN = "dinkel/spamassassin:3.4.0";
+import com.google.common.base.Preconditions;
+
+public class Data {
+
+    public static Data from(String data) {
+        return new Data(data);
+    }
+
+    private final String data;
+
+    public Data(String data) {
+        Preconditions.checkNotNull(data);
+
+        this.data = data;
+    }
+
+    public String getData() {
+        return data;
+    }
 }
