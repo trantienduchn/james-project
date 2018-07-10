@@ -111,9 +111,9 @@ public class MemoryMailQueueFactory implements MailQueueFactory<ManageableMailQu
         private ZonedDateTime calculateNextDelivery(long delay, TimeUnit unit) {
             if (delay > 0) {
                 try {
-                    ZonedDateTime.now().plus(delay, Temporals.chronoUnit(unit));
+                    return ZonedDateTime.now().plus(delay, Temporals.chronoUnit(unit));
                 } catch (ArithmeticException e) {
-                    return Instant.ofEpochMilli(Long.MAX_VALUE).atZone(ZoneId.systemDefault());
+                    return Instant.ofEpochMilli(Long.MAX_VALUE).atZone(ZoneId.of("UTC"));
                 }
             }
 
