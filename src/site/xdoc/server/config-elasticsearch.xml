@@ -82,11 +82,11 @@
           <dt><strong>elasticsearch.indexAttachments</strong></dt>
           <dd>Indicates if you wish to index attachments or not (default: true).</dd>
           <dt><strong>elasticsearch.index.quota.ratio.name</strong></dt>
-          <dd>Specify the ElasticSearch index name used for quotas</dd>
+          <dd>Specify the ElasticSearch alias name used for quotas</dd>
           <dt><strong>elasticsearch.alias.read.quota.ratio.name</strong></dt>
-          <dd>Specify the ElasticSearch index name used for reading quotas</dd>
+          <dd>Specify the ElasticSearch alias name used for reading quotas</dd>
           <dt><strong>elasticsearch.alias.write.quota.ratio.name</strong></dt>
-          <dd>Specify the ElasticSearch index name used for writing quotas</dd>
+          <dd>Specify the ElasticSearch alias name used for writing quotas</dd>
       </dl>
 
       For configuring the metric reporting on ElasticSearch :

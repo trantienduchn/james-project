@@ -30,6 +30,31 @@
     <p>Consult <a href="https://github.com/apache/james-project/server/container/guice/memory-guice/sample-configuration/webadmin.properties">webadmin.properties</a> in GIT to get some examples and hints.</p>
 
     <p>Use this configuration to define the WebAdmin's responding host and port.</p>
+
+    <dl>
+        <dt><strong>enabled</strong></dt>
+        <dd>Define if WebAdmin is launched (default: false)</dd>
+        <dt><strong>port</strong></dt>
+        <dd>Define WebAdmin's port (default: 8080)</dd>
+        <dt><strong>host</strong></dt>
+        <dd>Define WebAdmin's host (default: localhost)</dd>
+        <dt><strong>cors.enable</strong></dt>
+        <dd>Allow the Cross-origin resource sharing (default: false)</dd>
+        <dt><strong>cors.origin</strong></dt>
+        <dd>Specify ths CORS origin(default: null)</dd>
+        <dt><strong>jwt.enable</strong></dt>
+        <dd>Allow JSON Web Token(default: false)</dd>
+        <dt><strong>https.enable</strong></dt>
+        <dd>Use https (default: false)</dd>
+        <dt><strong>https.keystore</strong></dt>
+        <dd>Specify a keystore file for https (default: null)</dd>
+        <dt><strong>https.password</strong></dt>
+        <dd>Specify the keystore password (default: null)</dd>
+        <dt><strong>https.trust.keystore</strong></dt>
+        <dd>Specify a truststore file for https (default: null)</dd>
+        <dt><strong>https.trust.password</strong></dt>
+        <dd>Specify the truststore password (default: null)</dd>
+    </dl>
   </section>
 
 </body>

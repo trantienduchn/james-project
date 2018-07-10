@@ -47,7 +47,7 @@
       port 143 is the well-known/IANA registered port for IMAP 
      port 993 is the well-known/IANA registered port for IMAPS  ie over SSL/TLS</dd>
         <dt><strong>connectionBacklog</strong></dt>
-        <dd>Number of connection backlog of the server</dd>
+        <dd>Number of connection backlog of the server (maximum number of queued connection requests)</dd>
         <dt><strong>compress</strong></dt>
         <dd>true or false - Use or don't use COMPRESS extension.</dd>
         <dt><strong>maxLineLength</strong></dt>
