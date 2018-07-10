@@ -128,6 +128,11 @@
         <td><a href="config-jmap.html">JMAP Configuration (Guice only)</a></td>
         <td></td>
       </tr>
+      <tr>
+        <td><a href="https://github.com/apache/james-project/server/container/guice/memory-guice/sample-configuration/webadmin.properties">webadmin.properties</a></td>
+        <td><a href="config-webadmin.html">WebAdmin Configuration</a></td>
+        <td></td>
+      </tr>
 
     </table>
     
