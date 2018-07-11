@@ -129,7 +129,7 @@
         <td></td>
       </tr>
       <tr>
-        <td><a href="https://github.com/apache/james-project/server/container/guice/memory-guice/sample-configuration/webadmin.properties">webadmin.properties</a></td>
+        <td><a href="https://github.com/apache/james-project/blob/master/dockerfiles/run/guice/cassandra-ldap/destination/conf/webadmin.properties">webadmin.properties</a></td>
         <td><a href="config-webadmin.html">WebAdmin Configuration</a></td>
         <td></td>
       </tr>

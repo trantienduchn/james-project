@@ -41,9 +41,9 @@
         <dt><strong>cors.enable</strong></dt>
         <dd>Allow the Cross-origin resource sharing (default: false)</dd>
         <dt><strong>cors.origin</strong></dt>
-        <dd>Specify ths CORS origin(default: null)</dd>
+        <dd>Specify ths CORS origin (default: null)</dd>
         <dt><strong>jwt.enable</strong></dt>
-        <dd>Allow JSON Web Token(default: false)</dd>
+        <dd>Allow JSON Web Token (default: false)</dd>
         <dt><strong>https.enable</strong></dt>
         <dd>Use https (default: false)</dd>
         <dt><strong>https.keystore</strong></dt>
