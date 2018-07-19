@@ -1662,9 +1662,9 @@
             <dependency>
             </dependency>
             <dependency>
-                <groupId>com.jayway.awaitility</groupId>
+                <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
-                <version>1.6.5</version>
+                <version>3.1.1</version>
             </dependency>
             <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
