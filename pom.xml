@@ -650,7 +650,6 @@
         <maven-reporting-impl.version>2.2</maven-reporting-impl.version>
         <maven-reporting-api.version>3.0</maven-reporting-api.version>
         <qdox.version>1.12.1</qdox.version>
-        <ical4j.version>3.0.0</ical4j.version>
         <guavate.version>1.0.0</guavate.version>
         <javax.activation.groupId>javax.activation</javax.activation.groupId>
         <javax.activation.artifactId>activation</javax.activation.artifactId>
@@ -2314,11 +2313,6 @@
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
                 <version>${junit.vintage.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.mnode.ical4j</groupId>
-                <artifactId>ical4j</artifactId>
-                <version>${ical4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>

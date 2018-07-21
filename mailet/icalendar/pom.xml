@@ -29,6 +29,10 @@
 
     <name>Apache James :: ICalendar Mailets</name>
 
+    <properties>
+        <javax.cache.version>1.1.0</javax.cache.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -109,6 +113,17 @@
         <dependency>
             <groupId>org.mnode.ical4j</groupId>
             <artifactId>ical4j</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.cache</groupId>
+            <artifactId>cache-api</artifactId>
+            <version>${javax.cache.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jsr107.ri</groupId>
+            <artifactId>cache-ri-impl</artifactId>
+            <version>${javax.cache.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
