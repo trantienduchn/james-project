@@ -29,10 +29,6 @@
 
     <name>Apache James :: ICalendar Mailets</name>
 
-    <properties>
-        <javax.cache.version>1.1.0</javax.cache.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -118,12 +114,14 @@
         <dependency>
             <groupId>javax.cache</groupId>
             <artifactId>cache-api</artifactId>
-            <version>${javax.cache.version}</version>
+            <version>1.1.0</version>
+            <!-- JSR-107 JCache is used by ICAl4J version 3.0.0 -->
         </dependency>
         <dependency>
-            <groupId>org.jsr107.ri</groupId>
-            <artifactId>cache-ri-impl</artifactId>
-            <version>${javax.cache.version}</version>
+            <groupId>org.ehcache</groupId>
+            <artifactId>ehcache</artifactId>
+            <version>3.5.2</version>
+            <!-- A JSR-107 JCache implementation must be bound when using ICAL4J version 3.0.0 -->
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
