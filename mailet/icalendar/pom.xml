@@ -118,12 +118,6 @@
             <!-- JSR-107 JCache is used by ICAl4J version 3.0.0 -->
         </dependency>
         <dependency>
-            <groupId>org.ehcache</groupId>
-            <artifactId>ehcache</artifactId>
-            <version>3.5.2</version>
-            <!-- A JSR-107 JCache implementation must be bound when using ICAL4J version 3.0.0 -->
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
