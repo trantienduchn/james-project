@@ -42,6 +42,9 @@ public class DockerRabbitMQ {
     private final GenericContainer<?> container;
     private final Optional<String> nodeName;
 
+    private String host;
+    private Integer port;
+
     public static DockerRabbitMQ withCookieAndNodeName(String hostName, String erlangCookie, String nodeName, Network network) {
         return new DockerRabbitMQ(Optional.ofNullable(hostName), Optional.ofNullable(erlangCookie), Optional.ofNullable(nodeName),
             Optional.of(network));
@@ -66,11 +69,19 @@ public class DockerRabbitMQ {
     }
 
     public String getHostIp() {
-        return container.getContainerIpAddress();
+        if (host == null) {
+            host = container.getContainerIpAddress();
+        }
+
+        return host;
     }
 
     public Integer getPort() {
-        return container.getMappedPort(DEFAULT_RABBITMQ_PORT);
+        if (port == null) {
+            port = container.getMappedPort(DEFAULT_RABBITMQ_PORT);
+        }
+
+        return port;
     }
 
     public String getUsername() {
