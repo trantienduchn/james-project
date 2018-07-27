@@ -41,6 +41,8 @@ import com.google.inject.Module;
 
 public abstract class AbstractJamesServerTest {
 
+    protected static final String JAMES_SERVER_HOST = "127.0.0.1";
+
     public static final Module DOMAIN_LIST_CONFIGURATION_MODULE = binder -> binder.bind(DomainListConfiguration.class)
         .toInstance(DomainListConfiguration.builder()
             .autoDetect(true)
@@ -85,31 +87,31 @@ public abstract class AbstractJamesServerTest {
 
     @Test
     public void connectIMAPServerShouldSendShabangOnConnect() throws Exception {
-        socketChannel.connect(new InetSocketAddress("127.0.0.1", server.getProbe(ImapGuiceProbe.class).getImapPort()));
+        socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, server.getProbe(ImapGuiceProbe.class).getImapPort()));
         assertThat(getServerConnectionResponse(socketChannel)).startsWith("* OK JAMES IMAP4rev1 Server");
     }
 
     @Test
     public void connectOnSecondaryIMAPServerIMAPServerShouldSendShabangOnConnect() throws Exception {
-        socketChannel.connect(new InetSocketAddress("127.0.0.1", server.getProbe(ImapGuiceProbe.class).getImapsPort()));
+        socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, server.getProbe(ImapGuiceProbe.class).getImapsPort()));
         assertThat(getServerConnectionResponse(socketChannel)).startsWith("* OK JAMES IMAP4rev1 Server");
     }
 
     @Test
     public void connectPOP3ServerShouldSendShabangOnConnect() throws Exception {
-        socketChannel.connect(new InetSocketAddress("127.0.0.1", server.getProbe(Pop3GuiceProbe.class).getPop3Port()));
+        socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, server.getProbe(Pop3GuiceProbe.class).getPop3Port()));
         assertThat(getServerConnectionResponse(socketChannel)).contains("POP3 server (JAMES POP3 Server ) ready");
     }
 
     @Test
     public void connectSMTPServerShouldSendShabangOnConnect() throws Exception {
-        socketChannel.connect(new InetSocketAddress("127.0.0.1", server.getProbe(SmtpGuiceProbe.class).getSmtpPort()));
+        socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, server.getProbe(SmtpGuiceProbe.class).getSmtpPort()));
         assertThat(getServerConnectionResponse(socketChannel)).startsWith("220 JAMES Linagora's SMTP awesome Server");
     }
 
     @Test
     public void connectLMTPServerShouldSendShabangOnConnect() throws Exception {
-        socketChannel.connect(new InetSocketAddress("127.0.0.1", server.getProbe(LmtpGuiceProbe.class).getLmtpPort()));
+        socketChannel.connect(new InetSocketAddress(JAMES_SERVER_HOST, server.getProbe(LmtpGuiceProbe.class).getLmtpPort()));
         assertThat(getServerConnectionResponse(socketChannel)).contains("LMTP Server (JAMES Protocols Server) ready");
     }
 

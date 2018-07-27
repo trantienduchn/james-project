@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance   *
  * with the License.  You may obtain a copy of the License at   *
  *                                                              *
- *   http://www.apache.org/licenses/LICENSE-2.0                 *
+ * http://www.apache.org/licenses/LICENSE-2.0                   *
  *                                                              *
  * Unless required by applicable law or agreed to in writing,   *
  * software distributed under the License is distributed on an  *
@@ -21,19 +21,33 @@ package org.apache.james;
 
 import java.io.IOException;
 
+import org.apache.james.user.ldap.LdapGenericContainer;
 import org.junit.Rule;
+import org.junit.rules.RuleChain;
 
-public class MemoryJamesServerTest extends AbstractJamesServerTest {
+public class CassandraLdapJmapJamesServerTest extends AbstractJmapJamesServerTest {
+    private static final String DOMAIN = "james.org";
+    private static final String ADMIN_PASSWORD = "mysecretpassword";
+
+    private LdapGenericContainer ldapContainer = LdapGenericContainer.builder()
+        .domain(DOMAIN)
+        .password(ADMIN_PASSWORD)
+        .build();
+    private CassandraLdapJmapTestRule cassandraLdapJmap = CassandraLdapJmapTestRule.defaultTestRule();
 
     @Rule
-    public MemoryJmapTestRule memoryJmap = new MemoryJmapTestRule();
+    public RuleChain ruleChain = RuleChain.outerRule(ldapContainer).around(cassandraLdapJmap);
 
     @Override
     protected GuiceJamesServer createJamesServer() throws IOException {
-        return memoryJmap.jmapServer(DOMAIN_LIST_CONFIGURATION_MODULE);
+        ldapContainer.start();
+        return cassandraLdapJmap.jmapServer(ldapContainer.getLdapHost());
     }
 
     @Override
     protected void clean() {
+        if (ldapContainer != null) {
+            ldapContainer.stop();
+        }
     }
 }

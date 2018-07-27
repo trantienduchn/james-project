@@ -21,19 +21,24 @@ package org.apache.james;
 
 import java.io.IOException;
 
+import org.junit.ClassRule;
 import org.junit.Rule;
 
-public class MemoryJamesServerTest extends AbstractJamesServerTest {
+public class CassandraJmapJamesServerTest extends AbstractJmapJamesServerTest {
 
+    @ClassRule
+    public static DockerCassandraRule cassandra = new DockerCassandraRule();
+    
     @Rule
-    public MemoryJmapTestRule memoryJmap = new MemoryJmapTestRule();
+    public CassandraJmapTestRule cassandraJmap = CassandraJmapTestRule.defaultTestRule();
 
     @Override
     protected GuiceJamesServer createJamesServer() throws IOException {
-        return memoryJmap.jmapServer(DOMAIN_LIST_CONFIGURATION_MODULE);
+        return cassandraJmap.jmapServer(cassandra.getModule());
     }
 
     @Override
     protected void clean() {
     }
+
 }
