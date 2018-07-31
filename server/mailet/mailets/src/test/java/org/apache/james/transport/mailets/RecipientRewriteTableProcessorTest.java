@@ -285,31 +285,6 @@ public class RecipientRewriteTableProcessorTest {
         assertThat(mail.getRecipients()).containsOnly(MailAddressFixture.ANY_AT_LOCAL);
     }
     
-    @SuppressWarnings("unchecked")
-    @Test
-    public void processShouldSendMailToAllErrorRecipientsWhenMessagingException() throws Exception {
-        when(virtualTableStore.getMappings(eq("other"), eq(Domain.of(MailAddressFixture.JAMES_LOCAL)))).thenThrow(MessagingException.class);
-
-        mail = FakeMail.builder()
-            .sender(MailAddressFixture.ANY_AT_JAMES)
-            .mimeMessage(message)
-            .recipients(MailAddressFixture.OTHER_AT_LOCAL, MailAddressFixture.ANY_AT_LOCAL)
-            .build();
-
-        processor.processMail(mail);
-
-        FakeMailContext.SentMail expected = FakeMailContext.sentMailBuilder()
-                .sender(MailAddressFixture.ANY_AT_JAMES)
-                .recipient(MailAddressFixture.OTHER_AT_LOCAL)
-                .message(message)
-                .fromMailet()
-                .state(Mail.ERROR)
-                .build();
-
-        assertThat(mailetContext.getSentMails()).containsOnly(expected);
-        assertThat(mail.getRecipients()).containsOnly(MailAddressFixture.ANY_AT_LOCAL);
-    }
-    
     @Test
     public void processShouldNotSendMailWhenNoErrorRecipients() throws Exception {
         when(virtualTableStore.getMappings(any(String.class), any(Domain.class))).thenReturn(null);
