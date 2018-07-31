@@ -609,18 +609,6 @@ class GroupsRoutesTest {
         }
 
         @Test
-        void putShouldReturnErrorWhenErrorMappingExceptionIsThrown() throws Exception {
-            doThrow(RecipientRewriteTable.ErrorMappingException.class)
-                .when(memoryRecipientRewriteTable)
-                .addGroupMapping(any(), anyString());
-
-            when()
-                .put(GROUP1 + SEPARATOR + GROUP2)
-            .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
-        }
-
-        @Test
         void putShouldReturnErrorWhenRuntimeExceptionIsThrown() throws Exception {
             doThrow(RuntimeException.class)
                 .when(memoryRecipientRewriteTable)
@@ -635,18 +623,6 @@ class GroupsRoutesTest {
         @Test
         void getAllShouldReturnErrorWhenRecipientRewriteTableExceptionIsThrown() throws Exception {
             doThrow(RecipientRewriteTableException.class)
-                .when(memoryRecipientRewriteTable)
-                .getAllMappings();
-
-            when()
-                .get()
-            .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
-        }
-
-        @Test
-        void getAllShouldReturnErrorWhenErrorMappingExceptionIsThrown() throws Exception {
-            doThrow(RecipientRewriteTable.ErrorMappingException.class)
                 .when(memoryRecipientRewriteTable)
                 .getAllMappings();
 
@@ -681,18 +657,6 @@ class GroupsRoutesTest {
         }
 
         @Test
-        void deleteShouldReturnErrorWhenErrorMappingExceptionIsThrown() throws Exception {
-            doThrow(RecipientRewriteTable.ErrorMappingException.class)
-                .when(memoryRecipientRewriteTable)
-                .removeGroupMapping(any(), anyString());
-
-            when()
-                .delete(GROUP1 + SEPARATOR + GROUP2)
-            .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
-        }
-
-        @Test
         void deleteShouldReturnErrorWhenRuntimeExceptionIsThrown() throws Exception {
             doThrow(RuntimeException.class)
                 .when(memoryRecipientRewriteTable)
@@ -707,18 +671,6 @@ class GroupsRoutesTest {
         @Test
         void getShouldReturnErrorWhenRecipientRewriteTableExceptionIsThrown() throws Exception {
             doThrow(RecipientRewriteTableException.class)
-                .when(memoryRecipientRewriteTable)
-                .getUserDomainMappings(any());
-
-            when()
-                .get(GROUP1)
-            .then()
-                .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500);
-        }
-
-        @Test
-        void getShouldReturnErrorWhenErrorMappingExceptionIsThrown() throws Exception {
-            doThrow(RecipientRewriteTable.ErrorMappingException.class)
                 .when(memoryRecipientRewriteTable)
                 .getUserDomainMappings(any());
 
