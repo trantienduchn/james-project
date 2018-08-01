@@ -19,13 +19,15 @@
 
 package org.apache.james.imap.processor;
 
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.atLeastOnce;
+import static org.apache.james.imap.api.message.response.StatusResponse.Type.OK;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.only;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.james.core.quota.QuotaCount;
@@ -33,6 +35,7 @@ import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.imap.api.ImapCommand;
 import org.apache.james.imap.api.ImapSessionState;
 import org.apache.james.imap.api.ImapSessionUtils;
+import org.apache.james.imap.api.message.response.ImapResponseMessage;
 import org.apache.james.imap.api.message.response.StatusResponse;
 import org.apache.james.imap.api.process.ImapProcessor;
 import org.apache.james.imap.api.process.ImapSession;
@@ -53,6 +56,7 @@ import org.apache.james.mailbox.quota.QuotaRootResolver;
 import org.apache.james.metrics.api.NoopMetricFactory;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 public class GetQuotaRootProcessorTest {
 
@@ -103,13 +107,15 @@ public class GetQuotaRootProcessorTest {
 
         verify(mockedMailboxManager, times(1)).startProcessingRequest(mailboxSession);
         verify(mockedMailboxManager, times(1)).endProcessingRequest(mailboxSession);
-        verify(mockedResponder, times(1)).respond(quotaRootResponse);
-        verify(mockedResponder, times(1)).respond(storageQuotaResponse);
-        verify(mockedResponder, times(1)).respond(messageQuotaResponse);
 
-        verify(mockedResponder, atLeastOnce()).respond(argThat(response ->
-            (response instanceof StatusResponse)
-            && ((StatusResponse) response).getServerResponseType().equals(StatusResponse.Type.OK)));
+        ArgumentCaptor<ImapResponseMessage> responseCaptor = ArgumentCaptor.forClass(ImapResponseMessage.class);
+        verify(mockedResponder, times(4)).respond(responseCaptor.capture());
+
+        List<ImapResponseMessage> captorValues = responseCaptor.getAllValues();
+        assertThat(captorValues).contains(quotaRootResponse, storageQuotaResponse, messageQuotaResponse);
+        assertThat(captorValues).anySatisfy(response -> assertThat(response).isInstanceOfSatisfying(
+            StatusResponse.class,
+            st -> assertThat(st.getServerResponseType()).isEqualTo(OK)));
     }
 
     @Test
@@ -125,9 +131,12 @@ public class GetQuotaRootProcessorTest {
         verify(mockedMailboxManager).startProcessingRequest(mailboxSession);
         verify(mockedMailboxManager).endProcessingRequest(mailboxSession);
 
-        verify(mockedResponder, atLeastOnce()).respond(argThat(response ->
-            (response instanceof StatusResponse)
-            && ((StatusResponse) response).getServerResponseType().equals(StatusResponse.Type.BAD)));
+        ArgumentCaptor<StatusResponse> responseCaptor = ArgumentCaptor.forClass(StatusResponse.class);
+        verify(mockedResponder, only()).respond(responseCaptor.capture());
+
+        assertThat(responseCaptor.getValue())
+            .extracting(StatusResponse::getServerResponseType)
+            .containsOnlyOnce(StatusResponse.Type.BAD);
     }
 
     @Test
@@ -143,9 +152,12 @@ public class GetQuotaRootProcessorTest {
         verify(mockedMailboxManager).startProcessingRequest(mailboxSession);
         verify(mockedMailboxManager).endProcessingRequest(mailboxSession);
 
-        verify(mockedResponder, atLeastOnce()).respond(argThat(response ->
-            (response instanceof StatusResponse)
-            && ((StatusResponse) response).getServerResponseType().equals(StatusResponse.Type.NO)));
+        ArgumentCaptor<StatusResponse> responseCaptor = ArgumentCaptor.forClass(StatusResponse.class);
+        verify(mockedResponder, only()).respond(responseCaptor.capture());
+
+        assertThat(responseCaptor.getValue())
+            .extracting(StatusResponse::getServerResponseType)
+            .containsOnlyOnce(StatusResponse.Type.NO);
     }
 
 }

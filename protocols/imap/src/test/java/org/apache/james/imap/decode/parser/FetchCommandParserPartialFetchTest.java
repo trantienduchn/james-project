@@ -19,6 +19,7 @@
 
 package org.apache.james.imap.decode.parser;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import java.io.ByteArrayInputStream;
@@ -66,12 +67,14 @@ public class FetchCommandParserPartialFetchTest  {
         check("1 (BODY[]<20.12342348>)\r\n", ranges, false, data, "A01");
     }
 
-    @Test(expected = DecodingException.class)
+    @Test
     public void testShouldNotParseZeroLength() throws Exception {
         ImapRequestLineReader reader = new ImapRequestStreamLineReader(
                 new ByteArrayInputStream("1 (BODY[]<20.0>)\r\n"
                         .getBytes("US-ASCII")), new ByteArrayOutputStream());
-        parser.decode(command, reader, "A01", false, session);
+
+        assertThatThrownBy(() -> parser.decode(command, reader, "A01", false, session))
+            .isInstanceOf(DecodingException.class);
     }
 
     private void check(String input, IdRange[] idSet,

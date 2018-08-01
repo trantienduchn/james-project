@@ -105,12 +105,10 @@ public class FetchResponseEncoderNoExtensionsTest {
         parameterList.add("CHARSET");
         parameterList.add("US-ASCII");
 
-        final long octets = 2279L;
-        final long lines = 48L;
         when(stubStructure.getMediaType()).thenReturn("TEXT");
         when(stubStructure.getSubType()).thenReturn("HTML");
-        when(stubStructure.getOctets()).thenReturn(octets);
-        when(stubStructure.getLines()).thenReturn(lines);
+        when(stubStructure.getOctets()).thenReturn(2279L);
+        when(stubStructure.getLines()).thenReturn(48L);
         when(stubStructure.getParameters()).thenReturn(parameterList);
         when(stubStructure.getEncoding()).thenReturn("7BIT");
         when(stubStructure.getId()).thenReturn("");

@@ -119,7 +119,7 @@ public class FetchResponseEncoderEnvelopeTest {
 
     private Address mockAddress(final String name, final String domainList,
             final String mailbox, final String host) {
-        final Address address = mock(Address.class);
+        Address address = mock(Address.class);
 
         when(address.getPersonalName()).thenReturn(name);
         when(address.getAtDomainList()).thenReturn(domainList);
