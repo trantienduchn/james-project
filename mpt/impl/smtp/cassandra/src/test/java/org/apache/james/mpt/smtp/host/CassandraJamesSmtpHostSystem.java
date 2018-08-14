@@ -20,6 +20,7 @@
 package org.apache.james.mpt.smtp.host;
 
 import java.util.Iterator;
+import java.util.function.Predicate;
 
 import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.apache.james.CassandraJamesServerMain;
@@ -29,15 +30,16 @@ import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.dnsservice.api.InMemoryDNSService;
 import org.apache.james.modules.protocols.ProtocolHandlerModule;
 import org.apache.james.modules.protocols.SMTPServerModule;
+import org.apache.james.modules.protocols.SmtpGuiceProbe;
 import org.apache.james.modules.server.CamelMailetContainerModule;
 import org.apache.james.mpt.monitor.SystemLoggingMonitor;
 import org.apache.james.mpt.session.ExternalSessionFactory;
 import org.apache.james.mpt.smtp.SmtpHostSystem;
+import org.apache.james.protocols.lib.netty.AbstractConfigurableAsyncServer;
 import org.apache.james.queue.api.MailQueueItemDecoratorFactory;
 import org.apache.james.queue.api.RawMailQueueItemDecoratorFactory;
 import org.apache.james.server.core.configuration.Configuration;
 import org.apache.james.util.Host;
-import org.apache.james.util.Port;
 import org.apache.james.utils.DataProbeImpl;
 import org.junit.rules.TemporaryFolder;
 
@@ -50,17 +52,18 @@ public class CassandraJamesSmtpHostSystem extends ExternalSessionFactory impleme
 
     private static final Module SMTP_PROTOCOL_MODULE = Modules.combine(
         new ProtocolHandlerModule(),
-        new SMTPServerModule());
+        new SMTPServerModule());;
 
     private TemporaryFolder folder;
 
     private GuiceJamesServer jamesServer;
     private InMemoryDNSService inMemoryDNSService;
     private final Host cassandraHost;
+    private final Predicate<? super AbstractConfigurableAsyncServer> serverMatcher;
 
-
-    public CassandraJamesSmtpHostSystem(Port smtpPort, Host cassandraHost) {
-        super("localhost", smtpPort, new SystemLoggingMonitor(), "220 mydomain.tld smtp");
+    public CassandraJamesSmtpHostSystem(Predicate<? super AbstractConfigurableAsyncServer> serverMatcher, Host cassandraHost) {
+        super(new SystemLoggingMonitor(), "220 mydomain.tld smtp");
+        this.serverMatcher = serverMatcher;
         this.cassandraHost = cassandraHost;
     }
 
@@ -73,6 +76,7 @@ public class CassandraJamesSmtpHostSystem extends ExternalSessionFactory impleme
 
         createDomainIfNeeded(domain);
         jamesServer.getProbe(DataProbeImpl.class).addUser(userAtDomain, password);
+
         return true;
     }
 
@@ -94,6 +98,10 @@ public class CassandraJamesSmtpHostSystem extends ExternalSessionFactory impleme
         folder.create();
         jamesServer = createJamesServer();
         jamesServer.start();
+
+        setAddress(Host.from(
+            "localhost",
+            jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort(serverMatcher)));
     }
 
     @Override

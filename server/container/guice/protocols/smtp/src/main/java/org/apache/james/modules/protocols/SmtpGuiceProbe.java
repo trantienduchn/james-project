@@ -19,9 +19,11 @@
 package org.apache.james.modules.protocols;
 
 import java.net.InetSocketAddress;
+import java.util.function.Predicate;
 
 import javax.inject.Inject;
 
+import org.apache.james.protocols.lib.netty.AbstractConfigurableAsyncServer;
 import org.apache.james.smtpserver.netty.SMTPServerFactory;
 import org.apache.james.utils.GuiceProbe;
 
@@ -36,10 +38,19 @@ public class SmtpGuiceProbe implements GuiceProbe {
     }
 
     public int getSmtpPort() {
+        return findFirstPort(server -> true);
+    }
+
+    public int getSmtpPort(Predicate<? super AbstractConfigurableAsyncServer> filter) {
+        return findFirstPort(filter);
+    }
+
+    private Integer findFirstPort(Predicate<? super AbstractConfigurableAsyncServer> filter) {
         return smtpServerFactory.getServers().stream()
-                .findFirst()
-                .flatMap(server -> server.getListenAddresses().stream().findFirst())
-                .map(InetSocketAddress::getPort)
-                .orElseThrow(() -> new IllegalStateException("SMTP server not defined"));
+            .filter(filter)
+            .findFirst()
+            .flatMap(server -> server.getListenAddresses().stream().findFirst())
+            .map(InetSocketAddress::getPort)
+            .orElseThrow(() -> new IllegalStateException("SMTP server not defined"));
     }
 }

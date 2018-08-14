@@ -26,6 +26,7 @@ import org.apache.james.mpt.api.Continuation;
 import org.apache.james.mpt.api.Monitor;
 import org.apache.james.mpt.api.Session;
 import org.apache.james.mpt.api.SessionFactory;
+import org.apache.james.util.Host;
 import org.apache.james.util.Port;
 
 /**
@@ -34,7 +35,7 @@ import org.apache.james.util.Port;
 public class ExternalSessionFactory implements SessionFactory {
 
     public static final String IMAP_SHABANG = "* OK IMAP4rev1 Server ready";
-    protected final InetSocketAddress address;
+    protected InetSocketAddress address;
     protected final Monitor monitor;
     protected final String shabang;
 
@@ -64,6 +65,10 @@ public class ExternalSessionFactory implements SessionFactory {
 
     protected InetSocketAddress getAddress() {
         return address;
+    }
+
+    protected void setAddress(Host host) {
+        this.address = new InetSocketAddress(host.getHostName(), host.getPort());
     }
 
     /**

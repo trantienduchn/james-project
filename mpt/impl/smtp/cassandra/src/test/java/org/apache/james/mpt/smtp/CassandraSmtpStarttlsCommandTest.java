@@ -20,6 +20,7 @@
 package org.apache.james.mpt.smtp;
 
 import org.apache.james.backends.cassandra.DockerCassandraRule;
+import org.apache.james.protocols.lib.netty.AbstractConfigurableAsyncServer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -37,7 +38,7 @@ public class CassandraSmtpStarttlsCommandTest extends SmtpStarttlsCommandTest {
     @Before
     public void setUp() throws Exception {
         Injector injector = Guice.createInjector(
-                new SmtpTestModule(SmtpTestModule.SMTP_START_TLS_PORT, cassandraServer.getHost()));
+                new SmtpTestModule(AbstractConfigurableAsyncServer::getStartTLSSupported, cassandraServer.getHost()));
         system = injector.getInstance(SmtpHostSystem.class);
         system.beforeTest();
         super.setUp();

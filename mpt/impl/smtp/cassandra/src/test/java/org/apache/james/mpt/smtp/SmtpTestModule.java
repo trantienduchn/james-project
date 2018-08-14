@@ -18,28 +18,26 @@
  ****************************************************************/
 package org.apache.james.mpt.smtp;
 
+import java.util.function.Predicate;
+
 import org.apache.james.mpt.smtp.host.CassandraJamesSmtpHostSystem;
+import org.apache.james.protocols.lib.netty.AbstractConfigurableAsyncServer;
 import org.apache.james.util.Host;
-import org.apache.james.util.Port;
 
 import com.google.inject.AbstractModule;
 
 public class SmtpTestModule extends AbstractModule {
 
-    public static Port SMTP_PORT = new Port(1025);
-    public static Port SMTP_START_TLS_PORT = new Port(1587);
-
-    private final Port smtpPort;
+    private final Predicate<? super AbstractConfigurableAsyncServer> serverMatcher;
     private final Host cassandraHost;
 
-    public SmtpTestModule(Port smtpPort, Host cassandraHost) {
-        this.smtpPort = smtpPort;
+    public SmtpTestModule(Predicate<? super AbstractConfigurableAsyncServer> serverMatcher, Host cassandraHost) {
         this.cassandraHost = cassandraHost;
+        this.serverMatcher = serverMatcher;
     }
     
     @Override
     protected void configure() {
-        bind(SmtpHostSystem.class).toInstance(new CassandraJamesSmtpHostSystem(smtpPort, cassandraHost));
+        bind(SmtpHostSystem.class).toInstance(new CassandraJamesSmtpHostSystem(serverMatcher, cassandraHost));
     }
-
 }
