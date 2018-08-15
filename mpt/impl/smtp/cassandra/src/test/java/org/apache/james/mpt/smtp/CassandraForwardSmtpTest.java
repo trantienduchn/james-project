@@ -35,8 +35,10 @@ public class CassandraForwardSmtpTest extends ForwardSmtpTest {
     public CassandraSmtpTestRule cassandraSmtpTestRule = new CassandraSmtpTestRule(SMTP_GLOBAL_SERVER, cassandraServer.getHost());
 
     @Before
-    public void setup() throws Exception {
+    @Override
+    public void setUp() throws Exception {
         cassandraSmtpTestRule.beforeTest();
+        super.setUp();
     }
 
     @Override
