@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 import javax.inject.Inject;
 
 import org.apache.james.protocols.lib.netty.AbstractConfigurableAsyncServer;
+import org.apache.james.smtpserver.netty.SMTPServer;
 import org.apache.james.smtpserver.netty.SMTPServerFactory;
 import org.apache.james.utils.GuiceProbe;
 
@@ -44,12 +45,16 @@ public class SmtpGuiceProbe implements GuiceProbe {
         return getPort(AbstractConfigurableAsyncServer::getStartTLSSupported);
     }
 
+    public Integer getSmtpAuthRequiredPort() {
+        return getPort(server -> ((SMTPServer) server).getAuthRequired() == SMTPServer.AUTH_REQUIRED);
+    }
+
     private Integer getPort(Predicate<? super AbstractConfigurableAsyncServer> filter) {
         return smtpServerFactory.getServers().stream()
-                .filter(filter)
-                .findFirst()
-                .flatMap(server -> server.getListenAddresses().stream().findFirst())
-                .map(InetSocketAddress::getPort)
-                .orElseThrow(() -> new IllegalStateException("SMTP server not defined"));
+            .filter(filter)
+            .findFirst()
+            .flatMap(server -> server.getListenAddresses().stream().findFirst())
+            .map(InetSocketAddress::getPort)
+            .orElseThrow(() -> new IllegalStateException("SMTP server not defined"));
     }
 }
