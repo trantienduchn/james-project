@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 import javax.inject.Inject;
 
 import org.apache.james.protocols.lib.netty.AbstractConfigurableAsyncServer;
+import org.apache.james.smtpserver.netty.SMTPServer;
 import org.apache.james.smtpserver.netty.SMTPServerFactory;
 import org.apache.james.utils.GuiceProbe;
 
@@ -43,6 +44,10 @@ public class SmtpGuiceProbe implements GuiceProbe {
 
     public int getSmtpPort(Predicate<? super AbstractConfigurableAsyncServer> filter) {
         return findFirstPort(filter);
+    }
+
+    public Integer getSmtpAuthRequiredPort() {
+        return findFirstPort(server -> ((SMTPServer) server).getAuthRequired() == SMTPServer.AUTH_REQUIRED);
     }
 
     private Integer findFirstPort(Predicate<? super AbstractConfigurableAsyncServer> filter) {
