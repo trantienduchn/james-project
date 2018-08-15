@@ -19,37 +19,33 @@
 
 package org.apache.james.mpt.smtp;
 
+import static org.apache.james.mpt.smtp.CassandraSmtpTestRule.SmtpServerConnectedType.SMTP_GLOBAL_SERVER;
+
 import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import org.junit.Rule;
 
 public class CassandraForwardSmtpTest extends ForwardSmtpTest {
 
     @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
-    
-    private SmtpHostSystem system;
+
+    @Rule
+    public CassandraSmtpTestRule cassandraSmtpTestRule = new CassandraSmtpTestRule(SMTP_GLOBAL_SERVER, cassandraServer.getHost());
+
+    @Before
+    public void setup() throws Exception {
+        cassandraSmtpTestRule.beforeTest();
+    }
 
     @Override
-    @Before
-    public void setUp() throws Exception {
-        Injector injector = Guice.createInjector(
-                new SmtpTestModule(SmtpTestModule.SMTP_PORT, cassandraServer.getHost()));
-        system = injector.getInstance(SmtpHostSystem.class);
-        system.beforeTest();
-        super.setUp();
-    }
-    
-    @Override
     protected SmtpHostSystem createSmtpHostSystem() {
-        return system;
+        return cassandraSmtpTestRule;
     }
 
     @After
-    public void tearDown() throws Exception {
-        system.afterTest();
+    public void tearDown() {
+        cassandraSmtpTestRule.afterTest();
     }
 }
