@@ -20,7 +20,6 @@ package org.apache.james.mpt.smtp;
 
 import java.util.Iterator;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 
 import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.apache.james.CassandraJamesServerMain;
