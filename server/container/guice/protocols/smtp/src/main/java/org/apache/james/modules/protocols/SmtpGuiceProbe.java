@@ -19,12 +19,13 @@
 package org.apache.james.modules.protocols;
 
 import java.net.InetSocketAddress;
+import java.util.function.Predicate;
 
 import javax.inject.Inject;
 
+import org.apache.james.protocols.lib.netty.AbstractConfigurableAsyncServer;
 import org.apache.james.smtpserver.netty.SMTPServerFactory;
 import org.apache.james.utils.GuiceProbe;
-
 
 public class SmtpGuiceProbe implements GuiceProbe {
 
@@ -36,7 +37,16 @@ public class SmtpGuiceProbe implements GuiceProbe {
     }
 
     public int getSmtpPort() {
+        return getPort(server -> true);
+    }
+
+    public int getSmtpsPort() {
+        return getPort(AbstractConfigurableAsyncServer::getStartTLSSupported);
+    }
+
+    private Integer getPort(Predicate<? super AbstractConfigurableAsyncServer> filter) {
         return smtpServerFactory.getServers().stream()
+                .filter(filter)
                 .findFirst()
                 .flatMap(server -> server.getListenAddresses().stream().findFirst())
                 .map(InetSocketAddress::getPort)
