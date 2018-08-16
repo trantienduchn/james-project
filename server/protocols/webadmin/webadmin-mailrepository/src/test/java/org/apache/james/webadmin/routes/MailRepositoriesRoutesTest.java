@@ -29,19 +29,12 @@ import static org.apache.james.webadmin.WebAdminServer.NO_CONFIGURATION;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
@@ -50,8 +43,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
 
 import javax.mail.internet.MimeMessage;
 
@@ -59,15 +50,21 @@ import org.apache.james.core.MailAddress;
 import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.core.builder.MimeMessageBuilder.BodyPartBuilder;
 import org.apache.james.mailrepository.api.MailKey;
+import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.mailrepository.api.MailRepositoryPath;
-import org.apache.james.mailrepository.api.MailRepositoryStore;
 import org.apache.james.mailrepository.api.MailRepositoryUrl;
+import org.apache.james.mailrepository.lib.MailRepositoryStoreImpl;
 import org.apache.james.mailrepository.memory.MemoryMailRepository;
+import org.apache.james.mailrepository.memory.MemoryMailRepositoryProvider;
+import org.apache.james.mailrepository.memory.MemoryMailRepositoryUrlStore;
 import org.apache.james.metrics.api.NoopMetricFactory;
 import org.apache.james.queue.api.MailQueueFactory;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.queue.api.RawMailQueueItemDecoratorFactory;
 import org.apache.james.queue.memory.MemoryMailQueueFactory;
+import org.apache.james.server.core.configuration.Configuration;
+import org.apache.james.server.core.configuration.FileConfigurationProvider;
+import org.apache.james.server.core.filesystem.FileSystemImpl;
 import org.apache.james.task.MemoryTaskManager;
 import org.apache.james.util.ClassLoaderUtils;
 import org.apache.james.webadmin.Constants;
@@ -87,10 +84,8 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.stubbing.Answer;
 
-import com.github.steveash.guavate.Guavate;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
@@ -99,26 +94,24 @@ import io.restassured.parsing.Parser;
 
 public class MailRepositoriesRoutesTest {
 
-    private static final MailRepositoryUrl URL_MY_REPO = MailRepositoryUrl.from("url://myRepo");
+    private static final MailRepositoryUrl URL_MY_REPO = MailRepositoryUrl.from("memory://myRepo");
     private static final MailRepositoryPath PATH_MY_REPO = MailRepositoryPath.from("myRepo");
     private static final String PATH_ESCAPED_MY_REPO = "myRepo";
     private static final String MY_REPO_MAILS = "myRepo/mails";
     private static final String CUSTOM_QUEUE = "customQueue";
     private static final String NAME_1 = "name1";
     private static final String NAME_2 = "name2";
-    private static final Answer<?> RETURN_NO_MAIL_REPOSITORY = (invocation) -> Stream.empty();
     private WebAdminServer webAdminServer;
-    private MailRepositoryStore mailRepositoryStore;
-    private MemoryMailRepository mailRepository;
-    private Answer<?> returnMailRepository;
+    private MailRepositoryStoreImpl mailRepositoryStore;
     private ManageableMailQueue spoolQueue;
     private ManageableMailQueue customQueue;
 
+    private FileSystemImpl fileSystem;
+    private Configuration configuration;
+
     @Before
     public void setUp() throws Exception {
-        mailRepositoryStore = mock(MailRepositoryStore.class);
-        mailRepository = new MemoryMailRepository();
-        returnMailRepository = (invocation) -> Stream.of(mailRepository);
+        createMailRepositoryStore();
 
         MemoryTaskManager taskManager = new MemoryTaskManager();
         JsonTransformer jsonTransformer = new JsonTransformer();
@@ -150,58 +143,60 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
-    public void putMailRepositoryShouldReturnOkWhenRepositoryIsCreated() throws Exception {
+    public void putMailRepositoryShouldReturnOkWhenRepositoryIsCreated() {
         given()
-            .params("protocol", "url")
+            .params("protocol", "memory")
         .when()
             .put(PATH_ESCAPED_MY_REPO)
         .then()
             .statusCode(HttpStatus.NO_CONTENT_204);
 
-        verify(mailRepositoryStore).create(URL_MY_REPO);
-        verifyNoMoreInteractions(mailRepositoryStore);
+        assertThat(mailRepositoryStore.get(URL_MY_REPO))
+            .isNotEmpty()
+            .containsInstanceOf(MemoryMailRepository.class);
     }
 
     @Test
     public void putMailRepositoryShouldReturnOkWhenRepositoryAlreadyExists() throws Exception {
         given()
-            .params("protocol", "url")
+            .params("protocol", "memory")
         .when()
             .put(PATH_ESCAPED_MY_REPO)
         .then()
             .statusCode(HttpStatus.NO_CONTENT_204);
 
         given()
-            .params("protocol", "url")
+            .params("protocol", "memory")
         .when()
             .put(PATH_ESCAPED_MY_REPO)
         .then()
             .statusCode(HttpStatus.NO_CONTENT_204);
 
-        verify(mailRepositoryStore, times(2)).create(URL_MY_REPO);
-        verifyNoMoreInteractions(mailRepositoryStore);
+        assertThat(mailRepositoryStore.get(URL_MY_REPO))
+            .isNotEmpty()
+            .containsInstanceOf(MemoryMailRepository.class);
+
+        assertThat(mailRepositoryStore.getByPath(PATH_MY_REPO))
+            .hasSize(1);
     }
 
     @Test
-    public void putMailRepositoryShouldReturnServerErrorWhenCannotCreateRepository() throws Exception {
-        when(mailRepositoryStore.create(any()))
-            .thenThrow(new MailRepositoryStore.MailRepositoryStoreException("Error while selecting repository url://myRepo"));
-
+    public void putMailRepositoryShouldReturnServerErrorWhenCannotCreateRepository() {
         given()
-            .params("protocol", "url")
+            .params("protocol", "nonSupportProtocol")
         .when()
             .put(PATH_ESCAPED_MY_REPO)
         .then()
             .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
             .body("statusCode", is(500))
             .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()))
-            .body("message", is("Error while creating a mail repository with path 'myRepo' and protocol 'url'"))
-            .body("details", is("Error while selecting repository url://myRepo"));
+            .body("message", is("Error while creating a mail repository with path 'myRepo' and protocol 'nonSupportProtocol'"))
+            .body("details", is("No Mail Repository associated with nonSupportProtocol"));
     }
 
     @Test
     public void getMailRepositoriesShouldReturnEmptyWhenEmpty() {
-        when(mailRepositoryStore.getPaths()).thenAnswer(RETURN_NO_MAIL_REPOSITORY);
+        mailRepositoryStore = new MailRepositoryStoreImpl(new MemoryMailRepositoryUrlStore(), Sets.newHashSet());
 
         List<Object> mailRepositories =
             when()
@@ -218,9 +213,8 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
-    public void getMailRepositoriesShouldReturnRepositoryWhenOne() {
-        when(mailRepositoryStore.getPaths())
-            .thenAnswer((invocation) -> Stream.of(PATH_MY_REPO));
+    public void getMailRepositoriesShouldReturnRepositoryWhenOne() throws Exception {
+        mailRepositoryStore.create(URL_MY_REPO);
 
         when()
             .get()
@@ -232,10 +226,9 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
-    public void getMailRepositoriesShouldReturnTwoRepositoriesWhenTwo() {
-        ImmutableList<MailRepositoryPath> myRepositories = ImmutableList.of(PATH_MY_REPO, MailRepositoryPath.from("mySecondRepo"));
-        when(mailRepositoryStore.getPaths())
-            .thenReturn(myRepositories.stream());
+    public void getMailRepositoriesShouldReturnTwoRepositoriesWhenTwo() throws Exception {
+        mailRepositoryStore.create(URL_MY_REPO);
+        mailRepositoryStore.create(MailRepositoryUrl.from("memory://mySecondRepo"));
 
         List<String> mailRepositories =
             when()
@@ -249,14 +242,12 @@ public class MailRepositoriesRoutesTest {
                 .getList("repository");
 
         assertThat(mailRepositories)
-            .containsOnlyElementsOf(myRepositories.stream()
-                .map(MailRepositoryPath::asString)
-                .collect(Guavate.toImmutableList()));
+            .containsOnly(PATH_ESCAPED_MY_REPO, "mySecondRepo");
     }
 
     @Test
-    public void listingKeysShouldReturnNotFoundWhenNoRepository() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(RETURN_NO_MAIL_REPOSITORY);
+    public void listingKeysShouldReturnNotFoundWhenNoRepository() {
+        mailRepositoryStore = new MailRepositoryStoreImpl(new MemoryMailRepositoryUrlStore(), Sets.newHashSet());
 
         when()
             .get(MY_REPO_MAILS)
@@ -267,7 +258,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void listingKeysShouldReturnEmptyWhenNoMail() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        mailRepositoryStore.create(URL_MY_REPO);
 
         when()
             .get(MY_REPO_MAILS)
@@ -278,7 +269,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void listingKeysShouldReturnContainedKeys() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         mailRepository.store(FakeMail.builder()
             .name("name1")
@@ -297,7 +288,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void listingKeysShouldApplyLimitAndOffset() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         mailRepository.store(FakeMail.builder()
             .name("name1")
@@ -318,21 +309,6 @@ public class MailRepositoriesRoutesTest {
             .statusCode(HttpStatus.OK_200)
             .body("", hasSize(1))
             .body("", contains("name2"));
-    }
-
-    @Test
-    public void listingKeysShouldHandleErrorGracefully() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO))
-            .thenThrow(new MailRepositoryStore.MailRepositoryStoreException("message"));
-
-        when()
-            .get(MY_REPO_MAILS)
-        .then()
-            .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-            .body("statusCode", is(500))
-            .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()))
-            .body("message", is("Error while listing keys"))
-            .body("details", containsString("message"));
     }
 
     @Test
@@ -363,7 +339,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void listingKeysShouldReturnEmptyWhenOffsetExceedsSize() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         mailRepository.store(FakeMail.builder()
             .name("name1")
@@ -412,7 +388,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void listingKeysShouldIgnoreZeroedOffset() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
@@ -445,8 +421,8 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
-    public void retrievingRepositoryShouldReturnNotFoundWhenNone() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(RETURN_NO_MAIL_REPOSITORY);
+    public void retrievingRepositoryShouldReturnNotFoundWhenNone() {
+        mailRepositoryStore = new MailRepositoryStoreImpl(new MemoryMailRepositoryUrlStore(), Sets.newHashSet());
 
         given()
             .get(PATH_ESCAPED_MY_REPO)
@@ -456,7 +432,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void retrievingRepositoryShouldReturnBasicInformation() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        mailRepositoryStore.create(URL_MY_REPO);
 
         given()
             .get(PATH_ESCAPED_MY_REPO)
@@ -469,7 +445,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void retrievingRepositorySizeShouldReturnZeroWhenEmpty() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        mailRepositoryStore.create(URL_MY_REPO);
 
         given()
             .get(PATH_ESCAPED_MY_REPO)
@@ -481,7 +457,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void retrievingRepositorySizeShouldReturnNumberOfContainedMails() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
@@ -497,7 +473,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void retrievingAMailShouldDisplayItsInformation() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         String name = NAME_1;
         String sender = "sender@domain";
@@ -536,7 +512,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void retrievingAMailShouldDisplayAllAdditionalFieldsWhenRequested() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String name = NAME_1;
 
         BodyPartBuilder textMessage = MimeMessageBuilder.bodyPartBuilder()
@@ -639,7 +615,8 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void retrievingAMailShouldDisplayAllValidAdditionalFieldsWhenRequested() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
+
         String name = NAME_1;
         String sender = "sender@domain";
         String recipient1 = "recipient1@domain";
@@ -669,7 +646,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void retrievingAMailShouldDisplayCorrectlyEncodedHeadersInValidAdditionalFieldsWhenRequested() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String name = NAME_1;
         String sender = "sender@domain";
         String recipient1 = "recipient1@domain";
@@ -697,7 +674,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void retrievingAMailShouldDisplayAllValidAdditionalFieldsEvenTheDuplicatedOnesWhenRequested() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String name = NAME_1;
         String sender = "sender@domain";
         String recipient1 = "recipient1@domain";
@@ -727,7 +704,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void retrievingAMailShouldFailWhenAnUnknownFieldIsRequested() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String name = NAME_1;
         String sender = "sender@domain";
         String recipient1 = "recipient1@domain";
@@ -752,7 +729,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void retrievingAMailShouldNotFailWhenOnlyNameProperty() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
@@ -770,8 +747,8 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
-    public void retrievingAMailShouldFailWhenUnknown() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+    public void retrievingAMailShouldFailWhenUnknown() throws Exception{
+        mailRepositoryStore.create(URL_MY_REPO);
 
         String name = "name";
         when()
@@ -790,7 +767,7 @@ public class MailRepositoriesRoutesTest {
                 .build();
         RestAssured.registerParser(Constants.RFC822_CONTENT_TYPE, Parser.TEXT);
 
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         String name = NAME_1;
         FakeMail mail = FakeMail.builder()
@@ -818,12 +795,12 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void downloadingAMailShouldFailWhenUnknown() throws Exception {
+        mailRepositoryStore.create(URL_MY_REPO);
+
         RestAssured.requestSpecification = new RequestSpecBuilder().setPort(webAdminServer.getPort().getValue())
             .setBasePath(MailRepositoriesRoutes.MAIL_REPOSITORIES)
             .build();
         RestAssured.registerParser(Constants.RFC822_CONTENT_TYPE, Parser.TEXT);
-
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
 
         String name = "name";
         given()
@@ -839,7 +816,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void deletingAMailShouldRemoveIt() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
@@ -861,7 +838,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void deletingAMailShouldReturnOkWhenExist() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
@@ -875,7 +852,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void deletingAMailShouldReturnOkWhenNotExist() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        mailRepositoryStore.create(URL_MY_REPO);
 
         when()
             .delete(PATH_ESCAPED_MY_REPO + "/mails/name")
@@ -885,7 +862,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void deletingAllMailsShouldCreateATask() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        mailRepositoryStore.create(URL_MY_REPO);
 
         when()
             .delete(PATH_ESCAPED_MY_REPO + "/mails")
@@ -897,7 +874,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void clearTaskShouldHaveDetails() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
@@ -929,7 +906,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void clearTaskShouldRemoveAllTheMailsFromTheMailRepository() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
 
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
@@ -955,8 +932,8 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
-    public void patchShouldReturnNotFoundWhenNoMailRepository() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(RETURN_NO_MAIL_REPOSITORY);
+    public void patchShouldReturnNotFoundWhenNoMailRepository() {
+        mailRepositoryStore = new MailRepositoryStoreImpl(new MemoryMailRepositoryUrlStore(), Sets.newHashSet());
 
         when()
             .delete(PATH_ESCAPED_MY_REPO + "/mails")
@@ -968,8 +945,8 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
-    public void deleteShouldReturnNotFoundWhenNoMailRepository() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(RETURN_NO_MAIL_REPOSITORY);
+    public void deleteShouldReturnNotFoundWhenNoMailRepository() {
+        mailRepositoryStore = new MailRepositoryStoreImpl(new MemoryMailRepositoryUrlStore(), Sets.newHashSet());
 
         when()
             .delete(PATH_ESCAPED_MY_REPO + "/mails/any")
@@ -982,7 +959,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingAllTaskShouldCreateATask() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        mailRepositoryStore.create(URL_MY_REPO);
 
         given()
             .param("action", "reprocess")
@@ -995,9 +972,7 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
-    public void reprocessingAllTaskShouldRejectInvalidActions() throws Exception {
-        when(mailRepositoryStore.get(URL_MY_REPO)).thenReturn(Optional.of(mailRepository));
-
+    public void reprocessingAllTaskShouldRejectInvalidActions() {
         given()
             .param("action", "invalid")
         .when()
@@ -1010,9 +985,7 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
-    public void reprocessingAllTaskShouldRequireAction() throws Exception {
-        when(mailRepositoryStore.get(URL_MY_REPO)).thenReturn(Optional.of(mailRepository));
-
+    public void reprocessingAllTaskShouldRequireAction() {
         when()
             .patch(PATH_ESCAPED_MY_REPO + "/mails")
         .then()
@@ -1024,7 +997,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingAllTaskShouldIncludeDetailsWhenDefaultValues() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
             .build());
@@ -1058,7 +1031,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingAllTaskShouldIncludeDetails() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String name1 = "name1";
         String name2 = "name2";
         mailRepository.store(FakeMail.builder()
@@ -1097,7 +1070,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingAllTaskShouldClearMailRepository() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String name1 = "name1";
         String name2 = "name2";
         mailRepository.store(FakeMail.builder()
@@ -1125,7 +1098,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingAllTaskShouldEnqueueMailsOnDefaultQueue() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
             .build());
@@ -1151,7 +1124,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingAllTaskShouldPreserveStateWhenProcessorIsNotSpecified() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String state1 = "state1";
         String state2 = "state2";
         mailRepository.store(FakeMail.builder()
@@ -1181,7 +1154,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingAllTaskShouldOverWriteStateWhenProcessorSpecified() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String state1 = "state1";
         String state2 = "state2";
         mailRepository.store(FakeMail.builder()
@@ -1213,7 +1186,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingAllTaskShouldEnqueueMailsOnSpecifiedQueue() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
             .build());
@@ -1240,8 +1213,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldCreateATask() throws Exception {
-        when(mailRepositoryStore.get(URL_MY_REPO)).thenReturn(Optional.of(mailRepository));
-
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
             .build());
@@ -1258,8 +1230,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldRejectInvalidActions() throws Exception {
-        when(mailRepositoryStore.get(URL_MY_REPO)).thenReturn(Optional.of(mailRepository));
-
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
             .build());
@@ -1277,8 +1248,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldRequireAction() throws Exception {
-        when(mailRepositoryStore.get(URL_MY_REPO)).thenReturn(Optional.of(mailRepository));
-
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
             .build());
@@ -1294,7 +1264,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldIncludeDetailsWhenDefaultValues() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String name1 = "name1";
         String name2 = "name2";
         mailRepository.store(FakeMail.builder()
@@ -1329,7 +1299,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldIncludeDetails() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String name1 = "name1";
         String name2 = "name2";
         mailRepository.store(FakeMail.builder()
@@ -1367,7 +1337,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldRemoveMailFromRepository() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String name1 = "name1";
         String name2 = "name2";
         mailRepository.store(FakeMail.builder()
@@ -1396,7 +1366,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldEnqueueMailsOnDefaultQueue() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
             .build());
@@ -1422,7 +1392,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldPreserveStateWhenProcessorIsNotSpecified() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String state1 = "state1";
         String state2 = "state2";
         mailRepository.store(FakeMail.builder()
@@ -1452,7 +1422,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldOverWriteStateWhenProcessorSpecified() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         String state1 = "state1";
         String state2 = "state2";
         mailRepository.store(FakeMail.builder()
@@ -1484,7 +1454,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldEnqueueMailsOnSpecifiedQueue() throws Exception {
-        when(mailRepositoryStore.getByPath(PATH_MY_REPO)).thenAnswer(returnMailRepository);
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
             .build());
@@ -1511,7 +1481,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldNotEnqueueUnknownMailKey() throws Exception {
-        when(mailRepositoryStore.get(URL_MY_REPO)).thenReturn(Optional.of(mailRepository));
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
             .build());
@@ -1536,7 +1506,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldNotRemoveMailFromRepositoryWhenUnknownMailKey() throws Exception {
-        when(mailRepositoryStore.get(URL_MY_REPO)).thenReturn(Optional.of(mailRepository));
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
             .build());
@@ -1561,7 +1531,7 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void reprocessingOneTaskShouldFailWhenUnknownMailKey() throws Exception {
-        when(mailRepositoryStore.get(URL_MY_REPO)).thenReturn(Optional.of(mailRepository));
+        MailRepository mailRepository = mailRepositoryStore.create(URL_MY_REPO);
         mailRepository.store(FakeMail.builder()
             .name(NAME_1)
             .build());
@@ -1584,4 +1554,16 @@ public class MailRepositoriesRoutesTest {
             .body("status", is("failed"));
     }
 
+    private void createMailRepositoryStore() throws Exception {
+        configuration = Configuration.builder()
+                .workingDirectory("../")
+                .configurationFromClasspath()
+                .build();
+        fileSystem = new FileSystemImpl(configuration.directories());
+        MemoryMailRepositoryUrlStore urlStore = new MemoryMailRepositoryUrlStore();
+        mailRepositoryStore = new MailRepositoryStoreImpl(urlStore, Sets.newHashSet(new MemoryMailRepositoryProvider()));
+        mailRepositoryStore.configure(new FileConfigurationProvider(fileSystem, configuration)
+                .getConfiguration("mailrepositorystore"));
+        mailRepositoryStore.init();
+    }
 }
