@@ -181,23 +181,7 @@ public class MailRepositoriesRoutesTest {
     }
 
     @Test
-    public void putMailRepositoryShouldReturnServerErrorWhenCannotCreateRepository() {
-        given()
-            .params("protocol", "nonSupportProtocol")
-        .when()
-            .put(PATH_ESCAPED_MY_REPO)
-        .then()
-            .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)
-            .body("statusCode", is(500))
-            .body("type", is(ErrorResponder.ErrorType.SERVER_ERROR.getType()))
-            .body("message", is("Error while creating a mail repository with path 'myRepo' and protocol 'nonSupportProtocol'"))
-            .body("details", is("No Mail Repository associated with nonSupportProtocol"));
-    }
-
-    @Test
     public void getMailRepositoriesShouldReturnEmptyWhenEmpty() {
-        mailRepositoryStore = new MailRepositoryStoreImpl(new MemoryMailRepositoryUrlStore(), Sets.newHashSet());
-
         List<Object> mailRepositories =
             when()
                 .get()
@@ -247,8 +231,6 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void listingKeysShouldReturnNotFoundWhenNoRepository() {
-        mailRepositoryStore = new MailRepositoryStoreImpl(new MemoryMailRepositoryUrlStore(), Sets.newHashSet());
-
         when()
             .get(MY_REPO_MAILS)
         .then()
@@ -422,8 +404,6 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void retrievingRepositoryShouldReturnNotFoundWhenNone() {
-        mailRepositoryStore = new MailRepositoryStoreImpl(new MemoryMailRepositoryUrlStore(), Sets.newHashSet());
-
         given()
             .get(PATH_ESCAPED_MY_REPO)
         .then()
@@ -933,8 +913,6 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void patchShouldReturnNotFoundWhenNoMailRepository() {
-        mailRepositoryStore = new MailRepositoryStoreImpl(new MemoryMailRepositoryUrlStore(), Sets.newHashSet());
-
         when()
             .delete(PATH_ESCAPED_MY_REPO + "/mails")
         .then()
@@ -946,8 +924,6 @@ public class MailRepositoriesRoutesTest {
 
     @Test
     public void deleteShouldReturnNotFoundWhenNoMailRepository() {
-        mailRepositoryStore = new MailRepositoryStoreImpl(new MemoryMailRepositoryUrlStore(), Sets.newHashSet());
-
         when()
             .delete(PATH_ESCAPED_MY_REPO + "/mails/any")
         .then()
