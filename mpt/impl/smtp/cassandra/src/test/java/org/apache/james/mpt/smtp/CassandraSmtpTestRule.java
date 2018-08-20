@@ -54,16 +54,16 @@ import com.google.inject.util.Modules;
 public class CassandraSmtpTestRule implements TestRule, SmtpHostSystem {
 
     enum SmtpServerConnectedType {
-        SMTP_GLOBAL_SERVER(SmtpGuiceProbe::getSmtpPort),
-        SMTP_STAR_TLS_SERVER(SmtpGuiceProbe::getSmtpsPort);
+        SMTP_GLOBAL_SERVER(probe -> Port.of(probe.getSmtpPort())),
+        SMTP_START_TLS_SERVER(probe -> Port.of(probe.getSmtpsPort()));
 
-        private final Function<SmtpGuiceProbe, Integer> portExtractor;
+        private final Function<SmtpGuiceProbe, Port> portExtractor;
 
-        private SmtpServerConnectedType(Function<SmtpGuiceProbe, Integer> portExtractor) {
+        private SmtpServerConnectedType(Function<SmtpGuiceProbe, Port> portExtractor) {
             this.portExtractor = portExtractor;
         }
 
-        public Function<SmtpGuiceProbe, Integer> getPortExtractor() {
+        public Function<SmtpGuiceProbe, Port> getPortExtractor() {
             return portExtractor;
         }
     }
@@ -165,8 +165,8 @@ public class CassandraSmtpTestRule implements TestRule, SmtpHostSystem {
 
     private void createSessionFactory() {
         SmtpGuiceProbe smtpProbe = jamesServer.getProbe(SmtpGuiceProbe.class);
-        int smtpPort = smtpServerConnectedType.getPortExtractor().apply(smtpProbe);
+        Port smtpPort = smtpServerConnectedType.getPortExtractor().apply(smtpProbe);
 
-        sessionFactory = new ExternalSessionFactory("localhost", new Port(smtpPort), new SystemLoggingMonitor(), "220 mydomain.tld smtp");
+        sessionFactory = new ExternalSessionFactory("localhost", smtpPort, new SystemLoggingMonitor(), "220 mydomain.tld smtp");
     }
 }
