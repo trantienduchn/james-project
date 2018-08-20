@@ -19,7 +19,7 @@
 
 package org.apache.james.mpt.smtp;
 
-import static org.apache.james.mpt.smtp.CassandraSmtpTestRule.SmtpServerConnectedType.SMTP_STAR_TLS_SERVER;
+import static org.apache.james.mpt.smtp.CassandraSmtpTestRule.SmtpServerConnectedType.SMTP_START_TLS_SERVER;
 
 import org.apache.james.backends.cassandra.DockerCassandraRule;
 import org.junit.After;
@@ -32,7 +32,7 @@ public class CassandraSmtpStarttlsCommandTest extends SmtpStarttlsCommandTest {
     @ClassRule public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
 
     @Rule
-    public CassandraSmtpTestRule cassandraSmtpTestRule = new CassandraSmtpTestRule(SMTP_STAR_TLS_SERVER, cassandraServer.getHost());
+    public CassandraSmtpTestRule cassandraSmtpTestRule = new CassandraSmtpTestRule(SMTP_START_TLS_SERVER, cassandraServer.getHost());
 
     @Before
     @Override
