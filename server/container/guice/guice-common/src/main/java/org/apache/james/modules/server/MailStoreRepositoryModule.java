@@ -25,7 +25,7 @@ import org.apache.james.lifecycle.api.Configurable;
 import org.apache.james.mailrepository.api.MailRepositoryProvider;
 import org.apache.james.mailrepository.api.MailRepositoryStore;
 import org.apache.james.mailrepository.file.FileMailRepositoryProvider;
-import org.apache.james.mailrepository.lib.MailRepositoryStoreImpl;
+import org.apache.james.mailrepository.memory.MemoryMailRepositoryStore;
 import org.apache.james.server.core.configuration.ConfigurationProvider;
 import org.apache.james.utils.ConfigurationPerformer;
 import org.apache.james.utils.GuiceProbe;
@@ -42,8 +42,8 @@ public class MailStoreRepositoryModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(MailRepositoryStoreImpl.class).in(Scopes.SINGLETON);
-        bind(MailRepositoryStore.class).to(MailRepositoryStoreImpl.class);
+        bind(MemoryMailRepositoryStore.class).in(Scopes.SINGLETON);
+        bind(MailRepositoryStore.class).to(MemoryMailRepositoryStore.class);
 
         Multibinder<MailRepositoryProvider> multibinder = Multibinder.newSetBinder(binder(), MailRepositoryProvider.class);
         multibinder.addBinding().to(FileMailRepositoryProvider.class);
@@ -55,11 +55,11 @@ public class MailStoreRepositoryModule extends AbstractModule {
     public static class MailRepositoryStoreModuleConfigurationPerformer implements ConfigurationPerformer {
 
         private final ConfigurationProvider configurationProvider;
-        private final MailRepositoryStoreImpl javaMailRepositoryStore;
+        private final MemoryMailRepositoryStore javaMailRepositoryStore;
 
         @Inject
         public MailRepositoryStoreModuleConfigurationPerformer(ConfigurationProvider configurationProvider,
-                MailRepositoryStoreImpl javaMailRepositoryStore) {
+                                                               MemoryMailRepositoryStore javaMailRepositoryStore) {
             this.configurationProvider = configurationProvider;
             this.javaMailRepositoryStore = javaMailRepositoryStore;
         }
@@ -76,7 +76,7 @@ public class MailStoreRepositoryModule extends AbstractModule {
 
         @Override
         public List<Class<? extends Configurable>> forClasses() {
-            return ImmutableList.of(MailRepositoryStoreImpl.class);
+            return ImmutableList.of(MemoryMailRepositoryStore.class);
         }
     }
 

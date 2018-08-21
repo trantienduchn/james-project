@@ -53,9 +53,9 @@ import org.apache.james.mailrepository.api.MailKey;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.mailrepository.api.MailRepositoryPath;
 import org.apache.james.mailrepository.api.MailRepositoryUrl;
-import org.apache.james.mailrepository.lib.MailRepositoryStoreImpl;
 import org.apache.james.mailrepository.memory.MemoryMailRepository;
 import org.apache.james.mailrepository.memory.MemoryMailRepositoryProvider;
+import org.apache.james.mailrepository.memory.MemoryMailRepositoryStore;
 import org.apache.james.mailrepository.memory.MemoryMailRepositoryUrlStore;
 import org.apache.james.metrics.api.NoopMetricFactory;
 import org.apache.james.queue.api.MailQueueFactory;
@@ -102,7 +102,7 @@ public class MailRepositoriesRoutesTest {
     private static final String NAME_1 = "name1";
     private static final String NAME_2 = "name2";
     private WebAdminServer webAdminServer;
-    private MailRepositoryStoreImpl mailRepositoryStore;
+    private MemoryMailRepositoryStore mailRepositoryStore;
     private ManageableMailQueue spoolQueue;
     private ManageableMailQueue customQueue;
 
@@ -1537,7 +1537,7 @@ public class MailRepositoriesRoutesTest {
                 .build();
         fileSystem = new FileSystemImpl(configuration.directories());
         MemoryMailRepositoryUrlStore urlStore = new MemoryMailRepositoryUrlStore();
-        mailRepositoryStore = new MailRepositoryStoreImpl(urlStore, Sets.newHashSet(new MemoryMailRepositoryProvider()));
+        mailRepositoryStore = new MemoryMailRepositoryStore(urlStore, Sets.newHashSet(new MemoryMailRepositoryProvider()));
         mailRepositoryStore.configure(new FileConfigurationProvider(fileSystem, configuration)
                 .getConfiguration("mailrepositorystore"));
         mailRepositoryStore.init();

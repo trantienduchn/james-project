@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.lib;
+package org.apache.james.mailrepository.memory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -49,8 +49,8 @@ import org.slf4j.LoggerFactory;
 import com.github.fge.lambdas.Throwing;
 import com.google.common.collect.ImmutableList;
 
-public class MailRepositoryStoreImpl implements MailRepositoryStore, Configurable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(MailRepositoryStoreImpl.class);
+public class MemoryMailRepositoryStore implements MailRepositoryStore, Configurable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MemoryMailRepositoryStore.class);
 
     private final MailRepositoryUrlStore urlStore;
     private final Set<MailRepositoryProvider> mailRepositories;
@@ -60,7 +60,7 @@ public class MailRepositoryStoreImpl implements MailRepositoryStore, Configurabl
     private HierarchicalConfiguration configuration;
 
     @Inject
-    public MailRepositoryStoreImpl(MailRepositoryUrlStore urlStore, Set<MailRepositoryProvider> mailRepositories) {
+    public MemoryMailRepositoryStore(MailRepositoryUrlStore urlStore, Set<MailRepositoryProvider> mailRepositories) {
         this.urlStore = urlStore;
         this.mailRepositories = mailRepositories;
         this.destinationToRepositoryAssociations = new ConcurrentHashMap<>();

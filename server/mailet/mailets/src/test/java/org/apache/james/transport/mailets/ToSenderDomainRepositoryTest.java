@@ -32,8 +32,8 @@ import javax.mail.MessagingException;
 import org.apache.james.mailrepository.api.MailRepository;
 import org.apache.james.mailrepository.api.MailRepositoryStore;
 import org.apache.james.mailrepository.api.MailRepositoryUrl;
-import org.apache.james.mailrepository.lib.MailRepositoryStoreImpl;
 import org.apache.james.mailrepository.memory.MemoryMailRepositoryProvider;
+import org.apache.james.mailrepository.memory.MemoryMailRepositoryStore;
 import org.apache.james.mailrepository.memory.MemoryMailRepositoryUrlStore;
 import org.apache.james.server.core.configuration.Configuration;
 import org.apache.james.server.core.configuration.FileConfigurationProvider;
@@ -57,7 +57,7 @@ class ToSenderDomainRepositoryTest {
         .build();
 
     private ToSenderDomainRepository mailet;
-    private MailRepositoryStoreImpl mailRepositoryStore;
+    private MemoryMailRepositoryStore mailRepositoryStore;
     private FileSystemImpl fileSystem;
     private Configuration configuration;
 
@@ -74,7 +74,7 @@ class ToSenderDomainRepositoryTest {
                 .build();
         fileSystem = new FileSystemImpl(configuration.directories());
         MemoryMailRepositoryUrlStore urlStore = new MemoryMailRepositoryUrlStore();
-        mailRepositoryStore = new MailRepositoryStoreImpl(urlStore, Sets.newHashSet(new MemoryMailRepositoryProvider()));
+        mailRepositoryStore = new MemoryMailRepositoryStore(urlStore, Sets.newHashSet(new MemoryMailRepositoryProvider()));
         mailRepositoryStore.configure(new FileConfigurationProvider(fileSystem, configuration)
                 .getConfiguration("mailrepositorystore"));
         mailRepositoryStore.init();

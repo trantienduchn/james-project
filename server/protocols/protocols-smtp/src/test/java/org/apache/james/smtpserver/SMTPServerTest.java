@@ -50,8 +50,8 @@ import org.apache.james.domainlist.api.DomainList;
 import org.apache.james.domainlist.memory.MemoryDomainList;
 import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.mailrepository.api.MailRepositoryStore;
-import org.apache.james.mailrepository.lib.MailRepositoryStoreImpl;
 import org.apache.james.mailrepository.memory.MemoryMailRepositoryProvider;
+import org.apache.james.mailrepository.memory.MemoryMailRepositoryStore;
 import org.apache.james.mailrepository.memory.MemoryMailRepositoryUrlStore;
 import org.apache.james.metrics.api.Metric;
 import org.apache.james.protocols.api.utils.ProtocolServerUtils;
@@ -172,7 +172,7 @@ public class SMTPServerTest {
     protected HashedWheelTimer hashedWheelTimer;
     protected final MemoryUsersRepository usersRepository = MemoryUsersRepository.withoutVirtualHosting();
     protected AlterableDNSServer dnsServer;
-    protected MailRepositoryStoreImpl mailRepositoryStore;
+    protected MemoryMailRepositoryStore mailRepositoryStore;
     protected FileSystemImpl fileSystem;
     protected Configuration configuration;
     protected MockProtocolHandlerLoader chain;
@@ -200,7 +200,7 @@ public class SMTPServerTest {
                 .build();
         fileSystem = new FileSystemImpl(configuration.directories());
         MemoryMailRepositoryUrlStore urlStore = new MemoryMailRepositoryUrlStore();
-        mailRepositoryStore = new MailRepositoryStoreImpl(urlStore, Sets.newHashSet(new MemoryMailRepositoryProvider()));
+        mailRepositoryStore = new MemoryMailRepositoryStore(urlStore, Sets.newHashSet(new MemoryMailRepositoryProvider()));
         mailRepositoryStore.configure(new FileConfigurationProvider(fileSystem, configuration)
                 .getConfiguration("mailrepositorystore"));
         mailRepositoryStore.init();
