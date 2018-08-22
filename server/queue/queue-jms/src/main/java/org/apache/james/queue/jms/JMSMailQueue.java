@@ -426,10 +426,9 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
         try {
             return new MailAddress(sender);
         } catch (AddressException e) {
-            // Should never happen as long as the user does not modify the
-            // the header by himself
+            // Should never happen as long as the user does not modify the header by himself
             LOGGER.error("Unable to parse the sender address {} for mail {}, so we fallback to a null sender", sender, mail.getName(), e);
-            return null;
+            return MailAddress.nullSender();
         }
     }
 
