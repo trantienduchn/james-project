@@ -19,14 +19,8 @@
 
 package org.apache.james.jmap.api.filtering.impl;
 
-import org.apache.james.eventsourcing.eventstore.memory.InMemoryEventStore;
-import org.apache.james.jmap.api.filtering.FilteringManagement;
 import org.apache.james.jmap.api.filtering.FilteringManagementContract;
 
 public class EventSourcingFilteringManagementTest implements FilteringManagementContract {
 
-    @Override
-    public FilteringManagement instanciateFilteringManagement() {
-        return new EventSourcingFilteringManagement(new InMemoryEventStore());
-    }
 }
