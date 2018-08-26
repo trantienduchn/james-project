@@ -35,7 +35,7 @@ import com.github.fge.lambdas.Throwing;
 public class ActionApplier {
     private static final String DELIVERY_PATH_PREFIX = "DeliveryPath_";
 
-    public static class Factory {
+    static class Factory {
         private final MailboxManager mailboxManager;
         private final MailboxId.Factory mailboxIdFactory;
 
@@ -62,16 +62,12 @@ public class ActionApplier {
         }
     }
 
-    public static Factory factory(MailboxManager mailboxManager, MailboxId.Factory mailboxIdFactory) {
-        return new Factory(mailboxManager, mailboxIdFactory);
-    }
-
     private final MailboxManager mailboxManager;
     private final MailboxId.Factory mailboxIdFactory;
     private final Mail mail;
     private final User user;
 
-    public ActionApplier(MailboxManager mailboxManager, MailboxId.Factory mailboxIdFactory, Mail mail, User user) {
+    ActionApplier(MailboxManager mailboxManager, MailboxId.Factory mailboxIdFactory, Mail mail, User user) {
         this.mailboxManager = mailboxManager;
         this.mailboxIdFactory = mailboxIdFactory;
         this.mail = mail;

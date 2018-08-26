@@ -27,10 +27,10 @@ import org.apache.mailet.Mail;
 
 import com.google.common.base.Preconditions;
 
-class FilteringModel {
+class FilteringActionComputer {
     private final List<Rule> filteringRules;
 
-    FilteringModel(List<Rule> filteringRules) {
+    FilteringActionComputer(List<Rule> filteringRules) {
         Preconditions.checkNotNull(filteringRules);
 
         this.filteringRules = filteringRules;

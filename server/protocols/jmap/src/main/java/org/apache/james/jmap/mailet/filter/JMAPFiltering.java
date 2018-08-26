@@ -32,8 +32,12 @@ import org.apache.james.user.api.UsersRepository;
 import org.apache.james.user.api.UsersRepositoryException;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.GenericMailet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JMAPFiltering extends GenericMailet {
+
+    private final Logger logger = LoggerFactory.getLogger(JMAPFiltering.class);
 
     private final FilteringManagement filteringManagement;
     private final UsersRepository usersRepository;
@@ -55,21 +59,23 @@ public class JMAPFiltering extends GenericMailet {
     }
 
     private void filteringForRecipient(Mail mail, MailAddress recipient) {
-        User user = retrieveUser(recipient);
-        List<Rule> filteringRules = filteringManagement.listRulesForUser(user);
-        FilteringModel filteringModel = new FilteringModel(filteringRules);
-        Optional<Rule.Action> maybeAction = filteringModel.computeAction(mail);
+        retrieveUser(recipient).ifPresent(user -> {
+            List<Rule> filteringRules = filteringManagement.listRulesForUser(user);
+            FilteringActionComputer filteringActionComputer = new FilteringActionComputer(filteringRules);
+            Optional<Rule.Action> maybeAction = filteringActionComputer.computeAction(mail);
 
-        maybeAction.ifPresent(action -> actionApplierFactory.forMail(mail)
-                .forUser(user)
-                .apply(action));
+            maybeAction.ifPresent(action -> actionApplierFactory.forMail(mail)
+                    .forUser(user)
+                    .apply(action));
+        });
     }
 
-    private User retrieveUser(MailAddress recipient) {
+    private Optional<User> retrieveUser(MailAddress recipient) {
         try {
-            return User.fromUsername(usersRepository.getUser(recipient));
+            return Optional.ofNullable(User.fromUsername(usersRepository.getUser(recipient)));
         } catch (UsersRepositoryException e) {
-            throw new RuntimeException(e);
+            logger.error("cannot retrieve user " + recipient.asString(), e);
+            return Optional.empty();
         }
     }
 }

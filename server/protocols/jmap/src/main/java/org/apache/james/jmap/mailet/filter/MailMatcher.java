@@ -19,15 +19,7 @@
 
 package org.apache.james.jmap.mailet.filter;
 
-import static org.apache.james.jmap.api.filtering.Rule.Condition.Comparator.CONTAINS;
-import static org.apache.james.jmap.api.filtering.Rule.Condition.Comparator.EXACTLY_EQUALS;
-import static org.apache.james.jmap.api.filtering.Rule.Condition.Comparator.NOT_CONTAINS;
-import static org.apache.james.jmap.api.filtering.Rule.Condition.Comparator.NOT_EXACTLY_EQUALS;
-import static org.apache.james.jmap.api.filtering.Rule.Condition.Field.CC;
-import static org.apache.james.jmap.api.filtering.Rule.Condition.Field.FROM;
-import static org.apache.james.jmap.api.filtering.Rule.Condition.Field.RECIPIENT;
-import static org.apache.james.jmap.api.filtering.Rule.Condition.Field.SUBJECT;
-import static org.apache.james.jmap.api.filtering.Rule.Condition.Field.TO;
+import static org.apache.james.jmap.api.filtering.Rule.Condition;
 
 import java.util.Map;
 import java.util.Optional;
@@ -41,9 +33,11 @@ import org.apache.james.javax.AddressHelper;
 import org.apache.james.jmap.api.filtering.Rule;
 import org.apache.james.jmap.api.filtering.Rule.Condition.Field;
 import org.apache.mailet.Mail;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.github.fge.lambdas.Throwing;
 import com.github.fge.lambdas.functions.ThrowingFunction;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
 public interface MailMatcher {
@@ -51,21 +45,33 @@ public interface MailMatcher {
     interface HeaderExtractor extends ThrowingFunction<Mail, Stream<String>> {}
 
     class HeaderMatcher implements MailMatcher {
+
+        private final Logger logger = LoggerFactory.getLogger(HeaderMatcher.class);
+
         private final ContentMatcher contentMatcher;
         private final String ruleValue;
         private final HeaderExtractor headerExtractor;
 
-        HeaderMatcher(ContentMatcher contentMatcher, String ruleValue, HeaderExtractor headerExtractor) {
-            this.contentMatcher = contentMatcher;
+        HeaderMatcher(Optional<ContentMatcher> contentMatcherOptional, String ruleValue,
+                      Optional<HeaderExtractor> headerExtractorOptional) {
+            Preconditions.checkArgument(contentMatcherOptional.isPresent());
+            Preconditions.checkArgument(headerExtractorOptional.isPresent());
+
+            this.contentMatcher = contentMatcherOptional.get();
             this.ruleValue = ruleValue;
-            this.headerExtractor = headerExtractor;
+            this.headerExtractor = headerExtractorOptional.get();
         }
 
         @Override
         public boolean match(Mail mail) {
-            return Throwing.function(headerExtractor)
-                .apply(mail)
-                .anyMatch(headerLine -> contentMatcher.match(headerLine, ruleValue));
+            try {
+                return headerExtractor
+                        .apply(mail)
+                        .anyMatch(headerLine -> contentMatcher.match(headerLine, ruleValue));
+            } catch (Exception e) {
+                logger.error("error while extracting mail header", e);
+                return false;
+            }
         }
     }
 
@@ -75,25 +81,24 @@ public interface MailMatcher {
         ContentMatcher EXACTLY_EQUALS_MATCHER = StringUtils::equals;
         ContentMatcher NOT_EXACTLY_EQUALS_MATCHER = negate(StringUtils::equals);
 
-        Map<Rule.Condition.Comparator, ContentMatcher> MAPPER = ImmutableMap.<Rule.Condition.Comparator, ContentMatcher>builder()
-                .put(CONTAINS, CONTAINS_MATCHER)
-                .put(NOT_CONTAINS, NOT_CONTAINS_MATCHER)
-                .put(EXACTLY_EQUALS, EXACTLY_EQUALS_MATCHER)
-                .put(NOT_EXACTLY_EQUALS, NOT_EXACTLY_EQUALS_MATCHER)
+        Map<Rule.Condition.Comparator, ContentMatcher> CONTENT_MATCHER_REGISTRY = ImmutableMap.<Rule.Condition.Comparator, ContentMatcher>builder()
+                .put(Condition.Comparator.CONTAINS, CONTAINS_MATCHER)
+                .put(Condition.Comparator.NOT_CONTAINS, NOT_CONTAINS_MATCHER)
+                .put(Condition.Comparator.EXACTLY_EQUALS, EXACTLY_EQUALS_MATCHER)
+                .put(Condition.Comparator.NOT_EXACTLY_EQUALS, NOT_EXACTLY_EQUALS_MATCHER)
                 .build();
 
         static ContentMatcher negate(ContentMatcher contentMatcher) {
-            return (String fieldContent, String filterRuleValue) ->
-                    !contentMatcher.match(fieldContent, filterRuleValue);
+            return (String fullContent, String matchingValue) ->
+                    !contentMatcher.match(fullContent, matchingValue);
         }
 
-        static ContentMatcher getContentMatcher(Rule.Condition.Comparator comparator) {
+        static Optional<ContentMatcher> asContentMatcher(Condition.Comparator comparator) {
             return Optional
-                .ofNullable(MAPPER.get(comparator))
-                .orElseThrow(() -> new IllegalArgumentException("unexpected comparator " + comparator.asString()));
+                .ofNullable(CONTENT_MATCHER_REGISTRY.get(comparator));
         }
 
-        boolean match(String fieldContent, String filterRuleValue);
+        boolean match(String fullContent, String matchingValue);
     }
 
     HeaderExtractor SUBJECT_EXTRACTOR = mail ->
@@ -105,19 +110,19 @@ public interface MailMatcher {
     HeaderExtractor CC_EXTRACTOR = recipientExtractor(Message.RecipientType.CC);
     HeaderExtractor TO_EXTRACTOR = recipientExtractor(Message.RecipientType.TO);
 
-    Map<Field, HeaderExtractor> MAPPER = ImmutableMap.<Field, HeaderExtractor>builder()
-            .put(SUBJECT, SUBJECT_EXTRACTOR)
-            .put(RECIPIENT, RECIPIENT_EXTRACTOR)
-            .put(FROM, FROM_EXTRACTOR)
-            .put(CC, CC_EXTRACTOR)
-            .put(TO, TO_EXTRACTOR)
+    Map<Field, HeaderExtractor> HEADER_EXTRACTOR_REGISTRY = ImmutableMap.<Field, HeaderExtractor>builder()
+            .put(Field.SUBJECT, SUBJECT_EXTRACTOR)
+            .put(Field.RECIPIENT, RECIPIENT_EXTRACTOR)
+            .put(Field.FROM, FROM_EXTRACTOR)
+            .put(Field.CC, CC_EXTRACTOR)
+            .put(Field.TO, TO_EXTRACTOR)
             .build();
 
     static MailMatcher from(Rule rule) {
-        ContentMatcher contentMatcher = ContentMatcher.getContentMatcher(rule.getCondition().getComparator());
-        HeaderExtractor headerExtractor = getHeaderExtractor(rule.getCondition().getField());
+        Optional<ContentMatcher> contentMatcherOptional = ContentMatcher.asContentMatcher(rule.getCondition().getComparator());
+        Optional<HeaderExtractor> headerExtractorOptional = getHeaderExtractor(rule.getCondition().getField());
 
-        return new HeaderMatcher(contentMatcher, rule.getCondition().getValue(), headerExtractor);
+        return new HeaderMatcher(contentMatcherOptional, rule.getCondition().getValue(), headerExtractorOptional);
     }
 
     static HeaderExtractor recipientExtractor(Message.RecipientType type) {
@@ -130,10 +135,9 @@ public interface MailMatcher {
                 .orElse(Stream.empty());
     }
 
-    static HeaderExtractor getHeaderExtractor(Field field) {
+    static Optional<HeaderExtractor> getHeaderExtractor(Field field) {
         return Optional
-            .ofNullable(MAPPER.get(field))
-            .orElseThrow(() -> new IllegalArgumentException("unexpected field " + field.asString()));
+            .ofNullable(HEADER_EXTRACTOR_REGISTRY.get(field));
     }
 
     boolean match(Mail mail);
