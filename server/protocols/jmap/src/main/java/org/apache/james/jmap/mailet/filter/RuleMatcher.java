@@ -27,19 +27,18 @@ import org.apache.mailet.Mail;
 
 import com.google.common.base.Preconditions;
 
-class FilteringActionComputer {
+class RuleMatcher {
     private final List<Rule> filteringRules;
 
-    FilteringActionComputer(List<Rule> filteringRules) {
+    RuleMatcher(List<Rule> filteringRules) {
         Preconditions.checkNotNull(filteringRules);
 
         this.filteringRules = filteringRules;
     }
 
-    Optional<Rule.Action> computeAction(Mail mail) {
+    Optional<Rule> findApplicableRule(Mail mail) {
         return filteringRules.stream()
             .filter(rule -> MailMatcher.from(rule).match(mail))
-            .findFirst()
-            .map(Rule::getAction);
+            .findFirst();
     }
 }

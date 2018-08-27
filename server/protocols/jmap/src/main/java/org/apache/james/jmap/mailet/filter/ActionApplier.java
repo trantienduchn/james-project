@@ -31,6 +31,7 @@ import org.apache.james.mailbox.model.MailboxId;
 import org.apache.mailet.Mail;
 
 import com.github.fge.lambdas.Throwing;
+import com.google.common.annotations.VisibleForTesting;
 
 public class ActionApplier {
     private static final String DELIVERY_PATH_PREFIX = "DeliveryPath_";
@@ -66,6 +67,11 @@ public class ActionApplier {
     private final MailboxId.Factory mailboxIdFactory;
     private final Mail mail;
     private final User user;
+
+    @VisibleForTesting
+    public static Factory factory(MailboxManager mailboxManager, MailboxId.Factory mailboxIdFactory) {
+        return new Factory(mailboxManager, mailboxIdFactory);
+    }
 
     ActionApplier(MailboxManager mailboxManager, MailboxId.Factory mailboxIdFactory, Mail mail, User user) {
         this.mailboxManager = mailboxManager;

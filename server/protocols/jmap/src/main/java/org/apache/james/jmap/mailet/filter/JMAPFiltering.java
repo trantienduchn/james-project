@@ -59,15 +59,19 @@ public class JMAPFiltering extends GenericMailet {
     }
 
     private void filteringForRecipient(Mail mail, MailAddress recipient) {
-        retrieveUser(recipient).ifPresent(user -> {
-            List<Rule> filteringRules = filteringManagement.listRulesForUser(user);
-            FilteringActionComputer filteringActionComputer = new FilteringActionComputer(filteringRules);
-            Optional<Rule.Action> maybeAction = filteringActionComputer.computeAction(mail);
+        Optional<User> userOptional = retrieveUser(recipient);
+        userOptional
+            .ifPresent(user -> filteringForUser(user, mail));
+    }
 
-            maybeAction.ifPresent(action -> actionApplierFactory.forMail(mail)
-                    .forUser(user)
-                    .apply(action));
-        });
+    private void filteringForUser(User user, Mail mail) {
+        List<Rule> filteringRules = filteringManagement.listRulesForUser(user);
+        RuleMatcher ruleMatcher = new RuleMatcher(filteringRules);
+        Optional<Rule> maybeMatchingRule = ruleMatcher.findApplicableRule(mail);
+
+        maybeMatchingRule.ifPresent(rule -> actionApplierFactory.forMail(mail)
+                .forUser(user)
+                .apply(rule.getAction()));
     }
 
     private Optional<User> retrieveUser(MailAddress recipient) {

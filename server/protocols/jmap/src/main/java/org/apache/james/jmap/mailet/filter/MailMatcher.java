@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import javax.mail.Address;
 import javax.mail.Message;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.james.javax.AddressHelper;
 import org.apache.james.jmap.api.filtering.Rule;
@@ -65,9 +66,8 @@ public interface MailMatcher {
         @Override
         public boolean match(Mail mail) {
             try {
-                return headerExtractor
-                        .apply(mail)
-                        .anyMatch(headerLine -> contentMatcher.match(headerLine, ruleValue));
+                Stream<String> headerLines = headerExtractor.apply(mail);
+                return contentMatcher.match(headerLines, ruleValue);
             } catch (Exception e) {
                 logger.error("error while extracting mail header", e);
                 return false;
@@ -76,10 +76,10 @@ public interface MailMatcher {
     }
 
     interface ContentMatcher {
-        ContentMatcher CONTAINS_MATCHER = StringUtils::contains;
-        ContentMatcher NOT_CONTAINS_MATCHER = negate(StringUtils::contains);
-        ContentMatcher EXACTLY_EQUALS_MATCHER = StringUtils::equals;
-        ContentMatcher NOT_EXACTLY_EQUALS_MATCHER = negate(StringUtils::equals);
+        ContentMatcher CONTAINS_MATCHER = (contents, valueToMatch) -> contents.anyMatch(content -> StringUtils.contains(content, valueToMatch));
+        ContentMatcher NOT_CONTAINS_MATCHER = negate(CONTAINS_MATCHER);
+        ContentMatcher EXACTLY_EQUALS_MATCHER = (contents, valueToMatch) -> contents.anyMatch(content -> StringUtils.equals(content, valueToMatch));
+        ContentMatcher NOT_EXACTLY_EQUALS_MATCHER = negate(EXACTLY_EQUALS_MATCHER);
 
         Map<Rule.Condition.Comparator, ContentMatcher> CONTENT_MATCHER_REGISTRY = ImmutableMap.<Rule.Condition.Comparator, ContentMatcher>builder()
                 .put(Condition.Comparator.CONTAINS, CONTAINS_MATCHER)
@@ -89,8 +89,8 @@ public interface MailMatcher {
                 .build();
 
         static ContentMatcher negate(ContentMatcher contentMatcher) {
-            return (String fullContent, String matchingValue) ->
-                    !contentMatcher.match(fullContent, matchingValue);
+            return (Stream<String> contents, String valueToMatch) ->
+                    !contentMatcher.match(contents, valueToMatch);
         }
 
         static Optional<ContentMatcher> asContentMatcher(Condition.Comparator comparator) {
@@ -98,14 +98,18 @@ public interface MailMatcher {
                 .ofNullable(CONTENT_MATCHER_REGISTRY.get(comparator));
         }
 
-        boolean match(String fullContent, String matchingValue);
+        boolean match(Stream<String> contents, String valueToMatch);
     }
 
     HeaderExtractor SUBJECT_EXTRACTOR = mail ->
             Optional.ofNullable(mail.getMessage().getSubject())
                     .map(Stream::of)
                     .orElse(Stream.empty());
-    HeaderExtractor RECIPIENT_EXTRACTOR =  mail -> addressExtractor(mail.getMessage().getAllRecipients());
+    HeaderExtractor RECIPIENT_EXTRACTOR =  mail -> addressExtractor(
+            ArrayUtils.addAll(
+                mail.getMessage().getRecipients(Message.RecipientType.TO),
+                mail.getMessage().getRecipients(Message.RecipientType.CC)));
+
     HeaderExtractor FROM_EXTRACTOR = mail -> addressExtractor(mail.getMessage().getFrom());
     HeaderExtractor CC_EXTRACTOR = recipientExtractor(Message.RecipientType.CC);
     HeaderExtractor TO_EXTRACTOR = recipientExtractor(Message.RecipientType.TO);
