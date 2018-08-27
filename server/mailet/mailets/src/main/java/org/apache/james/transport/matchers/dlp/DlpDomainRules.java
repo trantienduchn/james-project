@@ -22,13 +22,11 @@ package org.apache.james.transport.matchers.dlp;
 import static org.apache.james.javax.AddressHelper.asStringStream;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import javax.mail.Address;
 import javax.mail.BodyPart;
 import javax.mail.Message;
 import javax.mail.MessagingException;
@@ -40,7 +38,6 @@ import org.apache.james.dlp.api.DLPConfigurationItem;
 import org.apache.james.dlp.api.DLPConfigurationItem.Targets;
 import org.apache.james.javax.AddressHelper;
 import org.apache.james.javax.MultipartUtil;
-import org.apache.james.mime4j.util.MimeUtil;
 import org.apache.james.util.OptionalUtils;
 import org.apache.mailet.Mail;
 

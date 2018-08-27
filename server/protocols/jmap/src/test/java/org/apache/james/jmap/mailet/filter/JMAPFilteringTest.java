@@ -625,16 +625,6 @@ class JMAPFilteringTest {
                 assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + FRED_MARTIN_USERNAME))
                         .isEqualTo(FRED_MARTIN_INBOX);
             }
-
-            // TODO How about...
-            // Rule sender1@domain.com
-            // Header Sender 1 <sender1@domain.com>
-            // It should match
-
-            // TODO How about...
-            // Rule Benoit Tellier
-            // Header Benoit Tellier <sender1@domain.com>
-            // It should match
         }
 
         @Nested
