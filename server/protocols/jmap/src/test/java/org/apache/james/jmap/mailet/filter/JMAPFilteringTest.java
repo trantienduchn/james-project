@@ -37,39 +37,61 @@ class JMAPFilteringTest {
 
     interface WithContainsCommandRule {
         void mailDirectiveShouldBeSetWhenContainsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldNotBeSetdWhenAllDoNotContainsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenAtLeastOneContainsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenUnscrambledContentContainsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenFoldedContentContainsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenMultipleHeaders(JMAPFilteringTestSystem testSystem) throws Exception;
     }
 
     interface WithNotContainsCommandRule {
         void mailDirectiveShouldBeSetWhenDoesntContainsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldNotBeSetWhenAtleastOneContentDoesntContainsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShoulNotBeSetWhenAllContentsContainsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenUnscrambledContentDoenstContainsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenFoldedContentDoesntContainsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenMultipleHeaders(JMAPFilteringTestSystem testSystem) throws Exception;
     }
 
     interface WithExactlyEqualsCommandRule {
         void mailDirectiveShouldBeSetWhenAddressExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenPersonalPersonalExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenFullAddressContentExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenAtLeastOneExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldNotBeSetWhenAllDoNotExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenUnscrambledContentExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenFoldedContentExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenMultipleHeaders(JMAPFilteringTestSystem testSystem) throws Exception;
     }
 
     interface WithNotExactlyEqualsCommandRule {
         void mailDirectiveShouldBeSetWhenDoNotExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenAllDoNotExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldNotBeSetWhenExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenUnscrambledContentDoesntExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenFoldedContentDoesntExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception;
+
         void mailDirectiveShouldBeSetWhenMultipleHeaders(JMAPFilteringTestSystem testSystem) throws Exception;
     }
 
@@ -2260,8 +2282,8 @@ class JMAPFilteringTest {
                         .sender(SENDER_1)
                         .recipient(FRED_MARTIN)
                         .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
-                            .addToRecipient( "sender2 <sender2@james.org>")
-                            .addCcRecipient( "linagora <linagora@james.org>")
+                            .addToRecipient("sender2 <sender2@james.org>")
+                            .addCcRecipient("linagora <linagora@james.org>")
                             .addHeader("to", "=?UTF-8?B?RnLDqWTDqXJpYyBNQVJUSU4=?= <fred.martin@linagora.com>,\r\n" +
                                 " sender1 <sender1@james.org>"))
                         .build();
@@ -3024,7 +3046,7 @@ class JMAPFilteringTest {
                         .sender(SENDER_1)
                         .recipient(FRED_MARTIN)
                         .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
-                            .setSubject( "this subject contains a folding\r\n" +
+                            .setSubject("this subject contains a folding\r\n" +
                                 " and the matcher should work"))
                         .build();
 
@@ -3154,7 +3176,7 @@ class JMAPFilteringTest {
                         .sender(SENDER_1)
                         .recipient(FRED_MARTIN)
                         .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
-                            .setSubject( "=?UTF-8?B?RnLDqWTDqXJpYyBNQVJUSU4=?= is the subject")
+                            .setSubject("=?UTF-8?B?RnLDqWTDqXJpYyBNQVJUSU4=?= is the subject")
                             .build())
                         .build();
 

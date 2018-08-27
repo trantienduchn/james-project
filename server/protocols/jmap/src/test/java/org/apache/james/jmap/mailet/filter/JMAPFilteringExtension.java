@@ -73,7 +73,7 @@ public class JMAPFilteringExtension implements BeforeEachCallback, ParameterReso
         }
 
 
-        public MailboxId createMailbox(InMemoryMailboxManager mailboxManager, String username, String mailboxName) throws Exception{
+        public MailboxId createMailbox(InMemoryMailboxManager mailboxManager, String username, String mailboxName) throws Exception {
             MailboxSession mailboxSession = mailboxManager.createSystemSession(username);
             return mailboxManager
                     .createMailbox(MailboxPath.forUser(username, mailboxName), mailboxSession)
