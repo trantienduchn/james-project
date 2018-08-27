@@ -112,7 +112,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -137,7 +137,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -162,7 +162,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -188,7 +188,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -215,7 +215,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -240,7 +240,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -269,7 +269,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -294,7 +294,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -319,7 +319,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -344,7 +344,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -369,7 +369,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -395,7 +395,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -426,7 +426,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.EXACTLY_EQUALS, "sender1@james.org"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -451,7 +451,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.EXACTLY_EQUALS, "sender1"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -476,7 +476,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.EXACTLY_EQUALS, "sender1 <sender1@james.org>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -501,7 +501,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.EXACTLY_EQUALS, SENDER_1))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -527,7 +527,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.EXACTLY_EQUALS, FRED_MARTIN))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -553,7 +553,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -579,7 +579,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -606,7 +606,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -649,7 +649,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, FRED_MARTIN))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -674,7 +674,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, SENDER_2))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -700,7 +700,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, SENDER_1))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -725,7 +725,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -750,7 +750,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -776,7 +776,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -811,7 +811,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -836,7 +836,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -861,7 +861,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -887,7 +887,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -914,7 +914,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -939,7 +939,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -968,7 +968,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -993,7 +993,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1018,7 +1018,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1043,7 +1043,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1068,7 +1068,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1094,7 +1094,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1125,7 +1125,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.EXACTLY_EQUALS, "sender1@james.org"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1149,7 +1149,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.EXACTLY_EQUALS, "sender1"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1173,7 +1173,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.EXACTLY_EQUALS, "sender1 <sender1@james.org>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1198,7 +1198,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.EXACTLY_EQUALS, SENDER_1))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1224,7 +1224,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.EXACTLY_EQUALS, FRED_MARTIN))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1250,7 +1250,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1276,7 +1276,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1303,7 +1303,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1336,7 +1336,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, FRED_MARTIN))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1361,7 +1361,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, SENDER_2))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1387,7 +1387,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, SENDER_1))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1412,7 +1412,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1437,7 +1437,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1463,7 +1463,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1498,7 +1498,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1523,7 +1523,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1548,7 +1548,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1574,7 +1574,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1601,7 +1601,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1626,7 +1626,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1655,7 +1655,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1680,7 +1680,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1705,7 +1705,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1730,7 +1730,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1755,7 +1755,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1781,7 +1781,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1812,7 +1812,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.EXACTLY_EQUALS, "sender1@james.org"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1837,7 +1837,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.EXACTLY_EQUALS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1862,7 +1862,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.EXACTLY_EQUALS, "sender1 <sender1@james.org>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1887,7 +1887,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.EXACTLY_EQUALS, SENDER_1))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1913,7 +1913,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.EXACTLY_EQUALS, FRED_MARTIN))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1939,7 +1939,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1965,7 +1965,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -1992,7 +1992,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2025,7 +2025,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, FRED_MARTIN))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2050,7 +2050,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, SENDER_2))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2076,7 +2076,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, SENDER_1))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2101,7 +2101,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2126,7 +2126,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2152,7 +2152,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.CC, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2187,7 +2187,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2212,7 +2212,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2237,7 +2237,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2263,7 +2263,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2291,7 +2291,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2316,7 +2316,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2341,7 +2341,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2371,7 +2371,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2396,7 +2396,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2421,7 +2421,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2446,7 +2446,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2471,7 +2471,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2497,7 +2497,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2524,7 +2524,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_CONTAINS, SENDER_1_USERNAME))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2555,7 +2555,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.EXACTLY_EQUALS, "sender1@james.org"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2579,7 +2579,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.EXACTLY_EQUALS, "sender1"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2603,7 +2603,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.EXACTLY_EQUALS, "sender1 <sender1@james.org>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2628,7 +2628,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.EXACTLY_EQUALS, SENDER_1))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2654,7 +2654,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.EXACTLY_EQUALS, FRED_MARTIN))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2680,7 +2680,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2706,7 +2706,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2733,7 +2733,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN <fred.martin@linagora.com>"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2762,7 +2762,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.EXACTLY_EQUALS, RECIPIENT_1))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2792,7 +2792,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, FRED_MARTIN))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2817,7 +2817,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, SENDER_2))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2843,7 +2843,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, SENDER_1))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2868,7 +2868,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2893,7 +2893,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2919,7 +2919,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTINTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2946,7 +2946,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.RECIPIENT, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, RECIPIENT_1))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -2979,7 +2979,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.CONTAINS, "subject"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3003,7 +3003,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.CONTAINS, "Frédéric MAR"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3027,7 +3027,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.CONTAINS, "contains a folding and the matcher should work"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3056,7 +3056,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.NOT_CONTAINS, "james"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3080,7 +3080,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.NOT_CONTAINS, "Frédéric_MARTIN_alternative_name"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3104,7 +3104,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.NOT_CONTAINS, "subject without \r\n"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3132,7 +3132,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.EXACTLY_EQUALS, "Subject content should be equals exaclty"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3157,7 +3157,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN is the subject"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3182,7 +3182,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.EXACTLY_EQUALS, "Frédéric MARTIN is the subject of this mail"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3212,7 +3212,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "a rule is expected not be equals to subject"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3236,7 +3236,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Java Mail Subject"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getRecipient1MailboxId().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3260,7 +3260,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTIN"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()
@@ -3284,7 +3284,7 @@ class JMAPFilteringTest {
                                 .id(RULE_ID_1)
                                 .name(RULE_NAME_1)
                                 .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.NOT_EXACTLY_EQUALS, "Frédéric MARTIN \r\n unscrambled"))
-                                .action(Rule.Action.ofMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize())))
+                                .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(testSystem.getFredMartinInbox().serialize()))))
                                 .build()));
 
                 FakeMail mail = FakeMail.builder()

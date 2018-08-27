@@ -81,7 +81,8 @@ public class ActionApplier {
     }
 
     public void apply(Rule.Action action) {
-        action.getMailboxIds()
+        action.getAppendInMailboxes()
+                .getMailboxIds()
                 .stream()
                 .findFirst()
                 .map(mailboxIdFactory::fromString)
