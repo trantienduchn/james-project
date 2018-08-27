@@ -83,8 +83,9 @@ public class ActionApplier {
     public void apply(Rule.Action action) {
         action.getMailboxIds()
                 .stream()
+                .findFirst()
                 .map(mailboxIdFactory::fromString)
-                .forEach(Throwing.consumer(this::addStorageDirective));
+                .ifPresent(Throwing.consumer(this::addStorageDirective));
     }
 
     private void addStorageDirective(MailboxId mailboxId) throws MailboxException {

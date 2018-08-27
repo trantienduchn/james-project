@@ -27,6 +27,8 @@ import java.util.stream.Stream;
 
 import javax.mail.Address;
 import javax.mail.Message;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -76,16 +78,103 @@ public interface MailMatcher {
     }
 
     interface ContentMatcher {
-        ContentMatcher CONTAINS_MATCHER = (contents, valueToMatch) -> contents.anyMatch(content -> StringUtils.contains(content, valueToMatch));
-        ContentMatcher NOT_CONTAINS_MATCHER = negate(CONTAINS_MATCHER);
-        ContentMatcher EXACTLY_EQUALS_MATCHER = (contents, valueToMatch) -> contents.anyMatch(content -> StringUtils.equals(content, valueToMatch));
-        ContentMatcher NOT_EXACTLY_EQUALS_MATCHER = negate(EXACTLY_EQUALS_MATCHER);
 
-        Map<Rule.Condition.Comparator, ContentMatcher> CONTENT_MATCHER_REGISTRY = ImmutableMap.<Rule.Condition.Comparator, ContentMatcher>builder()
-                .put(Condition.Comparator.CONTAINS, CONTAINS_MATCHER)
-                .put(Condition.Comparator.NOT_CONTAINS, NOT_CONTAINS_MATCHER)
-                .put(Condition.Comparator.EXACTLY_EQUALS, EXACTLY_EQUALS_MATCHER)
-                .put(Condition.Comparator.NOT_EXACTLY_EQUALS, NOT_EXACTLY_EQUALS_MATCHER)
+        class AddressHeader {
+
+            static class Builder {
+                private final Logger logger = LoggerFactory.getLogger(Builder.class);
+
+                private InternetAddress internetAddress;
+
+                private Builder() {
+                }
+
+                private Builder internetAddress(String addressAsString) {
+                    try {
+                        this.internetAddress = new InternetAddress(addressAsString);
+                    } catch (AddressException e) {
+                        logger.error("error while parsing address " + addressAsString, e);
+                    }
+
+                    return this;
+                }
+
+                public AddressHeader build() {
+                    Preconditions.checkNotNull(internetAddress);
+
+                    return new AddressHeader(internetAddress.getPersonal(), internetAddress.getAddress());
+                }
+            }
+
+            public static Builder builder() {
+                return new Builder();
+            }
+
+            private final String personal;
+            private final String address;
+
+            private AddressHeader(String personal, String address) {
+                this.personal = personal;
+                this.address = address;
+            }
+
+            public String getPersonal() {
+                return personal;
+            }
+
+            public String getAddress() {
+                return address;
+            }
+
+            public String serialize() {
+                String address = Optional.ofNullable(this.address).orElse("");
+
+                return Optional
+                    .ofNullable(personal)
+                    .map(personal -> personal + " <" + address + ">")
+                    .orElse("<" + address + ">");
+            }
+        }
+
+        ContentMatcher STRING_CONTAINS_MATCHER = (contents, valueToMatch) -> contents.anyMatch(content -> StringUtils.contains(content, valueToMatch));
+        ContentMatcher STRING_NOT_CONTAINS_MATCHER = negate(STRING_CONTAINS_MATCHER);
+        ContentMatcher STRING_EXACTLY_EQUALS_MATCHER = (contents, valueToMatch) -> contents.anyMatch(content -> StringUtils.equals(content, valueToMatch));
+        ContentMatcher STRING_NOT_EXACTLY_EQUALS_MATCHER = negate(STRING_EXACTLY_EQUALS_MATCHER);
+
+        Map<Rule.Condition.Comparator, ContentMatcher> CONTENT_STRING_MATCHER_REGISTRY = ImmutableMap.<Rule.Condition.Comparator, ContentMatcher>builder()
+                .put(Condition.Comparator.CONTAINS, STRING_CONTAINS_MATCHER)
+                .put(Condition.Comparator.NOT_CONTAINS, STRING_NOT_CONTAINS_MATCHER)
+                .put(Condition.Comparator.EXACTLY_EQUALS, STRING_EXACTLY_EQUALS_MATCHER)
+                .put(Condition.Comparator.NOT_EXACTLY_EQUALS, STRING_NOT_EXACTLY_EQUALS_MATCHER)
+                .build();
+
+        ContentMatcher ADDRESS_CONTAINS_MATCHER = (contents, valueToMatch) -> contents
+                .map(ContentMatcher::asAddressHeader)
+                .anyMatch(addressHeader -> StringUtils.contains(addressHeader.serialize(), valueToMatch));
+
+        ContentMatcher ADDRESS_NOT_CONTAINS_MATCHER = negate(ADDRESS_CONTAINS_MATCHER);
+        ContentMatcher ADDRESS_EXACTLY_EQUALS_MATCHER = (contents, valueToMatch) -> contents
+                .map(ContentMatcher::asAddressHeader)
+                .anyMatch(addressHeader ->
+                        StringUtils.equals(addressHeader.getPersonal(), valueToMatch)
+                    || StringUtils.equals(addressHeader.getAddress(), valueToMatch)
+                    || StringUtils.equals(addressHeader.serialize(), valueToMatch));
+
+        ContentMatcher ADDRESS_NOT_EXACTLY_EQUALS_MATCHER = negate(ADDRESS_EXACTLY_EQUALS_MATCHER);
+
+        Map<Rule.Condition.Comparator, ContentMatcher> HEADER_ADDRESS_MATCHER_REGISTRY = ImmutableMap.<Rule.Condition.Comparator, ContentMatcher>builder()
+                .put(Condition.Comparator.CONTAINS, ADDRESS_CONTAINS_MATCHER)
+                .put(Condition.Comparator.NOT_CONTAINS, ADDRESS_NOT_CONTAINS_MATCHER)
+                .put(Condition.Comparator.EXACTLY_EQUALS, ADDRESS_EXACTLY_EQUALS_MATCHER)
+                .put(Condition.Comparator.NOT_EXACTLY_EQUALS, ADDRESS_NOT_EXACTLY_EQUALS_MATCHER)
+                .build();
+
+        Map<Rule.Condition.Field, Map<Rule.Condition.Comparator, ContentMatcher>> CONTENT_MATCHER_REGISTRY = ImmutableMap.<Rule.Condition.Field, Map<Rule.Condition.Comparator, ContentMatcher>>builder()
+                .put(Condition.Field.SUBJECT, CONTENT_STRING_MATCHER_REGISTRY)
+                .put(Condition.Field.TO, HEADER_ADDRESS_MATCHER_REGISTRY)
+                .put(Condition.Field.CC, HEADER_ADDRESS_MATCHER_REGISTRY)
+                .put(Condition.Field.RECIPIENT, HEADER_ADDRESS_MATCHER_REGISTRY)
+                .put(Condition.Field.FROM, HEADER_ADDRESS_MATCHER_REGISTRY)
                 .build();
 
         static ContentMatcher negate(ContentMatcher contentMatcher) {
@@ -93,9 +182,16 @@ public interface MailMatcher {
                     !contentMatcher.match(contents, valueToMatch);
         }
 
-        static Optional<ContentMatcher> asContentMatcher(Condition.Comparator comparator) {
+        static Optional<ContentMatcher> asContentMatcher(Condition.Field field, Condition.Comparator comparator) {
             return Optional
-                .ofNullable(CONTENT_MATCHER_REGISTRY.get(comparator));
+                .ofNullable(CONTENT_MATCHER_REGISTRY.get(field))
+                .map(matcherRegistry -> matcherRegistry.get(comparator));
+        }
+
+        static AddressHeader asAddressHeader(String addressAsString) {
+            return AddressHeader.builder()
+                .internetAddress(addressAsString)
+                .build();
         }
 
         boolean match(Stream<String> contents, String valueToMatch);
@@ -122,9 +218,10 @@ public interface MailMatcher {
             .put(Field.TO, TO_EXTRACTOR)
             .build();
 
-    static MailMatcher from(Rule rule) {
-        Optional<ContentMatcher> contentMatcherOptional = ContentMatcher.asContentMatcher(rule.getCondition().getComparator());
-        Optional<HeaderExtractor> headerExtractorOptional = getHeaderExtractor(rule.getCondition().getField());
+    static  MailMatcher from(Rule rule) {
+        Condition ruleCondition = rule.getCondition();
+        Optional<ContentMatcher> contentMatcherOptional = ContentMatcher.asContentMatcher(ruleCondition.getField(), ruleCondition.getComparator());
+        Optional<HeaderExtractor> headerExtractorOptional = getHeaderExtractor(ruleCondition.getField());
 
         return new HeaderMatcher(contentMatcherOptional, rule.getCondition().getValue(), headerExtractorOptional);
     }
