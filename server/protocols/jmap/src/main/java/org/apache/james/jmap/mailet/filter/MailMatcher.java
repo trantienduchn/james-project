@@ -126,7 +126,7 @@ public interface MailMatcher {
                 return address;
             }
 
-            public String serialize() {
+            public String asString() {
                 String address = Optional.ofNullable(this.address).orElse("");
 
                 return Optional
@@ -150,7 +150,7 @@ public interface MailMatcher {
 
         ContentMatcher ADDRESS_CONTAINS_MATCHER = (contents, valueToMatch) -> contents
                 .map(ContentMatcher::asAddressHeader)
-                .anyMatch(addressHeader -> StringUtils.contains(addressHeader.serialize(), valueToMatch));
+                .anyMatch(addressHeader -> StringUtils.contains(addressHeader.asString(), valueToMatch));
 
         ContentMatcher ADDRESS_NOT_CONTAINS_MATCHER = negate(ADDRESS_CONTAINS_MATCHER);
         ContentMatcher ADDRESS_EXACTLY_EQUALS_MATCHER = (contents, valueToMatch) -> contents
@@ -158,7 +158,7 @@ public interface MailMatcher {
                 .anyMatch(addressHeader ->
                         StringUtils.equals(addressHeader.getPersonal(), valueToMatch)
                     || StringUtils.equals(addressHeader.getAddress(), valueToMatch)
-                    || StringUtils.equals(addressHeader.serialize(), valueToMatch));
+                    || StringUtils.equals(addressHeader.asString(), valueToMatch));
 
         ContentMatcher ADDRESS_NOT_EXACTLY_EQUALS_MATCHER = negate(ADDRESS_EXACTLY_EQUALS_MATCHER);
 

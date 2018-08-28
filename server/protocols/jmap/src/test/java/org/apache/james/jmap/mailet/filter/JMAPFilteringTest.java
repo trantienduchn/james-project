@@ -25,6 +25,8 @@ import org.apache.james.core.User;
 import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.jmap.api.filtering.Rule;
 import org.apache.james.jmap.mailet.filter.JMAPFilteringExtension.JMAPFilteringTestSystem;
+import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
+import org.apache.james.mailbox.model.MailboxId;
 import org.apache.mailet.base.test.FakeMail;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -3312,5 +3314,80 @@ class JMAPFilteringTest {
                         .isEqualTo(FRED_MARTIN_INBOX);
             }
         }
+    }
+
+    @Test
+    void mailDirectiveShouldSetFirstMatchedRuleWhenMultipleRules(JMAPFilteringTestSystem testSystem) throws Exception {
+        InMemoryMailboxManager mailboxManager = testSystem.getMailboxManager();
+        MailboxId mailbox1Id = testSystem.createMailbox(mailboxManager, JMAPFilteringTest.RECIPIENT_1_USERNAME, "RECIPIENT_1_MAILBOX_1");
+        MailboxId mailbox2Id = testSystem.createMailbox(mailboxManager, JMAPFilteringTest.RECIPIENT_1_USERNAME, "RECIPIENT_1_MAILBOX_2");
+        MailboxId mailbox3Id = testSystem.createMailbox(mailboxManager, JMAPFilteringTest.RECIPIENT_1_USERNAME, "RECIPIENT_1_MAILBOX_3");
+
+        testSystem.getFilteringManagement().defineRulesForUser(User.fromUsername(RECIPIENT_1_USERNAME),
+                ImmutableList.of(
+                    Rule.builder()
+                        .id(Rule.Id.of("1"))
+                        .name("rule 1")
+                        .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.CONTAINS, "subject"))
+                        .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(mailbox1Id.serialize()))))
+                        .build(),
+                    Rule.builder()
+                        .id(Rule.Id.of("2"))
+                        .name("rule 2")
+                        .condition(Rule.Condition.of(Rule.Condition.Field.FROM, Rule.Condition.Comparator.NOT_CONTAINS, "sender"))
+                        .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(mailbox2Id.serialize()))))
+                        .build(),
+                    Rule.builder()
+                        .id(Rule.Id.of("3"))
+                        .name("rule 3")
+                        .condition(Rule.Condition.of(Rule.Condition.Field.TO, Rule.Condition.Comparator.EXACTLY_EQUALS, "recipient1@james.org"))
+                        .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(mailbox3Id.serialize()))))
+                        .build()));
+
+        FakeMail mail = FakeMail.builder()
+                .sender(SENDER_1)
+                .recipients(RECIPIENT_1, RECIPIENT_2)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .addFrom("fred.martin@james.org")
+                    .addToRecipient("recipient1@james.org")
+                    .setSubject("this is the subject of the mail"))
+                .build();
+
+        testSystem.getJmapFiltering().service(mail);
+
+        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
+                .isEqualTo("RECIPIENT_1_MAILBOX_1");
+    }
+
+    @Test
+    void mailDirectiveShouldSetFirstMatchedMailboxWhenMultipleMailboxes(JMAPFilteringTestSystem testSystem) throws Exception {
+        InMemoryMailboxManager mailboxManager = testSystem.getMailboxManager();
+        MailboxId mailbox1Id = testSystem.createMailbox(mailboxManager, JMAPFilteringTest.RECIPIENT_1_USERNAME, "RECIPIENT_1_MAILBOX_1");
+        MailboxId mailbox2Id = testSystem.createMailbox(mailboxManager, JMAPFilteringTest.RECIPIENT_1_USERNAME, "RECIPIENT_1_MAILBOX_2");
+        MailboxId mailbox3Id = testSystem.createMailbox(mailboxManager, JMAPFilteringTest.RECIPIENT_1_USERNAME, "RECIPIENT_1_MAILBOX_3");
+
+        testSystem.getFilteringManagement().defineRulesForUser(User.fromUsername(RECIPIENT_1_USERNAME),
+                ImmutableList.of(
+                    Rule.builder()
+                        .id(Rule.Id.of("1"))
+                        .name("rule 1")
+                        .condition(Rule.Condition.of(Rule.Condition.Field.SUBJECT, Rule.Condition.Comparator.CONTAINS, "subject"))
+                        .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(
+                                mailbox3Id.serialize(),
+                                mailbox2Id.serialize(),
+                                mailbox1Id.serialize()))))
+                        .build()));
+
+        FakeMail mail = FakeMail.builder()
+                .sender(SENDER_1)
+                .recipients(RECIPIENT_1, RECIPIENT_2)
+                .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                    .setSubject("this is the subject of the mail"))
+                .build();
+
+        testSystem.getJmapFiltering().service(mail);
+
+        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
+                .isEqualTo("RECIPIENT_1_MAILBOX_3");
     }
 }
