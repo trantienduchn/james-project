@@ -49,20 +49,20 @@ public interface MailMatcher {
 
     class HeaderMatcher implements MailMatcher {
 
-        private final Logger logger = LoggerFactory.getLogger(HeaderMatcher.class);
+        private static final Logger LOGGER = LoggerFactory.getLogger(HeaderMatcher.class);
 
         private final ContentMatcher contentMatcher;
         private final String ruleValue;
         private final HeaderExtractor headerExtractor;
 
-        HeaderMatcher(Optional<ContentMatcher> contentMatcherOptional, String ruleValue,
-                      Optional<HeaderExtractor> headerExtractorOptional) {
-            Preconditions.checkArgument(contentMatcherOptional.isPresent());
-            Preconditions.checkArgument(headerExtractorOptional.isPresent());
+        HeaderMatcher(ContentMatcher contentMatcher, String ruleValue,
+                      HeaderExtractor headerExtractor) {
+            Preconditions.checkNotNull(contentMatcher);
+            Preconditions.checkNotNull(headerExtractor);
 
-            this.contentMatcher = contentMatcherOptional.get();
+            this.contentMatcher = contentMatcher;
             this.ruleValue = ruleValue;
-            this.headerExtractor = headerExtractorOptional.get();
+            this.headerExtractor = headerExtractor;
         }
 
         @Override
@@ -71,7 +71,7 @@ public interface MailMatcher {
                 Stream<String> headerLines = headerExtractor.apply(mail);
                 return contentMatcher.match(headerLines, ruleValue);
             } catch (Exception e) {
-                logger.error("error while extracting mail header", e);
+                LOGGER.error("error while extracting mail header", e);
                 return false;
             }
         }
@@ -80,59 +80,39 @@ public interface MailMatcher {
     interface ContentMatcher {
 
         class AddressHeader {
+            private static final Logger LOGGER = LoggerFactory.getLogger(AddressHeader.class);
 
-            static class Builder {
-                private final Logger logger = LoggerFactory.getLogger(Builder.class);
+            private Optional<String> personal;
+            private Optional<String> address;
+            private final String fullAddress;
 
-                private InternetAddress internetAddress;
+            private AddressHeader(String fullAddress) {
+                this.fullAddress = fullAddress;
+                parseFullAddress();
+            }
 
-                private Builder() {
-                }
-
-                private Builder internetAddress(String addressAsString) {
-                    try {
-                        this.internetAddress = new InternetAddress(addressAsString);
-                    } catch (AddressException e) {
-                        logger.error("error while parsing address " + addressAsString, e);
-                    }
-
-                    return this;
-                }
-
-                public AddressHeader build() {
-                    Preconditions.checkNotNull(internetAddress);
-
-                    return new AddressHeader(internetAddress.getPersonal(), internetAddress.getAddress());
+            private void parseFullAddress() {
+                try {
+                    InternetAddress internetAddress = new InternetAddress(fullAddress);
+                    this.personal = Optional.ofNullable(internetAddress.getPersonal());
+                    this.address = Optional.ofNullable(internetAddress.getAddress());
+                } catch (AddressException e) {
+                    LOGGER.error("error while parsing full address {}", fullAddress, e);
+                    this.personal = Optional.empty();
+                    this.address = Optional.empty();
                 }
             }
 
-            public static Builder builder() {
-                return new Builder();
-            }
-
-            private final String personal;
-            private final String address;
-
-            private AddressHeader(String personal, String address) {
-                this.personal = personal;
-                this.address = address;
-            }
-
-            public String getPersonal() {
+            public Optional<String> getPersonal() {
                 return personal;
             }
 
-            public String getAddress() {
+            public Optional<String> getAddress() {
                 return address;
             }
 
-            public String asString() {
-                String address = Optional.ofNullable(this.address).orElse("");
-
-                return Optional
-                    .ofNullable(personal)
-                    .map(personal -> personal + " <" + address + ">")
-                    .orElse("<" + address + ">");
+            public String getFullAddress() {
+                return fullAddress;
             }
         }
 
@@ -150,15 +130,15 @@ public interface MailMatcher {
 
         ContentMatcher ADDRESS_CONTAINS_MATCHER = (contents, valueToMatch) -> contents
                 .map(ContentMatcher::asAddressHeader)
-                .anyMatch(addressHeader -> StringUtils.contains(addressHeader.asString(), valueToMatch));
+                .anyMatch(addressHeader -> StringUtils.contains(addressHeader.getFullAddress(), valueToMatch));
 
         ContentMatcher ADDRESS_NOT_CONTAINS_MATCHER = negate(ADDRESS_CONTAINS_MATCHER);
         ContentMatcher ADDRESS_EXACTLY_EQUALS_MATCHER = (contents, valueToMatch) -> contents
                 .map(ContentMatcher::asAddressHeader)
                 .anyMatch(addressHeader ->
-                        StringUtils.equals(addressHeader.getPersonal(), valueToMatch)
-                    || StringUtils.equals(addressHeader.getAddress(), valueToMatch)
-                    || StringUtils.equals(addressHeader.asString(), valueToMatch));
+                        StringUtils.equals(addressHeader.getFullAddress(), valueToMatch)
+                        || StringUtils.equals(addressHeader.getAddress().orElse(null), valueToMatch)
+                        || StringUtils.equals(addressHeader.getPersonal().orElse(null), valueToMatch));
 
         ContentMatcher ADDRESS_NOT_EXACTLY_EQUALS_MATCHER = negate(ADDRESS_EXACTLY_EQUALS_MATCHER);
 
@@ -189,9 +169,7 @@ public interface MailMatcher {
         }
 
         static AddressHeader asAddressHeader(String addressAsString) {
-            return AddressHeader.builder()
-                .internetAddress(addressAsString)
-                .build();
+            return new AddressHeader(addressAsString);
         }
 
         boolean match(Stream<String> contents, String valueToMatch);
@@ -218,12 +196,15 @@ public interface MailMatcher {
             .put(Field.TO, TO_EXTRACTOR)
             .build();
 
-    static  MailMatcher from(Rule rule) {
+    static MailMatcher from(Rule rule) {
         Condition ruleCondition = rule.getCondition();
         Optional<ContentMatcher> contentMatcherOptional = ContentMatcher.asContentMatcher(ruleCondition.getField(), ruleCondition.getComparator());
         Optional<HeaderExtractor> headerExtractorOptional = getHeaderExtractor(ruleCondition.getField());
 
-        return new HeaderMatcher(contentMatcherOptional, rule.getCondition().getValue(), headerExtractorOptional);
+        return new HeaderMatcher(
+                contentMatcherOptional.orElse(null),
+                rule.getCondition().getValue(),
+                headerExtractorOptional.orElse(null));
     }
 
     static HeaderExtractor recipientExtractor(Message.RecipientType type) {
