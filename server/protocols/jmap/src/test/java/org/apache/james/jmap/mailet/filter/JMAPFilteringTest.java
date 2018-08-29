@@ -30,6 +30,7 @@ import static org.apache.james.jmap.api.filtering.Rule.Condition.Field.RECIPIENT
 import static org.apache.james.jmap.api.filtering.Rule.Condition.Field.SUBJECT;
 import static org.apache.james.jmap.api.filtering.Rule.Condition.Field.TO;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.BOU;
+import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.CC_HEADER;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.DELIVERY_PATH_PREFIX;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.EMPTY;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.FRED_MARTIN_FULLNAME;
@@ -40,6 +41,7 @@ import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.RECIPIENT
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.RECIPIENT_1_USERNAME;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.SCRAMBLED_SUBJECT;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.SHOULD_NOT_MATCH;
+import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.TO_HEADER;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.UNFOLDED_USERNAME;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.UNSCRAMBLED_SUBJECT;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_1_ADDRESS;
@@ -66,6 +68,8 @@ import org.apache.james.jmap.api.filtering.Rule;
 import org.apache.james.jmap.mailet.filter.JMAPFilteringExtension.JMAPFilteringTestSystem;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.model.MailboxId;
+import org.apache.james.util.OptionalUtils;
+import org.apache.james.util.StreamUtils;
 import org.apache.mailet.base.test.FakeMail;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -74,6 +78,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import com.github.fge.lambdas.Throwing;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
 @ExtendWith(JMAPFilteringExtension.class)
@@ -86,12 +91,18 @@ class JMAPFilteringTest {
         private Optional<MimeMessageBuilder> mimeMessageBuilder;
         private Optional<String> valueToMatch;
 
+        public FilteringArgumentBuilder(Optional<String> description, Optional<Rule.Condition.Field> field,
+                                        Optional<Rule.Condition.Comparator> comparator,
+                                        Optional<MimeMessageBuilder> mimeMessageBuilder, Optional<String> valueToMatch) {
+            this.description = description;
+            this.field = field;
+            this.comparator = comparator;
+            this.mimeMessageBuilder = mimeMessageBuilder;
+            this.valueToMatch = valueToMatch;
+        }
+
         public FilteringArgumentBuilder() {
-            description = Optional.empty();
-            field = Optional.empty();
-            comparator = Optional.empty();
-            mimeMessageBuilder = Optional.empty();
-            valueToMatch = Optional.empty();
+            this(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
         }
 
         public FilteringArgumentBuilder description(String description) {
@@ -139,6 +150,15 @@ class JMAPFilteringTest {
             return this;
         }
 
+        public FilteringArgumentBuilder headerForField(String headerValue) {
+            Preconditions.checkState(field.isPresent(), "field should be set first");
+
+            initMessageBuilder();
+
+            mimeMessageBuilder.ifPresent(Throwing.consumer(mimeBuilder -> mimeBuilder.addHeader(field.get().asString(), headerValue)));
+            return this;
+        }
+
         public FilteringArgumentBuilder subject(String subject) {
             initMessageBuilder();
             mimeMessageBuilder.ifPresent(Throwing.consumer(mimeBuilder -> mimeBuilder.setSubject(subject)));
@@ -152,28 +172,23 @@ class JMAPFilteringTest {
 
         public FilteringArgumentBuilder scrambledSubjectToMatch(String valueToMatch) {
             return description("normal content")
-                    .field(SUBJECT)
-                    .subject(SCRAMBLED_SUBJECT)
-                    .valueToMatch(valueToMatch);
+                .field(SUBJECT)
+                .subject(SCRAMBLED_SUBJECT)
+                .valueToMatch(valueToMatch);
         }
 
         public FilteringArgumentBuilder unscrambledSubjectToMatch(String valueToMatch) {
             return description("unscrambled content")
-                    .field(SUBJECT)
-                    .subject(UNSCRAMBLED_SUBJECT)
-                    .valueToMatch(valueToMatch);
+                .field(SUBJECT)
+                .subject(UNSCRAMBLED_SUBJECT)
+                .valueToMatch(valueToMatch);
         }
 
         public Arguments build() {
-            ArrayList<Object> availableArgs = new ArrayList<>();
-
-            description.ifPresent(availableArgs::add);
-            field.ifPresent(availableArgs::add);
-            comparator.ifPresent(availableArgs::add);
-            mimeMessageBuilder.ifPresent(availableArgs::add);
-            valueToMatch.ifPresent(availableArgs::add);
-
-            return Arguments.of(availableArgs.toArray(new Object[availableArgs.size()]));
+            return Arguments.of(
+                Stream.of(description, field, comparator, mimeMessageBuilder, valueToMatch)
+                    .flatMap(OptionalUtils::toStream)
+                    .toArray());
         }
 
         private void initMessageBuilder() {
@@ -181,11 +196,14 @@ class JMAPFilteringTest {
                 mimeMessageBuilder = Optional.of(MimeMessageBuilder.mimeMessageBuilder());
             }
         }
+
+        public FilteringArgumentBuilder copy() {
+            return new FilteringArgumentBuilder(description, field, comparator, mimeMessageBuilder, valueToMatch);
+        }
     }
 
     static class FilteringArgumentsProvider {
-
-        private List<FilteringArgumentBuilder> argumentsBuilders;
+        private final List<FilteringArgumentBuilder> argumentsBuilders;
 
         public FilteringArgumentsProvider() {
             argumentsBuilders = new ArrayList<>();
@@ -210,35 +228,59 @@ class JMAPFilteringTest {
     }
 
     static Stream<Arguments> mailDirectiveShouldBeSetWhenContainsRuleValueParamsProvider() {
-        return Stream.concat(
+        return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
-                .flatMap(headerField -> argumentsProvider()
-                    .argument(argumentBuilder().description("normal content").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).valueToMatch(USER_1_USERNAME))
-                    .argument(argumentBuilder().description("multiple headers").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).from(USER_2_FULL_ADDRESS).valueToMatch(USER_1_USERNAME))
-                    .argument(argumentBuilder().description("scrambled content").field(headerField).header(headerField.asString(), FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(FRED_MARTIN_FULLNAME))
-                    .argument(argumentBuilder().description("folded content").field(headerField).header(headerField.asString(), USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(UNFOLDED_USERNAME))
-                    .argument(argumentBuilder().description("multiple spaces content").field(headerField).header(headerField.asString(), GA_BOU_ZO_MEU_FULL_ADDRESS).valueToMatch(BOU))
+                .map(headerField -> argumentBuilder().field(headerField))
+                .flatMap(builder -> argumentsProvider()
+                    .argument(builder.copy()
+                        .description("normal content")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch(USER_1_USERNAME))
+                    .argument(builder.copy()
+                        .description("multiple headers")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .headerForField(USER_2_FULL_ADDRESS)
+                        .valueToMatch(USER_1_USERNAME))
+                    .argument(builder.copy()
+                        .description("scrambled content")
+                        .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch(FRED_MARTIN_FULLNAME))
+                    .argument(builder.copy()
+                        .description("folded content")
+                        .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(UNFOLDED_USERNAME))
+                    .argument(builder.copy()
+                        .description("multiple spaces content")
+                        .headerForField(GA_BOU_ZO_MEU_FULL_ADDRESS)
+                        .valueToMatch(BOU))
                     .toStream()),
+            Stream.of(TO_HEADER, CC_HEADER)
+                .flatMap(headerName -> Stream.of(
+                    argumentBuilder().description("normal content " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch(USER_3_USERNAME)
+                        .build(),
+                    argumentBuilder().description("scrambled content in " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch(FRED_MARTIN_FULLNAME)
+                        .build(),
+                    argumentBuilder().description("folded content in " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(UNFOLDED_USERNAME)
+                        .build())),
 
             argumentsProvider()
-                .argument(argumentBuilder().description("normal content to header").field(RECIPIENT).header("to", USER_3_FULL_ADDRESS).valueToMatch(USER_3_USERNAME))
-                .argument(argumentBuilder().description("scrambled content in to header").field(RECIPIENT).header("to", FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(FRED_MARTIN_FULLNAME))
-                .argument(argumentBuilder().description("folded content in to header").field(RECIPIENT).header("to", USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(UNFOLDED_USERNAME))
-
-                .argument(argumentBuilder().description("normal content cc header").field(RECIPIENT).header("cc", USER_3_FULL_ADDRESS).valueToMatch(USER_3_USERNAME))
-                .argument(argumentBuilder().description("scrambled content in cc header").field(RECIPIENT).header("cc", FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(FRED_MARTIN_FULLNAME))
-                .argument(argumentBuilder().description("folded content in cc header").field(RECIPIENT).header("cc", USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(UNFOLDED_USERNAME))
-
                 .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
-                        .ccRecipient(USER_1_FULL_ADDRESS)
-                        .ccRecipient(USER_2_FULL_ADDRESS)
-                        .toRecipient(USER_3_FULL_ADDRESS)
-                        .toRecipient(USER_4_FULL_ADDRESS)
-                        .valueToMatch(USER_1_USERNAME))
-
+                    .ccRecipient(USER_1_FULL_ADDRESS)
+                    .ccRecipient(USER_2_FULL_ADDRESS)
+                    .toRecipient(USER_3_FULL_ADDRESS)
+                    .toRecipient(USER_4_FULL_ADDRESS)
+                    .valueToMatch(USER_1_USERNAME))
                 .argument(argumentBuilder().scrambledSubjectToMatch(FRED_MARTIN_FULLNAME))
                 .argument(argumentBuilder().unscrambledSubjectToMatch(FRED_MARTIN_FULLNAME))
-
                 .toStream()
         );
     }
@@ -268,51 +310,79 @@ class JMAPFilteringTest {
             Rule.Condition.of(CC, CONTAINS, SHOULD_NOT_MATCH));
 
         FakeMail mail = FakeMail.builder()
-                .sender(USER_1_ADDRESS)
-                .recipients(RECIPIENT_1)
-                .mimeMessage(mimeMessageBuilder()
-                    .addFrom(USER_1_FULL_ADDRESS)
-                    .addToRecipient(USER_2_FULL_ADDRESS)
-                    .addCcRecipient(USER_3_FULL_ADDRESS))
-                .build();
+            .sender(USER_1_ADDRESS)
+            .recipients(RECIPIENT_1)
+            .mimeMessage(mimeMessageBuilder()
+                .addFrom(USER_1_FULL_ADDRESS)
+                .addToRecipient(USER_2_FULL_ADDRESS)
+                .addCcRecipient(USER_3_FULL_ADDRESS))
+            .build();
 
         testSystem.getJmapFiltering().service(mail);
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isNull();
+            .isNull();
     }
 
     static Stream<Arguments> mailDirectiveShouldBeSetWhenDoesntContainsRuleValueParamsProvider() throws Exception {
-        return Stream.concat(
+        return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
-                .flatMap(headerField -> argumentsProvider()
-                    .argument(argumentBuilder().description("normal content").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argumentBuilder().description("multiple headers").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).from(USER_2_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argumentBuilder().description("scrambled content").field(headerField).header(headerField.asString(), FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argumentBuilder().description("folded content").field(headerField).header(headerField.asString(), USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argumentBuilder().description("empty content").field(headerField).header(headerField.asString(), EMPTY).valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argumentBuilder().description("case sensitive content").field(headerField).header(headerField.asString(), GA_BOU_ZO_MEU_FULL_ADDRESS).valueToMatch(BOU.toLowerCase()))
-                    .toStream()),
-
-            argumentsProvider()
-                .argument(argumentBuilder().description("normal content to header").field(RECIPIENT).header("to", USER_3_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("scrambled content in to header").field(RECIPIENT).header("to", FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("folded content in to header").field(RECIPIENT).header("to", USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-
-                .argument(argumentBuilder().description("normal content cc header").field(RECIPIENT).header("cc", USER_3_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("scrambled content in cc header").field(RECIPIENT).header("cc", FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("folded content in cc header").field(RECIPIENT).header("cc", USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-
-                .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
-                        .ccRecipient(USER_1_FULL_ADDRESS)
-                        .ccRecipient(USER_2_FULL_ADDRESS)
-                        .toRecipient(USER_3_FULL_ADDRESS)
-                        .toRecipient(USER_4_FULL_ADDRESS)
+                .map(headerField -> argumentBuilder().field(headerField))
+                .flatMap(argBuilder -> argumentsProvider()
+                    .argument(argBuilder.copy()
+                        .description("normal content")
+                        .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch(SHOULD_NOT_MATCH))
-
+                    .argument(argBuilder.copy()
+                        .description("multiple headers")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .from(USER_2_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("scrambled content")
+                        .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("folded content")
+                        .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("empty content")
+                        .headerForField(EMPTY)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("case sensitive content")
+                        .headerForField(GA_BOU_ZO_MEU_FULL_ADDRESS)
+                        .valueToMatch(BOU.toLowerCase()))
+                    .toStream()),
+            Stream.of(TO_HEADER, CC_HEADER)
+                .flatMap(headerName -> Stream.of(
+                    argumentBuilder()
+                        .description("normal content " + headerName + " header")
+                        .field(RECIPIENT).header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build(),
+                    argumentBuilder()
+                        .description("scrambled content in " + headerName + " header")
+                        .field(RECIPIENT).header(headerName, FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build(),
+                    argumentBuilder()
+                        .description("folded content in " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build()
+                )),
+            argumentsProvider()
+                .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
+                    .ccRecipient(USER_1_FULL_ADDRESS)
+                    .ccRecipient(USER_2_FULL_ADDRESS)
+                    .toRecipient(USER_3_FULL_ADDRESS)
+                    .toRecipient(USER_4_FULL_ADDRESS)
+                    .valueToMatch(SHOULD_NOT_MATCH))
                 .argument(argumentBuilder().scrambledSubjectToMatch(SHOULD_NOT_MATCH))
                 .argument(argumentBuilder().unscrambledSubjectToMatch(SHOULD_NOT_MATCH))
-
                 .toStream()
         );
     }
@@ -325,13 +395,11 @@ class JMAPFilteringTest {
                                                              String valueToMatch,
                                                              JMAPFilteringTestSystem testSystem) throws Exception {
         testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, NOT_CONTAINS, valueToMatch));
-
         FakeMail mail = testSystem.asMail(mimeMessageBuilder);
-
         testSystem.getJmapFiltering().service(mail);
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isEqualTo(RECIPIENT_1_MAILBOX_1);
+            .isEqualTo(RECIPIENT_1_MAILBOX_1);
     }
 
     static Stream<Arguments> mailDirectiveShouldNotBeSetWhenAtleastOneContentContainsRuleValueParamsProvider() throws Exception {
@@ -365,46 +433,87 @@ class JMAPFilteringTest {
         testSystem.getJmapFiltering().service(mail);
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isNull();
+            .isNull();
     }
 
     static Stream<Arguments> mailDirectiveShouldBeSetWhenExactlyEqualsRuleValueParamsProvider() throws Exception {
-        return Stream.concat(
+        return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
-                .flatMap(headerField -> argumentsProvider()
-                    .argument(argumentBuilder().description("full address value").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).valueToMatch(USER_1_USERNAME))
-                    .argument(argumentBuilder().description("address only value").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).valueToMatch(USER_1_USERNAME))
-                    .argument(argumentBuilder().description("personal only value").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).valueToMatch(USER_1_USERNAME))
-                    .argument(argumentBuilder().description("personal header should match personal").field(headerField).header(headerField.asString(), USER_1_ADDRESS).valueToMatch(USER_1_ADDRESS))
-                    .argument(argumentBuilder().description("address header should match address").field(headerField).header(headerField.asString(), USER_1_USERNAME).valueToMatch(USER_1_USERNAME))
-                    .argument(argumentBuilder().description("multiple headers").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).header(headerField.asString(), USER_2_FULL_ADDRESS).valueToMatch(USER_1_USERNAME))
-                    .argument(argumentBuilder().description("scrambled content").field(headerField).header(headerField.asString(), FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(FRED_MARTIN_FULLNAME))
-                    .argument(argumentBuilder().description("folded content").field(headerField).header(headerField.asString(), USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(UNFOLDED_USERNAME))
+                .map(headerField -> argumentBuilder().field(headerField))
+                .flatMap(argBuilder -> argumentsProvider()
+                    .argument(argBuilder.copy()
+                        .description("full address value")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch(USER_1_USERNAME))
+                    .argument(argBuilder.copy()
+                        .description("address only value")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch(USER_1_USERNAME))
+                    .argument(argBuilder.copy()
+                        .description("personal only value")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch(USER_1_USERNAME))
+                    .argument(argBuilder.copy()
+                        .description("personal header should match personal")
+                        .headerForField(USER_1_USERNAME)
+                        .valueToMatch(USER_1_USERNAME))
+                    .argument(argBuilder.copy()
+                        .description("address header should match address").headerForField(USER_1_ADDRESS).valueToMatch(USER_1_ADDRESS))
+                    .argument(argBuilder.copy()
+                        .description("multiple headers")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .headerForField(USER_2_FULL_ADDRESS)
+                        .valueToMatch(USER_1_USERNAME))
+                    .argument(argBuilder.copy()
+                        .description("scrambled content")
+                        .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch(FRED_MARTIN_FULLNAME))
+                    .argument(argBuilder.copy()
+                        .description("folded content")
+                        .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(UNFOLDED_USERNAME))
                     .toStream()),
-
+            Stream.of(TO_HEADER, CC_HEADER)
+                .flatMap(headerName -> Stream.of(
+                    argumentBuilder()
+                        .description("full address " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch(USER_3_FULL_ADDRESS)
+                        .build(),
+                    argumentBuilder()
+                        .description("address only " + headerName + " header")
+                        .field(RECIPIENT).header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch(USER_3_ADDRESS)
+                        .build(),
+                    argumentBuilder()
+                        .description("personal only " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch(USER_3_USERNAME)
+                        .build(),
+                    argumentBuilder()
+                        .description("scrambled content in " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch(FRED_MARTIN_FULLNAME)
+                        .build(),
+                    argumentBuilder()
+                        .description("folded content in " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(UNFOLDED_USERNAME)
+                        .build()
+                )),
             argumentsProvider()
-                .argument(argumentBuilder().description("full address to header").field(RECIPIENT).header("to", USER_3_FULL_ADDRESS).valueToMatch(USER_3_FULL_ADDRESS))
-                .argument(argumentBuilder().description("address only to header").field(RECIPIENT).header("to", USER_3_FULL_ADDRESS).valueToMatch(USER_3_ADDRESS))
-                .argument(argumentBuilder().description("personal only to header").field(RECIPIENT).header("to", USER_3_FULL_ADDRESS).valueToMatch(USER_3_USERNAME))
-                .argument(argumentBuilder().description("scrambled content in to header").field(RECIPIENT).header("to", FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(FRED_MARTIN_FULLNAME))
-                .argument(argumentBuilder().description("folded content in to header").field(RECIPIENT).header("to", USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(UNFOLDED_USERNAME))
-
-                .argument(argumentBuilder().description("full address cc header").field(RECIPIENT).header("cc", USER_3_FULL_ADDRESS).valueToMatch(USER_3_FULL_ADDRESS))
-                .argument(argumentBuilder().description("address only cc header").field(RECIPIENT).header("cc", USER_3_FULL_ADDRESS).valueToMatch(USER_3_ADDRESS))
-                .argument(argumentBuilder().description("personal only cc header").field(RECIPIENT).header("cc", USER_3_FULL_ADDRESS).valueToMatch(USER_3_USERNAME))
-                .argument(argumentBuilder().description("scrambled content in cc header").field(RECIPIENT).header("cc", FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(FRED_MARTIN_FULLNAME))
-                .argument(argumentBuilder().description("folded content in cc header").field(RECIPIENT).header("cc", USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(UNFOLDED_USERNAME))
-
                 .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
-                        .ccRecipient(USER_1_FULL_ADDRESS)
-                        .ccRecipient(USER_2_FULL_ADDRESS)
-                        .toRecipient(USER_3_FULL_ADDRESS)
-                        .toRecipient(USER_4_FULL_ADDRESS)
-                        .valueToMatch(USER_4_FULL_ADDRESS))
-
+                    .ccRecipient(USER_1_FULL_ADDRESS)
+                    .ccRecipient(USER_2_FULL_ADDRESS)
+                    .toRecipient(USER_3_FULL_ADDRESS)
+                    .toRecipient(USER_4_FULL_ADDRESS)
+                    .valueToMatch(USER_4_FULL_ADDRESS))
                 .argument(argumentBuilder().scrambledSubjectToMatch(UNSCRAMBLED_SUBJECT))
                 .argument(argumentBuilder().unscrambledSubjectToMatch(UNSCRAMBLED_SUBJECT))
-
                 .toStream()
         );
     }
@@ -423,7 +532,7 @@ class JMAPFilteringTest {
         testSystem.getJmapFiltering().service(mail);
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isEqualTo(RECIPIENT_1_MAILBOX_1);
+            .isEqualTo(RECIPIENT_1_MAILBOX_1);
     }
 
     @Test
@@ -449,43 +558,90 @@ class JMAPFilteringTest {
     }
 
     static Stream<Arguments> mailDirectiveShouldBeSetWhenNotExactlyEqualsRuleValueParamsProvider() throws Exception {
-        return Stream.concat(
+        return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
-                .flatMap(headerField -> argumentsProvider()
-                    .argument(argumentBuilder().description("full address value should not match").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argumentBuilder().description("only address value should not match").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argumentBuilder().description("only personal value should not match").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argumentBuilder().description("personal value should not match address").field(headerField).header(headerField.asString(), USER_1_ADDRESS).valueToMatch(USER_1_USERNAME))
-                    .argument(argumentBuilder().description("address value should not match personal").field(headerField).header(headerField.asString(), USER_1_USERNAME).valueToMatch(USER_1_ADDRESS))
-                    .argument(argumentBuilder().description("multiple headers").field(headerField).header(headerField.asString(), USER_1_FULL_ADDRESS).header(headerField.asString(), USER_2_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argumentBuilder().description("scrambled content").field(headerField).header(headerField.asString(), FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argumentBuilder().description("folded content").field(headerField).header(headerField.asString(), USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argumentBuilder().description("empty content").field(headerField).header(headerField.asString(), EMPTY).valueToMatch(USER_1_USERNAME))
-                    .toStream()),
-
-            argumentsProvider()
-                .argument(argumentBuilder().description("full address to header").field(RECIPIENT).header("to", USER_3_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("address only to header").field(RECIPIENT).header("to", USER_3_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("personal only to header").field(RECIPIENT).header("to", USER_3_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("scrambled content in to header").field(RECIPIENT).header("to", FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("folded content in to header").field(RECIPIENT).header("to", USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-
-                .argument(argumentBuilder().description("full address cc header").field(RECIPIENT).header("cc", USER_3_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("address only cc header").field(RECIPIENT).header("cc", USER_3_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("personal only cc header").field(RECIPIENT).header("cc", USER_3_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("scrambled content in cc header").field(RECIPIENT).header("cc", FRED_MARTIN_FULL_SCRAMBLED_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("folded content in cc header").field(RECIPIENT).header("cc", USER_1_AND_UNFOLDED_USER_FULL_ADDRESS).valueToMatch(SHOULD_NOT_MATCH))
-
-                .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
-                        .ccRecipient(USER_1_FULL_ADDRESS)
-                        .ccRecipient(USER_2_FULL_ADDRESS)
-                        .toRecipient(USER_3_FULL_ADDRESS)
-                        .toRecipient(USER_4_FULL_ADDRESS)
+                .map(headerField -> argumentBuilder().field(headerField))
+                .flatMap(argBuilder -> argumentsProvider()
+                    .argument(argBuilder.copy()
+                        .description("full address value should not match")
+                        .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch(SHOULD_NOT_MATCH))
-
+                    .argument(argBuilder.copy()
+                        .description("only address value should not match")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("only personal value should not match")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("personal value should not match address")
+                        .headerForField(USER_1_ADDRESS)
+                        .valueToMatch(USER_1_USERNAME))
+                    .argument(argBuilder.copy()
+                        .description("address value should not match personal")
+                        .headerForField(USER_1_USERNAME)
+                        .valueToMatch(USER_1_ADDRESS))
+                    .argument(argBuilder.copy()
+                        .description("multiple headers")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .headerForField(USER_2_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("scrambled content")
+                        .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("folded content")
+                        .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("empty content")
+                        .headerForField(EMPTY)
+                        .valueToMatch(USER_1_USERNAME))
+                    .toStream()),
+            Stream.of(TO_HEADER, CC_HEADER)
+                .flatMap(headerName -> Stream.of(
+                    argumentBuilder()
+                        .description("full address " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build(),
+                    argumentBuilder()
+                        .description("address only " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build(),
+                    argumentBuilder()
+                        .description("personal only " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build(),
+                    argumentBuilder()
+                        .description("scrambled content in " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build(),
+                    argumentBuilder()
+                        .description("folded content in " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build()
+                )),
+            argumentsProvider()
+                .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
+                    .ccRecipient(USER_1_FULL_ADDRESS)
+                    .ccRecipient(USER_2_FULL_ADDRESS)
+                    .toRecipient(USER_3_FULL_ADDRESS)
+                    .toRecipient(USER_4_FULL_ADDRESS)
+                    .valueToMatch(SHOULD_NOT_MATCH))
                 .argument(argumentBuilder().scrambledSubjectToMatch(SHOULD_NOT_MATCH))
                 .argument(argumentBuilder().unscrambledSubjectToMatch(SHOULD_NOT_MATCH))
-
                 .toStream()
         );
     }
@@ -504,15 +660,35 @@ class JMAPFilteringTest {
         testSystem.getJmapFiltering().service(mail);
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isEqualTo(RECIPIENT_1_MAILBOX_1);
+            .isEqualTo(RECIPIENT_1_MAILBOX_1);
     }
 
     static Stream<Arguments> mailDirectiveShouldNotBeSetWhenAtLeastExactlyEqualsRuleValueParamsProvider() throws Exception {
         return argumentsProvider()
-            .argument(argumentBuilder().description("from headers").field(FROM).from(USER_1_FULL_ADDRESS).from(USER_2_FULL_ADDRESS).valueToMatch(USER_1_USERNAME))
-            .argument(argumentBuilder().description("to headers").field(TO).toRecipient(USER_1_FULL_ADDRESS).toRecipient(USER_2_FULL_ADDRESS).valueToMatch(USER_1_USERNAME))
-            .argument(argumentBuilder().description("cc headers").field(CC).ccRecipient(USER_1_FULL_ADDRESS).ccRecipient(USER_2_FULL_ADDRESS).valueToMatch(USER_1_USERNAME))
-            .argument(argumentBuilder().description("recipient headers").field(RECIPIENT).toRecipient(USER_1_FULL_ADDRESS).ccRecipient(USER_2_FULL_ADDRESS).valueToMatch(USER_1_USERNAME))
+            .argument(argumentBuilder()
+                .description("from headers")
+                .field(FROM)
+                .from(USER_1_FULL_ADDRESS)
+                .from(USER_2_FULL_ADDRESS)
+                .valueToMatch(USER_1_USERNAME))
+            .argument(argumentBuilder()
+                .description("to headers")
+                .field(TO)
+                .toRecipient(USER_1_FULL_ADDRESS)
+                .toRecipient(USER_2_FULL_ADDRESS)
+                .valueToMatch(USER_1_USERNAME))
+            .argument(argumentBuilder()
+                .description("cc headers")
+                .field(CC)
+                .ccRecipient(USER_1_FULL_ADDRESS)
+                .ccRecipient(USER_2_FULL_ADDRESS)
+                .valueToMatch(USER_1_USERNAME))
+            .argument(argumentBuilder()
+                .description("recipient headers")
+                .field(RECIPIENT)
+                .toRecipient(USER_1_FULL_ADDRESS)
+                .ccRecipient(USER_2_FULL_ADDRESS)
+                .valueToMatch(USER_1_USERNAME))
             .toStream();
     }
 
@@ -529,13 +705,19 @@ class JMAPFilteringTest {
         testSystem.getJmapFiltering().service(mail);
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isNull();
+            .isNull();
     }
 
     static Stream<Arguments> mailDirectiveShouldIgnoreBccHeadersParamsProvider() throws Exception {
         return argumentsProvider()
-            .argument(argumentBuilder().comparator(CONTAINS).bccRecipient(USER_3_FULL_ADDRESS).valueToMatch(USER_3_FULL_ADDRESS))
-            .argument(argumentBuilder().comparator(EXACTLY_EQUALS).bccRecipient(USER_3_FULL_ADDRESS).valueToMatch(USER_3_FULL_ADDRESS))
+            .argument(argumentBuilder()
+                .comparator(CONTAINS)
+                .bccRecipient(USER_3_FULL_ADDRESS)
+                .valueToMatch(USER_3_FULL_ADDRESS))
+            .argument(argumentBuilder()
+                .comparator(EXACTLY_EQUALS)
+                .bccRecipient(USER_3_FULL_ADDRESS)
+                .valueToMatch(USER_3_FULL_ADDRESS))
             .toStream();
     }
 
@@ -552,15 +734,18 @@ class JMAPFilteringTest {
         testSystem.getJmapFiltering().service(mail);
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isNull();
+            .isNull();
     }
 
 
     static Stream<Arguments> mailDirectiveShouldNotBeSetWhenHeaderContentIsNullParamsProvider() throws Exception {
         return Stream.of(Rule.Condition.Field.values())
-            .flatMap(field -> Stream.of(CONTAINS, EXACTLY_EQUALS).map(
-                    comparator -> argumentBuilder().field(field).comparator(comparator).valueToMatch(USER_1_USERNAME)
-                            .build()));
+            .flatMap(field -> Stream.of(CONTAINS, EXACTLY_EQUALS)
+                .map(comparator -> argumentBuilder()
+                    .field(field)
+                    .comparator(comparator)
+                    .valueToMatch(USER_1_USERNAME)
+                    .build()));
     }
 
     @ParameterizedTest(name = "mailDirectiveShouldNotBeSetWhenHeaderContentIsNull when matching header field {1}, with {0}")
@@ -580,9 +765,12 @@ class JMAPFilteringTest {
 
     static Stream<Arguments> mailDirectiveShouldBeSetWhenHeaderContentIsNullParamsProvider() throws Exception {
         return Stream.of(Rule.Condition.Field.values())
-            .flatMap(field -> Stream.of(NOT_CONTAINS, NOT_EXACTLY_EQUALS).map(
-                    comparator -> argumentBuilder().field(field).comparator(comparator).valueToMatch(USER_1_USERNAME)
-                            .build()));
+            .flatMap(field -> Stream.of(NOT_CONTAINS, NOT_EXACTLY_EQUALS)
+                .map(comparator -> argumentBuilder()
+                    .field(field)
+                    .comparator(comparator)
+                    .valueToMatch(USER_1_USERNAME)
+                    .build()));
     }
 
     @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenHeaderContentIsNull when matching header field {1}, with {0}")
@@ -594,9 +782,7 @@ class JMAPFilteringTest {
             JMAPFilteringTestSystem testSystem) throws Exception {
 
         testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, comparator, valueToMatch));
-
         FakeMail mail = testSystem.asMail(mimeMessageBuilder());
-
         testSystem.getJmapFiltering().service(mail);
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
@@ -612,39 +798,39 @@ class JMAPFilteringTest {
 
         testSystem.defineRulesForRecipient1();
         testSystem.getFilteringManagement().defineRulesForUser(User.fromUsername(RECIPIENT_1_USERNAME),
-                ImmutableList.of(
-                    Rule.builder()
-                        .id(Rule.Id.of("1"))
-                        .name("rule 1")
-                        .condition(Rule.Condition.of(SUBJECT, CONTAINS, UNSCRAMBLED_SUBJECT))
-                        .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(mailbox1Id.serialize())))
-                        .build(),
-                    Rule.builder()
-                        .id(Rule.Id.of("2"))
-                        .name("rule 2")
-                        .condition(Rule.Condition.of(FROM, NOT_CONTAINS, USER_1_USERNAME))
-                        .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(mailbox2Id.serialize())))
-                        .build(),
-                    Rule.builder()
-                        .id(Rule.Id.of("3"))
-                        .name("rule 3")
-                        .condition(Rule.Condition.of(TO, EXACTLY_EQUALS, USER_3_ADDRESS))
-                        .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(mailbox3Id.serialize())))
-                        .build()));
+            ImmutableList.of(
+                Rule.builder()
+                    .id(Rule.Id.of("1"))
+                    .name("rule 1")
+                    .condition(Rule.Condition.of(SUBJECT, CONTAINS, UNSCRAMBLED_SUBJECT))
+                    .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(mailbox1Id.serialize())))
+                    .build(),
+                Rule.builder()
+                    .id(Rule.Id.of("2"))
+                    .name("rule 2")
+                    .condition(Rule.Condition.of(FROM, NOT_CONTAINS, USER_1_USERNAME))
+                    .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(mailbox2Id.serialize())))
+                    .build(),
+                Rule.builder()
+                    .id(Rule.Id.of("3"))
+                    .name("rule 3")
+                    .condition(Rule.Condition.of(TO, EXACTLY_EQUALS, USER_3_ADDRESS))
+                    .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(mailbox3Id.serialize())))
+                    .build()));
 
         FakeMail mail = FakeMail.builder()
-                .sender(USER_1_ADDRESS)
-                .recipients(RECIPIENT_1)
-                .mimeMessage(mimeMessageBuilder()
-                    .addFrom(USER_2_ADDRESS)
-                    .addToRecipient(USER_3_ADDRESS)
-                    .setSubject(UNSCRAMBLED_SUBJECT))
-                .build();
+            .sender(USER_1_ADDRESS)
+            .recipients(RECIPIENT_1)
+            .mimeMessage(mimeMessageBuilder()
+                .addFrom(USER_2_ADDRESS)
+                .addToRecipient(USER_3_ADDRESS)
+                .setSubject(UNSCRAMBLED_SUBJECT))
+            .build();
 
         testSystem.getJmapFiltering().service(mail);
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isEqualTo("RECIPIENT_1_MAILBOX_1");
+            .isEqualTo("RECIPIENT_1_MAILBOX_1");
     }
 
     @Test
@@ -655,27 +841,27 @@ class JMAPFilteringTest {
         MailboxId mailbox3Id = testSystem.createMailbox(mailboxManager, RECIPIENT_1_USERNAME, "RECIPIENT_1_MAILBOX_3");
 
         testSystem.getFilteringManagement().defineRulesForUser(User.fromUsername(RECIPIENT_1_USERNAME),
-                ImmutableList.of(
-                    Rule.builder()
-                        .id(Rule.Id.of("1"))
-                        .name("rule 1")
-                        .condition(Rule.Condition.of(SUBJECT, CONTAINS, UNSCRAMBLED_SUBJECT))
-                        .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(
-                                mailbox3Id.serialize(),
-                                mailbox2Id.serialize(),
-                                mailbox1Id.serialize()))))
-                        .build()));
+            ImmutableList.of(
+                Rule.builder()
+                    .id(Rule.Id.of("1"))
+                    .name("rule 1")
+                    .condition(Rule.Condition.of(SUBJECT, CONTAINS, UNSCRAMBLED_SUBJECT))
+                    .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(ImmutableList.of(
+                        mailbox3Id.serialize(),
+                        mailbox2Id.serialize(),
+                        mailbox1Id.serialize()))))
+                    .build()));
 
         FakeMail mail = FakeMail.builder()
-                .sender(USER_1_ADDRESS)
-                .recipients(RECIPIENT_1)
-                .mimeMessage(mimeMessageBuilder()
-                    .setSubject(UNSCRAMBLED_SUBJECT))
-                .build();
+            .sender(USER_1_ADDRESS)
+            .recipients(RECIPIENT_1)
+            .mimeMessage(mimeMessageBuilder()
+                .setSubject(UNSCRAMBLED_SUBJECT))
+            .build();
 
         testSystem.getJmapFiltering().service(mail);
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isEqualTo("RECIPIENT_1_MAILBOX_3");
+            .isEqualTo("RECIPIENT_1_MAILBOX_3");
     }
 }

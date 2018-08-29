@@ -101,24 +101,24 @@ public class JMAPFilteringExtension implements BeforeEachCallback, ParameterReso
 
             final AtomicInteger counter = new AtomicInteger();
             ImmutableList<Rule> rules = conditions
-                    .stream()
-                    .map(condition -> Rule.builder()
-                            .id(Rule.Id.of(String.valueOf(counter.incrementAndGet())))
-                            .name(String.valueOf(counter.incrementAndGet()))
-                            .condition(condition)
-                            .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(testSystem.getRecipient1MailboxId().serialize())))
-                            .build())
-                    .collect(ImmutableList.toImmutableList());
+                .stream()
+                .map(condition -> Rule.builder()
+                    .id(Rule.Id.of(String.valueOf(counter.incrementAndGet())))
+                    .name(String.valueOf(counter.incrementAndGet()))
+                    .condition(condition)
+                    .action(Rule.Action.of(Rule.Action.AppendInMailboxes.withMailboxIds(testSystem.getRecipient1MailboxId().serialize())))
+                    .build())
+                .collect(ImmutableList.toImmutableList());
 
             testSystem.getFilteringManagement().defineRulesForUser(User.fromUsername(RECIPIENT_1_USERNAME), rules);
         }
 
         public FakeMail asMail(MimeMessageBuilder mimeMessageBuilder) throws MessagingException {
             return FakeMail.builder()
-                        .sender(USER_1_ADDRESS)
-                        .recipients(RECIPIENT_1)
-                        .mimeMessage(mimeMessageBuilder)
-                        .build();
+                .sender(USER_1_ADDRESS)
+                .recipients(RECIPIENT_1)
+                .mimeMessage(mimeMessageBuilder)
+                .build();
         }
     }
 

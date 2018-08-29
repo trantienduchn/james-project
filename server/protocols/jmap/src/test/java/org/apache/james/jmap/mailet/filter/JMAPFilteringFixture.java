@@ -55,4 +55,7 @@ public interface JMAPFilteringFixture {
     String UNFOLDED_USERNAME = "unfolded_user";
 
     String EMPTY = "";
+
+    String TO_HEADER = "to";
+    String CC_HEADER = "cc";
 }
