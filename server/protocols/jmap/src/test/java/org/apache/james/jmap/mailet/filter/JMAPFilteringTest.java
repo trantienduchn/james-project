@@ -227,216 +227,7 @@ class JMAPFilteringTest {
         return new FilteringArgumentsProvider();
     }
 
-    static Stream<Arguments> mailDirectiveShouldBeSetWhenContainsRuleValueParamsProvider() {
-        return StreamUtils.flatten(
-            Stream.of(FROM, TO, CC)
-                .map(headerField -> argumentBuilder().field(headerField))
-                .flatMap(builder -> argumentsProvider()
-                    .argument(builder.copy()
-                        .description("normal content")
-                        .headerForField(USER_1_FULL_ADDRESS)
-                        .valueToMatch(USER_1_USERNAME))
-                    .argument(builder.copy()
-                        .description("multiple headers")
-                        .headerForField(USER_1_FULL_ADDRESS)
-                        .headerForField(USER_2_FULL_ADDRESS)
-                        .valueToMatch(USER_1_USERNAME))
-                    .argument(builder.copy()
-                        .description("scrambled content")
-                        .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
-                        .valueToMatch(FRED_MARTIN_FULLNAME))
-                    .argument(builder.copy()
-                        .description("folded content")
-                        .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
-                        .valueToMatch(UNFOLDED_USERNAME))
-                    .argument(builder.copy()
-                        .description("multiple spaces content")
-                        .headerForField(GA_BOU_ZO_MEU_FULL_ADDRESS)
-                        .valueToMatch(BOU))
-                    .toStream()),
-            Stream.of(TO_HEADER, CC_HEADER)
-                .flatMap(headerName -> Stream.of(
-                    argumentBuilder().description("normal content " + headerName + " header")
-                        .field(RECIPIENT)
-                        .header(headerName, USER_3_FULL_ADDRESS)
-                        .valueToMatch(USER_3_USERNAME)
-                        .build(),
-                    argumentBuilder().description("scrambled content in " + headerName + " header")
-                        .field(RECIPIENT)
-                        .header(headerName, FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
-                        .valueToMatch(FRED_MARTIN_FULLNAME)
-                        .build(),
-                    argumentBuilder().description("folded content in " + headerName + " header")
-                        .field(RECIPIENT)
-                        .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
-                        .valueToMatch(UNFOLDED_USERNAME)
-                        .build())),
-
-            argumentsProvider()
-                .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
-                    .ccRecipient(USER_1_FULL_ADDRESS)
-                    .ccRecipient(USER_2_FULL_ADDRESS)
-                    .toRecipient(USER_3_FULL_ADDRESS)
-                    .toRecipient(USER_4_FULL_ADDRESS)
-                    .valueToMatch(USER_1_USERNAME))
-                .argument(argumentBuilder().scrambledSubjectToMatch(FRED_MARTIN_FULLNAME))
-                .argument(argumentBuilder().unscrambledSubjectToMatch(FRED_MARTIN_FULLNAME))
-                .toStream()
-        );
-    }
-
-    @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenContainsRuleValue when matching header field {1}, with {0}")
-    @MethodSource("mailDirectiveShouldBeSetWhenContainsRuleValueParamsProvider")
-    void mailDirectiveShouldBeSetWhenContainsRuleValue(String testDescription,
-                                                     Rule.Condition.Field fieldToMatch,
-                                                     MimeMessageBuilder mimeMessageBuilder,
-                                                     String valueToMatch,
-                                                     JMAPFilteringTestSystem testSystem) throws Exception {
-
-        testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, CONTAINS, valueToMatch));
-        FakeMail mail = testSystem.asMail(mimeMessageBuilder);
-        testSystem.getJmapFiltering().service(mail);
-
-        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isEqualTo(RECIPIENT_1_MAILBOX_1);
-    }
-
-    @Test
-    void mailDirectiveShouldNotBeSetWhenNoneRulesValueIsContained(JMAPFilteringTestSystem testSystem) throws Exception {
-
-        testSystem.defineRulesForRecipient1(
-            Rule.Condition.of(FROM, CONTAINS, SHOULD_NOT_MATCH),
-            Rule.Condition.of(TO, CONTAINS, SHOULD_NOT_MATCH),
-            Rule.Condition.of(CC, CONTAINS, SHOULD_NOT_MATCH));
-
-        FakeMail mail = FakeMail.builder()
-            .sender(USER_1_ADDRESS)
-            .recipients(RECIPIENT_1)
-            .mimeMessage(mimeMessageBuilder()
-                .addFrom(USER_1_FULL_ADDRESS)
-                .addToRecipient(USER_2_FULL_ADDRESS)
-                .addCcRecipient(USER_3_FULL_ADDRESS))
-            .build();
-
-        testSystem.getJmapFiltering().service(mail);
-
-        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-            .isNull();
-    }
-
-    static Stream<Arguments> mailDirectiveShouldBeSetWhenDoesntContainsRuleValueParamsProvider() throws Exception {
-        return StreamUtils.flatten(
-            Stream.of(FROM, TO, CC)
-                .map(headerField -> argumentBuilder().field(headerField))
-                .flatMap(argBuilder -> argumentsProvider()
-                    .argument(argBuilder.copy()
-                        .description("normal content")
-                        .headerForField(USER_1_FULL_ADDRESS)
-                        .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder.copy()
-                        .description("multiple headers")
-                        .headerForField(USER_1_FULL_ADDRESS)
-                        .from(USER_2_FULL_ADDRESS)
-                        .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder.copy()
-                        .description("scrambled content")
-                        .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
-                        .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder.copy()
-                        .description("folded content")
-                        .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
-                        .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder.copy()
-                        .description("empty content")
-                        .headerForField(EMPTY)
-                        .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder.copy()
-                        .description("case sensitive content")
-                        .headerForField(GA_BOU_ZO_MEU_FULL_ADDRESS)
-                        .valueToMatch(BOU.toLowerCase()))
-                    .toStream()),
-            Stream.of(TO_HEADER, CC_HEADER)
-                .flatMap(headerName -> Stream.of(
-                    argumentBuilder()
-                        .description("normal content " + headerName + " header")
-                        .field(RECIPIENT).header(headerName, USER_3_FULL_ADDRESS)
-                        .valueToMatch(SHOULD_NOT_MATCH)
-                        .build(),
-                    argumentBuilder()
-                        .description("scrambled content in " + headerName + " header")
-                        .field(RECIPIENT).header(headerName, FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
-                        .valueToMatch(SHOULD_NOT_MATCH)
-                        .build(),
-                    argumentBuilder()
-                        .description("folded content in " + headerName + " header")
-                        .field(RECIPIENT)
-                        .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
-                        .valueToMatch(SHOULD_NOT_MATCH)
-                        .build()
-                )),
-            argumentsProvider()
-                .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
-                    .ccRecipient(USER_1_FULL_ADDRESS)
-                    .ccRecipient(USER_2_FULL_ADDRESS)
-                    .toRecipient(USER_3_FULL_ADDRESS)
-                    .toRecipient(USER_4_FULL_ADDRESS)
-                    .valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().scrambledSubjectToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().unscrambledSubjectToMatch(SHOULD_NOT_MATCH))
-                .toStream()
-        );
-    }
-
-    @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenDoesntContainsRuleValue when matching header field {1}, with {0}")
-    @MethodSource("mailDirectiveShouldBeSetWhenDoesntContainsRuleValueParamsProvider")
-    void mailDirectiveShouldBeSetWhenDoesntContainsRuleValue(String testDescription,
-                                                             Rule.Condition.Field fieldToMatch,
-                                                             MimeMessageBuilder mimeMessageBuilder,
-                                                             String valueToMatch,
-                                                             JMAPFilteringTestSystem testSystem) throws Exception {
-        testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, NOT_CONTAINS, valueToMatch));
-        FakeMail mail = testSystem.asMail(mimeMessageBuilder);
-        testSystem.getJmapFiltering().service(mail);
-
-        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-            .isEqualTo(RECIPIENT_1_MAILBOX_1);
-    }
-
-    static Stream<Arguments> mailDirectiveShouldNotBeSetWhenAtleastOneContentContainsRuleValueParamsProvider() throws Exception {
-        return argumentsProvider()
-            .argument(argumentBuilder().description("one match").field(FROM).from(USER_1_FULL_ADDRESS).from(USER_2_FULL_ADDRESS).valueToMatch(USER_2_USERNAME))
-            .argument(argumentBuilder().description("two matches").field(TO)
-                    .toRecipient(USER_1_FULL_ADDRESS)
-                    .toRecipient(USER_2_FULL_ADDRESS)
-                    .toRecipient(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
-                .valueToMatch("user"))
-            .argument(argumentBuilder().description("all matches").field(CC)
-                    .ccRecipient(USER_1_FULL_ADDRESS)
-                    .ccRecipient(USER_2_FULL_ADDRESS)
-                    .ccRecipient(USER_3_FULL_ADDRESS)
-                    .ccRecipient(USER_4_FULL_ADDRESS)
-                .valueToMatch("user"))
-            .toStream();
-    }
-
-    @ParameterizedTest(name = "mailDirectiveShouldNotBeSetWhenAtleastOneContentContainsRuleValue when {0}")
-    @MethodSource("mailDirectiveShouldNotBeSetWhenAtleastOneContentContainsRuleValueParamsProvider")
-    void mailDirectiveShouldNotBeSetWhenAtleastOneContentContainsRuleValue(
-            String testDescription,
-            Rule.Condition.Field fieldToMatch,
-            MimeMessageBuilder mimeMessageBuilder,
-            String valueToMatch,
-            JMAPFilteringTestSystem testSystem) throws Exception {
-
-        testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, NOT_CONTAINS, valueToMatch));
-        FakeMail mail = testSystem.asMail(mimeMessageBuilder);
-        testSystem.getJmapFiltering().service(mail);
-
-        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-            .isNull();
-    }
-
-    static Stream<Arguments> mailDirectiveShouldBeSetWhenExactlyEqualsRuleValueParamsProvider() throws Exception {
+    static Stream<Arguments> exactlyEqualsTestSuite() {
         return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
                 .map(headerField -> argumentBuilder().field(headerField))
@@ -448,11 +239,11 @@ class JMAPFilteringTest {
                     .argument(argBuilder.copy()
                         .description("address only value")
                         .headerForField(USER_1_FULL_ADDRESS)
-                        .valueToMatch(USER_1_USERNAME))
+                        .valueToMatch(USER_1_ADDRESS))
                     .argument(argBuilder.copy()
                         .description("personal only value")
                         .headerForField(USER_1_FULL_ADDRESS)
-                        .valueToMatch(USER_1_USERNAME))
+                        .valueToMatch(USER_1_FULL_ADDRESS))
                     .argument(argBuilder.copy()
                         .description("personal header should match personal")
                         .headerForField(USER_1_USERNAME)
@@ -518,8 +309,149 @@ class JMAPFilteringTest {
         );
     }
 
+    static Stream<Arguments> notEqualsTestSuite() {
+        return StreamUtils.flatten(
+            Stream.of(FROM, TO, CC)
+                .map(headerField -> argumentBuilder().field(headerField))
+                .flatMap(argBuilder -> argumentsProvider()
+                    .argument(argBuilder.copy()
+                        .description("normal content")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("multiple headers")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .from(USER_2_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("scrambled content")
+                        .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("folded content")
+                        .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("empty content")
+                        .headerForField(EMPTY)
+                        .valueToMatch(SHOULD_NOT_MATCH))
+                    .argument(argBuilder.copy()
+                        .description("case sensitive content")
+                        .headerForField(GA_BOU_ZO_MEU_FULL_ADDRESS)
+                        .valueToMatch(BOU.toLowerCase()))
+                    .toStream()),
+            Stream.of(TO_HEADER, CC_HEADER)
+                .flatMap(headerName -> Stream.of(
+                    argumentBuilder()
+                        .description("normal content " + headerName + " header")
+                        .field(RECIPIENT).header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build(),
+                    argumentBuilder()
+                        .description("scrambled content in " + headerName + " header")
+                        .field(RECIPIENT).header(headerName, FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build(),
+                    argumentBuilder()
+                        .description("folded content in " + headerName + " header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build(),
+                    argumentBuilder()
+                        .description("bcc header")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(SHOULD_NOT_MATCH)
+                        .build()
+                )),
+            argumentsProvider()
+                .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
+                    .ccRecipient(USER_1_FULL_ADDRESS)
+                    .ccRecipient(USER_2_FULL_ADDRESS)
+                    .toRecipient(USER_3_FULL_ADDRESS)
+                    .toRecipient(USER_4_FULL_ADDRESS)
+                    .valueToMatch(SHOULD_NOT_MATCH))
+                .argument(argumentBuilder().scrambledSubjectToMatch(SHOULD_NOT_MATCH))
+                .argument(argumentBuilder().unscrambledSubjectToMatch(SHOULD_NOT_MATCH))
+                .toStream()
+        );
+    }
+
+    @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenContainsRuleValue when matching header field {1}, with {0}")
+    @MethodSource("exactlyEqualsTestSuite")
+    void mailDirectiveShouldBeSetWhenContainsRuleValue(String testDescription,
+                                                     Rule.Condition.Field fieldToMatch,
+                                                     MimeMessageBuilder mimeMessageBuilder,
+                                                     String valueToMatch,
+                                                     JMAPFilteringTestSystem testSystem) throws Exception {
+
+        testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, CONTAINS, valueToMatch));
+        FakeMail mail = testSystem.asMail(mimeMessageBuilder);
+        testSystem.getJmapFiltering().service(mail);
+
+        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
+                .isEqualTo(RECIPIENT_1_MAILBOX_1);
+    }
+
+    @Test
+    void mailDirectiveShouldNotBeSetWhenNoneRulesValueIsContained(JMAPFilteringTestSystem testSystem) throws Exception {
+
+        testSystem.defineRulesForRecipient1(
+            Rule.Condition.of(FROM, CONTAINS, SHOULD_NOT_MATCH),
+            Rule.Condition.of(TO, CONTAINS, SHOULD_NOT_MATCH),
+            Rule.Condition.of(CC, CONTAINS, SHOULD_NOT_MATCH));
+
+        FakeMail mail = FakeMail.builder()
+            .sender(USER_1_ADDRESS)
+            .recipients(RECIPIENT_1)
+            .mimeMessage(mimeMessageBuilder()
+                .addFrom(USER_1_FULL_ADDRESS)
+                .addToRecipient(USER_2_FULL_ADDRESS)
+                .addCcRecipient(USER_3_FULL_ADDRESS))
+            .build();
+
+        testSystem.getJmapFiltering().service(mail);
+
+        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
+            .isNull();
+    }
+
+    @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenDoesntContainsRuleValue when matching header field {1}, with {0}")
+    @MethodSource("notEqualsTestSuite")
+    void mailDirectiveShouldBeSetWhenDoesntContainsRuleValue(String testDescription,
+                                                             Rule.Condition.Field fieldToMatch,
+                                                             MimeMessageBuilder mimeMessageBuilder,
+                                                             String valueToMatch,
+                                                             JMAPFilteringTestSystem testSystem) throws Exception {
+        testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, NOT_CONTAINS, valueToMatch));
+        FakeMail mail = testSystem.asMail(mimeMessageBuilder);
+        testSystem.getJmapFiltering().service(mail);
+
+        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
+            .isEqualTo(RECIPIENT_1_MAILBOX_1);
+    }
+
+
+    @ParameterizedTest(name = "mailDirectiveShouldNotBeSetWhenAtleastOneContentContainsRuleValue when {0}")
+    @MethodSource("exactlyEqualsTestSuite")
+    void mailDirectiveShouldNotBeSetWhenAtleastOneContentContainsRuleValue(
+            String testDescription,
+            Rule.Condition.Field fieldToMatch,
+            MimeMessageBuilder mimeMessageBuilder,
+            String valueToMatch,
+            JMAPFilteringTestSystem testSystem) throws Exception {
+
+        testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, NOT_CONTAINS, valueToMatch));
+        FakeMail mail = testSystem.asMail(mimeMessageBuilder);
+        testSystem.getJmapFiltering().service(mail);
+
+        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
+            .isNull();
+    }
+
     @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenExactlyEqualsRuleValue when matching header field {1}, with {0}")
-    @MethodSource("mailDirectiveShouldBeSetWhenExactlyEqualsRuleValueParamsProvider")
+    @MethodSource("exactlyEqualsTestSuite")
     void mailDirectiveShouldBeSetWhenExactlyEqualsRuleValue(
             String testDescription,
             Rule.Condition.Field fieldToMatch,
@@ -647,7 +579,7 @@ class JMAPFilteringTest {
     }
 
     @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenNotExactlyEqualsRuleValue when matching header field {1}, with {0}")
-    @MethodSource("mailDirectiveShouldBeSetWhenNotExactlyEqualsRuleValueParamsProvider")
+    @MethodSource("notEqualsTestSuite")
     void mailDirectiveShouldBeSetWhenNotExactlyEqualsRuleValue(
             String testDescription,
             Rule.Condition.Field fieldToMatch,
@@ -663,37 +595,8 @@ class JMAPFilteringTest {
             .isEqualTo(RECIPIENT_1_MAILBOX_1);
     }
 
-    static Stream<Arguments> mailDirectiveShouldNotBeSetWhenAtLeastExactlyEqualsRuleValueParamsProvider() throws Exception {
-        return argumentsProvider()
-            .argument(argumentBuilder()
-                .description("from headers")
-                .field(FROM)
-                .from(USER_1_FULL_ADDRESS)
-                .from(USER_2_FULL_ADDRESS)
-                .valueToMatch(USER_1_USERNAME))
-            .argument(argumentBuilder()
-                .description("to headers")
-                .field(TO)
-                .toRecipient(USER_1_FULL_ADDRESS)
-                .toRecipient(USER_2_FULL_ADDRESS)
-                .valueToMatch(USER_1_USERNAME))
-            .argument(argumentBuilder()
-                .description("cc headers")
-                .field(CC)
-                .ccRecipient(USER_1_FULL_ADDRESS)
-                .ccRecipient(USER_2_FULL_ADDRESS)
-                .valueToMatch(USER_1_USERNAME))
-            .argument(argumentBuilder()
-                .description("recipient headers")
-                .field(RECIPIENT)
-                .toRecipient(USER_1_FULL_ADDRESS)
-                .ccRecipient(USER_2_FULL_ADDRESS)
-                .valueToMatch(USER_1_USERNAME))
-            .toStream();
-    }
-
     @ParameterizedTest(name = "mailDirectiveShouldNotBeSetWhenAtLeastExactlyEqualsRuleValue when {0}")
-    @MethodSource("mailDirectiveShouldNotBeSetWhenAtLeastExactlyEqualsRuleValueParamsProvider")
+    @MethodSource("exactlyEqualsTestSuite")
     void mailDirectiveShouldNotBeSetWhenAtLeastExactlyEqualsRuleValue(
             String testDescription,
             Rule.Condition.Field fieldToMatch,
