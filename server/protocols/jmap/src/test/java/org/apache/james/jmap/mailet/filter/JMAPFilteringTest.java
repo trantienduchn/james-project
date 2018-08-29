@@ -254,7 +254,9 @@ class JMAPFilteringTest {
                         .headerForField(USER_1_USERNAME)
                         .valueToMatch(USER_1_USERNAME))
                     .argument(argBuilder.copy()
-                        .description("address header should match address").headerForField(USER_1_ADDRESS).valueToMatch(USER_1_ADDRESS))
+                        .description("address header should match address")
+                        .headerForField(USER_1_ADDRESS)
+                        .valueToMatch(USER_1_ADDRESS))
                     .argument(argBuilder.copy()
                         .description("multiple headers")
                         .headerForField(USER_1_FULL_ADDRESS)
@@ -392,13 +394,13 @@ class JMAPFilteringTest {
         );
     }
 
-    @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenContainsRuleValue when matching header field {1}, with {0}")
+    @ParameterizedTest(name = "CONTAINS should match for header field {1}, with {0}")
     @MethodSource("exactlyEqualsTestSuite")
-    void mailDirectiveShouldBeSetWhenContainsRuleValue(String testDescription,
-                                                     Rule.Condition.Field fieldToMatch,
-                                                     MimeMessageBuilder mimeMessageBuilder,
-                                                     String valueToMatch,
-                                                     JMAPFilteringTestSystem testSystem) throws Exception {
+    void matchingContainsTest(String testDescription,
+                              Rule.Condition.Field fieldToMatch,
+                              MimeMessageBuilder mimeMessageBuilder,
+                              String valueToMatch,
+                              JMAPFilteringTestSystem testSystem) throws Exception {
 
         testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, CONTAINS, valueToMatch));
         FakeMail mail = testSystem.asMail(mimeMessageBuilder);
@@ -408,13 +410,13 @@ class JMAPFilteringTest {
                 .isEqualTo(RECIPIENT_1_MAILBOX_1);
     }
 
-    @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenDoesntContainsRuleValue when matching header field {1}, with {0}")
+    @ParameterizedTest(name = "NOT-CONTAINS should be matching for field {1}, with {0}")
     @MethodSource("notEqualsTestSuite")
-    void mailDirectiveShouldBeSetWhenDoesntContainsRuleValue(String testDescription,
-                                                             Rule.Condition.Field fieldToMatch,
-                                                             MimeMessageBuilder mimeMessageBuilder,
-                                                             String valueToMatch,
-                                                             JMAPFilteringTestSystem testSystem) throws Exception {
+    void matchingNotContainsTest(String testDescription,
+                                 Rule.Condition.Field fieldToMatch,
+                                 MimeMessageBuilder mimeMessageBuilder,
+                                 String valueToMatch,
+                                 JMAPFilteringTestSystem testSystem) throws Exception {
         testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, NOT_CONTAINS, valueToMatch));
         FakeMail mail = testSystem.asMail(mimeMessageBuilder);
         testSystem.getJmapFiltering().service(mail);
@@ -424,14 +426,13 @@ class JMAPFilteringTest {
     }
 
 
-    @ParameterizedTest(name = "mailDirectiveShouldNotBeSetWhenAtleastOneContentContainsRuleValue when {0}")
+    @ParameterizedTest(name = "NOT-CONTAINS should not be matching for field {1}, with {0}")
     @MethodSource("exactlyEqualsTestSuite")
-    void mailDirectiveShouldNotBeSetWhenAtleastOneContentContainsRuleValue(
-            String testDescription,
-            Rule.Condition.Field fieldToMatch,
-            MimeMessageBuilder mimeMessageBuilder,
-            String valueToMatch,
-            JMAPFilteringTestSystem testSystem) throws Exception {
+    void notContainsNotMatchingTest(String testDescription,
+                                    Rule.Condition.Field fieldToMatch,
+                                    MimeMessageBuilder mimeMessageBuilder,
+                                    String valueToMatch,
+                                    JMAPFilteringTestSystem testSystem) throws Exception {
 
         testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, NOT_CONTAINS, valueToMatch));
         FakeMail mail = testSystem.asMail(mimeMessageBuilder);
@@ -441,14 +442,13 @@ class JMAPFilteringTest {
             .isNull();
     }
 
-    @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenExactlyEqualsRuleValue when matching header field {1}, with {0}")
+    @ParameterizedTest(name = "EXACTLY-EQUALS should match for header field {1}, with {0}")
     @MethodSource("exactlyEqualsTestSuite")
-    void mailDirectiveShouldBeSetWhenExactlyEqualsRuleValue(
-            String testDescription,
-            Rule.Condition.Field fieldToMatch,
-            MimeMessageBuilder mimeMessageBuilder,
-            String valueToMatch,
-            JMAPFilteringTestSystem testSystem) throws Exception {
+    void equalsMatchingTest(String testDescription,
+                            Rule.Condition.Field fieldToMatch,
+                            MimeMessageBuilder mimeMessageBuilder,
+                            String valueToMatch,
+                            JMAPFilteringTestSystem testSystem) throws Exception {
 
         testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, EXACTLY_EQUALS, valueToMatch));
         FakeMail mail = testSystem.asMail(mimeMessageBuilder);
@@ -458,14 +458,13 @@ class JMAPFilteringTest {
             .isEqualTo(RECIPIENT_1_MAILBOX_1);
     }
 
-    @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenNotExactlyEqualsRuleValue when matching header field {1}, with {0}")
+    @ParameterizedTest(name = "NOT_EXACTLY_EQUALS should match for header field {1}, with {0}")
     @MethodSource("notEqualsTestSuite")
-    void mailDirectiveShouldBeSetWhenNotExactlyEqualsRuleValue(
-            String testDescription,
-            Rule.Condition.Field fieldToMatch,
-            MimeMessageBuilder mimeMessageBuilder,
-            String valueToMatch,
-            JMAPFilteringTestSystem testSystem) throws Exception {
+    void notEqualsMatchingTest(String testDescription,
+                               Rule.Condition.Field fieldToMatch,
+                               MimeMessageBuilder mimeMessageBuilder,
+                               String valueToMatch,
+                               JMAPFilteringTestSystem testSystem) throws Exception {
 
         testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, NOT_EXACTLY_EQUALS, valueToMatch));
         FakeMail mail = testSystem.asMail(mimeMessageBuilder);
@@ -475,14 +474,13 @@ class JMAPFilteringTest {
             .isEqualTo(RECIPIENT_1_MAILBOX_1);
     }
 
-    @ParameterizedTest(name = "mailDirectiveShouldNotBeSetWhenAtLeastExactlyEqualsRuleValue when {0}")
+    @ParameterizedTest(name = "NOT_EXACTLY_EQUALS should not match for header field {1}, with {0}")
     @MethodSource("exactlyEqualsTestSuite")
-    void mailDirectiveShouldNotBeSetWhenAtLeastExactlyEqualsRuleValue(
-            String testDescription,
-            Rule.Condition.Field fieldToMatch,
-            MimeMessageBuilder mimeMessageBuilder,
-            String valueToMatch,
-            JMAPFilteringTestSystem testSystem) throws Exception {
+    void notMatchingNotEqualsTests(String testDescription,
+                                   Rule.Condition.Field fieldToMatch,
+                                   MimeMessageBuilder mimeMessageBuilder,
+                                   String valueToMatch,
+                                   JMAPFilteringTestSystem testSystem) throws Exception {
         testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, NOT_EXACTLY_EQUALS, valueToMatch));
         FakeMail mail = testSystem.asMail(mimeMessageBuilder);
         testSystem.getJmapFiltering().service(mail);
