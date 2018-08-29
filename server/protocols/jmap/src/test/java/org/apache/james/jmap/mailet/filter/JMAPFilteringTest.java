@@ -408,29 +408,6 @@ class JMAPFilteringTest {
                 .isEqualTo(RECIPIENT_1_MAILBOX_1);
     }
 
-    @Test
-    void mailDirectiveShouldNotBeSetWhenNoneRulesValueIsContained(JMAPFilteringTestSystem testSystem) throws Exception {
-
-        testSystem.defineRulesForRecipient1(
-            Rule.Condition.of(FROM, CONTAINS, SHOULD_NOT_MATCH),
-            Rule.Condition.of(TO, CONTAINS, SHOULD_NOT_MATCH),
-            Rule.Condition.of(CC, CONTAINS, SHOULD_NOT_MATCH));
-
-        FakeMail mail = FakeMail.builder()
-            .sender(USER_1_ADDRESS)
-            .recipients(RECIPIENT_1)
-            .mimeMessage(mimeMessageBuilder()
-                .addFrom(USER_1_FULL_ADDRESS)
-                .addToRecipient(USER_2_FULL_ADDRESS)
-                .addCcRecipient(USER_3_FULL_ADDRESS))
-            .build();
-
-        testSystem.getJmapFiltering().service(mail);
-
-        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-            .isNull();
-    }
-
     @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenDoesntContainsRuleValue when matching header field {1}, with {0}")
     @MethodSource("notEqualsTestSuite")
     void mailDirectiveShouldBeSetWhenDoesntContainsRuleValue(String testDescription,
@@ -479,28 +456,6 @@ class JMAPFilteringTest {
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
             .isEqualTo(RECIPIENT_1_MAILBOX_1);
-    }
-
-    @Test
-    void mailDirectiveShouldNotBeSetWhenAllDoNotExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception {
-        testSystem.defineRulesForRecipient1(
-            Rule.Condition.of(FROM, CONTAINS, USER_1_FULL_ADDRESS),
-            Rule.Condition.of(FROM, EXACTLY_EQUALS, USER_1_FULL_ADDRESS),
-            Rule.Condition.of(TO, CONTAINS, USER_1_FULL_ADDRESS),
-            Rule.Condition.of(TO, EXACTLY_EQUALS, USER_1_FULL_ADDRESS),
-            Rule.Condition.of(CC, CONTAINS, USER_1_FULL_ADDRESS),
-            Rule.Condition.of(CC, EXACTLY_EQUALS, USER_1_FULL_ADDRESS),
-            Rule.Condition.of(RECIPIENT, EXACTLY_EQUALS, USER_1_FULL_ADDRESS),
-            Rule.Condition.of(RECIPIENT, EXACTLY_EQUALS, USER_1_FULL_ADDRESS),
-            Rule.Condition.of(SUBJECT, CONTAINS, USER_1_FULL_ADDRESS),
-            Rule.Condition.of(SUBJECT, EXACTLY_EQUALS, USER_1_FULL_ADDRESS)
-        );
-
-        FakeMail mail = testSystem.asMail(mimeMessageBuilder());
-        testSystem.getJmapFiltering().service(mail);
-
-        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isNull();
     }
 
     @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenNotExactlyEqualsRuleValue when matching header field {1}, with {0}")
@@ -610,5 +565,50 @@ class JMAPFilteringTest {
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
             .isEqualTo("RECIPIENT_1_MAILBOX_3");
+    }
+
+    @Test
+    void mailDirectiveShouldNotBeSetWhenAllDoNotExactlyEqualsRuleValue(JMAPFilteringTestSystem testSystem) throws Exception {
+        testSystem.defineRulesForRecipient1(
+            Rule.Condition.of(FROM, CONTAINS, USER_1_FULL_ADDRESS),
+            Rule.Condition.of(FROM, EXACTLY_EQUALS, USER_1_FULL_ADDRESS),
+            Rule.Condition.of(TO, CONTAINS, USER_1_FULL_ADDRESS),
+            Rule.Condition.of(TO, EXACTLY_EQUALS, USER_1_FULL_ADDRESS),
+            Rule.Condition.of(CC, CONTAINS, USER_1_FULL_ADDRESS),
+            Rule.Condition.of(CC, EXACTLY_EQUALS, USER_1_FULL_ADDRESS),
+            Rule.Condition.of(RECIPIENT, EXACTLY_EQUALS, USER_1_FULL_ADDRESS),
+            Rule.Condition.of(RECIPIENT, EXACTLY_EQUALS, USER_1_FULL_ADDRESS),
+            Rule.Condition.of(SUBJECT, CONTAINS, USER_1_FULL_ADDRESS),
+            Rule.Condition.of(SUBJECT, EXACTLY_EQUALS, USER_1_FULL_ADDRESS)
+        );
+
+        FakeMail mail = testSystem.asMail(mimeMessageBuilder());
+        testSystem.getJmapFiltering().service(mail);
+
+        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
+            .isNull();
+    }
+
+    @Test
+    void mailDirectiveShouldNotBeSetWhenNoneRulesValueIsContained(JMAPFilteringTestSystem testSystem) throws Exception {
+
+        testSystem.defineRulesForRecipient1(
+            Rule.Condition.of(FROM, CONTAINS, SHOULD_NOT_MATCH),
+            Rule.Condition.of(TO, CONTAINS, SHOULD_NOT_MATCH),
+            Rule.Condition.of(CC, CONTAINS, SHOULD_NOT_MATCH));
+
+        FakeMail mail = FakeMail.builder()
+            .sender(USER_1_ADDRESS)
+            .recipients(RECIPIENT_1)
+            .mimeMessage(mimeMessageBuilder()
+                .addFrom(USER_1_FULL_ADDRESS)
+                .addToRecipient(USER_2_FULL_ADDRESS)
+                .addCcRecipient(USER_3_FULL_ADDRESS))
+            .build();
+
+        testSystem.getJmapFiltering().service(mail);
+
+        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
+            .isNull();
     }
 }
