@@ -61,13 +61,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import javax.mail.internet.AddressException;
+
 import org.apache.james.core.User;
 import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.jmap.api.filtering.Rule;
 import org.apache.james.jmap.mailet.filter.JMAPFilteringExtension.JMAPFilteringTestSystem;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.model.MailboxId;
-import org.apache.james.util.OptionalUtils;
 import org.apache.james.util.StreamUtils;
 import org.apache.mailet.base.test.FakeMail;
 import org.junit.jupiter.api.Nested;
@@ -77,7 +78,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import com.github.fge.lambdas.Throwing;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
@@ -87,22 +87,19 @@ class JMAPFilteringTest {
     static class FilteringArgumentBuilder {
         private Optional<String> description;
         private Optional<Rule.Condition.Field> field;
-        private Optional<Rule.Condition.Comparator> comparator;
-        private Optional<MimeMessageBuilder> mimeMessageBuilder;
+        private MimeMessageBuilder mimeMessageBuilder;
         private Optional<String> valueToMatch;
 
-        public FilteringArgumentBuilder(Optional<String> description, Optional<Rule.Condition.Field> field,
-                                        Optional<Rule.Condition.Comparator> comparator,
-                                        Optional<MimeMessageBuilder> mimeMessageBuilder, Optional<String> valueToMatch) {
+        private FilteringArgumentBuilder(Optional<String> description, Optional<Rule.Condition.Field> field,
+                                        MimeMessageBuilder mimeMessageBuilder, Optional<String> valueToMatch) {
             this.description = description;
             this.field = field;
-            this.comparator = comparator;
             this.mimeMessageBuilder = mimeMessageBuilder;
             this.valueToMatch = valueToMatch;
         }
 
         public FilteringArgumentBuilder() {
-            this(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+            this(Optional.empty(), Optional.empty(), MimeMessageBuilder.mimeMessageBuilder(), Optional.empty());
         }
 
         public FilteringArgumentBuilder description(String description) {
@@ -115,58 +112,60 @@ class JMAPFilteringTest {
             return this;
         }
 
-        public FilteringArgumentBuilder comparator(Rule.Condition.Comparator comparator) {
-            this.comparator = Optional.ofNullable(comparator);
-            return this;
-        }
-
         public FilteringArgumentBuilder from(String from) {
-            initMessageBuilder();
-            mimeMessageBuilder.ifPresent(Throwing.consumer(mimeBuilder -> mimeBuilder.addFrom(from)));
+            try {
+                mimeMessageBuilder.addFrom(from);
+            } catch (AddressException e) {
+                throw new RuntimeException(e);
+            }
             return this;
         }
 
         public FilteringArgumentBuilder noHeader() {
-            initMessageBuilder();
             return this;
         }
 
         public FilteringArgumentBuilder toRecipient(String toRecipient) {
-            initMessageBuilder();
-            mimeMessageBuilder.ifPresent(Throwing.consumer(mimeBuilder -> mimeBuilder.addToRecipient(toRecipient)));
+            try {
+                mimeMessageBuilder.addToRecipient(toRecipient);
+            } catch (AddressException e) {
+                throw new RuntimeException(e);
+            }
             return this;
         }
 
         public FilteringArgumentBuilder ccRecipient(String ccRecipient) {
-            initMessageBuilder();
-            mimeMessageBuilder.ifPresent(Throwing.consumer(mimeBuilder -> mimeBuilder.addCcRecipient(ccRecipient)));
+            try {
+                mimeMessageBuilder.addCcRecipient(ccRecipient);
+            } catch (AddressException e) {
+                throw new RuntimeException(e);
+            }
             return this;
         }
 
         public FilteringArgumentBuilder bccRecipient(String bccRecipient) {
-            initMessageBuilder();
-            mimeMessageBuilder.ifPresent(Throwing.consumer(mimeBuilder -> mimeBuilder.addBccRecipient(bccRecipient)));
+            try {
+                mimeMessageBuilder.addBccRecipient(bccRecipient);
+            } catch (AddressException e) {
+                throw new RuntimeException(e);
+            }
             return this;
         }
 
         public FilteringArgumentBuilder header(String headerName, String headerValue) {
-            initMessageBuilder();
-            mimeMessageBuilder.ifPresent(Throwing.consumer(mimeBuilder -> mimeBuilder.addHeader(headerName, headerValue)));
+            mimeMessageBuilder.addHeader(headerName, headerValue);
             return this;
         }
 
         public FilteringArgumentBuilder headerForField(String headerValue) {
             Preconditions.checkState(field.isPresent(), "field should be set first");
 
-            initMessageBuilder();
-
-            mimeMessageBuilder.ifPresent(Throwing.consumer(mimeBuilder -> mimeBuilder.addHeader(field.get().asString(), headerValue)));
+            mimeMessageBuilder.addHeader(field.get().asString(), headerValue);
             return this;
         }
 
         public FilteringArgumentBuilder subject(String subject) {
-            initMessageBuilder();
-            mimeMessageBuilder.ifPresent(Throwing.consumer(mimeBuilder -> mimeBuilder.setSubject(subject)));
+            mimeMessageBuilder.setSubject(subject);
             return this;
         }
 
@@ -190,20 +189,15 @@ class JMAPFilteringTest {
         }
 
         public Arguments build() {
-            return Arguments.of(
-                Stream.of(description, field, comparator, mimeMessageBuilder, valueToMatch)
-                    .flatMap(OptionalUtils::toStream)
-                    .toArray());
-        }
-
-        private void initMessageBuilder() {
-            if (!mimeMessageBuilder.isPresent()) {
-                mimeMessageBuilder = Optional.of(MimeMessageBuilder.mimeMessageBuilder());
-            }
+            Preconditions.checkState(description.isPresent());
+            Preconditions.checkState(field.isPresent());
+            Preconditions.checkState(valueToMatch.isPresent());
+            
+            return Arguments.of(description.get(), field.get(), mimeMessageBuilder, valueToMatch.get());
         }
 
         public FilteringArgumentBuilder copy() {
-            return new FilteringArgumentBuilder(description, field, comparator, mimeMessageBuilder, valueToMatch);
+            return new FilteringArgumentBuilder(description, field, mimeMessageBuilder, valueToMatch);
         }
     }
 
