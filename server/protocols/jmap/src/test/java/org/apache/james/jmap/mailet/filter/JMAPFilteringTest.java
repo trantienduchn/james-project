@@ -76,9 +76,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import com.github.fge.lambdas.Throwing;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
 
 @ExtendWith(JMAPFilteringExtension.class)
 class JMAPFilteringTest {
@@ -86,25 +84,14 @@ class JMAPFilteringTest {
     static class FilteringArgumentBuilder {
         private Optional<String> description;
         private Optional<Rule.Condition.Field> field;
+        private MimeMessageBuilder mimeMessageBuilder;
         private Optional<String> valueToMatch;
         
-        private Optional<String> from = Optional.empty();
-        private Optional<String> toRecipient = Optional.empty();
-        private Optional<String> ccRecipient = Optional.empty();
-        private Optional<String> bccRecipient = Optional.empty();
-        private Multimap<String, String> headers;
-        private Optional<String> subject = Optional.empty();
-
-        private FilteringArgumentBuilder(Optional<String> description, Optional<Rule.Condition.Field> field,
-                                        Optional<String> valueToMatch) {
-            this.description = description;
-            this.field = field;
-            this.valueToMatch = valueToMatch;
-            this.headers = ArrayListMultimap.create();
-        }
-
-        public FilteringArgumentBuilder() {
-            this(Optional.empty(), Optional.empty(), Optional.empty());
+        private FilteringArgumentBuilder() {
+            this.description = Optional.empty();
+            this.field = Optional.empty();
+            mimeMessageBuilder = MimeMessageBuilder.mimeMessageBuilder();
+            this.valueToMatch = Optional.empty();
         }
 
         public FilteringArgumentBuilder description(String description) {
@@ -118,7 +105,7 @@ class JMAPFilteringTest {
         }
 
         public FilteringArgumentBuilder from(String from) {
-            this.from = Optional.ofNullable(from);
+            Optional.ofNullable(from).ifPresent(Throwing.consumer(mimeMessageBuilder::addFrom));
             return this;
         }
 
@@ -127,34 +114,34 @@ class JMAPFilteringTest {
         }
 
         public FilteringArgumentBuilder toRecipient(String toRecipient) {
-            this.toRecipient = Optional.ofNullable(toRecipient);
+            Optional.ofNullable(toRecipient).ifPresent(Throwing.consumer(mimeMessageBuilder::addToRecipient));
             return this;
         }
 
         public FilteringArgumentBuilder ccRecipient(String ccRecipient) {
-            this.ccRecipient = Optional.ofNullable(ccRecipient);
+            Optional.ofNullable(ccRecipient).ifPresent(Throwing.consumer(mimeMessageBuilder::addCcRecipient));
             return this;
         }
 
         public FilteringArgumentBuilder bccRecipient(String bccRecipient) {
-            this.bccRecipient = Optional.ofNullable(bccRecipient);
+            Optional.ofNullable(bccRecipient).ifPresent(Throwing.consumer(mimeMessageBuilder::addBccRecipient));
             return this;
         }
 
         public FilteringArgumentBuilder header(String headerName, String headerValue) {
-            headers.put(headerName, headerValue);
+            mimeMessageBuilder.addHeader(headerName, headerValue);
             return this;
         }
 
         public FilteringArgumentBuilder headerForField(String headerValue) {
             Preconditions.checkState(field.isPresent(), "field should be set first");
 
-            headers.put(field.get().asString(), headerValue);
+            mimeMessageBuilder.addHeader(field.get().asString(), headerValue);
             return this;
         }
 
         public FilteringArgumentBuilder subject(String subject) {
-            this.subject = Optional.ofNullable(subject);
+            mimeMessageBuilder.setSubject(subject);
             return this;
         }
 
@@ -181,13 +168,6 @@ class JMAPFilteringTest {
             Preconditions.checkState(description.isPresent());
             Preconditions.checkState(field.isPresent());
             Preconditions.checkState(valueToMatch.isPresent());
-            MimeMessageBuilder mimeMessageBuilder = MimeMessageBuilder.mimeMessageBuilder();
-            from.ifPresent(Throwing.consumer(mimeMessageBuilder::addFrom));
-            toRecipient.ifPresent(Throwing.consumer(mimeMessageBuilder::addToRecipient));
-            ccRecipient.ifPresent(Throwing.consumer(mimeMessageBuilder::addCcRecipient));
-            bccRecipient.ifPresent(Throwing.consumer(mimeMessageBuilder::addBccRecipient));
-            headers.forEach((name, value) -> mimeMessageBuilder.addHeader(name, value));
-            subject.ifPresent(mimeMessageBuilder::setSubject);
             
             return Arguments.of(description.get(), field.get(), mimeMessageBuilder, valueToMatch.get());
         }
