@@ -61,8 +61,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import javax.mail.internet.AddressException;
-
 import org.apache.james.core.User;
 import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.jmap.api.filtering.Rule;
@@ -78,8 +76,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import com.github.fge.lambdas.Throwing;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Multimap;
 
 @ExtendWith(JMAPFilteringExtension.class)
 class JMAPFilteringTest {
@@ -87,19 +88,25 @@ class JMAPFilteringTest {
     static class FilteringArgumentBuilder {
         private Optional<String> description;
         private Optional<Rule.Condition.Field> field;
-        private MimeMessageBuilder mimeMessageBuilder;
         private Optional<String> valueToMatch;
+        
+        private Optional<String> from = Optional.empty();
+        private Optional<String> toRecipient = Optional.empty();
+        private Optional<String> ccRecipient = Optional.empty();
+        private Optional<String> bccRecipient = Optional.empty();
+        private Multimap<String, String> headers;
+        private Optional<String> subject = Optional.empty();
 
         private FilteringArgumentBuilder(Optional<String> description, Optional<Rule.Condition.Field> field,
-                                        MimeMessageBuilder mimeMessageBuilder, Optional<String> valueToMatch) {
+                                        Optional<String> valueToMatch) {
             this.description = description;
             this.field = field;
-            this.mimeMessageBuilder = mimeMessageBuilder;
             this.valueToMatch = valueToMatch;
+            this.headers = ArrayListMultimap.create();
         }
 
         public FilteringArgumentBuilder() {
-            this(Optional.empty(), Optional.empty(), MimeMessageBuilder.mimeMessageBuilder(), Optional.empty());
+            this(Optional.empty(), Optional.empty(), Optional.empty());
         }
 
         public FilteringArgumentBuilder description(String description) {
@@ -113,11 +120,7 @@ class JMAPFilteringTest {
         }
 
         public FilteringArgumentBuilder from(String from) {
-            try {
-                mimeMessageBuilder.addFrom(from);
-            } catch (AddressException e) {
-                throw new RuntimeException(e);
-            }
+            this.from = Optional.ofNullable(from);
             return this;
         }
 
@@ -126,46 +129,34 @@ class JMAPFilteringTest {
         }
 
         public FilteringArgumentBuilder toRecipient(String toRecipient) {
-            try {
-                mimeMessageBuilder.addToRecipient(toRecipient);
-            } catch (AddressException e) {
-                throw new RuntimeException(e);
-            }
+            this.toRecipient = Optional.ofNullable(toRecipient);
             return this;
         }
 
         public FilteringArgumentBuilder ccRecipient(String ccRecipient) {
-            try {
-                mimeMessageBuilder.addCcRecipient(ccRecipient);
-            } catch (AddressException e) {
-                throw new RuntimeException(e);
-            }
+            this.ccRecipient = Optional.ofNullable(ccRecipient);
             return this;
         }
 
         public FilteringArgumentBuilder bccRecipient(String bccRecipient) {
-            try {
-                mimeMessageBuilder.addBccRecipient(bccRecipient);
-            } catch (AddressException e) {
-                throw new RuntimeException(e);
-            }
+            this.bccRecipient = Optional.ofNullable(bccRecipient);
             return this;
         }
 
         public FilteringArgumentBuilder header(String headerName, String headerValue) {
-            mimeMessageBuilder.addHeader(headerName, headerValue);
+            headers.put(headerName, headerValue);
             return this;
         }
 
         public FilteringArgumentBuilder headerForField(String headerValue) {
             Preconditions.checkState(field.isPresent(), "field should be set first");
 
-            mimeMessageBuilder.addHeader(field.get().asString(), headerValue);
+            headers.put(field.get().asString(), headerValue);
             return this;
         }
 
         public FilteringArgumentBuilder subject(String subject) {
-            mimeMessageBuilder.setSubject(subject);
+            this.subject = Optional.ofNullable(subject);
             return this;
         }
 
@@ -192,13 +183,17 @@ class JMAPFilteringTest {
             Preconditions.checkState(description.isPresent());
             Preconditions.checkState(field.isPresent());
             Preconditions.checkState(valueToMatch.isPresent());
+            MimeMessageBuilder mimeMessageBuilder = MimeMessageBuilder.mimeMessageBuilder();
+            from.ifPresent(Throwing.consumer(mimeMessageBuilder::addFrom));
+            toRecipient.ifPresent(Throwing.consumer(mimeMessageBuilder::addToRecipient));
+            ccRecipient.ifPresent(Throwing.consumer(mimeMessageBuilder::addCcRecipient));
+            bccRecipient.ifPresent(Throwing.consumer(mimeMessageBuilder::addBccRecipient));
+            headers.forEach((name, value) -> mimeMessageBuilder.addHeader(name, value));
+            subject.ifPresent(mimeMessageBuilder::setSubject);
             
             return Arguments.of(description.get(), field.get(), mimeMessageBuilder, valueToMatch.get());
         }
 
-        public FilteringArgumentBuilder copy() {
-            return new FilteringArgumentBuilder(description, field, mimeMessageBuilder, valueToMatch);
-        }
     }
 
     static class FilteringArgumentsProvider {
@@ -222,6 +217,11 @@ class JMAPFilteringTest {
         return new FilteringArgumentBuilder();
     }
 
+    static FilteringArgumentBuilder argumentBuilder(Rule.Condition.Field field) {
+        return new FilteringArgumentBuilder()
+            .field(field);
+    }
+
     static FilteringArgumentsProvider argumentsProvider() {
         return new FilteringArgumentsProvider();
     }
@@ -229,38 +229,38 @@ class JMAPFilteringTest {
     static Stream<Arguments> exactlyEqualsTestSuite() {
         return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
-                .map(headerField -> argumentBuilder().field(headerField))
+                .map(headerField -> argumentBuilder(headerField))
                 .flatMap(argBuilder -> argumentsProvider()
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("full address value")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch(USER_1_USERNAME))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("address only value")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch(USER_1_ADDRESS))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("personal only value")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch(USER_1_FULL_ADDRESS))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("personal header should match personal")
                         .headerForField(USER_1_USERNAME)
                         .valueToMatch(USER_1_USERNAME))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("address header should match address")
                         .headerForField(USER_1_ADDRESS)
                         .valueToMatch(USER_1_ADDRESS))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("multiple headers")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .headerForField(USER_2_FULL_ADDRESS)
                         .valueToMatch(USER_1_USERNAME))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("scrambled content")
                         .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
                         .valueToMatch(FRED_MARTIN_FULLNAME))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("folded content")
                         .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
                         .valueToMatch(UNFOLDED_USERNAME))
@@ -317,38 +317,38 @@ class JMAPFilteringTest {
     private static Stream<Arguments> containsArguments() {
         return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
-                .map(headerField -> argumentBuilder().field(headerField))
+                .map(headerField -> argumentBuilder(headerField))
                 .flatMap(argBuilder -> argumentsProvider()
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("full address value (partial matching)")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch("ser1 <"))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("address only value (partial matching)")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch("ser1@jam"))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("personal only value (partial matching)")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch("ser1"))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("address header & match in the address (partial matching)")
                         .headerForField(USER_1_ADDRESS)
                         .valueToMatch("ser1@jam"))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("raw value matching (partial matching)")
                         .headerForField(GA_BOU_ZO_MEU_FULL_ADDRESS)
                         .valueToMatch(BOU))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("multiple headers (partial matching)")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .headerForField(USER_2_FULL_ADDRESS)
                         .valueToMatch("ser1@jam"))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("scrambled content (partial matching)")
                         .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
                         .valueToMatch("déric MAR"))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("folded content (partial matching)")
                         .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
                         .valueToMatch("ded_us"))
@@ -406,30 +406,30 @@ class JMAPFilteringTest {
     static Stream<Arguments> notContainsTestSuite() {
         return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
-                .map(headerField -> argumentBuilder().field(headerField))
+                .map(headerField -> argumentBuilder(headerField))
                 .flatMap(argBuilder -> argumentsProvider()
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("normal content")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("multiple headers")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .from(USER_2_FULL_ADDRESS)
                         .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("scrambled content")
                         .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
                         .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("folded content")
                         .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
                         .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("empty content")
                         .headerForField(EMPTY)
                         .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder.copy()
+                    .argument(argBuilder
                         .description("case sensitive content")
                         .headerForField(GA_BOU_ZO_MEU_FULL_ADDRESS)
                         .valueToMatch(BOU.toLowerCase()))
