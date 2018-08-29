@@ -411,6 +411,22 @@ class JMAPFilteringTest {
                 .isEqualTo(RECIPIENT_1_MAILBOX_1);
     }
 
+    @ParameterizedTest(name = "CONTAINS should not match for header field {1}, with {0}")
+    @MethodSource("notEqualsTestSuite")
+    void notMatchingContainsTest(String testDescription,
+                              Rule.Condition.Field fieldToMatch,
+                              MimeMessageBuilder mimeMessageBuilder,
+                              String valueToMatch,
+                              JMAPFilteringTestSystem testSystem) throws Exception {
+
+        testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, CONTAINS, valueToMatch));
+        FakeMail mail = testSystem.asMail(mimeMessageBuilder);
+        testSystem.getJmapFiltering().service(mail);
+
+        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
+                .isNull();
+    }
+
     @ParameterizedTest(name = "NOT-CONTAINS should be matching for field {1}, with {0}")
     @MethodSource("notEqualsTestSuite")
     void matchingNotContainsTest(String testDescription,
@@ -457,6 +473,21 @@ class JMAPFilteringTest {
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
             .isEqualTo(RECIPIENT_1_MAILBOX_1);
+    }
+
+    @ParameterizedTest(name = "EXACTLY-EQUALS should not match for header field {1}, with {0}")
+    @MethodSource("notEqualsTestSuite")
+    void equalsNotMatchingTest(String testDescription,
+                            Rule.Condition.Field fieldToMatch,
+                            MimeMessageBuilder mimeMessageBuilder,
+                            String valueToMatch,
+                            JMAPFilteringTestSystem testSystem) throws Exception {
+        testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, EXACTLY_EQUALS, valueToMatch));
+        FakeMail mail = testSystem.asMail(mimeMessageBuilder);
+        testSystem.getJmapFiltering().service(mail);
+
+        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
+            .isNull();
     }
 
     @ParameterizedTest(name = "NOT_EXACTLY_EQUALS should match for header field {1}, with {0}")
