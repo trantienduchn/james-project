@@ -59,12 +59,12 @@ public class JMAPFiltering extends GenericMailet {
     }
 
     private void filteringForRecipient(Mail mail, MailAddress recipient) {
-        Optional<User> userOptional = retrieveUser(recipient);
-        userOptional
-            .ifPresent(user -> filteringForUser(user, mail));
+        Optional<User> maybeUser = retrieveUser(recipient);
+        maybeUser
+            .ifPresent(user -> findFirstApplicableRule(user, mail));
     }
 
-    private void filteringForUser(User user, Mail mail) {
+    private void findFirstApplicableRule(User user, Mail mail) {
         List<Rule> filteringRules = filteringManagement.listRulesForUser(user);
         RuleMatcher ruleMatcher = new RuleMatcher(filteringRules);
         Optional<Rule> maybeMatchingRule = ruleMatcher.findApplicableRule(mail);

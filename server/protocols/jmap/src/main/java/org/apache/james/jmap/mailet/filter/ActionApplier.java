@@ -34,7 +34,7 @@ import com.github.fge.lambdas.Throwing;
 import com.google.common.annotations.VisibleForTesting;
 
 public class ActionApplier {
-    private static final String DELIVERY_PATH_PREFIX = "DeliveryPath_";
+    static final String DELIVERY_PATH_PREFIX = "DeliveryPath_";
 
     static class Factory {
         private final MailboxManager mailboxManager;
@@ -73,7 +73,7 @@ public class ActionApplier {
         return new Factory(mailboxManager, mailboxIdFactory);
     }
 
-    ActionApplier(MailboxManager mailboxManager, MailboxId.Factory mailboxIdFactory, Mail mail, User user) {
+    private ActionApplier(MailboxManager mailboxManager, MailboxId.Factory mailboxIdFactory, Mail mail, User user) {
         this.mailboxManager = mailboxManager;
         this.mailboxIdFactory = mailboxIdFactory;
         this.mail = mail;

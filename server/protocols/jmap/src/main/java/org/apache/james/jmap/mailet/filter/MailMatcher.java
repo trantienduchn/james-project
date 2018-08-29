@@ -55,7 +55,7 @@ public interface MailMatcher {
         private final String ruleValue;
         private final HeaderExtractor headerExtractor;
 
-        HeaderMatcher(ContentMatcher contentMatcher, String ruleValue,
+        private HeaderMatcher(ContentMatcher contentMatcher, String ruleValue,
                       HeaderExtractor headerExtractor) {
             Preconditions.checkNotNull(contentMatcher);
             Preconditions.checkNotNull(headerExtractor);
@@ -68,7 +68,7 @@ public interface MailMatcher {
         @Override
         public boolean match(Mail mail) {
             try {
-                Stream<String> headerLines = headerExtractor.apply(mail);
+                final Stream<String> headerLines = headerExtractor.apply(mail);
                 return contentMatcher.match(headerLines, ruleValue);
             } catch (Exception e) {
                 LOGGER.error("error while extracting mail header", e);
@@ -198,13 +198,13 @@ public interface MailMatcher {
 
     static MailMatcher from(Rule rule) {
         Condition ruleCondition = rule.getCondition();
-        Optional<ContentMatcher> contentMatcherOptional = ContentMatcher.asContentMatcher(ruleCondition.getField(), ruleCondition.getComparator());
-        Optional<HeaderExtractor> headerExtractorOptional = getHeaderExtractor(ruleCondition.getField());
+        Optional<ContentMatcher> maybeContentMatcher = ContentMatcher.asContentMatcher(ruleCondition.getField(), ruleCondition.getComparator());
+        Optional<HeaderExtractor> maybeHeaderExtractor = getHeaderExtractor(ruleCondition.getField());
 
         return new HeaderMatcher(
-                contentMatcherOptional.orElse(null),
+                maybeContentMatcher.orElse(null),
                 rule.getCondition().getValue(),
-                headerExtractorOptional.orElse(null));
+                maybeHeaderExtractor.orElse(null));
     }
 
     static HeaderExtractor recipientExtractor(Message.RecipientType type) {

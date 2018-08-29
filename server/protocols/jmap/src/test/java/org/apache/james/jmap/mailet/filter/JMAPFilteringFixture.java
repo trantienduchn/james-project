@@ -20,8 +20,6 @@
 package org.apache.james.jmap.mailet.filter;
 
 public interface JMAPFilteringFixture {
-    String DELIVERY_PATH_PREFIX = "DeliveryPath_";
-
     String GA_BOU_ZO_MEU_FULL_ADDRESS = "GA BOU ZO MEU <GA.BOU.ZO.MEU@james.org>";
     String BOU = "BOU";
 
