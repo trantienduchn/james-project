@@ -126,6 +126,11 @@ class JMAPFilteringTest {
             return this;
         }
 
+        public FilteringArgumentBuilder noHeader() {
+            initMessageBuilder();
+            return this;
+        }
+
         public FilteringArgumentBuilder toRecipient(String toRecipient) {
             initMessageBuilder();
             mimeMessageBuilder.ifPresent(Throwing.consumer(mimeBuilder -> mimeBuilder.addToRecipient(toRecipient)));
@@ -376,7 +381,14 @@ class JMAPFilteringTest {
                     .valueToMatch(USER_1_FULL_ADDRESS))
                 .argument(argumentBuilder().scrambledSubjectToMatch(SHOULD_NOT_MATCH))
                 .argument(argumentBuilder().unscrambledSubjectToMatch(SHOULD_NOT_MATCH))
-                .toStream()
+                .toStream(),
+            Stream.of(Rule.Condition.Field.values())
+                .map(field -> argumentBuilder()
+                    .description("no header")
+                    .field(field)
+                    .noHeader()
+                    .valueToMatch(USER_1_USERNAME)
+                    .build())
         );
     }
 
@@ -490,7 +502,7 @@ class JMAPFilteringTest {
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
                 .isNull();
     }
-    
+
     @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenNotExactlyEqualsRuleValue when matching header field {1}, with {0}")
     @MethodSource("notEqualsTestSuite")
     void mailDirectiveShouldBeSetWhenNotExactlyEqualsRuleValue(
@@ -522,57 +534,6 @@ class JMAPFilteringTest {
 
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
             .isNull();
-    }
-
-    static Stream<Arguments> mailDirectiveShouldNotBeSetWhenHeaderContentIsNullParamsProvider() throws Exception {
-        return Stream.of(Rule.Condition.Field.values())
-            .flatMap(field -> Stream.of(CONTAINS, EXACTLY_EQUALS)
-                .map(comparator -> argumentBuilder()
-                    .field(field)
-                    .comparator(comparator)
-                    .valueToMatch(USER_1_USERNAME)
-                    .build()));
-    }
-
-    @ParameterizedTest(name = "mailDirectiveShouldNotBeSetWhenHeaderContentIsNull when matching header field {1}, with {0}")
-    @MethodSource("mailDirectiveShouldNotBeSetWhenHeaderContentIsNullParamsProvider")
-    void mailDirectiveShouldNotBeSetWhenHeaderContentIsNull(
-            Rule.Condition.Field fieldToMatch,
-            Rule.Condition.Comparator comparator,
-            String valueToMatch,
-            JMAPFilteringTestSystem testSystem) throws Exception {
-        testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, comparator, valueToMatch));
-        FakeMail mail = testSystem.asMail(mimeMessageBuilder());
-        testSystem.getJmapFiltering().service(mail);
-
-        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isNull();
-    }
-
-    static Stream<Arguments> mailDirectiveShouldBeSetWhenHeaderContentIsNullParamsProvider() throws Exception {
-        return Stream.of(Rule.Condition.Field.values())
-            .flatMap(field -> Stream.of(NOT_CONTAINS, NOT_EXACTLY_EQUALS)
-                .map(comparator -> argumentBuilder()
-                    .field(field)
-                    .comparator(comparator)
-                    .valueToMatch(USER_1_USERNAME)
-                    .build()));
-    }
-
-    @ParameterizedTest(name = "mailDirectiveShouldBeSetWhenHeaderContentIsNull when matching header field {1}, with {0}")
-    @MethodSource("mailDirectiveShouldBeSetWhenHeaderContentIsNullParamsProvider")
-    void mailDirectiveShouldBeSetWhenHeaderContentIsNull(
-            Rule.Condition.Field fieldToMatch,
-            Rule.Condition.Comparator comparator,
-            String valueToMatch,
-            JMAPFilteringTestSystem testSystem) throws Exception {
-
-        testSystem.defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, comparator, valueToMatch));
-        FakeMail mail = testSystem.asMail(mimeMessageBuilder());
-        testSystem.getJmapFiltering().service(mail);
-
-        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-                .isEqualTo(RECIPIENT_1_MAILBOX_1);
     }
 
     @Test
