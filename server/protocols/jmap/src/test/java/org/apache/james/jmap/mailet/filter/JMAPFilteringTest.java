@@ -363,8 +363,7 @@ class JMAPFilteringTest {
                         .field(RECIPIENT)
                         .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
                         .valueToMatch(SHOULD_NOT_MATCH)
-                        .build()
-                )),
+                        .build())),
             argumentsProvider()
                 .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
                     .ccRecipient(USER_1_FULL_ADDRESS)
@@ -372,6 +371,9 @@ class JMAPFilteringTest {
                     .toRecipient(USER_3_FULL_ADDRESS)
                     .toRecipient(USER_4_FULL_ADDRESS)
                     .valueToMatch(SHOULD_NOT_MATCH))
+                .argument(argumentBuilder().description("matching bcc headers").field(RECIPIENT)
+                    .bccRecipient(USER_1_FULL_ADDRESS)
+                    .valueToMatch(USER_1_FULL_ADDRESS))
                 .argument(argumentBuilder().scrambledSubjectToMatch(SHOULD_NOT_MATCH))
                 .argument(argumentBuilder().unscrambledSubjectToMatch(SHOULD_NOT_MATCH))
                 .toStream()
@@ -610,36 +612,6 @@ class JMAPFilteringTest {
         assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
             .isNull();
     }
-
-    static Stream<Arguments> mailDirectiveShouldIgnoreBccHeadersParamsProvider() throws Exception {
-        return argumentsProvider()
-            .argument(argumentBuilder()
-                .comparator(CONTAINS)
-                .bccRecipient(USER_3_FULL_ADDRESS)
-                .valueToMatch(USER_3_FULL_ADDRESS))
-            .argument(argumentBuilder()
-                .comparator(EXACTLY_EQUALS)
-                .bccRecipient(USER_3_FULL_ADDRESS)
-                .valueToMatch(USER_3_FULL_ADDRESS))
-            .toStream();
-    }
-
-    @ParameterizedTest(name = "mailDirectiveShouldIgnoreBccHeaders with comparator {0}")
-    @MethodSource("mailDirectiveShouldIgnoreBccHeadersParamsProvider")
-    void mailDirectiveShouldIgnoreBccHeaders(
-            Rule.Condition.Comparator comparator,
-            MimeMessageBuilder mimeMessageBuilder,
-            String valueToMatch,
-            JMAPFilteringTestSystem testSystem) throws Exception {
-
-        testSystem.defineRulesForRecipient1(Rule.Condition.of(RECIPIENT, comparator, valueToMatch));
-        FakeMail mail = testSystem.asMail(mimeMessageBuilder);
-        testSystem.getJmapFiltering().service(mail);
-
-        assertThat(mail.getAttribute(DELIVERY_PATH_PREFIX + RECIPIENT_1_USERNAME))
-            .isNull();
-    }
-
 
     static Stream<Arguments> mailDirectiveShouldNotBeSetWhenHeaderContentIsNullParamsProvider() throws Exception {
         return Stream.of(Rule.Condition.Field.values())
