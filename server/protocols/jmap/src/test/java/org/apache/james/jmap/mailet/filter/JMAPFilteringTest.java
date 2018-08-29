@@ -50,7 +50,6 @@ import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_1_FU
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_1_USERNAME;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_2_ADDRESS;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_2_FULL_ADDRESS;
-import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_2_USERNAME;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_3_ADDRESS;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_3_FULL_ADDRESS;
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_3_USERNAME;
@@ -302,8 +301,7 @@ class JMAPFilteringTest {
                         .field(RECIPIENT)
                         .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
                         .valueToMatch(UNFOLDED_USERNAME)
-                        .build()
-                )),
+                        .build())),
             argumentsProvider()
                 .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
                     .ccRecipient(USER_1_FULL_ADDRESS)
@@ -313,8 +311,7 @@ class JMAPFilteringTest {
                     .valueToMatch(USER_4_FULL_ADDRESS))
                 .argument(argumentBuilder().scrambledSubjectToMatch(UNSCRAMBLED_SUBJECT))
                 .argument(argumentBuilder().unscrambledSubjectToMatch(UNSCRAMBLED_SUBJECT))
-                .toStream()
-        );
+                .toStream());
     }
 
     static Stream<Arguments> notEqualsTestSuite() {
@@ -391,8 +388,7 @@ class JMAPFilteringTest {
                     .field(field)
                     .noHeader()
                     .valueToMatch(USER_1_USERNAME)
-                    .build())
-        );
+                    .build()));
     }
 
     @ParameterizedTest(name = "CONTAINS should match for header field {1}, with {0}")
