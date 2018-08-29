@@ -314,7 +314,102 @@ class JMAPFilteringTest {
                 .toStream());
     }
 
+    static Stream<Arguments> containsTestSuite() {
+        return Stream.concat(
+            exactlyEqualsTestSuite(),
+            containsArguments());
+    }
+
+    private static Stream<Arguments> containsArguments() {
+        return StreamUtils.flatten(
+            Stream.of(FROM, TO, CC)
+                .map(headerField -> argumentBuilder().field(headerField))
+                .flatMap(argBuilder -> argumentsProvider()
+                    .argument(argBuilder.copy()
+                        .description("full address value (partial matching)")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch("ser1 <"))
+                    .argument(argBuilder.copy()
+                        .description("address only value (partial matching)")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch("ser1@jam"))
+                    .argument(argBuilder.copy()
+                        .description("personal only value (partial matching)")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch("ser1"))
+                    .argument(argBuilder.copy()
+                        .description("address header & match in the address (partial matching)")
+                        .headerForField(USER_1_ADDRESS)
+                        .valueToMatch("ser1@jam"))
+                    .argument(argBuilder.copy()
+                        .description("raw value matching (partial matching)")
+                        .headerForField(GA_BOU_ZO_MEU_FULL_ADDRESS)
+                        .valueToMatch(BOU))
+                    .argument(argBuilder.copy()
+                        .description("multiple headers (partial matching)")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .headerForField(USER_2_FULL_ADDRESS)
+                        .valueToMatch("ser1@jam"))
+                    .argument(argBuilder.copy()
+                        .description("scrambled content (partial matching)")
+                        .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch("déric MAR"))
+                    .argument(argBuilder.copy()
+                        .description("folded content (partial matching)")
+                        .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch("ded_us"))
+                    .toStream()),
+            Stream.of(TO_HEADER, CC_HEADER)
+                .flatMap(headerName -> Stream.of(
+                    argumentBuilder()
+                        .description("full address " + headerName + " header (partial matching)")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch("ser3 <us")
+                        .build(),
+                    argumentBuilder()
+                        .description("address only " + headerName + " header (partial matching)")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch("ser3@jam")
+                        .build(),
+                    argumentBuilder()
+                        .description("personal only " + headerName + " header (partial matching)")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch("ser3")
+                        .build(),
+                    argumentBuilder()
+                        .description("scrambled content in " + headerName + " header (partial matching)")
+                        .field(RECIPIENT)
+                        .header(headerName, FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
+                        .valueToMatch("déric MAR")
+                        .build(),
+                    argumentBuilder()
+                        .description("folded content in " + headerName + " header (partial matching)")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch("folded_us")
+                        .build())),
+            argumentsProvider()
+                .argument(argumentBuilder().description("multiple to and cc headers (partial matching)").field(RECIPIENT)
+                    .ccRecipient(USER_1_FULL_ADDRESS)
+                    .ccRecipient(USER_2_FULL_ADDRESS)
+                    .toRecipient(USER_3_FULL_ADDRESS)
+                    .toRecipient(USER_4_FULL_ADDRESS)
+                    .valueToMatch("user4@jam"))
+                .argument(argumentBuilder().scrambledSubjectToMatch("is the subject"))
+                .argument(argumentBuilder().unscrambledSubjectToMatch("rédéric MART"))
+                .toStream());
+    }
+
     static Stream<Arguments> notEqualsTestSuite() {
+        return Stream.concat(
+            notContainsTestSuite(),
+            containsArguments());
+    }
+
+    static Stream<Arguments> notContainsTestSuite() {
         return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
                 .map(headerField -> argumentBuilder().field(headerField))
@@ -392,7 +487,7 @@ class JMAPFilteringTest {
     }
 
     @ParameterizedTest(name = "CONTAINS should match for header field {1}, with {0}")
-    @MethodSource("exactlyEqualsTestSuite")
+    @MethodSource("containsTestSuite")
     void matchingContainsTest(String testDescription,
                               Rule.Condition.Field fieldToMatch,
                               MimeMessageBuilder mimeMessageBuilder,
@@ -408,7 +503,7 @@ class JMAPFilteringTest {
     }
 
     @ParameterizedTest(name = "CONTAINS should not match for header field {1}, with {0}")
-    @MethodSource("notEqualsTestSuite")
+    @MethodSource("notContainsTestSuite")
     void notMatchingContainsTest(String testDescription,
                               Rule.Condition.Field fieldToMatch,
                               MimeMessageBuilder mimeMessageBuilder,
@@ -424,7 +519,7 @@ class JMAPFilteringTest {
     }
 
     @ParameterizedTest(name = "NOT-CONTAINS should be matching for field {1}, with {0}")
-    @MethodSource("notEqualsTestSuite")
+    @MethodSource("notContainsTestSuite")
     void matchingNotContainsTest(String testDescription,
                                  Rule.Condition.Field fieldToMatch,
                                  MimeMessageBuilder mimeMessageBuilder,
@@ -440,7 +535,7 @@ class JMAPFilteringTest {
 
 
     @ParameterizedTest(name = "NOT-CONTAINS should not be matching for field {1}, with {0}")
-    @MethodSource("exactlyEqualsTestSuite")
+    @MethodSource("containsTestSuite")
     void notContainsNotMatchingTest(String testDescription,
                                     Rule.Condition.Field fieldToMatch,
                                     MimeMessageBuilder mimeMessageBuilder,
