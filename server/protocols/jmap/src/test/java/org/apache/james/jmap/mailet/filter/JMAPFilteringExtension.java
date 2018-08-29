@@ -19,13 +19,19 @@
 
 package org.apache.james.jmap.mailet.filter;
 
-import static org.apache.james.jmap.mailet.filter.JMAPFilteringTest.RECIPIENT_1_USERNAME;
+import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.RECIPIENT_1;
+import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.RECIPIENT_1_MAILBOX_1;
+import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.RECIPIENT_1_USERNAME;
+import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_1_ADDRESS;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.mail.MessagingException;
+
 import org.apache.james.core.User;
+import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.eventsourcing.eventstore.memory.InMemoryEventStore;
 import org.apache.james.jmap.api.filtering.FilteringManagement;
 import org.apache.james.jmap.api.filtering.Rule;
@@ -38,6 +44,7 @@ import org.apache.james.mailbox.inmemory.manager.InMemoryIntegrationResources;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.user.memory.MemoryUsersRepository;
+import org.apache.mailet.base.test.FakeMail;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -86,10 +93,6 @@ public class JMAPFilteringExtension implements BeforeEachCallback, ParameterReso
                     .get();
         }
 
-        public void defineRuleForRecipient1(Rule.Condition.Field fieldToMatch, Rule.Condition.Comparator comparator, String valueToMatch) {
-            defineRulesForRecipient1(Rule.Condition.of(fieldToMatch, comparator, valueToMatch));
-        }
-
         public void defineRulesForRecipient1(Rule.Condition... conditions) {
             defineRulesForRecipient1(Arrays.asList(conditions));
         }
@@ -110,6 +113,13 @@ public class JMAPFilteringExtension implements BeforeEachCallback, ParameterReso
             testSystem.getFilteringManagement().defineRulesForUser(User.fromUsername(RECIPIENT_1_USERNAME), rules);
         }
 
+        public FakeMail asMail(MimeMessageBuilder mimeMessageBuilder) throws MessagingException {
+            return FakeMail.builder()
+                        .sender(USER_1_ADDRESS)
+                        .recipients(RECIPIENT_1)
+                        .mimeMessage(mimeMessageBuilder)
+                        .build();
+        }
     }
 
     private JMAPFilteringTestSystem testSystem;
@@ -140,7 +150,7 @@ public class JMAPFilteringExtension implements BeforeEachCallback, ParameterReso
 
     private void initMailboxes() throws Exception {
         InMemoryMailboxManager mailboxManager = testSystem.getMailboxManager();
-        MailboxId mailbox1Id = testSystem.createMailbox(mailboxManager, RECIPIENT_1_USERNAME, JMAPFilteringTest.RECIPIENT_1_MAILBOX_1);
+        MailboxId mailbox1Id = testSystem.createMailbox(mailboxManager, RECIPIENT_1_USERNAME, RECIPIENT_1_MAILBOX_1);
 
         testSystem.recipient1Mailbox = mailbox1Id;
     }
