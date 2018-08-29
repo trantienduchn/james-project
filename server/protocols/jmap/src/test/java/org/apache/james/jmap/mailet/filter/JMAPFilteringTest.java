@@ -56,6 +56,7 @@ import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_3_US
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_4_FULL_ADDRESS;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -187,18 +188,30 @@ class JMAPFilteringTest {
         return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
                 .flatMap(headerField -> Stream.of(
-                    argumentBuilder(headerField)
+                        argumentBuilder(headerField)
                         .description("full address value")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch(USER_1_USERNAME),
+                    argumentBuilder(headerField)
+                        .description("full address value (different case)")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch(USER_1_USERNAME.toUpperCase(Locale.ENGLISH)),
                     argumentBuilder(headerField)
                         .description("address only value")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch(USER_1_ADDRESS),
                     argumentBuilder(headerField)
+                        .description("address only value (different case)")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch(USER_1_ADDRESS.toUpperCase(Locale.ENGLISH)),
+                    argumentBuilder(headerField)
                         .description("personal only value")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch(USER_1_FULL_ADDRESS),
+                    argumentBuilder(headerField)
+                        .description("personal only value (different case)")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch(USER_1_FULL_ADDRESS.toUpperCase()),
                     argumentBuilder(headerField)
                         .description("personal header should match personal")
                         .headerForField(USER_1_USERNAME)
@@ -219,7 +232,11 @@ class JMAPFilteringTest {
                     argumentBuilder(headerField)
                         .description("folded content")
                         .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
-                        .valueToMatch(UNFOLDED_USERNAME)
+                        .valueToMatch(UNFOLDED_USERNAME),
+                    argumentBuilder(headerField)
+                        .description("folded content (different case)")
+                        .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
+                        .valueToMatch(UNFOLDED_USERNAME.toUpperCase())
                     ).map(FilteringArgumentBuilder::build)),
             Stream.of(TO_HEADER, CC_HEADER)
                 .flatMap(headerName -> Stream.of(
@@ -228,6 +245,12 @@ class JMAPFilteringTest {
                         .field(RECIPIENT)
                         .header(headerName, USER_3_FULL_ADDRESS)
                         .valueToMatch(USER_3_FULL_ADDRESS)
+                        .build(),
+                    argumentBuilder()
+                        .description("full address " + headerName + " header (different case)")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch(USER_3_FULL_ADDRESS.toUpperCase(Locale.ENGLISH))
                         .build(),
                     argumentBuilder()
                         .description("address only " + headerName + " header")
@@ -279,6 +302,10 @@ class JMAPFilteringTest {
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch("ser1 <"),
                     argumentBuilder(headerField)
+                        .description("full address value (partial matching, different case)")
+                        .headerForField(USER_1_FULL_ADDRESS)
+                        .valueToMatch("SER1 <"),
+                    argumentBuilder(headerField)
                         .description("address only value (partial matching)")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .valueToMatch("ser1@jam"),
@@ -315,6 +342,12 @@ class JMAPFilteringTest {
                         .field(RECIPIENT)
                         .header(headerName, USER_3_FULL_ADDRESS)
                         .valueToMatch("ser3 <us")
+                        .build(),
+                    argumentBuilder()
+                        .description("full address " + headerName + " header (partial matching, different case)")
+                        .field(RECIPIENT)
+                        .header(headerName, USER_3_FULL_ADDRESS)
+                        .valueToMatch("SER3 <US")
                         .build(),
                     argumentBuilder()
                         .description("address only " + headerName + " header (partial matching)")
@@ -381,11 +414,7 @@ class JMAPFilteringTest {
                     argumentBuilder(headerField)
                         .description("empty content")
                         .headerForField(EMPTY)
-                        .valueToMatch(SHOULD_NOT_MATCH),
-                    argumentBuilder(headerField)
-                        .description("case sensitive content")
-                        .headerForField(GA_BOU_ZO_MEU_FULL_ADDRESS)
-                        .valueToMatch(BOU.toLowerCase()))
+                        .valueToMatch(SHOULD_NOT_MATCH))
                     .map(FilteringArgumentBuilder::build)),
             Stream.of(TO_HEADER, CC_HEADER)
                 .flatMap(headerName -> Stream.of(

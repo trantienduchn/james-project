@@ -130,15 +130,15 @@ public interface MailMatcher {
 
         ContentMatcher ADDRESS_CONTAINS_MATCHER = (contents, valueToMatch) -> contents
                 .map(ContentMatcher::asAddressHeader)
-                .anyMatch(addressHeader -> StringUtils.contains(addressHeader.getFullAddress(), valueToMatch));
+                .anyMatch(addressHeader -> StringUtils.containsIgnoreCase(addressHeader.getFullAddress(), valueToMatch));
 
         ContentMatcher ADDRESS_NOT_CONTAINS_MATCHER = negate(ADDRESS_CONTAINS_MATCHER);
         ContentMatcher ADDRESS_EXACTLY_EQUALS_MATCHER = (contents, valueToMatch) -> contents
                 .map(ContentMatcher::asAddressHeader)
                 .anyMatch(addressHeader ->
-                        StringUtils.equals(addressHeader.getFullAddress(), valueToMatch)
-                        || StringUtils.equals(addressHeader.getAddress().orElse(null), valueToMatch)
-                        || StringUtils.equals(addressHeader.getPersonal().orElse(null), valueToMatch));
+                        StringUtils.equalsIgnoreCase(addressHeader.getFullAddress(), valueToMatch)
+                        || StringUtils.equalsIgnoreCase(addressHeader.getAddress().orElse(null), valueToMatch)
+                        || StringUtils.equalsIgnoreCase(addressHeader.getPersonal().orElse(null), valueToMatch));
 
         ContentMatcher ADDRESS_NOT_EXACTLY_EQUALS_MATCHER = negate(ADDRESS_EXACTLY_EQUALS_MATCHER);
 
