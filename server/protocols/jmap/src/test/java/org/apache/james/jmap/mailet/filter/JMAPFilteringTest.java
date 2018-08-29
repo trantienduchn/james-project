@@ -56,8 +56,6 @@ import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_3_US
 import static org.apache.james.jmap.mailet.filter.JMAPFilteringFixture.USER_4_FULL_ADDRESS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -196,23 +194,6 @@ class JMAPFilteringTest {
 
     }
 
-    static class FilteringArgumentsProvider {
-        private final List<FilteringArgumentBuilder> argumentsBuilders;
-
-        public FilteringArgumentsProvider() {
-            argumentsBuilders = new ArrayList<>();
-        }
-
-        public FilteringArgumentsProvider argument(FilteringArgumentBuilder builder) {
-            argumentsBuilders.add(builder);
-            return this;
-        }
-
-        public Stream<Arguments> toStream() {
-            return argumentsBuilders.stream().map(FilteringArgumentBuilder::build);
-        }
-    }
-
     static FilteringArgumentBuilder argumentBuilder() {
         return new FilteringArgumentBuilder();
     }
@@ -222,49 +203,45 @@ class JMAPFilteringTest {
             .field(field);
     }
 
-    static FilteringArgumentsProvider argumentsProvider() {
-        return new FilteringArgumentsProvider();
-    }
-
     static Stream<Arguments> exactlyEqualsTestSuite() {
         return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
                 .map(headerField -> argumentBuilder(headerField))
-                .flatMap(argBuilder -> argumentsProvider()
-                    .argument(argBuilder
+                .flatMap(argBuilder -> Stream.of(
+                    argBuilder
                         .description("full address value")
                         .headerForField(USER_1_FULL_ADDRESS)
-                        .valueToMatch(USER_1_USERNAME))
-                    .argument(argBuilder
+                        .valueToMatch(USER_1_USERNAME),
+                    argBuilder
                         .description("address only value")
                         .headerForField(USER_1_FULL_ADDRESS)
-                        .valueToMatch(USER_1_ADDRESS))
-                    .argument(argBuilder
+                        .valueToMatch(USER_1_ADDRESS),
+                    argBuilder
                         .description("personal only value")
                         .headerForField(USER_1_FULL_ADDRESS)
-                        .valueToMatch(USER_1_FULL_ADDRESS))
-                    .argument(argBuilder
+                        .valueToMatch(USER_1_FULL_ADDRESS),
+                    argBuilder
                         .description("personal header should match personal")
                         .headerForField(USER_1_USERNAME)
-                        .valueToMatch(USER_1_USERNAME))
-                    .argument(argBuilder
+                        .valueToMatch(USER_1_USERNAME),
+                    argBuilder
                         .description("address header should match address")
                         .headerForField(USER_1_ADDRESS)
-                        .valueToMatch(USER_1_ADDRESS))
-                    .argument(argBuilder
+                        .valueToMatch(USER_1_ADDRESS),
+                    argBuilder
                         .description("multiple headers")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .headerForField(USER_2_FULL_ADDRESS)
-                        .valueToMatch(USER_1_USERNAME))
-                    .argument(argBuilder
+                        .valueToMatch(USER_1_USERNAME),
+                    argBuilder
                         .description("scrambled content")
                         .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
-                        .valueToMatch(FRED_MARTIN_FULLNAME))
-                    .argument(argBuilder
+                        .valueToMatch(FRED_MARTIN_FULLNAME),
+                    argBuilder
                         .description("folded content")
                         .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
-                        .valueToMatch(UNFOLDED_USERNAME))
-                    .toStream()),
+                        .valueToMatch(UNFOLDED_USERNAME)
+                    ).map(FilteringArgumentBuilder::build)),
             Stream.of(TO_HEADER, CC_HEADER)
                 .flatMap(headerName -> Stream.of(
                     argumentBuilder()
@@ -296,16 +273,16 @@ class JMAPFilteringTest {
                         .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
                         .valueToMatch(UNFOLDED_USERNAME)
                         .build())),
-            argumentsProvider()
-                .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
+            Stream.of(
+                argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
                     .ccRecipient(USER_1_FULL_ADDRESS)
                     .ccRecipient(USER_2_FULL_ADDRESS)
                     .toRecipient(USER_3_FULL_ADDRESS)
                     .toRecipient(USER_4_FULL_ADDRESS)
-                    .valueToMatch(USER_4_FULL_ADDRESS))
-                .argument(argumentBuilder().scrambledSubjectToMatch(UNSCRAMBLED_SUBJECT))
-                .argument(argumentBuilder().unscrambledSubjectToMatch(UNSCRAMBLED_SUBJECT))
-                .toStream());
+                    .valueToMatch(USER_4_FULL_ADDRESS)
+                    .build(),
+                argumentBuilder().scrambledSubjectToMatch(UNSCRAMBLED_SUBJECT).build(),
+                argumentBuilder().unscrambledSubjectToMatch(UNSCRAMBLED_SUBJECT).build()));
     }
 
     static Stream<Arguments> containsTestSuite() {
@@ -318,41 +295,41 @@ class JMAPFilteringTest {
         return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
                 .map(headerField -> argumentBuilder(headerField))
-                .flatMap(argBuilder -> argumentsProvider()
-                    .argument(argBuilder
+                .flatMap(argBuilder -> Stream.of(
+                    argBuilder
                         .description("full address value (partial matching)")
                         .headerForField(USER_1_FULL_ADDRESS)
-                        .valueToMatch("ser1 <"))
-                    .argument(argBuilder
+                        .valueToMatch("ser1 <"),
+                    argBuilder
                         .description("address only value (partial matching)")
                         .headerForField(USER_1_FULL_ADDRESS)
-                        .valueToMatch("ser1@jam"))
-                    .argument(argBuilder
+                        .valueToMatch("ser1@jam"),
+                    argBuilder
                         .description("personal only value (partial matching)")
                         .headerForField(USER_1_FULL_ADDRESS)
-                        .valueToMatch("ser1"))
-                    .argument(argBuilder
+                        .valueToMatch("ser1"),
+                    argBuilder
                         .description("address header & match in the address (partial matching)")
                         .headerForField(USER_1_ADDRESS)
-                        .valueToMatch("ser1@jam"))
-                    .argument(argBuilder
+                        .valueToMatch("ser1@jam"),
+                    argBuilder
                         .description("raw value matching (partial matching)")
                         .headerForField(GA_BOU_ZO_MEU_FULL_ADDRESS)
-                        .valueToMatch(BOU))
-                    .argument(argBuilder
+                        .valueToMatch(BOU),
+                    argBuilder
                         .description("multiple headers (partial matching)")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .headerForField(USER_2_FULL_ADDRESS)
-                        .valueToMatch("ser1@jam"))
-                    .argument(argBuilder
+                        .valueToMatch("ser1@jam"),
+                    argBuilder
                         .description("scrambled content (partial matching)")
                         .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
-                        .valueToMatch("déric MAR"))
-                    .argument(argBuilder
+                        .valueToMatch("déric MAR"),
+                    argBuilder
                         .description("folded content (partial matching)")
                         .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
                         .valueToMatch("ded_us"))
-                    .toStream()),
+                    .map(FilteringArgumentBuilder::build)),
             Stream.of(TO_HEADER, CC_HEADER)
                 .flatMap(headerName -> Stream.of(
                     argumentBuilder()
@@ -385,16 +362,15 @@ class JMAPFilteringTest {
                         .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
                         .valueToMatch("folded_us")
                         .build())),
-            argumentsProvider()
-                .argument(argumentBuilder().description("multiple to and cc headers (partial matching)").field(RECIPIENT)
+            Stream.of(
+                argumentBuilder().description("multiple to and cc headers (partial matching)").field(RECIPIENT)
                     .ccRecipient(USER_1_FULL_ADDRESS)
                     .ccRecipient(USER_2_FULL_ADDRESS)
                     .toRecipient(USER_3_FULL_ADDRESS)
                     .toRecipient(USER_4_FULL_ADDRESS)
-                    .valueToMatch("user4@jam"))
-                .argument(argumentBuilder().scrambledSubjectToMatch("is the subject"))
-                .argument(argumentBuilder().unscrambledSubjectToMatch("rédéric MART"))
-                .toStream());
+                    .valueToMatch("user4@jam").build(),
+                argumentBuilder().scrambledSubjectToMatch("is the subject").build(),
+                argumentBuilder().unscrambledSubjectToMatch("rédéric MART").build()));
     }
 
     static Stream<Arguments> notEqualsTestSuite() {
@@ -407,33 +383,33 @@ class JMAPFilteringTest {
         return StreamUtils.flatten(
             Stream.of(FROM, TO, CC)
                 .map(headerField -> argumentBuilder(headerField))
-                .flatMap(argBuilder -> argumentsProvider()
-                    .argument(argBuilder
+                .flatMap(argBuilder -> Stream.of(
+                    argBuilder
                         .description("normal content")
                         .headerForField(USER_1_FULL_ADDRESS)
-                        .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder
+                        .valueToMatch(SHOULD_NOT_MATCH),
+                    argBuilder
                         .description("multiple headers")
                         .headerForField(USER_1_FULL_ADDRESS)
                         .from(USER_2_FULL_ADDRESS)
-                        .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder
+                        .valueToMatch(SHOULD_NOT_MATCH),
+                    argBuilder
                         .description("scrambled content")
                         .headerForField(FRED_MARTIN_FULL_SCRAMBLED_ADDRESS)
-                        .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder
+                        .valueToMatch(SHOULD_NOT_MATCH),
+                    argBuilder
                         .description("folded content")
                         .headerForField(USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
-                        .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder
+                        .valueToMatch(SHOULD_NOT_MATCH),
+                    argBuilder
                         .description("empty content")
                         .headerForField(EMPTY)
-                        .valueToMatch(SHOULD_NOT_MATCH))
-                    .argument(argBuilder
+                        .valueToMatch(SHOULD_NOT_MATCH),
+                    argBuilder
                         .description("case sensitive content")
                         .headerForField(GA_BOU_ZO_MEU_FULL_ADDRESS)
                         .valueToMatch(BOU.toLowerCase()))
-                    .toStream()),
+                    .map(FilteringArgumentBuilder::build)),
             Stream.of(TO_HEADER, CC_HEADER)
                 .flatMap(headerName -> Stream.of(
                     argumentBuilder()
@@ -458,19 +434,20 @@ class JMAPFilteringTest {
                         .header(headerName, USER_1_AND_UNFOLDED_USER_FULL_ADDRESS)
                         .valueToMatch(SHOULD_NOT_MATCH)
                         .build())),
-            argumentsProvider()
-                .argument(argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
+            Stream.of(
+                argumentBuilder().description("multiple to and cc headers").field(RECIPIENT)
                     .ccRecipient(USER_1_FULL_ADDRESS)
                     .ccRecipient(USER_2_FULL_ADDRESS)
                     .toRecipient(USER_3_FULL_ADDRESS)
                     .toRecipient(USER_4_FULL_ADDRESS)
-                    .valueToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().description("matching bcc headers").field(RECIPIENT)
+                    .valueToMatch(SHOULD_NOT_MATCH)
+                    .build(),
+                argumentBuilder().description("matching bcc headers").field(RECIPIENT)
                     .bccRecipient(USER_1_FULL_ADDRESS)
-                    .valueToMatch(USER_1_FULL_ADDRESS))
-                .argument(argumentBuilder().scrambledSubjectToMatch(SHOULD_NOT_MATCH))
-                .argument(argumentBuilder().unscrambledSubjectToMatch(SHOULD_NOT_MATCH))
-                .toStream(),
+                    .valueToMatch(USER_1_FULL_ADDRESS)
+                    .build(),
+                argumentBuilder().scrambledSubjectToMatch(SHOULD_NOT_MATCH).build(),
+                argumentBuilder().unscrambledSubjectToMatch(SHOULD_NOT_MATCH).build()),
             Stream.of(Rule.Condition.Field.values())
                 .map(field -> argumentBuilder()
                     .description("no header")
