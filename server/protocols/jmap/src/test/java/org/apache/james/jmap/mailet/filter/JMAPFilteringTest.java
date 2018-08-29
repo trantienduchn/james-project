@@ -158,11 +158,25 @@ class JMAPFilteringTest {
                 .valueToMatch(valueToMatch);
         }
 
+        public FilteringArgumentBuilder scrambledSubjectShouldNotMatchCaseSensitive() {
+            return description("normal content (case sensitive)")
+                .field(SUBJECT)
+                .subject(SCRAMBLED_SUBJECT)
+                .valueToMatch(SCRAMBLED_SUBJECT.toUpperCase(Locale.FRENCH));
+        }
+
         public FilteringArgumentBuilder unscrambledSubjectToMatch(String valueToMatch) {
             return description("unscrambled content")
                 .field(SUBJECT)
                 .subject(UNSCRAMBLED_SUBJECT)
                 .valueToMatch(valueToMatch);
+        }
+
+        public FilteringArgumentBuilder unscrambledSubjectShouldNotMatchCaseSensitive() {
+            return description("unscrambled content (case sensitive)")
+                    .field(SUBJECT)
+                    .subject(UNSCRAMBLED_SUBJECT)
+                    .valueToMatch(UNSCRAMBLED_SUBJECT.toUpperCase(Locale.FRENCH));
         }
 
         public Arguments build() {
@@ -453,7 +467,9 @@ class JMAPFilteringTest {
                     .valueToMatch(USER_1_FULL_ADDRESS)
                     .build(),
                 argumentBuilder().scrambledSubjectToMatch(SHOULD_NOT_MATCH).build(),
-                argumentBuilder().unscrambledSubjectToMatch(SHOULD_NOT_MATCH).build()),
+                argumentBuilder().scrambledSubjectShouldNotMatchCaseSensitive().build(),
+                argumentBuilder().unscrambledSubjectToMatch(SHOULD_NOT_MATCH).build(),
+                argumentBuilder().unscrambledSubjectShouldNotMatchCaseSensitive().build()),
             Stream.of(Rule.Condition.Field.values())
                 .map(field -> argumentBuilder()
                     .description("no header")
