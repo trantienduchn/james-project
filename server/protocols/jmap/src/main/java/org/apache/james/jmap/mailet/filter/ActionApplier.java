@@ -36,6 +36,7 @@ import com.google.common.annotations.VisibleForTesting;
 public class ActionApplier {
     static final String DELIVERY_PATH_PREFIX = "DeliveryPath_";
 
+    @VisibleForTesting
     static class Factory {
         private final MailboxManager mailboxManager;
         private final MailboxId.Factory mailboxIdFactory;
@@ -50,7 +51,7 @@ public class ActionApplier {
             return new RequireUser(mail);
         }
 
-        class RequireUser {
+        public class RequireUser {
             private final Mail mail;
 
             RequireUser(Mail mail) {
