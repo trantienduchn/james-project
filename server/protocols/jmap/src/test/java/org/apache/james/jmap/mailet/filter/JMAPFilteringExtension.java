@@ -60,14 +60,18 @@ public class JMAPFilteringExtension implements BeforeEachCallback, ParameterReso
         private final JMAPFiltering jmapFiltering;
         private final FilteringManagement filteringManagement;
         private final InMemoryMailboxManager mailboxManager;
-
-        private MailboxId recipient1Mailbox;
+        private final MailboxId recipient1Mailbox;
 
         JMAPFilteringTestSystem(JMAPFiltering jmapFiltering, FilteringManagement filteringManagement,
                                 InMemoryMailboxManager mailboxManager) {
             this.jmapFiltering = jmapFiltering;
             this.filteringManagement = filteringManagement;
             this.mailboxManager = mailboxManager;
+            try {
+                this.recipient1Mailbox = createMailbox(mailboxManager, RECIPIENT_1_USERNAME, RECIPIENT_1_MAILBOX_1);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         public JMAPFiltering getJmapFiltering() {
@@ -89,8 +93,8 @@ public class JMAPFilteringExtension implements BeforeEachCallback, ParameterReso
         public MailboxId createMailbox(InMemoryMailboxManager mailboxManager, String username, String mailboxName) throws Exception {
             MailboxSession mailboxSession = mailboxManager.createSystemSession(username);
             return mailboxManager
-                    .createMailbox(MailboxPath.forUser(username, mailboxName), mailboxSession)
-                    .get();
+                .createMailbox(MailboxPath.forUser(username, mailboxName), mailboxSession)
+                .orElseThrow(() -> new RuntimeException("Missing mailboxId when creating mailbox"));
         }
 
         public void defineRulesForRecipient1(Rule.Condition... conditions) {
@@ -98,8 +102,7 @@ public class JMAPFilteringExtension implements BeforeEachCallback, ParameterReso
         }
 
         public void defineRulesForRecipient1(List<Rule.Condition> conditions) {
-
-            final AtomicInteger counter = new AtomicInteger();
+            AtomicInteger counter = new AtomicInteger();
             ImmutableList<Rule> rules = conditions
                 .stream()
                 .map(condition -> Rule.builder()
@@ -134,8 +137,6 @@ public class JMAPFilteringExtension implements BeforeEachCallback, ParameterReso
         JMAPFiltering jmapFiltering = new JMAPFiltering(filteringManagement, usersRepository, actionApplierFactory);
 
         testSystem = new JMAPFilteringTestSystem(jmapFiltering, filteringManagement, mailboxManager);
-
-        initMailboxes();
     }
 
     @Override
@@ -146,12 +147,5 @@ public class JMAPFilteringExtension implements BeforeEachCallback, ParameterReso
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         return testSystem;
-    }
-
-    private void initMailboxes() throws Exception {
-        InMemoryMailboxManager mailboxManager = testSystem.getMailboxManager();
-        MailboxId mailbox1Id = testSystem.createMailbox(mailboxManager, RECIPIENT_1_USERNAME, RECIPIENT_1_MAILBOX_1);
-
-        testSystem.recipient1Mailbox = mailbox1Id;
     }
 }
