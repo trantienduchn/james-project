@@ -82,24 +82,23 @@ public interface MailMatcher {
         class AddressHeader {
             private static final Logger LOGGER = LoggerFactory.getLogger(AddressHeader.class);
 
-            private Optional<String> personal;
-            private Optional<String> address;
+            private final Optional<String> personal;
+            private final Optional<String> address;
             private final String fullAddress;
 
             private AddressHeader(String fullAddress) {
                 this.fullAddress = fullAddress;
-                parseFullAddress();
+                Optional<InternetAddress> internetAddress = parseFullAddress();
+                this.personal = internetAddress.map(InternetAddress::getPersonal);
+                this.address = internetAddress.map(InternetAddress::getAddress);
             }
 
-            private void parseFullAddress() {
+            private Optional<InternetAddress> parseFullAddress() {
                 try {
-                    InternetAddress internetAddress = new InternetAddress(fullAddress);
-                    this.personal = Optional.ofNullable(internetAddress.getPersonal());
-                    this.address = Optional.ofNullable(internetAddress.getAddress());
+                    return Optional.of(new InternetAddress(fullAddress));
                 } catch (AddressException e) {
                     LOGGER.error("error while parsing full address {}", fullAddress, e);
-                    this.personal = Optional.empty();
-                    this.address = Optional.empty();
+                    return Optional.empty();
                 }
             }
 
