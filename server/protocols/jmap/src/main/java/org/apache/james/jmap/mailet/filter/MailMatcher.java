@@ -201,9 +201,9 @@ public interface MailMatcher {
         Optional<HeaderExtractor> maybeHeaderExtractor = getHeaderExtractor(ruleCondition.getField());
 
         return new HeaderMatcher(
-                maybeContentMatcher.orElse(null),
-                rule.getCondition().getValue(),
-                maybeHeaderExtractor.orElse(null));
+            maybeContentMatcher.orElseThrow(() -> new RuntimeException("No content matcher associated with field " + ruleCondition.getField())),
+            rule.getCondition().getValue(),
+            maybeHeaderExtractor.orElseThrow(() -> new RuntimeException("No content matcher associated with comparator " + ruleCondition.getComparator())));
     }
 
     static HeaderExtractor recipientExtractor(Message.RecipientType type) {
