@@ -24,6 +24,7 @@ import javax.jms.ConnectionFactory;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
+import org.apache.james.metrics.api.NoopGaugeRegistry;
 import org.apache.james.metrics.api.NoopMetricFactory;
 import org.apache.james.queue.api.DelayedManageableMailQueueContract;
 import org.apache.james.queue.api.DelayedPriorityMailQueueContract;
@@ -52,8 +53,9 @@ public class ActiveMQMailQueueTest implements DelayedManageableMailQueueContract
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://localhost?create=false");
         RawMailQueueItemDecoratorFactory mailQueueItemDecoratorFactory = new RawMailQueueItemDecoratorFactory();
         NoopMetricFactory metricFactory = new NoopMetricFactory();
+        NoopGaugeRegistry gaugeRegistry = new NoopGaugeRegistry();
         String queueName = BrokerExtension.generateRandomQueueName(broker);
-        mailQueue = new ActiveMQMailQueue(connectionFactory, mailQueueItemDecoratorFactory, queueName, !USE_BLOB, metricFactory);
+        mailQueue = new ActiveMQMailQueue(connectionFactory, mailQueueItemDecoratorFactory, queueName, !USE_BLOB, metricFactory, gaugeRegistry);
     }
 
     @AfterEach

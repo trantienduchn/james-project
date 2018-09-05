@@ -30,6 +30,7 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.commons.io.FileUtils;
 import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.metrics.api.NoopGaugeRegistry;
 import org.apache.james.metrics.api.NoopMetricFactory;
 import org.apache.james.queue.api.DelayedManageableMailQueueContract;
 import org.apache.james.queue.api.DelayedPriorityMailQueueContract;
@@ -68,8 +69,9 @@ public class ActiveMQMailQueueBlobTest implements DelayedManageableMailQueueCont
 
         RawMailQueueItemDecoratorFactory mailQueueItemDecoratorFactory = new RawMailQueueItemDecoratorFactory();
         NoopMetricFactory metricFactory = new NoopMetricFactory();
+        NoopGaugeRegistry gaugeRegistry = new NoopGaugeRegistry();
         String queueName = BrokerExtension.generateRandomQueueName(broker);
-        mailQueue = new ActiveMQMailQueue(connectionFactory, mailQueueItemDecoratorFactory, queueName, USE_BLOB, metricFactory);
+        mailQueue = new ActiveMQMailQueue(connectionFactory, mailQueueItemDecoratorFactory, queueName, USE_BLOB, metricFactory, gaugeRegistry);
     }
 
     @AfterEach
