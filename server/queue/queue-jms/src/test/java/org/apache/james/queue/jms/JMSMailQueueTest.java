@@ -19,23 +19,13 @@
 
 package org.apache.james.queue.jms;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
-import javax.jms.ConnectionFactory;
-
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
-import org.apache.james.metrics.api.GaugeRegistry;
-import org.apache.james.metrics.api.Metric;
 import org.apache.james.metrics.api.NoopGaugeRegistry;
 import org.apache.james.metrics.api.NoopMetricFactory;
 import org.apache.james.queue.api.DelayedManageableMailQueueContract;
 import org.apache.james.queue.api.DelayedPriorityMailQueueContract;
 import org.apache.james.queue.api.MailQueue;
-import org.apache.james.queue.api.MailQueueMetricContract;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.queue.api.PriorityManageableMailQueueContract;
 import org.apache.james.queue.api.RawMailQueueItemDecoratorFactory;
@@ -47,24 +37,23 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(BrokerExtension.class)
 public class JMSMailQueueTest implements DelayedManageableMailQueueContract, PriorityManageableMailQueueContract, DelayedPriorityMailQueueContract,
-    MailQueueMetricContract {
+    JMSMailQueueMetricContract {
 
-    private JMSMailQueue mailQueue;
-    private NoopMetricFactory metricFactory;
-    private NoopGaugeRegistry gaugeRegistry;
-    private Metric enqueuedMailsMetric;
-    private Metric dequeuedMailsMetric;
+    JMSMailQueue mailQueue;
+    ActiveMQConnectionFactory connectionFactory;
+    RawMailQueueItemDecoratorFactory mailQueueItemDecoratorFactory;
+    NoopMetricFactory metricFactory;
+    String queueName;
+    NoopGaugeRegistry gaugeRegistry;
 
     @BeforeEach
     void setUp(BrokerService broker) {
-        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://localhost?create=false");
-        RawMailQueueItemDecoratorFactory mailQueueItemDecoratorFactory = new RawMailQueueItemDecoratorFactory();
-        metricFactory = spy(new NoopMetricFactory());
-        gaugeRegistry = spy(new NoopGaugeRegistry());
-        mockMetrics();
-        String queueName = BrokerExtension.generateRandomQueueName(broker);
-
-        mailQueue = spy(new JMSMailQueue(connectionFactory, mailQueueItemDecoratorFactory, queueName, metricFactory, gaugeRegistry));
+        connectionFactory = new ActiveMQConnectionFactory("vm://localhost?create=false");
+        mailQueueItemDecoratorFactory = new RawMailQueueItemDecoratorFactory();
+        metricFactory = new NoopMetricFactory();
+        gaugeRegistry = new NoopGaugeRegistry();
+        queueName = BrokerExtension.generateRandomQueueName(broker);
+        mailQueue = new JMSMailQueue(connectionFactory, mailQueueItemDecoratorFactory, queueName, metricFactory, gaugeRegistry);
     }
 
     @AfterEach
@@ -75,27 +64,6 @@ public class JMSMailQueueTest implements DelayedManageableMailQueueContract, Pri
     @Override
     public MailQueue getMailQueue() {
         return mailQueue;
-    }
-
-    void mockMetrics() {
-        enqueuedMailsMetric = mock(Metric.class);
-        dequeuedMailsMetric = mock(Metric.class);
-        when(metricFactory.generate(anyString())).thenReturn(enqueuedMailsMetric, dequeuedMailsMetric);
-    }
-
-    @Override
-    public GaugeRegistry gaugeRegistry() {
-        return gaugeRegistry;
-    }
-
-    @Override
-    public Metric enqueuedMailsMetric() {
-        return enqueuedMailsMetric;
-    }
-
-    @Override
-    public Metric dequeuedMailsMetric() {
-        return dequeuedMailsMetric;
     }
 
     @Test

@@ -461,7 +461,7 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
             dequeuedMailsMetric.decrement();
             gaugeRegistry.register("mailQueueSize:" + queueName, queueSizeGauge());
         } catch (Exception e) {
-            LOGGER.error("Unexpected exception while decreasing metric");
+            LOGGER.error("Unexpected exception while decreasing metric", e);
         }
     }
 
@@ -470,7 +470,7 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
             enqueuedMailsMetric.increment();
             gaugeRegistry.register("mailQueueSize:" + queueName, queueSizeGauge());
         } catch (Exception e) {
-            LOGGER.error("Unexpected exception while increasing metric");
+            LOGGER.error("Unexpected exception while increasing metric", e);
         }
     }
 

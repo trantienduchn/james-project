@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.queue.api;
+package org.apache.james.queue.jms;
 
 import static org.apache.james.queue.api.Mails.defaultMail;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,17 +34,17 @@ import javax.mail.MessagingException;
 import org.apache.james.metrics.api.Gauge;
 import org.apache.james.metrics.api.GaugeRegistry;
 import org.apache.james.metrics.api.Metric;
+import org.apache.james.queue.api.MailQueue;
+import org.apache.james.queue.api.MailQueueContract;
 import org.apache.mailet.base.test.FakeMail;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import com.github.fge.lambdas.Throwing;
 
-public interface MailQueueMetricContract extends MailQueueContract {
-
-    GaugeRegistry gaugeRegistry();
-    Metric enqueuedMailsMetric();
-    Metric dequeuedMailsMetric();
+@ExtendWith(JMSMailQueueMetricExtension.class)
+public interface JMSMailQueueMetricContract extends MailQueueContract {
 
     default FakeMail fakeMail() throws MessagingException {
         return defaultMail()
@@ -52,38 +52,34 @@ public interface MailQueueMetricContract extends MailQueueContract {
             .build();
     }
 
-    default void enQueueMail(Integer times) throws Exception {
-        MailQueue mailQueue = getMailQueue();
-
+    default void enQueueMail(JMSMailQueueMetricExtension.JMSMailQueueMetricTestSystem testSystem, Integer times) throws Exception {
         IntStream
             .rangeClosed(1, times)
-            .forEach(Throwing.intConsumer(time -> mailQueue.enQueue(fakeMail())));
+            .forEach(Throwing.intConsumer(time -> testSystem.getMockMailQueue().enQueue(fakeMail())));
     }
 
-    default void deQueueMail(Integer times) throws Exception {
-        MailQueue mailQueue = getMailQueue();
-
+    default void deQueueMail(JMSMailQueueMetricExtension.JMSMailQueueMetricTestSystem testSystem, Integer times) throws Exception {
         IntStream
             .rangeClosed(1, times)
-            .forEach(Throwing.intConsumer(time -> mailQueue.deQueue().done(true)));
+            .forEach(Throwing.intConsumer(time -> testSystem.getMockMailQueue().deQueue().done(true)));
     }
 
     @Test
-    default void enqueueShouldIncreaseMetric() throws Exception {
-        Metric enqueuedMailsMetric = enqueuedMailsMetric();
+    default void enqueueShouldIncreaseMetric(JMSMailQueueMetricExtension.JMSMailQueueMetricTestSystem testSystem) throws Exception {
+        Metric enqueuedMailsMetric = testSystem.getMockEnqueuedMailsMetric();
 
-        enQueueMail(2);
+        enQueueMail(testSystem, 2);
 
         verify(enqueuedMailsMetric, times(2)).increment();
         verifyNoMoreInteractions(enqueuedMailsMetric);
     }
 
     @Test
-    default void enqueueShouldRegisterGauge() throws Exception {
-        Metric enqueuedMailsMetric = enqueuedMailsMetric();
-        GaugeRegistry gaugeRegistry = gaugeRegistry();
+    default void enqueueShouldRegisterGauge(JMSMailQueueMetricExtension.JMSMailQueueMetricTestSystem testSystem) throws Exception {
+        Metric enqueuedMailsMetric = testSystem.getMockEnqueuedMailsMetric();
+        GaugeRegistry gaugeRegistry = testSystem.getMockGaugeRegistry();
 
-        enQueueMail(2);
+        enQueueMail(testSystem, 2);
 
         verify(enqueuedMailsMetric, times(2)).increment();
         verifyNoMoreInteractions(enqueuedMailsMetric);
@@ -97,46 +93,46 @@ public interface MailQueueMetricContract extends MailQueueContract {
     }
 
     @Test
-    default void enqueueShouldNotDecreaseMetric() throws Exception {
-        Metric enqueuedMailsMetric = enqueuedMailsMetric();
-        Metric dequeuedMailsMetric = dequeuedMailsMetric();
+    default void enqueueShouldNotDecreaseMetric(JMSMailQueueMetricExtension.JMSMailQueueMetricTestSystem testSystem) throws Exception {
+        Metric enqueuedMailsMetric = testSystem.getMockEnqueuedMailsMetric();
+        Metric dequeuedMailsMetric = testSystem.getMockDequeuedMailsMetric();
 
-        enQueueMail(2);
+        enQueueMail(testSystem, 2);
 
         verify(enqueuedMailsMetric, times(2)).increment();
         verifyNoMoreInteractions(dequeuedMailsMetric);
     }
 
     @Test
-    default void enqueueShouldWorkWhenMetricRecordingGotException() throws Exception {
-        ManageableMailQueue mailQueue = (ManageableMailQueue) getMailQueue();
+    default void enqueueShouldWorkWhenMetricRecordingGotException(JMSMailQueueMetricExtension.JMSMailQueueMetricTestSystem testSystem) throws Exception {
+        JMSMailQueue mailQueue = testSystem.getMockMailQueue();
         when(mailQueue.getSize()).thenThrow(MailQueue.MailQueueException.class);
 
-        enQueueMail(1);
+        enQueueMail(testSystem, 1);
 
-        MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
+        MailQueue.MailQueueItem mailQueueItem = testSystem.getMockMailQueue().deQueue();
         assertThat(mailQueueItem.getMail().getName())
             .isEqualTo("name1");
     }
 
     @Test
-    default void dequeueShouldDecreaseMetric() throws Exception {
-        Metric dequeuedMailsMetric = dequeuedMailsMetric();
+    default void dequeueShouldDecreaseMetric(JMSMailQueueMetricExtension.JMSMailQueueMetricTestSystem testSystem) throws Exception {
+        Metric dequeuedMailsMetric = testSystem.getMockDequeuedMailsMetric();
 
-        enQueueMail(2);
-        deQueueMail(2);
+        enQueueMail(testSystem, 2);
+        deQueueMail(testSystem, 2);
 
         verify(dequeuedMailsMetric, times(2)).decrement();
         verifyNoMoreInteractions(dequeuedMailsMetric);
     }
 
     @Test
-    default void dequeueShouldRegisterGauge() throws Exception {
-        Metric enqueuedMailsMetric = dequeuedMailsMetric();
-        GaugeRegistry gaugeRegistry = gaugeRegistry();
+    default void dequeueShouldRegisterGauge(JMSMailQueueMetricExtension.JMSMailQueueMetricTestSystem testSystem) throws Exception {
+        Metric enqueuedMailsMetric = testSystem.getMockDequeuedMailsMetric();
+        GaugeRegistry gaugeRegistry = testSystem.getMockGaugeRegistry();
 
-        enQueueMail(3);
-        deQueueMail(2);
+        enQueueMail(testSystem, 3);
+        deQueueMail(testSystem, 2);
 
         verify(enqueuedMailsMetric, times(2)).decrement();
         verifyNoMoreInteractions(enqueuedMailsMetric);
@@ -150,12 +146,12 @@ public interface MailQueueMetricContract extends MailQueueContract {
     }
 
     @Test
-    default void dequeueShouldNotIncreaseMetric() throws Exception {
-        Metric enqueuedMailsMetric = enqueuedMailsMetric();
-        Metric dequeuedMailsMetric = dequeuedMailsMetric();
+    default void dequeueShouldNotIncreaseMetric(JMSMailQueueMetricExtension.JMSMailQueueMetricTestSystem testSystem) throws Exception {
+        Metric enqueuedMailsMetric = testSystem.getMockEnqueuedMailsMetric();
+        Metric dequeuedMailsMetric = testSystem.getMockDequeuedMailsMetric();
 
-        enQueueMail(2);
-        deQueueMail(2);
+        enQueueMail(testSystem, 2);
+        deQueueMail(testSystem, 2);
 
         verify(dequeuedMailsMetric, times(2)).decrement();
         verifyNoMoreInteractions(dequeuedMailsMetric);
@@ -165,13 +161,13 @@ public interface MailQueueMetricContract extends MailQueueContract {
     }
 
     @Test
-    default void dequeueShouldWorkWhenMetricRecordingGotException() throws Exception {
-        ManageableMailQueue mailQueue = (ManageableMailQueue) getMailQueue();
+    default void dequeueShouldWorkWhenMetricRecordingGotException(JMSMailQueueMetricExtension.JMSMailQueueMetricTestSystem testSystem) throws Exception {
+        JMSMailQueue mailQueue = testSystem.getMockMailQueue();
         when(mailQueue.getSize()).thenThrow(MailQueue.MailQueueException.class, MailQueue.MailQueueException.class);
 
-        enQueueMail(1);
+        enQueueMail(testSystem, 1);
 
-        MailQueue.MailQueueItem mailQueueItem = getMailQueue().deQueue();
+        MailQueue.MailQueueItem mailQueueItem = testSystem.getMockMailQueue().deQueue();
         assertThat(mailQueueItem.getMail().getName())
             .isEqualTo("name1");
     }
