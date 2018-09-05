@@ -52,6 +52,8 @@ import javax.mail.internet.MimeMessage;
 import org.apache.commons.collections.iterators.EnumerationIterator;
 import org.apache.james.core.MailAddress;
 import org.apache.james.lifecycle.api.Disposable;
+import org.apache.james.metrics.api.Gauge;
+import org.apache.james.metrics.api.GaugeRegistry;
 import org.apache.james.metrics.api.Metric;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.metrics.api.TimeMetric;
@@ -68,6 +70,7 @@ import org.slf4j.LoggerFactory;
 import org.threeten.extra.Temporals;
 
 import com.github.fge.lambdas.Throwing;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterators;
@@ -143,8 +146,9 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
     protected final Connection connection;
     protected final MailQueueItemDecoratorFactory mailQueueItemDecoratorFactory;
     protected final Metric enqueuedMailsMetric;
-    protected final Metric mailQueueSize;
+    protected final Metric dequeuedMailsMetric;
     protected final MetricFactory metricFactory;
+    protected final GaugeRegistry gaugeRegistry;
 
     protected final Session session;
     protected final Queue queue;
@@ -153,7 +157,9 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
     private final Joiner joiner;
     private final Splitter splitter;
 
-    public JMSMailQueue(ConnectionFactory connectionFactory, MailQueueItemDecoratorFactory mailQueueItemDecoratorFactory, String queueName, MetricFactory metricFactory) {
+    public JMSMailQueue(ConnectionFactory connectionFactory, MailQueueItemDecoratorFactory mailQueueItemDecoratorFactory,
+                        String queueName, MetricFactory metricFactory,
+                        GaugeRegistry gaugeRegistry) {
         try {
             connection = connectionFactory.createConnection();
             connection.start();
@@ -163,8 +169,9 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
         this.mailQueueItemDecoratorFactory = mailQueueItemDecoratorFactory;
         this.queueName = queueName;
         this.metricFactory = metricFactory;
+        this.gaugeRegistry = gaugeRegistry;
         this.enqueuedMailsMetric = metricFactory.generate("enqueuedMail:" + queueName);
-        this.mailQueueSize = metricFactory.generate("mailQueueSize:" + queueName);
+        this.dequeuedMailsMetric = metricFactory.generate("dequeuedMail:" + queueName);
 
         this.joiner = Joiner.on(JAMES_MAIL_SEPARATOR).skipNulls();
         this.splitter = Splitter.on(JAMES_MAIL_SEPARATOR)
@@ -211,7 +218,7 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
                 Message message = consumer.receive(10000);
 
                 if (message != null) {
-                    mailQueueSize.decrement();
+                    metricForDecrement();
                     return createMailQueueItem(session, consumer, message);
                 } else {
                     session.commit();
@@ -245,11 +252,9 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
             }
 
             Map<String, Object> props = getJMSProperties(mail, nextDeliveryTimestamp);
-
             produceMail(props, msgPrio, mail);
 
-            enqueuedMailsMetric.increment();
-            mailQueueSize.increment();
+            metricForIncrement();
         } catch (Exception e) {
             throw new MailQueueException("Unable to enqueue mail " + mail, e);
         } finally {
@@ -449,6 +454,30 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
         } else {
             LOGGER.error("Not supported mail attribute {} of type {} for mail {}", name, attrValue, mail.getName());
         }
+    }
+
+    private void metricForDecrement() {
+        try {
+            dequeuedMailsMetric.decrement();
+            gaugeRegistry.register("mailQueueSize:" + queueName, queueSizeGauge());
+        } catch (Exception e) {
+            LOGGER.error("Unexpected exception while decreasing metric");
+        }
+    }
+
+    private void metricForIncrement() {
+        try {
+            enqueuedMailsMetric.increment();
+            gaugeRegistry.register("mailQueueSize:" + queueName, queueSizeGauge());
+        } catch (Exception e) {
+            LOGGER.error("Unexpected exception while increasing metric");
+        }
+    }
+
+    @VisibleForTesting
+    Gauge<Long> queueSizeGauge() {
+        return () -> Throwing.supplier(this::getSize)
+            .get();
     }
 
     @Override
