@@ -39,37 +39,37 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 public class JMSMailQueueMetricExtension implements BeforeTestExecutionCallback, AfterTestExecutionCallback, ParameterResolver {
 
     class JMSMailQueueMetricTestSystem {
-        private final JMSMailQueue mockMailQueue;
-        private final MetricFactory mockMetricFactory;
-        private final GaugeRegistry mockGaugeRegistry;
+        private final JMSMailQueue spyMailQueue;
+        private final MetricFactory spyMetricFactory;
+        private final GaugeRegistry spyGaugeRegistry;
         private final Metric mockEnqueuedMailsMetric;
         private final Metric mockDequeuedMailsMetric;
 
         public JMSMailQueueMetricTestSystem(JMSMailQueueTest jmsMailQueueTest) {
-            mockMetricFactory = spy(new NoopMetricFactory());
-            mockGaugeRegistry = spy(new NoopGaugeRegistry());
+            spyMetricFactory = spy(new NoopMetricFactory());
+            spyGaugeRegistry = spy(new NoopGaugeRegistry());
             mockEnqueuedMailsMetric = mock(Metric.class);
             mockDequeuedMailsMetric = mock(Metric.class);
 
-            when(mockMetricFactory.generate(anyString())).thenReturn(mockEnqueuedMailsMetric, mockDequeuedMailsMetric);
+            when(spyMetricFactory.generate(anyString())).thenReturn(mockEnqueuedMailsMetric, mockDequeuedMailsMetric);
 
-            this.mockMailQueue = spy(new JMSMailQueue(jmsMailQueueTest.connectionFactory,
+            this.spyMailQueue = spy(new JMSMailQueue(jmsMailQueueTest.connectionFactory,
                 jmsMailQueueTest.mailQueueItemDecoratorFactory,
                 jmsMailQueueTest.queueName,
-                mockMetricFactory,
-                mockGaugeRegistry));
+                spyMetricFactory,
+                spyGaugeRegistry));
         }
 
-        public MetricFactory getMockMetricFactory() {
-            return mockMetricFactory;
+        public MetricFactory getSpyMetricFactory() {
+            return spyMetricFactory;
         }
 
-        public GaugeRegistry getMockGaugeRegistry() {
-            return mockGaugeRegistry;
+        public GaugeRegistry getSpyGaugeRegistry() {
+            return spyGaugeRegistry;
         }
 
-        public JMSMailQueue getMockMailQueue() {
-            return mockMailQueue;
+        public JMSMailQueue getSpyMailQueue() {
+            return spyMailQueue;
         }
 
         public Metric getMockEnqueuedMailsMetric() {
@@ -92,7 +92,7 @@ public class JMSMailQueueMetricExtension implements BeforeTestExecutionCallback,
 
     @Override
     public void afterTestExecution(ExtensionContext extensionContext) throws Exception {
-        testSystem.mockMailQueue.dispose();
+        testSystem.spyMailQueue.dispose();
     }
 
     @Override
