@@ -219,7 +219,7 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
                 Message message = consumer.receive(10000);
 
                 if (message != null) {
-                    dequeuedMailsMetric.decrement();
+                    dequeuedMailsMetric.increment();
                     return createMailQueueItem(session, consumer, message);
                 } else {
                     session.commit();

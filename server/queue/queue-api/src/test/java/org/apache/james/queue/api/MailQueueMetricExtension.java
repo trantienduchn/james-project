@@ -17,11 +17,10 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.queue.jms;
+package org.apache.james.queue.api;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import org.apache.james.metrics.api.GaugeRegistry;
@@ -29,47 +28,26 @@ import org.apache.james.metrics.api.Metric;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.metrics.api.NoopGaugeRegistry;
 import org.apache.james.metrics.api.NoopMetricFactory;
-import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
-import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.mockito.Mockito;
 
-public class JMSMailQueueMetricExtension implements BeforeTestExecutionCallback, AfterTestExecutionCallback, ParameterResolver {
+public class MailQueueMetricExtension implements BeforeEachCallback, ParameterResolver {
 
-    class JMSMailQueueMetricTestSystem {
-        private final JMSMailQueue spyMailQueue;
-        private final MetricFactory spyMetricFactory;
-        private final GaugeRegistry spyGaugeRegistry;
+    public class MailQueueMetricTestSystem {
         private final Metric mockEnqueuedMailsMetric;
         private final Metric mockDequeuedMailsMetric;
+        private final GaugeRegistry spyGaugeRegistry;
+        private final MetricFactory spyMetricFactory;
 
-        public JMSMailQueueMetricTestSystem(JMSMailQueueTest jmsMailQueueTest) {
-            spyMetricFactory = spy(new NoopMetricFactory());
-            spyGaugeRegistry = spy(new NoopGaugeRegistry());
+        public MailQueueMetricTestSystem() {
             mockEnqueuedMailsMetric = mock(Metric.class);
             mockDequeuedMailsMetric = mock(Metric.class);
-
-            when(spyMetricFactory.generate(anyString())).thenReturn(mockEnqueuedMailsMetric, mockDequeuedMailsMetric);
-
-            this.spyMailQueue = spy(new JMSMailQueue(jmsMailQueueTest.connectionFactory,
-                jmsMailQueueTest.mailQueueItemDecoratorFactory,
-                jmsMailQueueTest.queueName,
-                spyMetricFactory,
-                spyGaugeRegistry));
-        }
-
-        public MetricFactory getSpyMetricFactory() {
-            return spyMetricFactory;
-        }
-
-        public GaugeRegistry getSpyGaugeRegistry() {
-            return spyGaugeRegistry;
-        }
-
-        public JMSMailQueue getSpyMailQueue() {
-            return spyMailQueue;
+            spyGaugeRegistry = Mockito.spy(new NoopGaugeRegistry());
+            spyMetricFactory = Mockito.spy(new NoopMetricFactory());
         }
 
         public Metric getMockEnqueuedMailsMetric() {
@@ -79,30 +57,33 @@ public class JMSMailQueueMetricExtension implements BeforeTestExecutionCallback,
         public Metric getMockDequeuedMailsMetric() {
             return mockDequeuedMailsMetric;
         }
+
+        public GaugeRegistry getSpyGaugeRegistry() {
+            return spyGaugeRegistry;
+        }
+
+        public MetricFactory getSpyMetricFactory() {
+            return spyMetricFactory;
+        }
     }
 
-    private JMSMailQueueMetricTestSystem testSystem;
+    private MailQueueMetricTestSystem testSystem;
 
     @Override
-    public void beforeTestExecution(ExtensionContext extensionContext) throws Exception {
-        JMSMailQueueTest jmsMailQueueTest = (JMSMailQueueTest) extensionContext.getTestInstance().get();
+    public void beforeEach(ExtensionContext extensionContext) throws Exception {
+        testSystem = new MailQueueMetricTestSystem();
 
-        testSystem = new JMSMailQueueMetricTestSystem(jmsMailQueueTest);
-    }
-
-    @Override
-    public void afterTestExecution(ExtensionContext extensionContext) throws Exception {
-        testSystem.spyMailQueue.dispose();
+        when(testSystem.spyMetricFactory.generate(anyString()))
+            .thenReturn(testSystem.mockEnqueuedMailsMetric, testSystem.mockDequeuedMailsMetric);
     }
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return parameterContext.getParameter().getType() == JMSMailQueueMetricTestSystem.class;
+        return parameterContext.getParameter().getType() == MailQueueMetricTestSystem.class;
     }
 
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         return testSystem;
     }
-
 }
