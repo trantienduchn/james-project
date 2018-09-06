@@ -98,7 +98,7 @@ public interface MailQueueMetricContract extends MailQueueContract {
     }
 
     @Test
-    default void dequeueShouldNotTouchEequeueMetric(MailQueueMetricExtension.MailQueueMetricTestSystem testSystem) throws Exception {
+    default void dequeueShouldNotTouchEnqueueMetric(MailQueueMetricExtension.MailQueueMetricTestSystem testSystem) throws Exception {
         enQueueMail(2);
         deQueueMail(2);
 

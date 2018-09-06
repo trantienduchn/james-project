@@ -172,7 +172,7 @@ public class JMSMailQueue implements ManageableMailQueue, JMSSupport, MailPriori
         this.dequeuedMailsMetric = metricFactory.generate(DEQUEUED_METRIC_NAME_PREFIX + queueName);
 
         this.gaugeRegistry = gaugeRegistry;
-        this.gaugeRegistry.register("mailQueueSize:" + queueName, queueSizeGauge());
+        this.gaugeRegistry.register(QUEUE_SIZE_METRIC_NAME_PREFIX + queueName, queueSizeGauge());
 
         this.joiner = Joiner.on(JAMES_MAIL_SEPARATOR).skipNulls();
         this.splitter = Splitter.on(JAMES_MAIL_SEPARATOR)
