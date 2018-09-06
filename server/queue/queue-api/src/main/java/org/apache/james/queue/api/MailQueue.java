@@ -57,6 +57,11 @@ import org.apache.mailet.Mail;
  */
 public interface MailQueue {
 
+    String ENQUEUED_METRIC_NAME_PREFIX = "enqueuedMail:";
+    String DEQUEUED_METRIC_NAME_PREFIX = "dequeuedMail:";
+    String ENQUEUED_TIMER_METRIC_NAME_PREFIX = "enqueueTime:";
+    String DEQUEUED_TIMER_METRIC_NAME_PREFIX = "dequeueTime:";
+
     /**
      * No delay for queued {@link MailQueueItem}
      */
