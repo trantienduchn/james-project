@@ -19,10 +19,13 @@
 
 package org.apache.james.queue.jms;
 
+import javax.jms.ConnectionFactory;
+
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.activemq.broker.BrokerService;
 import org.apache.james.metrics.api.GaugeRegistry;
 import org.apache.james.metrics.api.MetricFactory;
+import org.apache.james.metrics.api.NoopMetricFactory;
 import org.apache.james.queue.api.DelayedManageableMailQueueContract;
 import org.apache.james.queue.api.DelayedPriorityMailQueueContract;
 import org.apache.james.queue.api.MailQueue;
@@ -42,19 +45,14 @@ public class JMSMailQueueTest implements DelayedManageableMailQueueContract, Pri
     MailQueueMetricContract {
 
     private JMSMailQueue mailQueue;
-    private ActiveMQConnectionFactory connectionFactory;
-    private RawMailQueueItemDecoratorFactory mailQueueItemDecoratorFactory;
-    private MetricFactory metricFactory;
-    private String queueName;
-    private GaugeRegistry gaugeRegistry;
 
     @BeforeEach
     void setUp(BrokerService broker, MailQueueMetricExtension.MailQueueMetricTestSystem metricTestSystem) {
-        connectionFactory = new ActiveMQConnectionFactory("vm://localhost?create=false");
-        mailQueueItemDecoratorFactory = new RawMailQueueItemDecoratorFactory();
-        metricFactory = metricTestSystem.getSpyMetricFactory();
-        gaugeRegistry = metricTestSystem.getSpyGaugeRegistry();
-        queueName = BrokerExtension.generateRandomQueueName(broker);
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("vm://localhost?create=false");
+        RawMailQueueItemDecoratorFactory mailQueueItemDecoratorFactory = new RawMailQueueItemDecoratorFactory();
+        MetricFactory metricFactory = metricTestSystem.getSpyMetricFactory();
+        GaugeRegistry gaugeRegistry = metricTestSystem.getSpyGaugeRegistry();
+        String queueName = BrokerExtension.generateRandomQueueName(broker);
         mailQueue = new JMSMailQueue(connectionFactory, mailQueueItemDecoratorFactory, queueName, metricFactory, gaugeRegistry);
     }
 
