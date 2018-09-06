@@ -306,17 +306,11 @@
         <constructor-arg index="0" ref="metricRegistry"/>
     </bean>
 
-    <bean id="metricRegistry" class="com.codahale.metrics.MetricRegistry"/>
-
-    <!--
-    ======================================================================
-    Gauges
-    ======================================================================
-    -->
-
     <bean id="gaugeRegistry" class="org.apache.james.metrics.dropwizard.DropWizardGaugeRegistry">
         <constructor-arg index="0" ref="metricRegistry"/>
     </bean>
+    
+    <bean id="metricRegistry" class="com.codahale.metrics.MetricRegistry"/>
 
     <!--
     ======================================================================
