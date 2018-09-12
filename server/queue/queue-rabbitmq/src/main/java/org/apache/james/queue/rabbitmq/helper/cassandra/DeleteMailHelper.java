@@ -23,7 +23,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -63,33 +63,39 @@ class DeleteMailHelper {
 
     private CompletableFuture<Void> updateEnqueuedMail(Mail mail, MailQueueName mailQueueName) {
         if (shouldUpdateFirstEnqueued()) {
-            return firstEnqueuedMailDao.findFirstEnqueuedInstant(mailQueueName)
-                .thenCompose(maybeStartSliceInstant -> findMailInEnqueuedTable(mail, mailQueueName, maybeStartSliceInstant))
-                .thenCompose(maybeEnqueuedMail -> setMailSliceToFirstEnqueued(mailQueueName, maybeEnqueuedMail));
+            return firstEnqueuedMailDao
+                .findFirstEnqueuedInstant(mailQueueName)
+                .thenCompose(findMailInEnqueued(mail, mailQueueName))
+                .thenCompose(setFirstEnqueued(mailQueueName));
         } else {
             return CompletableFuture.completedFuture(null);
         }
     }
 
-    private CompletionStage<Void> setMailSliceToFirstEnqueued(MailQueueName mailQueueName, Optional<EnqueuedMail> maybeEnqueuedMail) {
-        if (maybeEnqueuedMail.isPresent()) {
-            EnqueuedMail endQueuedMail = maybeEnqueuedMail.get();
-            return firstEnqueuedMailDao.updateFirstEnqueuedTime(mailQueueName, endQueuedMail.getTimeRangeStart());
-        } else {
-            return CompletableFuture.completedFuture(null);
-        }
+    private Function<Optional<EnqueuedMail>, CompletableFuture<Void>> setFirstEnqueued(MailQueueName mailQueueName) {
+        return maybeEnqueuedMail ->
+
+            maybeEnqueuedMail
+                .map(endQueuedMail -> firstEnqueuedMailDao
+                    .updateFirstEnqueuedTime(mailQueueName, endQueuedMail.getTimeRangeStart()))
+            .orElse(CompletableFuture.completedFuture(null));
     }
 
-    private CompletionStage<Optional<EnqueuedMail>> findMailInEnqueuedTable(
-        Mail mail, MailQueueName mailQueueName, Optional<Instant> startInstantOptional) {
+    private Function<Optional<Instant>, CompletableFuture<Optional<EnqueuedMail>>> findMailInEnqueued(
+        Mail mail, MailQueueName mailQueueName) {
 
-        if (startInstantOptional.isPresent()) {
-            Instant sliceStart = startInstantOptional.get();
-            Stream<BucketedSlices.BucketAndSlice> allBucketSlices = calculateBucketedSlices(sliceStart, Optional.empty());
-            return enqueuedMailsDao.findEnqueuedMail(mailQueueName, allBucketSlices, MailKey.fromMail(mail));
-        } else {
-            return CompletableFuture.completedFuture(Optional.empty());
-        }
+        return startInstantOptional ->
+
+            startInstantOptional
+                .map(sliceStart -> findEnqueuedWithMailKey(mailQueueName, sliceStart, mail))
+                .orElse(CompletableFuture.completedFuture(Optional.empty()));
+    }
+
+    private CompletableFuture<Optional<EnqueuedMail>> findEnqueuedWithMailKey(
+        MailQueueName mailQueueName, Instant sliceStart, Mail mail) {
+
+        Stream<BucketedSlices.BucketAndSlice> allBucketSlices = calculateBucketedSlicesNoEndPoint(sliceStart);
+        return enqueuedMailsDao.findEnqueuedMail(mailQueueName, allBucketSlices, MailKey.fromMail(mail));
     }
 
     private boolean shouldUpdateFirstEnqueued() {
@@ -97,10 +103,9 @@ class DeleteMailHelper {
         return Math.abs(random.nextInt()) % threshold == 0;
     }
 
-    private Stream<BucketedSlices.BucketAndSlice> calculateBucketedSlices(Instant startingPoint, Optional<Instant> endAtOptional) {
+    private Stream<BucketedSlices.BucketAndSlice> calculateBucketedSlicesNoEndPoint(Instant startingPoint) {
         return BucketedSlices.builder()
             .startAt(startingPoint)
-            .endAtOptional(endAtOptional)
             .bucketCount(configuration.getBucketCount())
             .sliceWindowSideInSecond(configuration.getSliceWindow().getSeconds())
             .build()

@@ -65,11 +65,9 @@ class StoreMailHelper {
     private CompletionStage<Void> updateFirstEnqueuedIfNotExist(
         EnqueuedMail enqueuedMail, MailQueueName mailQueueName, Optional<Instant> maybeInstant) {
 
-        if (maybeInstant.isPresent()) {
-            return CompletableFuture.completedFuture(null);
-        } else {
-            return firstEnqueuedMailDao.updateFirstEnqueuedTime(mailQueueName, enqueuedMail.getTimeRangeStart());
-        }
+        return maybeInstant
+            .map(instant -> successedFuture())
+            .orElse(firstEnqueuedMailDao.updateFirstEnqueuedTime(mailQueueName, enqueuedMail.getTimeRangeStart()));
     }
 
     private EnqueuedMail convertToEnqueuedMail(Mail mail, MailQueueName mailQueueName) {
@@ -91,5 +89,9 @@ class StoreMailHelper {
     private int computedBucketId(Mail mail) {
         int mailKeyHasCode = mail.getName().hashCode();
         return mailKeyHasCode % configuration.getBucketCount();
+    }
+
+    private CompletableFuture<Void> successedFuture() {
+        return CompletableFuture.completedFuture(null);
     }
 }
