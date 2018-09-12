@@ -35,9 +35,7 @@ import javax.inject.Inject;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedMail;
-import org.apache.james.util.CompletableFutureUtil;
 import org.apache.james.util.FluentFutureStream;
-import org.apache.james.util.StreamUtils;
 
 class BrowseHelper {
 
@@ -48,17 +46,18 @@ class BrowseHelper {
     private final Clock clock;
 
     @Inject
-    BrowseHelper(BrowseStartDAO browseStartDao, DeletedMailsDAO deletedMailsDao,
-                 EnqueuedMailsDAO enqueuedMailsDao, CassandraMailQueueViewConfiguration configuration) {
+    BrowseHelper(BrowseStartDAO browseStartDao,
+                 DeletedMailsDAO deletedMailsDao,
+                 EnqueuedMailsDAO enqueuedMailsDao,
+                 CassandraMailQueueViewConfiguration configuration, Clock clock) {
         this.browseStartDao = browseStartDao;
         this.deletedMailsDao = deletedMailsDao;
         this.enqueuedMailsDao = enqueuedMailsDao;
         this.configuration = configuration;
-        clock = Clock.systemUTC();
+        this.clock = clock;
     }
 
     CompletableFuture<Stream<ManageableMailQueue.MailQueueItemView>> browse(MailQueueName queueName) {
-
         return browseReferences(queueName)
             .map(EnqueuedMail::getMail)
             .map(ManageableMailQueue.MailQueueItemView::new)
@@ -67,31 +66,29 @@ class BrowseHelper {
 
     FluentFutureStream<EnqueuedMail> browseReferences(MailQueueName queueName) {
         return FluentFutureStream.of(browseStartDao.findBrowseStart(queueName)
-            .thenApply(maybeStart -> maybeStart.map(this::allSlicesFrom).orElse(Stream.empty())))
-            .thenFlatCompose(currentSlice -> browseOnlyEnqueuedInOrder(queueName, currentSlice));
+            .thenApply(this::calculateAllSlicesFromBrowseStart))
+            .thenFlatMap(currentSlice -> browseOnlyEnqueuedInOrder(queueName, currentSlice));
     }
 
-    private CompletableFuture<Stream<EnqueuedMail>> browseOnlyEnqueuedInOrder(MailQueueName queueName, Slice currentSlice) {
-
-         return CompletableFutureUtil.allOf(allBucketIds()
-            .map(bucketId -> browseOnlyEnqueuedInOrder(queueName, currentSlice, bucketId)))
-            .thenApply(StreamUtils::flatten)
-            .thenApply(enqueuedMailStream -> enqueuedMailStream.sorted(EnqueuedMail.getEnqueuedTimeComparator()));
+    private FluentFutureStream<EnqueuedMail> browseOnlyEnqueuedInOrder(MailQueueName queueName, Slice currentSlice) {
+        return FluentFutureStream.ofFluentFutureStreams(allBucketIds()
+                .map(bucketId -> browseOnlyEnqueuedForBucket(queueName, currentSlice, bucketId)))
+            .sorted(EnqueuedMail.getEnqueuedTimeComparator());
     }
 
-    private CompletableFuture<Stream<EnqueuedMail>> browseOnlyEnqueuedInOrder(
+    private FluentFutureStream<EnqueuedMail> browseOnlyEnqueuedForBucket(
         MailQueueName queueName, Slice currentSlice, BucketId bucketId) {
-
         return FluentFutureStream.of(
             enqueuedMailsDao
                 .selectEnqueuedMails(queueName, currentSlice, bucketId))
-                .thenFlatComposeOnOptional(mailReference -> filterDeleted(queueName, mailReference))
-                .completableFuture();
+                .thenFlatComposeOnOptional(mailReference -> filterDeleted(queueName, mailReference));
     }
 
-    private Stream<Slice> allSlicesFrom(Instant startingSliceInstant) {
-        Slice firstSlice = Slice.of(startingSliceInstant, configuration.getSliceWindow().getSeconds());
-        return allSlicesTill(firstSlice, clock.instant());
+    private Stream<Slice> calculateAllSlicesFromBrowseStart(Optional<Instant> maybeBrowseStartInstant) {
+        return maybeBrowseStartInstant
+            .map(browseStartInstant -> Slice.of(browseStartInstant, configuration.getSliceWindow()))
+            .map(startSlice -> allSlicesTill(startSlice, clock.instant()))
+            .orElse(Stream.empty());
     }
 
     private Stream<BucketId> allBucketIds() {

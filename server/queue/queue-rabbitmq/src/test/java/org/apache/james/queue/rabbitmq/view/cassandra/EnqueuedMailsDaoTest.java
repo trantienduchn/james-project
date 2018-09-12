@@ -23,6 +23,7 @@ import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice
 import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices.Slice;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
 
@@ -48,7 +49,7 @@ public class EnqueuedMailsDaoTest {
     private static int BUCKET_ID_VALUE = 10;
     private static BucketId BUCKET_ID = BucketId.of(BUCKET_ID_VALUE);
     private static final Instant NOW = Instant.now();
-    private static final Slice SLICE_OF_NOW = Slice.of(NOW, 100);
+    private static final Slice SLICE_OF_NOW = Slice.of(NOW, Duration.ofSeconds(100));
 
     @ClassRule
     public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
@@ -101,7 +102,7 @@ public class EnqueuedMailsDaoTest {
     }
 
     @Test
-    public void selectEnqueuedMailsShouldShouldWork() throws Exception {
+    public void selectEnqueuedMailsShouldWork() throws Exception {
         testee.insert(EnqueuedMail.builder()
                 .mail(FakeMail.builder()
                     .name(MAIL_KEY_1.getMailKey())
@@ -134,9 +135,10 @@ public class EnqueuedMailsDaoTest {
             .hasOnlyOneElementSatisfying(selectedEnqueuedMail -> {
                 SoftAssertions softly = new SoftAssertions();
                 softly.assertThat(selectedEnqueuedMail.getMailQueueName()).isEqualTo(OUT_GOING_1);
-                softly.assertThat(selectedEnqueuedMail.getBucketId()).isEqualTo(BUCKET_ID_VALUE);
+                softly.assertThat(selectedEnqueuedMail.getBucketId()).isEqualTo(BUCKET_ID);
                 softly.assertThat(selectedEnqueuedMail.getTimeRangeStart()).isEqualTo(NOW);
                 softly.assertThat(selectedEnqueuedMail.getMailKey()).isEqualTo(MAIL_KEY_1);
+                softly.assertAll();
             });
     }
 }

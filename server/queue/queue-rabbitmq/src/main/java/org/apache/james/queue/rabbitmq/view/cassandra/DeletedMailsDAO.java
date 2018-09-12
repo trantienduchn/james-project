@@ -27,7 +27,6 @@ import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueV
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.DeletedMailTable.QUEUE_NAME;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.DeletedMailTable.TABLE_NAME;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
@@ -54,28 +53,27 @@ class DeletedMailsDAO {
 
     private PreparedStatement prepareInsert(Session session) {
         return session.prepare(insertInto(TABLE_NAME)
-                .value(QUEUE_NAME, bindMarker(QUEUE_NAME))
-                .value(MAIL_KEY, bindMarker(MAIL_KEY)));
+            .value(QUEUE_NAME, bindMarker(QUEUE_NAME))
+            .value(MAIL_KEY, bindMarker(MAIL_KEY)));
     }
 
     private PreparedStatement prepareSelectExist(Session session) {
         return session.prepare(select()
-                .from(TABLE_NAME)
-                .where(eq(QUEUE_NAME, bindMarker(QUEUE_NAME)))
-                .and(eq(MAIL_KEY, bindMarker(MAIL_KEY))));
+            .from(TABLE_NAME)
+            .where(eq(QUEUE_NAME, bindMarker(QUEUE_NAME)))
+            .and(eq(MAIL_KEY, bindMarker(MAIL_KEY))));
     }
 
     CompletableFuture<Void> markAsDeleted(MailQueueName mailQueueName, MailKey mailKey) {
         return executor.executeVoid(insertOne.bind()
-                   .setString(QUEUE_NAME, mailQueueName.asString())
-                   .setString(MAIL_KEY, mailKey.getMailKey()));
+            .setString(QUEUE_NAME, mailQueueName.asString())
+            .setString(MAIL_KEY, mailKey.getMailKey()));
     }
 
     CompletableFuture<Boolean> checkDeleted(MailQueueName mailQueueName, MailKey mailKey) {
-        return executor.executeSingleRow(
+        return executor.executeReturnExists(
             selectOne.bind()
                 .setString(QUEUE_NAME, mailQueueName.asString())
-                .setString(MAIL_KEY, mailKey.getMailKey()))
-            .thenApply(Optional::isPresent);
+                .setString(MAIL_KEY, mailKey.getMailKey()));
     }
 }

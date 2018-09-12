@@ -19,8 +19,11 @@
 
 package org.apache.james.queue.rabbitmq.view.cassandra;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 
@@ -35,21 +38,39 @@ class StoreMailHelper {
     private final EnqueuedMailsDAO enqueuedMailsDao;
     private final BrowseStartDAO browseStartDao;
     private final CassandraMailQueueViewConfiguration configuration;
+    private final Clock clock;
+    private final Set<MailQueueName> initialInserted;
 
     @Inject
     StoreMailHelper(EnqueuedMailsDAO enqueuedMailsDao,
                     BrowseStartDAO browseStartDao,
-                    CassandraMailQueueViewConfiguration configuration) {
+                    CassandraMailQueueViewConfiguration configuration,
+                    Clock clock) {
         this.enqueuedMailsDao = enqueuedMailsDao;
         this.browseStartDao = browseStartDao;
         this.configuration = configuration;
+        this.clock = clock;
+        this.initialInserted = ConcurrentHashMap.newKeySet();
     }
 
     CompletableFuture<Void> storeMailInEnqueueTable(Mail mail, MailQueueName mailQueueName) {
         EnqueuedMail enqueuedMail = convertToEnqueuedMail(mail, mailQueueName);
 
         return enqueuedMailsDao.insert(enqueuedMail)
-            .thenCompose(any -> browseStartDao.insertInitialBrowseStart(mailQueueName, enqueuedMail.getTimeRangeStart()));
+            .thenCompose(any -> initBrowseStartIfNeeded(mailQueueName, enqueuedMail.getTimeRangeStart()));
+    }
+
+    private CompletableFuture<Void> initBrowseStartIfNeeded(MailQueueName mailQueueName, Instant sliceStartAt) {
+        if (!initialInserted.contains(mailQueueName)) {
+            return tryInsertBrowseStart(mailQueueName, sliceStartAt);
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+
+    private CompletableFuture<Void> tryInsertBrowseStart(MailQueueName mailQueueName, Instant sliceStartAt) {
+        return browseStartDao
+            .insertInitialBrowseStart(mailQueueName, sliceStartAt)
+            .thenAccept(any -> initialInserted.add(mailQueueName));
     }
 
     private EnqueuedMail convertToEnqueuedMail(Mail mail, MailQueueName mailQueueName) {
@@ -65,13 +86,13 @@ class StoreMailHelper {
 
     private Instant currentSliceStartInstant() {
         long sliceSide = configuration.getSliceWindowInSecond();
-        long sliceId = Instant.now().getEpochSecond() / sliceSide;
+        long sliceId = clock.instant().getEpochSecond() / sliceSide;
         return Instant.ofEpochSecond(sliceId * sliceSide);
     }
 
     private BucketId computedBucketId(Mail mail) {
-        int mailKeyHasCode = mail.getName().hashCode();
-        int bucketIdValue = mailKeyHasCode % configuration.getBucketCount();
+        int mailKeyHashCode = mail.getName().hashCode();
+        int bucketIdValue = mailKeyHashCode % configuration.getBucketCount();
         return BucketId.of(bucketIdValue);
     }
 }

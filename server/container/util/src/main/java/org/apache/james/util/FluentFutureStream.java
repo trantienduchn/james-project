@@ -19,6 +19,7 @@
 
 package org.apache.james.util;
 
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BinaryOperator;
@@ -43,6 +44,16 @@ public class FluentFutureStream<T> {
      */
     public static <T> FluentFutureStream<T> of(Stream<CompletableFuture<T>> completableFutureStream) {
         return new FluentFutureStream<>(CompletableFutureUtil.allOf(completableFutureStream));
+    }
+
+    /**
+     * Constructs a FluentFutureStream from a Stream of Fluent Future of Stream.
+     *
+     * Underlying streams are flatMapped.
+     */
+    public static <T> FluentFutureStream<T> ofFluentFutureStreams(Stream<FluentFutureStream<T>> fluentFutureStreams) {
+        return ofNestedStreams(fluentFutureStreams
+            .map(fluentFutureStream -> fluentFutureStream.completableFuture));
     }
 
     /**
@@ -126,6 +137,17 @@ public class FluentFutureStream<T> {
     /**
      * Apply a transformation to all value of the underlying stream.
      *
+     * As the supplied transformation produces fluent futures of stream, we need to compose then flatMap the returned values.
+     */
+    public <U> FluentFutureStream<U> thenFlatMap(Function<T, FluentFutureStream<U>> function) {
+        return FluentFutureStream.of(
+            completableFuture().thenCompose(elementStream ->
+                ofFluentFutureStreams(elementStream.map(function)).completableFuture()));
+    }
+
+    /**
+     * Apply a transformation to all value of the underlying stream.
+     *
      * As the supplied transformation produces futures of stream, we need to compose then flatMap the returned values.
      */
     public <U> FluentFutureStream<U> thenFlatCompose(Function<T, CompletableFuture<Stream<U>>> function) {
@@ -165,6 +187,14 @@ public class FluentFutureStream<T> {
      */
     public CompletableFuture<T> reduce(T emptyAccumulator, BinaryOperator<T> combiner) {
         return CompletableFutureUtil.reduce(combiner, completableFuture, emptyAccumulator);
+    }
+
+    /**
+     * sort all elements of the stream by the provided {@code Comparator}.
+     */
+    public FluentFutureStream<T> sorted(Comparator<T> comparator) {
+        return FluentFutureStream.of(
+            CompletableFutureUtil.sorted(completableFuture(), comparator));
     }
 
     /**
