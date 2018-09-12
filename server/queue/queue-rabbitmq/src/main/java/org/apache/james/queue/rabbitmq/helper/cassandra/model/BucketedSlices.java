@@ -30,6 +30,9 @@ import org.apache.james.util.StreamUtils;
 import com.google.common.base.Preconditions;
 
 public class BucketedSlices {
+    // todo review and test
+    // strong typing for slice and buckets
+    // cascading lambdas
 
     public static class Builder {
         private Instant startAt;

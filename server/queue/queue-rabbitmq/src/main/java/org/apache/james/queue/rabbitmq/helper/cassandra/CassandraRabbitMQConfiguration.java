@@ -21,15 +21,15 @@ package org.apache.james.queue.rabbitmq.helper.cassandra;
 
 import java.time.Duration;
 
-public class CassandraRabbitMQHelperConfiguration {
+public class CassandraRabbitMQConfiguration {
 
     private final int bucketCount;
     private final int updateFirstEnqueuedPace;
     private final Duration sliceWindow;
 
-    public CassandraRabbitMQHelperConfiguration(int bucketCount,
-                                                int updateFirstEnqueuedPace,
-                                                Duration sliceWindow) {
+    public CassandraRabbitMQConfiguration(int bucketCount,
+                                          int updateFirstEnqueuedPace,
+                                          Duration sliceWindow) {
         this.bucketCount = bucketCount;
         this.updateFirstEnqueuedPace = updateFirstEnqueuedPace;
         this.sliceWindow = sliceWindow;

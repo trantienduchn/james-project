@@ -64,7 +64,7 @@ public class EnqueuedMailsDaoTest {
 
     @Before
     public void setUp() {
-        CassandraRabbitMQHelperConfiguration configuration = new CassandraRabbitMQHelperConfiguration(1, ENQUEUED_PACE_UPDATE, Duration.ofHours(1));
+        CassandraRabbitMQConfiguration configuration = new CassandraRabbitMQConfiguration(1, ENQUEUED_PACE_UPDATE, Duration.ofHours(1));
 
         testee = new EnqueuedMailsDAO(
             cassandra.getConf(),

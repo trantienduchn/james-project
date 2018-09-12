@@ -38,13 +38,13 @@ class BrowseHelper {
 
     private final DeletedMailsDAO deletedMailsDao;
     private final EnqueuedMailsDAO enqueuedMailsDao;
-    private final CassandraRabbitMQHelperConfiguration configuration;
+    private final CassandraRabbitMQConfiguration configuration;
     private final Clock clock;
 
     @Inject
     public BrowseHelper(DeletedMailsDAO deletedMailsDao,
                         EnqueuedMailsDAO enqueuedMailsDao,
-                        CassandraRabbitMQHelperConfiguration configuration) {
+                        CassandraRabbitMQConfiguration configuration) {
         this.deletedMailsDao = deletedMailsDao;
         this.enqueuedMailsDao = enqueuedMailsDao;
         this.configuration = configuration;

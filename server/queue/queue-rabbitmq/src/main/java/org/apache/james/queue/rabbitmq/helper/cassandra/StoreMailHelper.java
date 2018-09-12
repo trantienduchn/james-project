@@ -35,12 +35,12 @@ class StoreMailHelper {
 
     private final EnqueuedMailsDAO enqueuedMailsDao;
     private final FirstEnqueuedMailDAO firstEnqueuedMailDao;
-    private final CassandraRabbitMQHelperConfiguration configuration;
+    private final CassandraRabbitMQConfiguration configuration;
 
     @Inject
     public StoreMailHelper(EnqueuedMailsDAO enqueuedMailsDao,
                            FirstEnqueuedMailDAO firstEnqueuedMailDao,
-                           CassandraRabbitMQHelperConfiguration configuration) {
+                           CassandraRabbitMQConfiguration configuration) {
         this.enqueuedMailsDao = enqueuedMailsDao;
         this.firstEnqueuedMailDao = firstEnqueuedMailDao;
 

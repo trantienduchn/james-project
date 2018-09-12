@@ -39,14 +39,14 @@ class DeleteMailHelper {
     private final DeletedMailsDAO deletedMailsDao;
     private final EnqueuedMailsDAO enqueuedMailsDao;
     private final FirstEnqueuedMailDAO firstEnqueuedMailDao;
-    private final CassandraRabbitMQHelperConfiguration configuration;
+    private final CassandraRabbitMQConfiguration configuration;
     private final Random random;
 
     @Inject
     public DeleteMailHelper(DeletedMailsDAO deletedMailsDao,
                                       EnqueuedMailsDAO enqueuedMailsDao,
                                       FirstEnqueuedMailDAO firstEnqueuedMailDao,
-                                      CassandraRabbitMQHelperConfiguration configuration) {
+                                      CassandraRabbitMQConfiguration configuration) {
         this.deletedMailsDao = deletedMailsDao;
         this.enqueuedMailsDao = enqueuedMailsDao;
         this.firstEnqueuedMailDao = firstEnqueuedMailDao;

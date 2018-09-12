@@ -63,7 +63,7 @@ public class FirstEnqueuedMailDAO {
                 .where(eq(QUEUE_NAME, bindMarker(QUEUE_NAME))));
     }
 
-    private PreparedStatement prepareUpdate(Session session) {
+    private PreparedStatement prepareUpdate(Session session) { // todo insert
         return session.prepare(update(TABLE_NAME)
                 .with(set(TIME_RANGE_START, bindMarker(TIME_RANGE_START)))
                 .where(eq(QUEUE_NAME, bindMarker(QUEUE_NAME))));

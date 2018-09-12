@@ -213,12 +213,12 @@ public class EnqueuedMailsDAO {
     private final PreparedStatement insert;
     private final CassandraUtils cassandraUtils;
     private final CassandraTypesProvider cassandraTypesProvider;
-    private final CassandraRabbitMQHelperConfiguration manageableQueueConfiguration;
+    private final CassandraRabbitMQConfiguration manageableQueueConfiguration;
 
     @Inject
     public EnqueuedMailsDAO(Session session, CassandraUtils cassandraUtils,
                             CassandraTypesProvider cassandraTypesProvider,
-                            CassandraRabbitMQHelperConfiguration manageableQueueConfiguration) {
+                            CassandraRabbitMQConfiguration manageableQueueConfiguration) {
         this.executor = new CassandraAsyncExecutor(session);
         this.cassandraUtils = cassandraUtils;
         this.cassandraTypesProvider = cassandraTypesProvider;
@@ -276,7 +276,7 @@ public class EnqueuedMailsDAO {
     }
 
     CompletableFuture<Stream<EnqueuedMail>> selectEnqueuedMails(
-        MailQueueName queueName, Integer bucketId, Instant sliceStartInstant) {
+        MailQueueName queueName, Integer bucketId, Instant sliceStartInstant) { // todo use strong types
 
         return executor.execute(
             selectFrom.bind()

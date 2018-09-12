@@ -47,7 +47,7 @@ public class StoreMailHelperTest {
 
     @Before
     public void setUp() {
-        CassandraRabbitMQHelperConfiguration configuration = new CassandraRabbitMQHelperConfiguration(1,
+        CassandraRabbitMQConfiguration configuration = new CassandraRabbitMQConfiguration(1,
             ENQUEUED_PACE_UPDATE, Duration.ofHours(1));
 
         EnqueuedMailsDAO enqueuedMailDao = new EnqueuedMailsDAO(
