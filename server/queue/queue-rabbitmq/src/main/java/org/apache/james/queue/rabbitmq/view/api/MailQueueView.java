@@ -31,6 +31,10 @@ public interface MailQueueView {
 
     CompletableFuture<Void> deleteMail(Mail mail);
 
+    CompletableFuture<Long> delete(DeleteCondition deleteCondition);
+
+    CompletableFuture<Boolean> isDeleted(Mail mail);
+
     ManageableMailQueue.MailQueueIterator browse();
 
     long getSize();
