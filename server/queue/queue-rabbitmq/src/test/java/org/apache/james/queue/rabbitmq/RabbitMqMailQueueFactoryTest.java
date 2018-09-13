@@ -37,7 +37,6 @@ import org.apache.james.backend.rabbitmq.RabbitMQConnectionFactory;
 import org.apache.james.backend.rabbitmq.ReusableDockerRabbitMQExtension;
 import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.metrics.api.NoopMetricFactory;
-import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.api.Store;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.queue.api.MailQueueFactory;
