@@ -26,7 +26,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Stream;
 
+import org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices.BucketId;
 import org.junit.jupiter.api.Test;
+
+import nl.jqno.equalsverifier.EqualsVerifier;
 
 class BucketedSlicesTest {
     
@@ -41,14 +44,26 @@ class BucketedSlicesTest {
     private static final Slice FIRST_SLICE_NEXT_TWO_HOUR = Slice.of(FIRST_SLICE_INSTANT_NEXT_TWO_HOUR, Duration.ofSeconds(ONE_HOUR_IN_SECONDS));
 
     @Test
+    void bucketIdShouldMatchBeanContract() {
+        EqualsVerifier.forClass(BucketId.class)
+            .verify();
+    }
+
+    @Test
+    void sliceShouldMatchBeanContract() {
+        EqualsVerifier.forClass(Slice.class)
+            .verify();
+    }
+
+    @Test
     void allSlicesTillShouldReturnOnlyFirstSliceWhenEndAtInTheSameInterval() {
-        assertThat(Slice.allSlicesTill(FIRST_SLICE, FIRST_SLICE_INSTANT.plusSeconds(3599)))
+        assertThat(Slice.allSlicesTill(FIRST_SLICE, FIRST_SLICE_INSTANT.plusSeconds(ONE_HOUR_IN_SECONDS - 1)))
             .containsOnly(FIRST_SLICE);
     }
 
     @Test
     void allSlicesTillShouldReturnAllSlicesBetweenStartAndEndAt() {
-        Stream<Slice> allSlices = Slice.allSlicesTill(FIRST_SLICE, FIRST_SLICE_INSTANT_NEXT_TWO_HOUR.plusSeconds(3599));
+        Stream<Slice> allSlices = Slice.allSlicesTill(FIRST_SLICE, FIRST_SLICE_INSTANT_NEXT_TWO_HOUR.plusSeconds(ONE_HOUR_IN_SECONDS - 1));
 
         assertThat(allSlices)
             .containsExactly(
@@ -61,7 +76,7 @@ class BucketedSlicesTest {
     void allSlicesTillShouldReturnSameSlicesWhenEndAtsAreInTheSameInterval() {
         Stream<Slice> allSlicesEndAtTheStartOfWindow = Slice.allSlicesTill(FIRST_SLICE, FIRST_SLICE_INSTANT_NEXT_TWO_HOUR);
         Stream<Slice> allSlicesEndAtTheMiddleOfWindow = Slice.allSlicesTill(FIRST_SLICE, FIRST_SLICE_INSTANT_NEXT_TWO_HOUR.plusSeconds(1000));
-        Stream<Slice> allSlicesEndAtTheTheEndWindow = Slice.allSlicesTill(FIRST_SLICE, FIRST_SLICE_INSTANT_NEXT_TWO_HOUR.plusSeconds(3599));
+        Stream<Slice> allSlicesEndAtTheTheEndWindow = Slice.allSlicesTill(FIRST_SLICE, FIRST_SLICE_INSTANT_NEXT_TWO_HOUR.plusSeconds(ONE_HOUR_IN_SECONDS - 1));
 
         Slice [] allSlicesInThreeHours = {
             FIRST_SLICE,
