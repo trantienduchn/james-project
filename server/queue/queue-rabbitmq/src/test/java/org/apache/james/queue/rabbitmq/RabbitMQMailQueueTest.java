@@ -19,6 +19,7 @@
 
 package org.apache.james.queue.rabbitmq;
 
+import static java.time.temporal.ChronoUnit.HOURS;
 import static org.apache.james.queue.api.Mails.defaultMail;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -33,6 +34,7 @@ import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import javax.mail.internet.MimeMessage;
@@ -66,37 +68,39 @@ import org.apache.james.util.streams.Iterators;
 import org.apache.mailet.Mail;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
+import com.github.fge.lambdas.Throwing;
 import com.nurkiewicz.asyncretry.AsyncRetryExecutor;
 
+@ExtendWith(ReusableDockerRabbitMQExtension.class)
 public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQueueMetricContract {
     private static final HashBlobId.Factory BLOB_ID_FACTORY = new HashBlobId.Factory();
     private static final int THREE_BUCKET_COUNT = 3;
     private static final int UPDATE_BROWSE_START_PACE = 2;
     private static final Duration ONE_HOUR_SLICE_WINDOW = Duration.ofHours(1);
     private static final String SPOOL = "spool";
+    private static final Instant IN_SLICE_1 =Instant.parse("2007-12-03T10:15:30.00Z");
+    private static final Instant IN_SLICE_2 = IN_SLICE_1.plus(1, HOURS);
+    private static final Instant IN_SLICE_3 = IN_SLICE_1.plus(2, HOURS);
+    private static final Instant IN_SLICE_5 = IN_SLICE_1.plus(4, HOURS);
+    private static final Instant IN_SLICE_6 = IN_SLICE_1.plus(6, HOURS);
 
-    private static CassandraCluster cassandra;
+
+    @RegisterExtension
+    static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(CassandraModule.aggregateModules(
+        CassandraBlobModule.MODULE,
+        CassandraMailQueueViewModule.MODULE));
 
     private RabbitMQMailQueueFactory mailQueueFactory;
     private Clock clock;
 
-    @BeforeAll
-    static void setUpClass(DockerCassandraExtension.DockerCassandra dockerCassandra) {
-        cassandra = CassandraCluster.create(
-            CassandraModule.aggregateModules(
-                CassandraBlobModule.MODULE,
-                CassandraMailQueueViewModule.MODULE),
-            dockerCassandra.getHost());
-    }
-
     @BeforeEach
-    void setup(DockerRabbitMQ rabbitMQ, MailQueueMetricExtension.MailQueueMetricTestSystem metricTestSystem) throws IOException, TimeoutException, URISyntaxException {
+    void setup(DockerRabbitMQ rabbitMQ, CassandraCluster cassandra, MailQueueMetricExtension.MailQueueMetricTestSystem metricTestSystem) throws IOException, TimeoutException, URISyntaxException {
         CassandraBlobsDAO blobsDAO = new CassandraBlobsDAO(cassandra.getConf(), CassandraConfiguration.DEFAULT_CONFIGURATION, BLOB_ID_FACTORY);
         Store<MimeMessage, MimeMessagePartsId> mimeMessageStore = MimeMessageStore.factory(blobsDAO).mimeMessageStore();
 
@@ -127,28 +131,28 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
             .managementUri(rabbitManagementUri)
             .build();
 
-        RabbitMQConnectionFactory rabbitMQConnectionFactory = new RabbitMQConnectionFactory(
-            rabbitMQConfiguration,
-            new AsyncRetryExecutor(Executors.newSingleThreadScheduledExecutor()));
+        RabbitMQConnectionFactory rabbitMQConnectionFactory = new RabbitMQConnectionFactory(rabbitMQConfiguration,
+                new AsyncRetryExecutor(Executors.newSingleThreadScheduledExecutor()));
 
         RabbitClient rabbitClient = new RabbitClient(new RabbitChannelPool(rabbitMQConnectionFactory));
         RabbitMQMailQueue.Factory factory = new RabbitMQMailQueue.Factory(
-            metricTestSystem.getSpyMetricFactory(),
-            rabbitClient,
-            mimeMessageStore,
-            BLOB_ID_FACTORY,
-            mailQueueView);
+                    metricTestSystem.getSpyMetricFactory(),
+                    rabbitClient,
+                    mimeMessageStore,
+                    BLOB_ID_FACTORY,
+                    mailQueueView);
+
         RabbitMQManagementApi mqManagementApi = new RabbitMQManagementApi(rabbitManagementUri, new RabbitMQManagementCredentials("guest", "guest".toCharArray()));
         mailQueueFactory = new RabbitMQMailQueueFactory(rabbitClient, mqManagementApi, factory);
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown(CassandraCluster cassandra) {
         cassandra.clearTables();
     }
 
     @AfterAll
-    static void tearDownClass() {
+    static void tearDownClass(CassandraCluster cassandra) {
         cassandra.closeCluster();
     }
 
@@ -164,48 +168,22 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
 
     @Test
     void browseShouldReturnCurrentlyEnqueuedMailFromAllSlices() throws Exception {
-        Instant inSlice1 = Instant.parse("2007-12-03T10:15:30.00Z");
-        Instant inSlice2 = Instant.parse("2007-12-03T11:15:30.00Z");
-        Instant inSlice3 = Instant.parse("2007-12-03T12:15:30.00Z");
-        Instant inSlice5 = Instant.parse("2007-12-03T15:15:30.00Z");
-        Instant inSlice6 = Instant.parse("2007-12-03T16:15:30.00Z");
-
-        when(clock.instant()).thenReturn(inSlice1);
-
         ManageableMailQueue mailQueue = getManageableMailQueue();
+        int bucketCount = 5;
 
-        mailQueue.enQueue(defaultMail().name("1-1").build());
-        mailQueue.enQueue(defaultMail().name("1-2").build());
-        mailQueue.enQueue(defaultMail().name("1-3").build());
-        mailQueue.enQueue(defaultMail().name("1-4").build());
-        mailQueue.enQueue(defaultMail().name("1-5").build());
+        when(clock.instant()).thenReturn(IN_SLICE_1);
+        enqueueMailsInSlice(1, bucketCount);
 
-        when(clock.instant()).thenReturn(inSlice2);
+        when(clock.instant()).thenReturn(IN_SLICE_2);
+        enqueueMailsInSlice(2, bucketCount);
 
-        mailQueue.enQueue(defaultMail().name("2-1").build());
-        mailQueue.enQueue(defaultMail().name("2-2").build());
-        mailQueue.enQueue(defaultMail().name("2-3").build());
-        mailQueue.enQueue(defaultMail().name("2-4").build());
-        mailQueue.enQueue(defaultMail().name("2-5").build());
+        when(clock.instant()).thenReturn(IN_SLICE_3);
+        enqueueMailsInSlice(3, bucketCount);
 
-        when(clock.instant()).thenReturn(inSlice3);
+        when(clock.instant()).thenReturn(IN_SLICE_5);
+        enqueueMailsInSlice(5, bucketCount);
 
-        mailQueue.enQueue(defaultMail().name("3-1").build());
-        mailQueue.enQueue(defaultMail().name("3-2").build());
-        mailQueue.enQueue(defaultMail().name("3-3").build());
-        mailQueue.enQueue(defaultMail().name("3-4").build());
-        mailQueue.enQueue(defaultMail().name("3-5").build());
-
-        when(clock.instant()).thenReturn(inSlice5);
-
-        mailQueue.enQueue(defaultMail().name("5-1").build());
-        mailQueue.enQueue(defaultMail().name("5-2").build());
-        mailQueue.enQueue(defaultMail().name("5-3").build());
-        mailQueue.enQueue(defaultMail().name("5-4").build());
-        mailQueue.enQueue(defaultMail().name("5-5").build());
-
-        when(clock.instant()).thenReturn(inSlice6);
-
+        when(clock.instant()).thenReturn(IN_SLICE_6);
         Stream<String> names = Iterators.toStream(mailQueue.browse())
             .map(ManageableMailQueue.MailQueueItemView::getMail)
             .map(Mail::getName);
@@ -219,83 +197,31 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
 
     @Test
     void browseAndDequeueShouldCombineWellWhenDifferentSlices() throws Exception {
-        Instant inSlice1 = Instant.parse("2007-12-03T10:15:30.00Z");
-        Instant inSlice2 = Instant.parse("2007-12-03T11:15:30.00Z");
-        Instant inSlice3 = Instant.parse("2007-12-03T12:15:30.00Z");
-        Instant inSlice5 = Instant.parse("2007-12-03T15:15:30.00Z");
-        Instant inSlice6 = Instant.parse("2007-12-03T16:15:30.00Z");
-
-        when(clock.instant()).thenReturn(inSlice1);
-
         ManageableMailQueue mailQueue = getManageableMailQueue();
+        int bucketCount = 5;
 
-        mailQueue.enQueue(defaultMail().name("1-1").build());
-        mailQueue.enQueue(defaultMail().name("1-2").build());
-        mailQueue.enQueue(defaultMail().name("1-3").build());
-        mailQueue.enQueue(defaultMail().name("1-4").build());
-        mailQueue.enQueue(defaultMail().name("1-5").build());
+        when(clock.instant()).thenReturn(IN_SLICE_1);
+        enqueueMailsInSlice(1, bucketCount);
 
-        when(clock.instant()).thenReturn(inSlice2);
+        when(clock.instant()).thenReturn(IN_SLICE_2);
+        enqueueMailsInSlice(2, bucketCount);
 
-        mailQueue.enQueue(defaultMail().name("2-1").build());
-        mailQueue.enQueue(defaultMail().name("2-2").build());
-        mailQueue.enQueue(defaultMail().name("2-3").build());
-        mailQueue.enQueue(defaultMail().name("2-4").build());
-        mailQueue.enQueue(defaultMail().name("2-5").build());
+        when(clock.instant()).thenReturn(IN_SLICE_3);
+        enqueueMailsInSlice(3, bucketCount);
 
-        when(clock.instant()).thenReturn(inSlice3);
+        when(clock.instant()).thenReturn(IN_SLICE_5);
+        enqueueMailsInSlice(5, bucketCount);
 
-        mailQueue.enQueue(defaultMail().name("3-1").build());
-        mailQueue.enQueue(defaultMail().name("3-2").build());
-        mailQueue.enQueue(defaultMail().name("3-3").build());
-        mailQueue.enQueue(defaultMail().name("3-4").build());
-        mailQueue.enQueue(defaultMail().name("3-5").build());
+        when(clock.instant()).thenReturn(IN_SLICE_6);
 
-        when(clock.instant()).thenReturn(inSlice5);
+        dequeueMails(5);
 
-        mailQueue.enQueue(defaultMail().name("5-1").build());
-        mailQueue.enQueue(defaultMail().name("5-2").build());
-        mailQueue.enQueue(defaultMail().name("5-3").build());
-        mailQueue.enQueue(defaultMail().name("5-4").build());
-        mailQueue.enQueue(defaultMail().name("5-5").build());
-
-        when(clock.instant()).thenReturn(inSlice6);
-
-        MailQueue.MailQueueItem item1_1 = mailQueue.deQueue();
-        MailQueue.MailQueueItem item1_2 = mailQueue.deQueue();
-        MailQueue.MailQueueItem item1_3 = mailQueue.deQueue();
-        MailQueue.MailQueueItem item1_4 = mailQueue.deQueue();
-        MailQueue.MailQueueItem item1_5 = mailQueue.deQueue();
-
-        MailQueue.MailQueueItem item2_1 = mailQueue.deQueue();
-        MailQueue.MailQueueItem item2_2 = mailQueue.deQueue();
-        MailQueue.MailQueueItem item2_3 = mailQueue.deQueue();
+        dequeueMails(3);
         MailQueue.MailQueueItem item2_4 = mailQueue.deQueue();
-        MailQueue.MailQueueItem item2_5 = mailQueue.deQueue();
-
-        MailQueue.MailQueueItem item3_1 = mailQueue.deQueue();
-        MailQueue.MailQueueItem item3_2 = mailQueue.deQueue();
-        MailQueue.MailQueueItem item3_3 = mailQueue.deQueue();
-        MailQueue.MailQueueItem item3_4 = mailQueue.deQueue();
-        MailQueue.MailQueueItem item3_5 = mailQueue.deQueue();
-
-        item1_1.done(true);
-        item1_2.done(true);
-        item1_3.done(true);
-        item1_4.done(true);
-        item1_5.done(true);
-
-        item2_1.done(true);
-        item2_2.done(true);
-        item2_3.done(true);
         item2_4.done(false);
-        item2_5.done(true);
+        dequeueMails(1);
 
-        item3_1.done(true);
-        item3_2.done(true);
-        item3_3.done(true);
-        item3_4.done(true);
-        item3_5.done(true);
+        dequeueMails(5);
 
         Stream<String> names = Iterators.toStream(mailQueue.browse())
             .map(ManageableMailQueue.MailQueueItemView::getMail)
@@ -380,12 +306,20 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
     @Disabled
     @Override
     public void clearShouldRemoveAllElements() {
-
     }
 
-    @Disabled("RabbitMQ Mail Queue do not yet implement getSize()")
-    @Override
-    public void constructorShouldRegisterGetQueueSizeGauge(MailQueueMetricExtension.MailQueueMetricTestSystem testSystem) {
+    private void enqueueMailsInSlice(int slice, int bucketCount) {
+        ManageableMailQueue mailQueue = getManageableMailQueue();
 
+        IntStream.rangeClosed(1, bucketCount)
+            .forEach(Throwing.intConsumer(bucketId -> mailQueue.enQueue(defaultMail()
+                .name(slice + "-" + bucketId)
+                .build())));
+    }
+
+    private void dequeueMails(int times) {
+        ManageableMailQueue mailQueue = getManageableMailQueue();
+        IntStream.rangeClosed(1, times)
+            .forEach(Throwing.intConsumer(bucketId -> mailQueue.deQueue().done(true)));
     }
 }
