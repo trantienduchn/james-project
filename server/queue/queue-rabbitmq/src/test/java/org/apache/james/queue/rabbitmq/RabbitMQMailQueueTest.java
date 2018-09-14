@@ -44,7 +44,7 @@ import org.apache.james.backend.rabbitmq.RabbitMQConfiguration;
 import org.apache.james.backend.rabbitmq.RabbitMQConnectionFactory;
 import org.apache.james.backend.rabbitmq.ReusableDockerRabbitMQExtension;
 import org.apache.james.backends.cassandra.CassandraCluster;
-import org.apache.james.backends.cassandra.DockerCassandraExtension;
+import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
 import org.apache.james.blob.api.HashBlobId;
@@ -74,13 +74,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import com.nurkiewicz.asyncretry.AsyncRetryExecutor;
 
-@ExtendWith({ReusableDockerRabbitMQExtension.class, DockerCassandraExtension.class})
 public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQueueMetricContract {
     private static final HashBlobId.Factory BLOB_ID_FACTORY = new HashBlobId.Factory();
-    public static final int THREE_BUCKET_COUNT = 3;
-    public static final int UPDATE_BROWSE_START_PACE = 2;
-    public static final Duration ONE_HOUR_SLICE_WINDOW = Duration.ofHours(1);
-    public static final String SPOOL = "spool";
+    private static final int THREE_BUCKET_COUNT = 3;
+    private static final int UPDATE_BROWSE_START_PACE = 2;
+    private static final Duration ONE_HOUR_SLICE_WINDOW = Duration.ofHours(1);
+    private static final String SPOOL = "spool";
 
     private static CassandraCluster cassandra;
 
