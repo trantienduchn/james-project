@@ -95,13 +95,15 @@ class CassandraMailQueueBrowser {
     FluentFutureStream<EnqueuedMail> browseReferences(MailQueueName queueName) {
         return FluentFutureStream.of(browseStartDao.findBrowseStart(queueName)
             .thenApply(this::allSlicesStartingAt))
-            .thenFlatMap(slice -> browseSlice(queueName, slice));
+            .map(slice -> browseSlice(queueName, slice), FluentFutureStream::unboxFluentFuture);
     }
 
     private FluentFutureStream<EnqueuedMail> browseSlice(MailQueueName queueName, Slice slice) {
-        return FluentFutureStream.ofFluentFutureStreams(
+        return FluentFutureStream.of(
             allBucketIds()
-                .map(bucketId -> browseBucket(queueName, slice, bucketId)))
+                .map(bucketId ->
+                    browseBucket(queueName, slice, bucketId).completableFuture()),
+            FluentFutureStream::unboxStream)
             .sorted(Comparator.comparing(EnqueuedMail::getEnqueuedTime));
     }
 
