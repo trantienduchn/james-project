@@ -84,7 +84,7 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
     private static final int UPDATE_BROWSE_START_PACE = 2;
     private static final Duration ONE_HOUR_SLICE_WINDOW = Duration.ofHours(1);
     private static final String SPOOL = "spool";
-    private static final Instant IN_SLICE_1 =Instant.parse("2007-12-03T10:15:30.00Z");
+    private static final Instant IN_SLICE_1 = Instant.parse("2007-12-03T10:15:30.00Z");
     private static final Instant IN_SLICE_2 = IN_SLICE_1.plus(1, HOURS);
     private static final Instant IN_SLICE_3 = IN_SLICE_1.plus(2, HOURS);
     private static final Instant IN_SLICE_5 = IN_SLICE_1.plus(4, HOURS);
@@ -169,19 +169,19 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
     @Test
     void browseShouldReturnCurrentlyEnqueuedMailFromAllSlices() throws Exception {
         ManageableMailQueue mailQueue = getManageableMailQueue();
-        int bucketCount = 5;
+        int emailCount = 5;
 
         when(clock.instant()).thenReturn(IN_SLICE_1);
-        enqueueMailsInSlice(1, bucketCount);
+        enqueueMailsInSlice(1, emailCount);
 
         when(clock.instant()).thenReturn(IN_SLICE_2);
-        enqueueMailsInSlice(2, bucketCount);
+        enqueueMailsInSlice(2, emailCount);
 
         when(clock.instant()).thenReturn(IN_SLICE_3);
-        enqueueMailsInSlice(3, bucketCount);
+        enqueueMailsInSlice(3, emailCount);
 
         when(clock.instant()).thenReturn(IN_SLICE_5);
-        enqueueMailsInSlice(5, bucketCount);
+        enqueueMailsInSlice(5, emailCount);
 
         when(clock.instant()).thenReturn(IN_SLICE_6);
         Stream<String> names = Iterators.toStream(mailQueue.browse())
@@ -198,19 +198,19 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
     @Test
     void browseAndDequeueShouldCombineWellWhenDifferentSlices() throws Exception {
         ManageableMailQueue mailQueue = getManageableMailQueue();
-        int bucketCount = 5;
+        int emailCount = 5;
 
         when(clock.instant()).thenReturn(IN_SLICE_1);
-        enqueueMailsInSlice(1, bucketCount);
+        enqueueMailsInSlice(1, emailCount);
 
         when(clock.instant()).thenReturn(IN_SLICE_2);
-        enqueueMailsInSlice(2, bucketCount);
+        enqueueMailsInSlice(2, emailCount);
 
         when(clock.instant()).thenReturn(IN_SLICE_3);
-        enqueueMailsInSlice(3, bucketCount);
+        enqueueMailsInSlice(3, emailCount);
 
         when(clock.instant()).thenReturn(IN_SLICE_5);
-        enqueueMailsInSlice(5, bucketCount);
+        enqueueMailsInSlice(5, emailCount);
 
         when(clock.instant()).thenReturn(IN_SLICE_6);
 
@@ -308,10 +308,15 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
     public void clearShouldRemoveAllElements() {
     }
 
-    private void enqueueMailsInSlice(int slice, int bucketCount) {
+    @Disabled("RabbitMQ Mail Queue do not yet implement getSize()")
+    @Override
+    public void constructorShouldRegisterGetQueueSizeGauge(MailQueueMetricExtension.MailQueueMetricTestSystem testSystem) {
+    }
+
+    private void enqueueMailsInSlice(int slice, int emailCount) {
         ManageableMailQueue mailQueue = getManageableMailQueue();
 
-        IntStream.rangeClosed(1, bucketCount)
+        IntStream.rangeClosed(1, emailCount)
             .forEach(Throwing.intConsumer(bucketId -> mailQueue.enQueue(defaultMail()
                 .name(slice + "-" + bucketId)
                 .build())));
