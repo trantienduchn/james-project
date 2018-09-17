@@ -110,7 +110,7 @@ public class RabbitMQMailQueue implements ManageableMailQueue {
     @Override
     public void enQueue(Mail mail) throws MailQueueException {
         metricFactory.runPublishingTimerMetric(ENQUEUED_TIMER_METRIC_NAME_PREFIX + name.asString(),
-            Throwing.runnable(() -> enqueuer.enQueue(mail)).sneakyThrow());
+            Throwing.runnable(() -> enqueuer.enQueue(mail, mailQueueView, clock)).sneakyThrow());
     }
 
     @Override

@@ -21,6 +21,7 @@ package org.apache.james.queue.rabbitmq;
 
 import static org.apache.james.queue.api.MailQueue.ENQUEUED_METRIC_NAME_PREFIX;
 
+import java.time.Clock;
 import java.util.concurrent.CompletableFuture;
 
 import javax.mail.MessagingException;
@@ -31,6 +32,7 @@ import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.metrics.api.Metric;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.queue.api.MailQueue;
+import org.apache.james.queue.rabbitmq.view.api.MailQueueView;
 import org.apache.mailet.Mail;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -52,10 +54,11 @@ class Enqueuer {
         this.enqueueMetric = metricFactory.generate(ENQUEUED_METRIC_NAME_PREFIX + name.asString());
     }
 
-    void enQueue(Mail mail) throws MailQueue.MailQueueException {
+    void enQueue(Mail mail, MailQueueView mailQueueView, Clock clock) throws MailQueue.MailQueueException {
         saveMail(mail)
             .thenAccept(Throwing.<MimeMessagePartsId>consumer(partsId -> publishReferenceToRabbit(mail, partsId)).sneakyThrow())
             .thenRun(enqueueMetric::increment)
+            .thenRun(() -> mailQueueView.storeMail(clock.instant(), mail))
             .join();
     }
 
