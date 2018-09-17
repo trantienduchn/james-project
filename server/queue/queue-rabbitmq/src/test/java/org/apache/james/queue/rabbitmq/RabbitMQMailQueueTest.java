@@ -115,7 +115,7 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
             .setPort(rabbitMQ.getAdminPort())
             .build();
         clock = mock(Clock.class);
-        when(clock.instant()).thenReturn(Instant.parse("2007-12-03T10:15:30.00Z"));
+        when(clock.instant()).thenReturn(IN_SLICE_1);
         ThreadLocalRandom random = ThreadLocalRandom.current();
 
         MailQueueView mailQueueView = CassandraMailQueueViewTestFactory.factory(clock, random, cassandra.getConf(), cassandra.getTypesProvider(),
@@ -136,12 +136,12 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
 
         RabbitClient rabbitClient = new RabbitClient(new RabbitChannelPool(rabbitMQConnectionFactory));
         RabbitMQMailQueue.Factory factory = new RabbitMQMailQueue.Factory(
-                    metricTestSystem.getSpyMetricFactory(),
-                    rabbitClient,
-                    mimeMessageStore,
-                    BLOB_ID_FACTORY,
-                    mailQueueView);
-
+            metricTestSystem.getSpyMetricFactory(),
+            rabbitClient,
+            mimeMessageStore,
+            BLOB_ID_FACTORY,
+            mailQueueView,
+            Clock.systemUTC());
         RabbitMQManagementApi mqManagementApi = new RabbitMQManagementApi(rabbitManagementUri, new RabbitMQManagementCredentials("guest", "guest".toCharArray()));
         mailQueueFactory = new RabbitMQMailQueueFactory(rabbitClient, mqManagementApi, factory);
     }
