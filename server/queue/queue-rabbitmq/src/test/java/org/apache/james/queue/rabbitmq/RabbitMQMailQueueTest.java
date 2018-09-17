@@ -66,8 +66,6 @@ import org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModu
 import org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewTestFactory;
 import org.apache.james.util.streams.Iterators;
 import org.apache.mailet.Mail;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -89,7 +87,6 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
     private static final Instant IN_SLICE_3 = IN_SLICE_1.plus(2, HOURS);
     private static final Instant IN_SLICE_5 = IN_SLICE_1.plus(4, HOURS);
     private static final Instant IN_SLICE_6 = IN_SLICE_1.plus(6, HOURS);
-
 
     @RegisterExtension
     static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(CassandraModule.aggregateModules(
@@ -144,16 +141,6 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
             Clock.systemUTC());
         RabbitMQManagementApi mqManagementApi = new RabbitMQManagementApi(rabbitManagementUri, new RabbitMQManagementCredentials("guest", "guest".toCharArray()));
         mailQueueFactory = new RabbitMQMailQueueFactory(rabbitClient, mqManagementApi, factory);
-    }
-
-    @AfterEach
-    void tearDown(CassandraCluster cassandra) {
-        cassandra.clearTables();
-    }
-
-    @AfterAll
-    static void tearDownClass(CassandraCluster cassandra) {
-        cassandra.closeCluster();
     }
 
     @Override
@@ -215,20 +202,15 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
         when(clock.instant()).thenReturn(IN_SLICE_6);
 
         dequeueMails(5);
-
-        dequeueMails(3);
-        MailQueue.MailQueueItem item2_4 = mailQueue.deQueue();
-        item2_4.done(false);
-        dequeueMails(1);
-
         dequeueMails(5);
+        dequeueMails(3);
 
         Stream<String> names = Iterators.toStream(mailQueue.browse())
             .map(ManageableMailQueue.MailQueueItemView::getMail)
             .map(Mail::getName);
 
         assertThat(names)
-            .containsExactly("2-4", "5-1", "5-2", "5-3", "5-4", "5-5");
+            .containsExactly("3-4", "3-5", "5-1", "5-2", "5-3", "5-4", "5-5");
     }
 
     @Disabled

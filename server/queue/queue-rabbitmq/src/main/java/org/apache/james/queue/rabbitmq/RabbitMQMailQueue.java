@@ -26,11 +26,11 @@ import java.util.function.Function;
 import javax.inject.Inject;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.Store;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.metrics.api.MetricFactory;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.queue.rabbitmq.view.api.MailQueueView;
 import org.apache.mailet.Mail;
@@ -70,9 +70,10 @@ public class RabbitMQMailQueue implements ManageableMailQueue {
 
         RabbitMQMailQueue create(MailQueueName mailQueueName) {
             return new RabbitMQMailQueue(metricFactory, mailQueueName,
-                new Enqueuer(mailQueueName, rabbitClient, mimeMessageStore, mailReferenceSerializer, metricFactory),
-                new Dequeuer(mailQueueName, rabbitClient, mailLoader, mailReferenceSerializer, metricFactory),
-                mailQueueView, clock);
+                new Enqueuer(mailQueueName, rabbitClient, mimeMessageStore, mailReferenceSerializer,
+                    metricFactory, mailQueueView, clock),
+                new Dequeuer(mailQueueName, rabbitClient, mailLoader, mailReferenceSerializer,
+                    metricFactory, mailQueueView), mailQueueView);
         }
     }
 
@@ -81,17 +82,15 @@ public class RabbitMQMailQueue implements ManageableMailQueue {
     private final Enqueuer enqueuer;
     private final Dequeuer dequeuer;
     private final MailQueueView mailQueueView;
-    private final Clock clock;
 
     RabbitMQMailQueue(MetricFactory metricFactory, MailQueueName name,
                       Enqueuer enqueuer, Dequeuer dequeuer,
-                      MailQueueView mailQueueView, Clock clock) {
+                      MailQueueView mailQueueView) {
         this.metricFactory = metricFactory;
         this.name = name;
         this.enqueuer = enqueuer;
         this.dequeuer = dequeuer;
         this.mailQueueView = mailQueueView;
-        this.clock = clock;
     }
 
     @Override
@@ -108,13 +107,13 @@ public class RabbitMQMailQueue implements ManageableMailQueue {
     }
 
     @Override
-    public void enQueue(Mail mail) throws MailQueueException {
+    public void enQueue(Mail mail) {
         metricFactory.runPublishingTimerMetric(ENQUEUED_TIMER_METRIC_NAME_PREFIX + name.asString(),
-            Throwing.runnable(() -> enqueuer.enQueue(mail, mailQueueView, clock)).sneakyThrow());
+            Throwing.runnable(() -> enqueuer.enQueue(mail)).sneakyThrow());
     }
 
     @Override
-    public MailQueueItem deQueue() throws MailQueueException {
+    public MailQueueItem deQueue() {
         return metricFactory.runPublishingTimerMetric(DEQUEUED_TIMER_METRIC_NAME_PREFIX + name.asString(),
             Throwing.supplier(dequeuer::deQueue).sneakyThrow());
     }

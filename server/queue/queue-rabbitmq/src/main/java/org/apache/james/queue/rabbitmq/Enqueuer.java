@@ -44,21 +44,26 @@ class Enqueuer {
     private final Store<MimeMessage, MimeMessagePartsId> mimeMessageStore;
     private final MailReferenceSerializer mailReferenceSerializer;
     private final Metric enqueueMetric;
+    private final MailQueueView mailQueueView;
+    private final Clock clock;
 
     Enqueuer(MailQueueName name, RabbitClient rabbitClient, Store<MimeMessage, MimeMessagePartsId> mimeMessageStore,
-             MailReferenceSerializer serializer, MetricFactory metricFactory) {
+             MailReferenceSerializer serializer, MetricFactory metricFactory,
+             MailQueueView mailQueueView, Clock clock) {
         this.name = name;
         this.rabbitClient = rabbitClient;
         this.mimeMessageStore = mimeMessageStore;
         this.mailReferenceSerializer = serializer;
+        this.mailQueueView = mailQueueView;
+        this.clock = clock;
         this.enqueueMetric = metricFactory.generate(ENQUEUED_METRIC_NAME_PREFIX + name.asString());
     }
 
-    void enQueue(Mail mail, MailQueueView mailQueueView, Clock clock) throws MailQueue.MailQueueException {
+    void enQueue(Mail mail) throws MailQueue.MailQueueException {
         saveMail(mail)
             .thenAccept(Throwing.<MimeMessagePartsId>consumer(partsId -> publishReferenceToRabbit(mail, partsId)).sneakyThrow())
             .thenRun(enqueueMetric::increment)
-            .thenRun(() -> mailQueueView.storeMail(clock.instant(), mail))
+            .thenCompose(any -> mailQueueView.storeMail(clock.instant(), mail))
             .join();
     }
 
