@@ -19,11 +19,15 @@
 
 package org.apache.james.queue.rabbitmq.view.cassandra.configuration;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.james.eventsourcing.AggregateId;
+import org.apache.james.eventsourcing.Event;
+import org.apache.james.eventsourcing.eventstore.History;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 
 class ConfigurationAggregate {
 
@@ -56,7 +60,39 @@ class ConfigurationAggregate {
         }
     }
 
+    static ConfigurationAggregate load(History history) {
+        return new ConfigurationAggregate(history);
+    }
+
     private static final String CONFIGURATION_AGGREGATE_KEY = "CassandraMailQueueViewConfiguration";
     static final AggregateId CONFIGURATION_AGGREGATE_ID = () -> CONFIGURATION_AGGREGATE_KEY;
 
+    private final History history;
+    private final State state;
+
+    ConfigurationAggregate(History history) {
+        this.history = history;
+        this.state = State.initial();
+
+        history.getEvents().forEach(this::apply);
+    }
+
+    List<? extends Event> applyConfiguration(CassandraMailQueueViewConfiguration configuration) {
+        ConfigurationAdded newEvent = new ConfigurationAdded(
+            history.getNextEventId(),
+            configuration);
+        apply(newEvent);
+
+        return ImmutableList.of(newEvent);
+    }
+
+    Optional<CassandraMailQueueViewConfiguration> getCurrentConfiguration() {
+        return state.maybeConfiguration;
+    }
+
+    private void apply(Event event) {
+        if (event instanceof ConfigurationAdded) {
+            state.set(((ConfigurationAdded) event).getConfiguration());
+        }
+    }
 }
