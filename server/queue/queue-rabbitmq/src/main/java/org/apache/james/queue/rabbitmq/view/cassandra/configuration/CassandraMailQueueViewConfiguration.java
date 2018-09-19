@@ -17,9 +17,10 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.queue.rabbitmq.view.cassandra;
+package org.apache.james.queue.rabbitmq.view.cassandra.configuration;
 
 import java.time.Duration;
+import java.util.Objects;
 
 import com.google.common.base.Preconditions;
 
@@ -87,5 +88,22 @@ public class CassandraMailQueueViewConfiguration {
 
     public Duration getSliceWindow() {
         return sliceWindow;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (o instanceof CassandraMailQueueViewConfiguration) {
+            CassandraMailQueueViewConfiguration that = (CassandraMailQueueViewConfiguration) o;
+
+            return Objects.equals(this.bucketCount, that.bucketCount)
+                && Objects.equals(this.updateBrowseStartPace, that.updateBrowseStartPace)
+                && Objects.equals(this.sliceWindow, that.sliceWindow);
+        }
+        return false;
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(bucketCount, updateBrowseStartPace, sliceWindow);
     }
 }
