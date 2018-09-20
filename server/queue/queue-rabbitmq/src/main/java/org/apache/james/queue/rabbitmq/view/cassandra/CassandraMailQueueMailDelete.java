@@ -33,6 +33,8 @@ import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedMail;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.MailKey;
 import org.apache.mailet.Mail;
 
+import com.google.common.annotations.VisibleForTesting;
+
 class CassandraMailQueueMailDelete {
 
     private final DeletedMailsDAO deletedMailsDao;
@@ -42,6 +44,14 @@ class CassandraMailQueueMailDelete {
     private final ThreadLocalRandom random;
 
     @Inject
+    CassandraMailQueueMailDelete(DeletedMailsDAO deletedMailsDao,
+                                 BrowseStartDAO browseStartDao,
+                                 CassandraMailQueueBrowser cassandraMailQueueBrowser,
+                                 CassandraMailQueueViewConfiguration configuration) {
+        this(deletedMailsDao, browseStartDao, cassandraMailQueueBrowser, configuration, ThreadLocalRandom.current());
+    }
+
+    @VisibleForTesting
     CassandraMailQueueMailDelete(DeletedMailsDAO deletedMailsDao,
                                  BrowseStartDAO browseStartDao,
                                  CassandraMailQueueBrowser cassandraMailQueueBrowser,

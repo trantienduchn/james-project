@@ -34,6 +34,8 @@ import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedMail;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.MailKey;
 import org.apache.mailet.Mail;
 
+import com.google.common.annotations.VisibleForTesting;
+
 class CassandraMailQueueMailStore {
 
     private final EnqueuedMailsDAO enqueuedMailsDao;
@@ -43,6 +45,13 @@ class CassandraMailQueueMailStore {
     private final Set<MailQueueName> initialInserted;
 
     @Inject
+    CassandraMailQueueMailStore(EnqueuedMailsDAO enqueuedMailsDao,
+                                BrowseStartDAO browseStartDao,
+                                CassandraMailQueueViewConfiguration configuration) {
+        this(enqueuedMailsDao, browseStartDao, configuration, Clock.systemUTC());
+    }
+
+    @VisibleForTesting
     CassandraMailQueueMailStore(EnqueuedMailsDAO enqueuedMailsDao,
                                 BrowseStartDAO browseStartDao,
                                 CassandraMailQueueViewConfiguration configuration,

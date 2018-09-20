@@ -40,6 +40,7 @@ import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMai
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedMail;
 import org.apache.james.util.FluentFutureStream;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 class CassandraMailQueueBrowser {
@@ -75,6 +76,14 @@ class CassandraMailQueueBrowser {
     private final Clock clock;
 
     @Inject
+    CassandraMailQueueBrowser(BrowseStartDAO browseStartDao,
+                              DeletedMailsDAO deletedMailsDao,
+                              EnqueuedMailsDAO enqueuedMailsDao,
+                              CassandraMailQueueViewConfiguration configuration) {
+        this(browseStartDao, deletedMailsDao, enqueuedMailsDao, configuration, Clock.systemUTC());
+    }
+
+    @VisibleForTesting
     CassandraMailQueueBrowser(BrowseStartDAO browseStartDao,
                               DeletedMailsDAO deletedMailsDao,
                               EnqueuedMailsDAO enqueuedMailsDao,
