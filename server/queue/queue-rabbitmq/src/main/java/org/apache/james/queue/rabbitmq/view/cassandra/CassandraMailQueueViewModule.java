@@ -52,7 +52,7 @@ public interface CassandraMailQueueViewModule {
         String LAST_UPDATED = "lastUpdated";
         String PER_RECIPIENT_SPECIFIC_HEADERS = "perRecipientSpecificHeaders";
 
-        String HEADER_TYPE = "header";
+        String ENQUEUED_MAIL_HEADER_TYPE = "enqueuedMailHeader";
         String HEADER_NAME = "headerName";
         String HEADER_VALUE = "headerValue";
     }
@@ -72,7 +72,7 @@ public interface CassandraMailQueueViewModule {
     }
 
     CassandraModule MODULE = CassandraModule
-        .type(EnqueuedMailsTable.HEADER_TYPE)
+        .type(EnqueuedMailsTable.ENQUEUED_MAIL_HEADER_TYPE)
             .statement(statement -> statement
                 .addColumn(EnqueuedMailsTable.HEADER_NAME, text())
                 .addColumn(EnqueuedMailsTable.HEADER_VALUE, text()))
@@ -98,7 +98,7 @@ public interface CassandraMailQueueViewModule {
             .addColumn(EnqueuedMailsTable.REMOTE_HOST, text())
             .addColumn(EnqueuedMailsTable.REMOTE_ADDR, text())
             .addColumn(EnqueuedMailsTable.LAST_UPDATED, timestamp())
-            .addUDTMapColumn(EnqueuedMailsTable.PER_RECIPIENT_SPECIFIC_HEADERS, text(), frozen(EnqueuedMailsTable.HEADER_TYPE)))
+            .addUDTMapColumn(EnqueuedMailsTable.PER_RECIPIENT_SPECIFIC_HEADERS, text(), frozen(EnqueuedMailsTable.ENQUEUED_MAIL_HEADER_TYPE)))
 
         .table(BrowseStartTable.TABLE_NAME)
         .comment("this table allows to find the starting point of iteration from the table: "

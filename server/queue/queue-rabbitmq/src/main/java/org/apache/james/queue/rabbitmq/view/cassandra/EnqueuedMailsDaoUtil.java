@@ -21,10 +21,10 @@ package org.apache.james.queue.rabbitmq.view.cassandra;
 
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ATTRIBUTES;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.BUCKET_ID;
+import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ENQUEUED_MAIL_HEADER_TYPE;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ENQUEUED_TIME;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ERROR_MESSAGE;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.HEADER_NAME;
-import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.HEADER_TYPE;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.HEADER_VALUE;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.LAST_UPDATED;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.MAIL_KEY;
@@ -187,7 +187,7 @@ public class EnqueuedMailsDaoUtil {
             .stream()
             .flatMap(entry -> entry.getValue().stream().map(value -> Pair.of(entry.getKey(), value)))
             .map(entry -> Pair.of(entry.getKey().asString(),
-                cassandraTypesProvider.getDefinedUserType(HEADER_TYPE)
+                cassandraTypesProvider.getDefinedUserType(ENQUEUED_MAIL_HEADER_TYPE)
                     .newValue()
                     .setString(HEADER_NAME, entry.getRight().getName())
                     .setString(HEADER_VALUE, entry.getRight().getValue())))
