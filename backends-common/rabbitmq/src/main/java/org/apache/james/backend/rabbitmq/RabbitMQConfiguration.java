@@ -139,9 +139,6 @@ public class RabbitMQConfiguration {
         }
     }
 
-    private static final String URI_PROPERTY_NAME = "uri";
-    private static final String MANAGEMENT_URI_PROPERTY_NAME = "management.uri";
-
     public static RequireAmqpUri builder() {
         return amqpUri -> managementUri -> new Builder(amqpUri, managementUri);
     }
@@ -169,6 +166,14 @@ public class RabbitMQConfiguration {
             throw new IllegalStateException("You need to specify a valid URI", e);
         }
     }
+
+    public static final RabbitMQConfiguration DEFAULT = RabbitMQConfiguration.builder()
+        .amqpUri(checkURI("amqp://james:james@localhost:5672"))
+        .managementUri(checkURI("http://james:james@localhost:15672"))
+        .build();
+
+    private static final String URI_PROPERTY_NAME = "uri";
+    private static final String MANAGEMENT_URI_PROPERTY_NAME = "management.uri";
 
     private final URI uri;
     private final URI managementUri;

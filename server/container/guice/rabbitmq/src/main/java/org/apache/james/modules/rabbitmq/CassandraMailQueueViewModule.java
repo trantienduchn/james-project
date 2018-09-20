@@ -26,6 +26,8 @@ import javax.inject.Singleton;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTOModule;
+import org.apache.james.queue.rabbitmq.view.api.MailQueueView;
+import org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueView;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMailQueueViewConfiguration;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMailQueueViewConfigurationModule;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.EventsourcingConfigurationManagement;
@@ -54,6 +56,12 @@ public class CassandraMailQueueViewModule extends AbstractModule {
 
     @Provides
     @Singleton
+    private MailQueueView.Factory mailQueueViewFactory(CassandraMailQueueView.Factory factory) {
+        return factory;
+    }
+
+    @Provides
+    @Singleton
     private CassandraMailQueueViewConfiguration getMailQueueViewConfiguration(EventsourcingConfigurationManagement configurationManagement,
                                                                               PropertiesProvider propertiesProvider) {
         return configurationManagement
@@ -65,11 +73,12 @@ public class CassandraMailQueueViewModule extends AbstractModule {
             Configuration configuration = propertiesProvider.getConfiguration(CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME);
             return CassandraMailQueueViewConfiguration.from(configuration);
         } catch (FileNotFoundException e) {
-            LOGGER.error("Could not find " + CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME + " configuration file.");
-            throw new RuntimeException(e);
+            LOGGER.error("Could not find " + CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME + " configuration file. Using the default one");
+            return CassandraMailQueueViewConfiguration.DEFAULT;
         } catch (ConfigurationException e) {
-            LOGGER.error("Error happens while reading configs from " + CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME + " configuration file.");
-            throw new RuntimeException(e);
+            LOGGER.error("Error happens while reading configs from " + CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME + " configuration file. " +
+                "Using the default one");
+            return CassandraMailQueueViewConfiguration.DEFAULT;
         }
     }
 }

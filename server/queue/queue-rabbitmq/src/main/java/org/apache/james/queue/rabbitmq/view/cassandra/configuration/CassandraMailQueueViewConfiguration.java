@@ -85,6 +85,12 @@ public class CassandraMailQueueViewConfiguration {
             .build();
     }
 
+    public static final CassandraMailQueueViewConfiguration DEFAULT = builder()
+        .bucketCount(1)
+        .updateBrowseStartPace(1000)
+        .sliceWindow(Duration.ofHours(1))
+        .build();
+
     private static final String SLICE_WINDOW_PROPERTY_NAME = "sliceWindow";
     private static final String BUCKET_COUNT_PROPERTY_NAME = "bucketCount";
     private static final String UPDATE_BROWSE_START_PACE_PROPERTY_NAME = "updateBrowseStartPace";
