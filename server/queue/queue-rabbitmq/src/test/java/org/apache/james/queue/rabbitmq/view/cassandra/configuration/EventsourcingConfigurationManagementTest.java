@@ -101,4 +101,31 @@ class EventsourcingConfigurationManagementTest {
             .contains(FIRST_CONFIGURATION);
     }
 
+    @Test
+    void storeShouldReturnStoredConfiguration(EventStore eventStore) {
+        EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
+
+        CassandraMailQueueViewConfiguration storedConfiguration = testee.store(FIRST_CONFIGURATION);
+
+        assertThat(storedConfiguration)
+            .isEqualTo(FIRST_CONFIGURATION);
+    }
+
+    @Test
+    void loadIfAbsentShouldLoadFromInitialIfEmptyHistory(EventStore eventStore) {
+        EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
+
+        assertThat(testee.loadIfAbsent(() -> FIRST_CONFIGURATION))
+            .isEqualTo(FIRST_CONFIGURATION);
+    }
+
+    @Test
+    void loadIfAbsentShouldLoadFromHistoryIfNotEmpty(EventStore eventStore) {
+        EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
+        testee.store(FIRST_CONFIGURATION);
+        testee.store(SECOND_CONFIGURATION);
+
+        assertThat(testee.loadIfAbsent(() -> THIRD_CONFIGURATION))
+            .isEqualTo(SECOND_CONFIGURATION);
+    }
 }

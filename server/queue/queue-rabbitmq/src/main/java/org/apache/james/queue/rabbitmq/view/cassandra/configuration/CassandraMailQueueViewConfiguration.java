@@ -22,6 +22,8 @@ package org.apache.james.queue.rabbitmq.view.cassandra.configuration;
 import java.time.Duration;
 import java.util.Objects;
 
+import org.apache.commons.configuration.Configuration;
+
 import com.google.common.base.Preconditions;
 
 public class CassandraMailQueueViewConfiguration {
@@ -65,6 +67,27 @@ public class CassandraMailQueueViewConfiguration {
     public static Builder.RequireBucketCount builder() {
         return bucketCount -> updateBrowseStartPace -> sliceWindow -> new Builder.ReadyToBuild(bucketCount, updateBrowseStartPace, sliceWindow);
     }
+
+    public static CassandraMailQueueViewConfiguration from(Configuration configuration) {
+        long sliceWindowInSecond = configuration.getLong(SLICE_WINDOW_PROPERTY_NAME);
+        Preconditions.checkState(sliceWindowInSecond > 1, "slice window is a duration, then have to be positive");
+
+        int bucketCount = configuration.getInt(BUCKET_COUNT_PROPERTY_NAME);
+        Preconditions.checkState(bucketCount > 1, "bucket count have to be positive");
+
+        int updateBrowseStartPace = configuration.getInt(UPDATE_BROWSE_START_PACE_PROPERTY_NAME);
+        Preconditions.checkState(updateBrowseStartPace > 1, "update browse start pace have to be positive");
+
+        return builder()
+            .bucketCount(bucketCount)
+            .updateBrowseStartPace(updateBrowseStartPace)
+            .sliceWindow(Duration.ofSeconds(sliceWindowInSecond))
+            .build();
+    }
+
+    private static final String SLICE_WINDOW_PROPERTY_NAME = "sliceWindow";
+    private static final String BUCKET_COUNT_PROPERTY_NAME = "bucketCount";
+    private static final String UPDATE_BROWSE_START_PACE_PROPERTY_NAME = "updateBrowseStartPace";
 
     private final int bucketCount;
     private final int updateBrowseStartPace;

@@ -22,6 +22,7 @@ package org.apache.james.queue.rabbitmq.view.cassandra.configuration;
 import static org.apache.james.queue.rabbitmq.view.cassandra.configuration.ConfigurationAggregate.CONFIGURATION_AGGREGATE_ID;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.inject.Inject;
 
@@ -29,6 +30,7 @@ import org.apache.james.eventsourcing.EventSourcingSystem;
 import org.apache.james.eventsourcing.Subscriber;
 import org.apache.james.eventsourcing.eventstore.EventStore;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 
 public class EventsourcingConfigurationManagement {
@@ -47,13 +49,21 @@ public class EventsourcingConfigurationManagement {
         this.eventStore = eventStore;
     }
 
-    public Optional<CassandraMailQueueViewConfiguration> load() {
+    public CassandraMailQueueViewConfiguration loadIfAbsent(Supplier<CassandraMailQueueViewConfiguration> initialGenerator) {
+        Preconditions.checkNotNull(initialGenerator);
+
+        return load()
+            .orElseGet(() -> store(initialGenerator.get()));
+    }
+
+    Optional<CassandraMailQueueViewConfiguration> load() {
         return ConfigurationAggregate
             .load(eventStore.getEventsOfAggregate(CONFIGURATION_AGGREGATE_ID))
             .getCurrentConfiguration();
     }
 
-    public void store(CassandraMailQueueViewConfiguration configuration) {
+    CassandraMailQueueViewConfiguration store(CassandraMailQueueViewConfiguration configuration) {
         eventSourcingSystem.dispatch(new ConfigurationStoreCommand(configuration));
+        return configuration;
     }
 }
