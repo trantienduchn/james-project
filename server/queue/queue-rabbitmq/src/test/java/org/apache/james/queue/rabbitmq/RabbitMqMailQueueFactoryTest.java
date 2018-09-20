@@ -78,9 +78,7 @@ class RabbitMqMailQueueFactoryTest implements MailQueueFactoryContract<RabbitMQM
             new AsyncRetryExecutor(Executors.newSingleThreadScheduledExecutor()));
 
         RabbitClient rabbitClient = new RabbitClient(new RabbitChannelPool(rabbitMQConnectionFactory));
-        RabbitMQManagementApi mqManagementApi = new RabbitMQManagementApi(
-            rabbitManagementUri,
-            new RabbitMQManagementCredentials("guest", "guest".toCharArray()));
+        RabbitMQManagementApi mqManagementApi = new RabbitMQManagementApi(rabbitMQConfiguration);
         mailQueueFactory = new RabbitMQMailQueueFactory(
             rabbitClient,
             mqManagementApi,

@@ -19,13 +19,12 @@
 
 package org.apache.james.queue.rabbitmq;
 
-import java.net.MalformedURLException;
-import java.net.URI;
 import java.util.List;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import org.apache.james.backend.rabbitmq.RabbitMQConfiguration;
 import org.apache.james.util.OptionalUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -55,14 +54,15 @@ class RabbitMQManagementApi {
     private final Api api;
 
     @Inject
-    RabbitMQManagementApi(URI rabbitManagementUri, RabbitMQManagementCredentials credentials) throws MalformedURLException {
+    RabbitMQManagementApi(RabbitMQConfiguration configuration) {
+        RabbitMQConfiguration.ManagementCredential credentials = configuration.getManagementCredential();
         api = Feign.builder()
             .requestInterceptor(new BasicAuthRequestInterceptor(credentials.getUser(), new String(credentials.getPassword())))
             .logger(new Slf4jLogger(RabbitMQManagementApi.class))
             .logLevel(Logger.Level.FULL)
             .encoder(new JacksonEncoder())
             .decoder(new JacksonDecoder())
-            .target(Api.class, rabbitManagementUri.toString());
+            .target(Api.class, configuration.getManagementUri().toString());
 
     }
 
