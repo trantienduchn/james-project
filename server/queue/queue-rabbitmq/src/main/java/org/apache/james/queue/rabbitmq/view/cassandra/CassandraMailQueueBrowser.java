@@ -43,7 +43,7 @@ import org.apache.james.util.FluentFutureStream;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
-class CassandraMailQueueBrowser {
+public class CassandraMailQueueBrowser {
 
     static class CassandraMailQueueIterator implements ManageableMailQueue.MailQueueIterator {
 

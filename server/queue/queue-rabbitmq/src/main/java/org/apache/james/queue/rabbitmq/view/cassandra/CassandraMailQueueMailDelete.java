@@ -35,7 +35,7 @@ import org.apache.mailet.Mail;
 
 import com.google.common.annotations.VisibleForTesting;
 
-class CassandraMailQueueMailDelete {
+public class CassandraMailQueueMailDelete {
 
     private final DeletedMailsDAO deletedMailsDao;
     private final BrowseStartDAO browseStartDao;
