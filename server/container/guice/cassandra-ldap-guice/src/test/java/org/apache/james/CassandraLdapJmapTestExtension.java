@@ -19,45 +19,48 @@
 
 package org.apache.james;
 
-import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_CASSANDRA_MODULE;
-
 import java.io.IOException;
 
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
-import org.apache.james.mailbox.extractor.TextExtractor;
-import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.TestESMetricReporterModule;
 import org.apache.james.modules.TestElasticSearchModule;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.server.core.configuration.Configuration;
+import org.apache.james.user.ldap.LdapGenericContainer;
+import org.apache.james.user.ldap.LdapRepositoryConfiguration;
 import org.apache.james.util.Runnables;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ParameterContext;
-import org.junit.jupiter.api.extension.ParameterResolutionException;
-import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.rules.TemporaryFolder;
 
 import com.google.inject.Module;
 
-class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, AfterEachCallback, ParameterResolver {
+class CassandraLdapJmapTestExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, AfterEachCallback {
 
-    private static final int LIMIT_TO_10_MESSAGES = 10;
+    private static final String DOMAIN = "james.org";
+    private static final String ADMIN_PASSWORD = "mysecretpassword";
+    private static final int LIMIT_TO_3_MESSAGES = 3;
+
     private final EmbeddedElasticSearch elasticSearch;
-
     private final TemporaryFolder temporaryFolder;
     private final DockerCassandraRule cassandra;
     private final Module[] additionalModules;
+    private final LdapGenericContainer ldapContainer;
     private GuiceJamesServer jamesServer;
 
-    CassandraJmapTestExtension(Module... additionalModules) {
+    CassandraLdapJmapTestExtension(Module... additionalModules) {
         this.additionalModules = additionalModules;
         this.temporaryFolder = new TemporaryFolder();
         this.elasticSearch = new EmbeddedElasticSearch(temporaryFolder);
         this.cassandra = new DockerCassandraRule();
+        this.ldapContainer = LdapGenericContainer.builder()
+            .domain(DOMAIN)
+            .password(ADMIN_PASSWORD)
+            .build();
     }
 
     @Override
@@ -68,6 +71,7 @@ class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEachCallbac
 
     @Override
     public void beforeEach(ExtensionContext extensionContext) throws Exception {
+        ldapContainer.start();
         jamesServer = createJmapServer();
         jamesServer.start();
     }
@@ -75,21 +79,12 @@ class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEachCallbac
     @Override
     public void afterEach(ExtensionContext extensionContext) throws Exception {
         jamesServer.stop();
+        ldapContainer.stop();
     }
 
     @Override
     public void afterAll(ExtensionContext extensionContext) throws Exception {
         Runnables.runParallel(cassandra::stop, elasticSearch::after);
-    }
-
-    @Override
-    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return parameterContext.getParameter().getType() == GuiceJamesServer.class;
-    }
-
-    @Override
-    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return jamesServer;
     }
 
     public GuiceJamesServer getJamesServer() {
@@ -103,12 +98,32 @@ class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEachCallbac
             .build();
 
         return GuiceJamesServer.forConfiguration(configuration)
-            .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
-            .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
-            .overrideWith(new TestJMAPServerModule(LIMIT_TO_10_MESSAGES))
+            .combineWith(CassandraLdapJamesServerMain.cassandraLdapServerModule)
+            .overrideWith(new TestJMAPServerModule(LIMIT_TO_3_MESSAGES))
             .overrideWith(new TestESMetricReporterModule())
             .overrideWith(new TestElasticSearchModule(elasticSearch))
             .overrideWith(cassandra.getModule())
-            .overrideWith(additionalModules);
+            .overrideWith(additionalModules)
+            .overrideWith(binder -> binder.bind(LdapRepositoryConfiguration.class)
+                .toInstance(computeConfiguration(ldapContainer.getLdapHost())));
+    }
+
+    private LdapRepositoryConfiguration computeConfiguration(String ldapIp) {
+        try {
+            return LdapRepositoryConfiguration.builder()
+                .ldapHost(ldapIp)
+                .principal("cn=admin,dc=james,dc=org")
+                .credentials("mysecretpassword")
+                .userBase("ou=People,dc=james,dc=org")
+                .userIdAttribute("uid")
+                .userObjectClass("inetOrgPerson")
+                .maxRetries(4)
+                .retryStartInterval(0)
+                .retryMaxInterval(8)
+                .scale(1000)
+                .build();
+        } catch (ConfigurationException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

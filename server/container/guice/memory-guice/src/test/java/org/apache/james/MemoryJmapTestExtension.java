@@ -80,6 +80,9 @@ class MemoryJmapTestExtension implements BeforeEachCallback, AfterEachCallback, 
         return jamesServer;
     }
 
+    public GuiceJamesServer getJamesServer() {
+        return jamesServer;
+    }
 
     private GuiceJamesServer jmapServer(Module... modules) throws IOException {
         Configuration configuration = Configuration.builder()
