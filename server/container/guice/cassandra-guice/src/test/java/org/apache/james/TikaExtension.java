@@ -18,36 +18,34 @@
  ****************************************************************/
 
 package org.apache.james;
+
 import org.apache.james.mailbox.tika.TikaContainer;
 import org.apache.james.modules.TestTikaModule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import com.google.inject.Module;
 
-
-public class GuiceTikaRule implements GuiceModuleTestRule {
+class TikaExtension implements BeforeAllCallback, AfterAllCallback {
 
     private TikaContainer tika;
 
-    @Override
-    public Statement apply(Statement base, Description description) {
-        return new Statement() {
-            @Override
-            public void evaluate() throws Throwable {
-                tika = new TikaContainer();
-                tika.start();
-                base.evaluate();
-            }
-        };
+    TikaExtension() {
+        this.tika = new TikaContainer();
     }
 
     @Override
-    public void await() {
+    public void beforeAll(ExtensionContext extensionContext) throws Exception {
+        tika.start();
     }
 
     @Override
-    public Module getModule() {
+    public void afterAll(ExtensionContext extensionContext) throws Exception {
+        tika.stop();
+    }
+
+    public Module getTikaGuiceModule() {
         return new TestTikaModule(tika);
     }
 }

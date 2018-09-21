@@ -28,7 +28,7 @@ public class CassandraJmapJamesServerTest extends AbstractJmapJamesServerTest {
 
     @ClassRule
     public static DockerCassandraRule cassandra = new DockerCassandraRule();
-    
+
     @Rule
     public CassandraJmapTestRule cassandraJmap = CassandraJmapTestRule.defaultTestRule();
 
