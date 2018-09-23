@@ -38,18 +38,50 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.rules.TemporaryFolder;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Module;
 
-class MemoryJmapTestExtension implements BeforeEachCallback, AfterEachCallback, BeforeAllCallback, ParameterResolver {
+public class MemoryJmapTestExtension implements BeforeEachCallback, AfterEachCallback, BeforeAllCallback, ParameterResolver {
 
+    public static class Builder {
+        private boolean ignoreEach;
+        private ImmutableList<Module> addtionalModules;
+
+        public Builder() {
+            this.ignoreEach = false;
+            this.addtionalModules = EMPTY_MODULES;
+        }
+
+        public Builder ignoreEach() {
+            this.ignoreEach = true;
+            return this;
+        }
+
+        public Builder modules(Module... addtionalModules) {
+            this.addtionalModules = ImmutableList.copyOf(addtionalModules);
+            return this;
+        }
+
+        public MemoryJmapTestExtension build() {
+            return new MemoryJmapTestExtension(addtionalModules, ignoreEach);
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    private static final ImmutableList<Module> EMPTY_MODULES = ImmutableList.of();
     private static final int LIMIT_TO_10_MESSAGES = 10;
     
-    public final TemporaryFolder temporaryFolder;
-    private final Module[] addtionalModules;
+    private final TemporaryFolder temporaryFolder;
+    private final ImmutableList<Module> addtionalModules;
+    private final boolean ignoreEach;
 
     private GuiceJamesServer jamesServer;
 
-    MemoryJmapTestExtension(Module... addtionalModules) {
+    private MemoryJmapTestExtension(ImmutableList<Module> addtionalModules, boolean ignoreEach) {
+        this.ignoreEach = ignoreEach;
         this.temporaryFolder = new TemporaryFolder();
         this.addtionalModules = addtionalModules;
     }
@@ -61,13 +93,17 @@ class MemoryJmapTestExtension implements BeforeEachCallback, AfterEachCallback, 
 
     @Override
     public void beforeEach(ExtensionContext extensionContext) throws Exception {
-        jamesServer = jmapServer(addtionalModules);
-        jamesServer.start();
+        if (!ignoreEach) {
+            jamesServer = jmapServer();
+            jamesServer.start();
+        }
     }
 
     @Override
     public void afterEach(ExtensionContext extensionContext) throws Exception {
-        jamesServer.stop();
+        if (!ignoreEach) {
+            jamesServer.stop();
+        }
     }
 
     @Override
@@ -84,7 +120,7 @@ class MemoryJmapTestExtension implements BeforeEachCallback, AfterEachCallback, 
         return jamesServer;
     }
 
-    private GuiceJamesServer jmapServer(Module... modules) throws IOException {
+    public GuiceJamesServer jmapServer(Module... customModules) throws IOException {
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
             .configurationFromClasspath()
@@ -95,6 +131,7 @@ class MemoryJmapTestExtension implements BeforeEachCallback, AfterEachCallback, 
             .overrideWith(binder -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
             .overrideWith(binder -> binder.bind(MessageSearchIndex.class).to(SimpleMessageSearchIndex.class))
-            .overrideWith(modules);
+            .overrideWith(addtionalModules)
+            .overrideWith(customModules);
     }
 }
