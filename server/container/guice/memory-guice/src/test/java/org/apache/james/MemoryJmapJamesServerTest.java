@@ -24,7 +24,9 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class MemoryJmapJamesServerTest implements JmapJamesServerContract {
 
     @RegisterExtension
-    static MemoryJmapTestExtension jamesMemoryServerExtension = new MemoryJmapTestExtension(DOMAIN_LIST_CONFIGURATION_MODULE);
+    static MemoryJmapTestExtension jamesMemoryServerExtension = MemoryJmapTestExtension.builder()
+        .modules(DOMAIN_LIST_CONFIGURATION_MODULE)
+        .build();
 
     @Override
     public GuiceJamesServer jamesServer() {

@@ -27,6 +27,7 @@ class CassandraWithTikaTest implements JamesServerContract {
     static TikaExtension tikaExtension = new TikaExtension();
 
     @RegisterExtension
-    static CassandraJmapTestExtension cassandraJmapServer = new CassandraJmapTestExtension(
-        tikaExtension.getTikaGuiceModule(), DOMAIN_LIST_CONFIGURATION_MODULE);
+    static CassandraJmapTestExtension cassandraJmapServer = CassandraJmapTestExtension.Builder
+        .withDefaultFromModules(tikaExtension.getTikaGuiceModule(), DOMAIN_LIST_CONFIGURATION_MODULE)
+        .build();
 }
