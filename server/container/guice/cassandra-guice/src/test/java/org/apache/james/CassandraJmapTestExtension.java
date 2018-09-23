@@ -54,24 +54,31 @@ public class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEach
 
         public static Builder withExtension(GuiceModuleTestExtension extension, Module... modules) {
             return builder()
-                .modules(modules)
+                .additionalModules(modules)
                 .extensions(ImmutableList.of(extension));
         }
 
         public static Builder withDefaultFromModules(Module... modules) {
             return builder()
-                .modules(modules)
+                .additionalModules(modules)
                 .extensions(EMBEDDED_ES_EXTENSION_ONLY);
         }
 
+        private Module coreModule;
         private ImmutableList<Module> additionalModules;
         private ImmutableList<GuiceModuleTestExtension> extensions;
         private boolean ignoreEach;
 
         public Builder() {
-            this.additionalModules = EMPTY_MODULES;
+            this.coreModule = ALL_BUT_JMX_CASSANDRA_MODULE;
+            this.additionalModules = DEFAULT_MODULES;
             this.extensions = EMPTY_EXTENSIONS;
             this.ignoreEach = false;
+        }
+
+        public Builder coreModule(Module coreModule) {
+            this.coreModule = coreModule;
+            return this;
         }
 
         public Builder modules(Module... additionalModules) {
@@ -79,8 +86,21 @@ public class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEach
             return this;
         }
 
+        public Builder additionalModules(Module... additionalModules) {
+            this.additionalModules = ImmutableList.<Module>builder()
+                .add(additionalModules)
+                .addAll(this.additionalModules)
+                .build();
+            return this;
+        }
+
         public Builder extensions(ImmutableList<GuiceModuleTestExtension> extensions) {
             this.extensions = extensions;
+            return this;
+        }
+
+        public Builder extensions(GuiceModuleTestExtension... extensions) {
+            this.extensions = ImmutableList.copyOf(extensions);
             return this;
         }
 
@@ -90,7 +110,7 @@ public class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEach
         }
 
         public CassandraJmapTestExtension build() {
-            return new CassandraJmapTestExtension(additionalModules, extensions, ignoreEach);
+            return new CassandraJmapTestExtension(coreModule, additionalModules, extensions, ignoreEach);
         }
     }
 
@@ -98,23 +118,30 @@ public class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEach
         return new Builder();
     }
 
-    private static final ImmutableList<Module> EMPTY_MODULES = ImmutableList.of();
+    private static final int LIMIT_TO_10_MESSAGES = 10;
+
+    private static final ImmutableList<Module> DEFAULT_MODULES = ImmutableList.of(
+        binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class),
+        new TestJMAPServerModule(LIMIT_TO_10_MESSAGES),
+        new TestESMetricReporterModule());
     private static final ImmutableList<GuiceModuleTestExtension> EMPTY_EXTENSIONS = ImmutableList.of();
     private static final ImmutableList<GuiceModuleTestExtension> EMBEDDED_ES_EXTENSION_ONLY = ImmutableList.of(new EmbeddedElasticSearchExtension());
 
-    private static final int LIMIT_TO_10_MESSAGES = 10;
 
     private final TemporaryFolder temporaryFolder;
     private final DockerCassandraRule cassandra;
+    private final Module coreModule;
     private final ImmutableList<Module> additionalModules;
     private final ImmutableList<GuiceModuleTestExtension> extensions;
     private final boolean ignoreEach;
 
     private GuiceJamesServer jamesServer;
 
-    private CassandraJmapTestExtension(ImmutableList<Module> additionalModules,
-                                      ImmutableList<GuiceModuleTestExtension> extensions,
-                                      boolean ignoreEach) {
+    private CassandraJmapTestExtension(Module coreModule,
+                                       ImmutableList<Module> additionalModules,
+                                       ImmutableList<GuiceModuleTestExtension> extensions,
+                                       boolean ignoreEach) {
+        this.coreModule = coreModule;
         this.ignoreEach = ignoreEach;
         this.cassandra = new DockerCassandraRule();
         this.temporaryFolder = new TemporaryFolder();
@@ -133,6 +160,9 @@ public class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEach
     @Override
     public void beforeEach(ExtensionContext extensionContext) throws Exception {
         if (!ignoreEach) {
+            Runnable[] extensionBeforeEach = toRunnables(extension -> extension.beforeEach(extensionContext));
+            Runnables.runParallel(extensionBeforeEach);
+
             jamesServer = createJmapServer();
             jamesServer.start();
         }
@@ -141,13 +171,16 @@ public class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEach
     @Override
     public void afterEach(ExtensionContext extensionContext) throws Exception {
         if (!ignoreEach) {
+            Runnable[] extensionAfterEach = toRunnables(extension -> extension.afterEach(extensionContext));
+            Runnables.runParallel(extensionAfterEach);
+
             jamesServer.stop();
         }
     }
 
     @Override
     public void afterAll(ExtensionContext extensionContext) throws Exception {
-        Runnable[] extensionAfterAll = toRunnables(extension -> extension.beforeAll(extensionContext));
+        Runnable[] extensionAfterAll = toRunnables(extension -> extension.afterAll(extensionContext));
         Runnables.runParallel(ArrayUtils.add(extensionAfterAll, cassandra::stop));
     }
 
@@ -185,13 +218,10 @@ public class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEach
             .collect(ImmutableList.toImmutableList());
 
         return GuiceJamesServer.forConfiguration(configuration)
-            .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
-            .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
-            .overrideWith(new TestJMAPServerModule(LIMIT_TO_10_MESSAGES))
-            .overrideWith(new TestESMetricReporterModule())
-            .overrideWith(extensionModules)
+            .combineWith(coreModule)
             .overrideWith(cassandra.getModule())
             .overrideWith(additionalModules)
+            .overrideWith(extensionModules)
             .overrideWith(customModules);
     }
 

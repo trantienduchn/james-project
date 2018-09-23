@@ -26,6 +26,7 @@ import java.io.IOException;
 
 import org.apache.commons.net.imap.IMAPClient;
 import org.apache.james.core.Domain;
+import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.protocols.ImapGuiceProbe;
 import org.apache.james.modules.protocols.SmtpGuiceProbe;
 import org.apache.james.utils.IMAPMessageReader;
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 public class CassandraLdapJamesServerTest implements JmapJamesServerContract {
+    private static final int LIMIT_TO_3_MESSAGES = 3;
     private static final String JAMES_USER = "james-user";
     private static final String PASSWORD = "secret";
     private static final Duration slowPacedPollInterval = ONE_HUNDRED_MILLISECONDS;
@@ -50,9 +52,16 @@ public class CassandraLdapJamesServerTest implements JmapJamesServerContract {
         .pollDelay(slowPacedPollInterval)
         .await();
 
+    private static final LdapExtension ldapExtension = new LdapExtension();
+    private static final EmbeddedElasticSearchExtension embbededESExtension = new EmbeddedElasticSearchExtension();
     @RegisterExtension
-    static CassandraLdapJmapTestExtension testExtension = new CassandraLdapJmapTestExtension(
-        DOMAIN_LIST_CONFIGURATION_MODULE);
+    static CassandraJmapTestExtension testExtension = CassandraJmapTestExtension.builder()
+        .coreModule(CassandraLdapJamesServerMain.cassandraLdapServerModule)
+        .modules(
+            new TestJMAPServerModule(LIMIT_TO_3_MESSAGES),
+            DOMAIN_LIST_CONFIGURATION_MODULE)
+        .extensions(embbededESExtension, ldapExtension)
+        .build();
 
     private IMAPClient imapClient;
     private IMAPMessageReader imapMessageReader;
@@ -74,7 +83,7 @@ public class CassandraLdapJamesServerTest implements JmapJamesServerContract {
     public void tearDown() throws IOException {
         this.messageSender.close();
         this.imapMessageReader.close();
-        this.imapClient.close();
+        this.imapClient.disconnect();
     }
 
     @Test

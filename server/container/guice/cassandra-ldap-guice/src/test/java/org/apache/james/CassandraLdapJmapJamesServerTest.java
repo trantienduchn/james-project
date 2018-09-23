@@ -24,8 +24,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 public class CassandraLdapJmapJamesServerTest implements JmapJamesServerContract {
 
     @RegisterExtension
-    static CassandraLdapJmapTestExtension testExtension = new CassandraLdapJmapTestExtension(
-        DOMAIN_LIST_CONFIGURATION_MODULE);
+    static CassandraJmapTestExtension testExtension = CassandraLdapJamesServerTest.testExtension;
 
     @Override
     public GuiceJamesServer jamesServer() {
