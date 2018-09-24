@@ -125,8 +125,10 @@ public class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEach
         new TestJMAPServerModule(LIMIT_TO_10_MESSAGES),
         new TestESMetricReporterModule());
     private static final ImmutableList<GuiceModuleTestExtension> EMPTY_EXTENSIONS = ImmutableList.of();
-    public static final GuiceModuleTestExtension EMBEDDED_ES = new EmbeddedElasticSearchExtension();
-    private static final ImmutableList<GuiceModuleTestExtension> EMBEDDED_ES_EXTENSION_ONLY = ImmutableList.of(EMBEDDED_ES);
+    public static final EmbeddedElasticSearchExtension EMBEDDED_ES = new EmbeddedElasticSearchExtension();
+    public static final DockerRabbitMQTestExtension DOCKER_RABBIT_MQ = new DockerRabbitMQTestExtension();
+    private static final ImmutableList<GuiceModuleTestExtension> EMBEDDED_ES_EXTENSION_ONLY = ImmutableList.of(
+        EMBEDDED_ES, DOCKER_RABBIT_MQ);
 
 
     private final TemporaryFolder temporaryFolder;
