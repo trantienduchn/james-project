@@ -70,13 +70,13 @@ public class CassandraMailQueueViewConfiguration {
 
     public static CassandraMailQueueViewConfiguration from(Configuration configuration) {
         long sliceWindowInSecond = configuration.getLong(SLICE_WINDOW_PROPERTY_NAME);
-        Preconditions.checkState(sliceWindowInSecond > 1, "slice window is a duration, then have to be positive");
+        Preconditions.checkState(sliceWindowInSecond > 1, "'sliceWindow' is a duration, then have to be positive");
 
         int bucketCount = configuration.getInt(BUCKET_COUNT_PROPERTY_NAME);
-        Preconditions.checkState(bucketCount > 1, "bucket count have to be positive");
+        Preconditions.checkState(bucketCount > 1, "'bucketCount' count have to be positive");
 
         int updateBrowseStartPace = configuration.getInt(UPDATE_BROWSE_START_PACE_PROPERTY_NAME);
-        Preconditions.checkState(updateBrowseStartPace > 1, "update browse start pace have to be positive");
+        Preconditions.checkState(updateBrowseStartPace > 1, "'updateBrowseStartPace' have to be positive");
 
         return builder()
             .bucketCount(bucketCount)

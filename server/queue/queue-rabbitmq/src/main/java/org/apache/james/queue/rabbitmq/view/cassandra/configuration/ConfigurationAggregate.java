@@ -50,12 +50,21 @@ class ConfigurationAggregate {
             maybeConfiguration = Optional.of(configuration);
         }
 
-        private void validateConfiguration(CassandraMailQueueViewConfiguration configuration) {
-            Preconditions.checkNotNull(configuration);
+        private void validateConfiguration(CassandraMailQueueViewConfiguration configurationUpdate) {
+            Preconditions.checkNotNull(configurationUpdate);
 
             maybeConfiguration.ifPresent(currentConfiguration -> {
-                Preconditions.checkArgument(currentConfiguration.getBucketCount() < configuration.getBucketCount(),
-                    "can not set bucket count to be less than the current one: " + currentConfiguration.getBucketCount());
+                Preconditions.checkArgument(configurationUpdate.getBucketCount() >= currentConfiguration.getBucketCount(),
+                    "can not set 'bucketCount'(" + configurationUpdate.getBucketCount() + ") to be less than the current one: "
+                        + currentConfiguration.getBucketCount());
+
+                long updateSliceWindowInSecond = configurationUpdate.getSliceWindow().getSeconds();
+                long currentSliceWindowInSecond = currentConfiguration.getSliceWindow().getSeconds();
+                Preconditions.checkArgument(
+                    updateSliceWindowInSecond <= currentSliceWindowInSecond
+                        && currentSliceWindowInSecond % updateSliceWindowInSecond == 0,
+                    "update 'sliceWindow'(" + configurationUpdate.getSliceWindow() + ") have to be less than and divisible by the current one: "
+                        + currentConfiguration.getSliceWindow());
             });
         }
     }
@@ -78,7 +87,7 @@ class ConfigurationAggregate {
     }
 
     List<? extends Event> applyConfiguration(CassandraMailQueueViewConfiguration configuration) {
-        ConfigurationAdded newEvent = new ConfigurationAdded(
+        ConfigurationEdited newEvent = new ConfigurationEdited(
             history.getNextEventId(),
             configuration);
         apply(newEvent);
@@ -91,8 +100,8 @@ class ConfigurationAggregate {
     }
 
     private void apply(Event event) {
-        if (event instanceof ConfigurationAdded) {
-            state.set(((ConfigurationAdded) event).getConfiguration());
+        if (event instanceof ConfigurationEdited) {
+            state.set(((ConfigurationEdited) event).getConfiguration());
         }
     }
 }

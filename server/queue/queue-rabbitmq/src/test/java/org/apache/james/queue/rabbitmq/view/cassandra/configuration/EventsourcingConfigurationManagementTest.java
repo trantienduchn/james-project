@@ -35,20 +35,27 @@ class EventsourcingConfigurationManagementTest {
     static CassandraEventStoreExtension eventStoreExtension = new CassandraEventStoreExtension(
         CassandraMailQueueViewConfigurationModule.MAIL_QUEUE_VIEW_CONFIGURATION);
 
+    private static final int DEFAULT_BUCKET_COUNT = 10;
+    private static final int DEFAULT_UPDATE_PACE = 100;
+    private static final Duration ONE_HOUR = Duration.ofHours(1);
+    private static final Duration TWO_HOURS = Duration.ofHours(2);
+    private static final Duration FORTY_FIVE_MINUTES = Duration.ofMinutes(45);
+    private static final Duration THIRTY_MINUTES = Duration.ofMinutes(30);
+
     private static final CassandraMailQueueViewConfiguration FIRST_CONFIGURATION = CassandraMailQueueViewConfiguration.builder()
-        .bucketCount(1)
-        .updateBrowseStartPace(1)
-        .sliceWindow(Duration.ofHours(1))
+        .bucketCount(DEFAULT_BUCKET_COUNT)
+        .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+        .sliceWindow(ONE_HOUR)
         .build();
     private static final CassandraMailQueueViewConfiguration SECOND_CONFIGURATION = CassandraMailQueueViewConfiguration.builder()
-        .bucketCount(2)
-        .updateBrowseStartPace(2)
-        .sliceWindow(Duration.ofHours(2))
+        .bucketCount(DEFAULT_BUCKET_COUNT + 1)
+        .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+        .sliceWindow(ONE_HOUR)
         .build();
     private static final CassandraMailQueueViewConfiguration THIRD_CONFIGURATION = CassandraMailQueueViewConfiguration.builder()
-        .bucketCount(3)
-        .updateBrowseStartPace(3)
-        .sliceWindow(Duration.ofHours(3))
+        .bucketCount(DEFAULT_BUCKET_COUNT + 2)
+        .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+        .sliceWindow(ONE_HOUR)
         .build();
 
     private EventsourcingConfigurationManagement createConfigurationManagement(EventStore eventStore) {
@@ -85,10 +92,38 @@ class EventsourcingConfigurationManagementTest {
     @Test
     void storeShouldThrowWhenBucketCountIsLessThanTheCurrentOne(EventStore eventStore) {
         EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
-        testee.store(SECOND_CONFIGURATION);
+        testee.store(CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+            .sliceWindow(ONE_HOUR)
+            .build());
 
-        assertThatThrownBy(() -> testee.store(FIRST_CONFIGURATION))
+        assertThatThrownBy(() -> testee.store(CassandraMailQueueViewConfiguration.builder()
+                .bucketCount(DEFAULT_BUCKET_COUNT - 1)
+                .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+                .sliceWindow(ONE_HOUR)
+                .build()))
             .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void storeShouldWorkWhenIncreaseBucketCount(EventStore eventStore) {
+        EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
+        testee.store(CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+            .sliceWindow(ONE_HOUR)
+            .build());
+
+        CassandraMailQueueViewConfiguration increaseOneBucketConfiguration = CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT + 1)
+            .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+            .sliceWindow(ONE_HOUR)
+            .build();
+        testee.store(increaseOneBucketConfiguration);
+
+        assertThat(testee.load())
+            .contains(increaseOneBucketConfiguration);
     }
 
     @Test
@@ -109,6 +144,98 @@ class EventsourcingConfigurationManagementTest {
 
         assertThat(storedConfiguration)
             .isEqualTo(FIRST_CONFIGURATION);
+    }
+
+    @Test
+    void storeShouldThrowWhenIncreaseSliceWindow(EventStore eventStore) {
+        EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
+        testee.store(CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+            .sliceWindow(ONE_HOUR)
+            .build());
+
+        assertThatThrownBy(() -> testee.store(CassandraMailQueueViewConfiguration.builder()
+                .bucketCount(DEFAULT_BUCKET_COUNT)
+                .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+                .sliceWindow(TWO_HOURS)
+                .build()))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+    @Test
+    void storeShouldThrowWhenDecreaseSliceWindowByANotDivisibleNumber(EventStore eventStore) {
+        EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
+        testee.store(CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+            .sliceWindow(ONE_HOUR)
+            .build());
+
+        assertThatThrownBy(() -> testee.store(CassandraMailQueueViewConfiguration.builder()
+                .bucketCount(DEFAULT_BUCKET_COUNT)
+                .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+                .sliceWindow(FORTY_FIVE_MINUTES)
+                .build()))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+    @Test
+    void storeShouldWorkWhenDecreaseSliceWindowByADivisibleNumber(EventStore eventStore) {
+        EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
+        testee.store(CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+            .sliceWindow(ONE_HOUR)
+            .build());
+
+        CassandraMailQueueViewConfiguration decreaseTwiceSliceWindowConfiguration = CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+            .sliceWindow(THIRTY_MINUTES)
+            .build();
+        testee.store(decreaseTwiceSliceWindowConfiguration);
+
+        assertThat(testee.load())
+            .contains(decreaseTwiceSliceWindowConfiguration);
+    }
+
+    @Test
+    void storeShouldWorkWhenIncreaseUpdatePace(EventStore eventStore) {
+        EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
+        testee.store(CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+            .sliceWindow(ONE_HOUR)
+            .build());
+
+        CassandraMailQueueViewConfiguration decreaseTwiceSliceWindowConfiguration = CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_UPDATE_PACE + 10)
+            .sliceWindow(ONE_HOUR)
+            .build();
+        testee.store(decreaseTwiceSliceWindowConfiguration);
+
+        assertThat(testee.load())
+            .contains(decreaseTwiceSliceWindowConfiguration);
+    }
+
+    @Test
+    void storeShouldWorkWhenDeIncreaseUpdatePace(EventStore eventStore) {
+        EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
+        testee.store(CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_UPDATE_PACE)
+            .sliceWindow(ONE_HOUR)
+            .build());
+
+        CassandraMailQueueViewConfiguration decreaseTwiceSliceWindowConfiguration = CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_UPDATE_PACE - 10)
+            .sliceWindow(ONE_HOUR)
+            .build();
+        testee.store(decreaseTwiceSliceWindowConfiguration);
+
+        assertThat(testee.load())
+            .contains(decreaseTwiceSliceWindowConfiguration);
     }
 
     @Test

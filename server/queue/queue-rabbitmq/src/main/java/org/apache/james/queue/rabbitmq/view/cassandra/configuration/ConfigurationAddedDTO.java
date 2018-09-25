@@ -33,19 +33,19 @@ import com.google.common.base.Preconditions;
 
 class ConfigurationAddedDTO implements EventDTO {
 
-    static ConfigurationAddedDTO from(ConfigurationAdded configurationAdded, String type) {
-        Preconditions.checkNotNull(configurationAdded);
+    static ConfigurationAddedDTO from(ConfigurationEdited configurationEdited, String type) {
+        Preconditions.checkNotNull(configurationEdited);
 
-        CassandraMailQueueViewConfiguration configuration = configurationAdded.getConfiguration();
+        CassandraMailQueueViewConfiguration configuration = configurationEdited.getConfiguration();
         return new ConfigurationAddedDTO(
-            configurationAdded.eventId().serialize(),
+            configurationEdited.eventId().serialize(),
             type, configuration.getBucketCount(),
             configuration.getUpdateBrowseStartPace(),
             configuration.getSliceWindow());
     }
 
-    static ConfigurationAddedDTO from(ConfigurationAdded configurationAdded) {
-        return from(configurationAdded, CassandraMailQueueViewConfigurationModule.TYPE);
+    static ConfigurationAddedDTO from(ConfigurationEdited configurationEdited) {
+        return from(configurationEdited, CassandraMailQueueViewConfigurationModule.TYPE);
     }
 
     private final int eventId;
@@ -72,7 +72,7 @@ class ConfigurationAddedDTO implements EventDTO {
     @JsonIgnore
     @Override
     public Event toEvent() {
-        return new ConfigurationAdded(
+        return new ConfigurationEdited(
             EventId.fromSerialized(eventId),
             CassandraMailQueueViewConfiguration.builder()
                 .bucketCount(bucketCount)

@@ -19,17 +19,18 @@
 
 package org.apache.james.queue.rabbitmq.view.cassandra.configuration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.time.Duration;
 
 import org.apache.james.eventsourcing.EventId;
-import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-class ConfigurationAddedDTOTest {
+class ConfigurationEditedDTOTest {
 
     private static final int EVENT_ID_SERIALIZED = 10;
     private static final EventId EVENT_ID = EventId.fromSerialized(EVENT_ID_SERIALIZED);
@@ -51,7 +52,7 @@ class ConfigurationAddedDTOTest {
 
     @Test
     void fromShouldReturnCorrespondingDTO() {
-        ConfigurationAdded configurationAdded = new ConfigurationAdded(
+        ConfigurationEdited configurationEdited = new ConfigurationEdited(
             EVENT_ID,
             CassandraMailQueueViewConfiguration.builder()
                 .bucketCount(BUCKET_COUNT)
@@ -59,13 +60,13 @@ class ConfigurationAddedDTOTest {
                 .sliceWindow(ONE_HOUR)
                 .build());
 
-        ConfigurationAddedDTO dto = ConfigurationAddedDTO.from(configurationAdded);
-        SoftAssertions softly = new SoftAssertions();
-        softly.assertThat(dto.getEventId()).isEqualTo(EVENT_ID_SERIALIZED);
-        softly.assertThat(dto.getType()).isEqualTo(CassandraMailQueueViewConfigurationModule.TYPE);
-        softly.assertThat(dto.getBucketCount()).isEqualTo(BUCKET_COUNT);
-        softly.assertThat(dto.getUpdateBrowseStartPace()).isEqualTo(UPDATE_PACE);
-        softly.assertThat(dto.getSliceWindow()).isEqualTo(ONE_HOUR);
-        softly.assertAll();
+
+        ConfigurationAddedDTO dto = ConfigurationAddedDTO.from(configurationEdited);
+        assertAll(
+            () -> assertThat(dto.getEventId()).isEqualTo(EVENT_ID_SERIALIZED),
+            () -> assertThat(dto.getType()).isEqualTo(CassandraMailQueueViewConfigurationModule.TYPE),
+            () -> assertThat(dto.getBucketCount()).isEqualTo(BUCKET_COUNT),
+            () -> assertThat(dto.getUpdateBrowseStartPace()).isEqualTo(UPDATE_PACE),
+            () -> assertThat(dto.getSliceWindow()).isEqualTo(ONE_HOUR));
     }
 }
