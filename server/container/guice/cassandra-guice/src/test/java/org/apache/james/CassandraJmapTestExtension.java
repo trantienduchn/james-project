@@ -80,6 +80,11 @@ public class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEach
             return this;
         }
 
+        public Builder defaultOverrideModules(Module... defaultOverrideModules) {
+            this.overrideModule = Modules.combine(defaultOverrideModules);
+            return this;
+        }
+
         public Builder overrideModules(Module... additionalModules) {
             this.overrideModule = Modules.override(this.overrideModule)
                 .with(additionalModules);
@@ -107,11 +112,10 @@ public class CassandraJmapTestExtension implements BeforeAllCallback, BeforeEach
 
     private static final int LIMIT_TO_10_MESSAGES = 10;
 
-    private static final Module DEFAULT_MODULE = Modules
-        .override(
-            binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class),
-            new TestJMAPServerModule(LIMIT_TO_10_MESSAGES))
-        .with(new TestESMetricReporterModule());
+    private static final Module DEFAULT_MODULE = Modules.combine(
+        binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class),
+        new TestJMAPServerModule(LIMIT_TO_10_MESSAGES),
+        new TestESMetricReporterModule());
 
     private static final ImmutableList<GuiceModuleTestExtension> EMPTY_EXTENSIONS = ImmutableList.of();
     public static final GuiceModuleTestExtension EMBEDDED_ES = new EmbeddedElasticSearchExtension();
