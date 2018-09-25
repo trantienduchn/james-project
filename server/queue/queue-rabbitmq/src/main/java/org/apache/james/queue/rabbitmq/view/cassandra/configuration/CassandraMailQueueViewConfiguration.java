@@ -70,13 +70,13 @@ public class CassandraMailQueueViewConfiguration {
 
     public static CassandraMailQueueViewConfiguration from(Configuration configuration) {
         long sliceWindowInSecond = configuration.getLong(SLICE_WINDOW_PROPERTY_NAME);
-        Preconditions.checkState(sliceWindowInSecond > 1, "'sliceWindow' is a duration, then have to be positive");
+        Preconditions.checkState(sliceWindowInSecond >= MINIMAL_SLICE_WINDOW, "'sliceWindow' is a duration, then have to be positive");
 
         int bucketCount = configuration.getInt(BUCKET_COUNT_PROPERTY_NAME);
-        Preconditions.checkState(bucketCount > 1, "'bucketCount' count have to be positive");
+        Preconditions.checkState(bucketCount >= MINIMAL_BUCKET_COUNT, "'bucketCount' count have to be positive");
 
         int updateBrowseStartPace = configuration.getInt(UPDATE_BROWSE_START_PACE_PROPERTY_NAME);
-        Preconditions.checkState(updateBrowseStartPace > 1, "'updateBrowseStartPace' have to be positive");
+        Preconditions.checkState(updateBrowseStartPace >= MINIMAL_UPDATE_BROWSE_START_PACE, "'updateBrowseStartPace' have to be positive");
 
         return builder()
             .bucketCount(bucketCount)
@@ -84,6 +84,10 @@ public class CassandraMailQueueViewConfiguration {
             .sliceWindow(Duration.ofSeconds(sliceWindowInSecond))
             .build();
     }
+
+    private static final int MINIMAL_SLICE_WINDOW = 1;
+    private static final int MINIMAL_BUCKET_COUNT = 1;
+    private static final int MINIMAL_UPDATE_BROWSE_START_PACE = 1;
 
     private static final String SLICE_WINDOW_PROPERTY_NAME = "sliceWindow";
     private static final String BUCKET_COUNT_PROPERTY_NAME = "bucketCount";
