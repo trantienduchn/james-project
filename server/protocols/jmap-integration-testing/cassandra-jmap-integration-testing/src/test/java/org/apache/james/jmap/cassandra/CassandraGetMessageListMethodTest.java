@@ -31,7 +31,7 @@ class CassandraGetMessageListMethodTest extends GetMessageListMethodTest {
     @RegisterExtension
     static CassandraJmapTestExtension testExtension = CassandraJmapTestExtension.builder()
         .extensions(EMBEDDED_ES)
-        .modules(new TestJMAPServerModule(LIMIT_TO_3_MESSAGES))
+        .overrideModules(new TestJMAPServerModule(LIMIT_TO_3_MESSAGES))
         .build();
 
     @Override

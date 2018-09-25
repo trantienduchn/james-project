@@ -41,7 +41,7 @@ public class JamesCapabilitiesServerTest {
 
     @RegisterExtension
     static CassandraJmapTestExtension testExtension = CassandraJmapTestExtension.builder()
-        .modules(
+        .overrideModules(
             (binder) -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class),
             new TestJMAPServerModule(GetMessageListMethod.DEFAULT_MAXIMUM_LIMIT))
         .extensions(EMBEDDED_ES)

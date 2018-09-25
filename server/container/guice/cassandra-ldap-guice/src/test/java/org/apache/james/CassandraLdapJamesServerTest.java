@@ -57,7 +57,7 @@ public class CassandraLdapJamesServerTest implements JmapJamesServerContract {
     @RegisterExtension
     static CassandraJmapTestExtension testExtension = CassandraJmapTestExtension.builder()
         .coreModule(CassandraLdapJamesServerMain.cassandraLdapServerModule)
-        .modules(
+        .overrideModules(
             new TestJMAPServerModule(LIMIT_TO_3_MESSAGES),
             DOMAIN_LIST_CONFIGURATION_MODULE)
         .extensions(embbededESExtension, ldapExtension)

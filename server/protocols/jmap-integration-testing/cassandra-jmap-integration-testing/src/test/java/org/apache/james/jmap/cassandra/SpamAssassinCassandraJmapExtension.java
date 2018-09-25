@@ -52,7 +52,7 @@ public class SpamAssassinCassandraJmapExtension implements BeforeAllCallback, Af
         this.spamAssassinExtension = new SpamAssassinExtension();
         this.jamesExtension = CassandraJmapTestExtension.builder()
             .extensions(EMBEDDED_ES)
-            .modules(
+            .overrideModules(
                 binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class),
                 new TestJMAPServerModule(LIMIT_TO_20_MESSAGES),
                 new TestESMetricReporterModule(),
@@ -78,15 +78,15 @@ public class SpamAssassinCassandraJmapExtension implements BeforeAllCallback, Af
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
+        jamesExtension.beforeEach(context);
         james = james();
         spamAssassinExtension.beforeEach(context);
-        james.getJmapServer().start();
     }
 
     @Override
-    public void afterEach(ExtensionContext context) {
-        james.getJmapServer().stop();
+    public void afterEach(ExtensionContext context) throws Exception {
         spamAssassinExtension.afterEach(context);
+        jamesExtension.afterEach(context);
     }
 
     @Override
