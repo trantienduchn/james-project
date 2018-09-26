@@ -56,11 +56,12 @@ public class CassandraMailQueueViewModule extends AbstractModule {
     @Singleton
     private CassandraMailQueueViewConfiguration getMailQueueViewConfiguration(EventsourcingConfigurationManagement configurationManagement,
                                                                               PropertiesProvider propertiesProvider) {
-        return configurationManagement
-            .loadIfAbsent(() -> loadInitialConfiguration(propertiesProvider));
+        CassandraMailQueueViewConfiguration configurationFromPropertiesFile = loadConfiguration(propertiesProvider);
+        configurationManagement.applyNewConfiguration(configurationFromPropertiesFile);
+        return configurationFromPropertiesFile;
     }
 
-    private CassandraMailQueueViewConfiguration loadInitialConfiguration(PropertiesProvider propertiesProvider) {
+    private CassandraMailQueueViewConfiguration loadConfiguration(PropertiesProvider propertiesProvider) {
         try {
             Configuration configuration = propertiesProvider.getConfiguration(CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME);
             return CassandraMailQueueViewConfiguration.from(configuration);
