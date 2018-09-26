@@ -25,10 +25,10 @@ public interface CassandraMailQueueViewConfigurationModule {
 
     String TYPE = "cassandra-mail-queue-view-configuration";
 
-    EventDTOModule<ConfigurationEdited, ConfigurationAddedDTO> MAIL_QUEUE_VIEW_CONFIGURATION =
+    EventDTOModule<ConfigurationEdited, ConfigurationEditedDTO> MAIL_QUEUE_VIEW_CONFIGURATION =
         EventDTOModule
             .forEvent(ConfigurationEdited.class)
-            .convertToDTO(ConfigurationAddedDTO.class)
-            .convertWith(ConfigurationAddedDTO::from)
+            .convertToDTO(ConfigurationEditedDTO.class)
+            .convertWith(ConfigurationEditedDTO::from)
             .typeName(TYPE);
 }

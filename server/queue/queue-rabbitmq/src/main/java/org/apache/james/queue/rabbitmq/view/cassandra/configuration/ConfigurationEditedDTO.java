@@ -31,20 +31,20 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Preconditions;
 
-class ConfigurationAddedDTO implements EventDTO {
+class ConfigurationEditedDTO implements EventDTO {
 
-    static ConfigurationAddedDTO from(ConfigurationEdited configurationEdited, String type) {
+    static ConfigurationEditedDTO from(ConfigurationEdited configurationEdited, String type) {
         Preconditions.checkNotNull(configurationEdited);
 
         CassandraMailQueueViewConfiguration configuration = configurationEdited.getConfiguration();
-        return new ConfigurationAddedDTO(
+        return new ConfigurationEditedDTO(
             configurationEdited.eventId().serialize(),
             type, configuration.getBucketCount(),
             configuration.getUpdateBrowseStartPace(),
             configuration.getSliceWindow());
     }
 
-    static ConfigurationAddedDTO from(ConfigurationEdited configurationEdited) {
+    static ConfigurationEditedDTO from(ConfigurationEdited configurationEdited) {
         return from(configurationEdited, CassandraMailQueueViewConfigurationModule.TYPE);
     }
 
@@ -55,7 +55,7 @@ class ConfigurationAddedDTO implements EventDTO {
     private final Duration sliceWindow;
 
     @JsonCreator
-    ConfigurationAddedDTO(
+    ConfigurationEditedDTO(
         @JsonProperty("eventId") int eventId,
         @JsonProperty("type") String type,
         @JsonProperty("bucketCount") int bucketCount,
@@ -103,8 +103,8 @@ class ConfigurationAddedDTO implements EventDTO {
 
     @Override
     public final boolean equals(Object o) {
-        if (o instanceof ConfigurationAddedDTO) {
-            ConfigurationAddedDTO that = (ConfigurationAddedDTO) o;
+        if (o instanceof ConfigurationEditedDTO) {
+            ConfigurationEditedDTO that = (ConfigurationEditedDTO) o;
 
             return Objects.equals(this.eventId, that.eventId)
                 && Objects.equals(this.type, that.type)

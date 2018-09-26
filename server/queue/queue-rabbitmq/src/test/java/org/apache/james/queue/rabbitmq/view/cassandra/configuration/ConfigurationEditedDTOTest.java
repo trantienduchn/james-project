@@ -19,6 +19,8 @@
 
 package org.apache.james.queue.rabbitmq.view.cassandra.configuration;
 
+import static org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMailQueueViewConfigurationModule.TYPE;
+import static org.apache.james.queue.rabbitmq.view.cassandra.configuration.ConfigurationAggregate.CONFIGURATION_AGGREGATE_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -40,13 +42,13 @@ class ConfigurationEditedDTOTest {
 
     @Test
     void shouldMatchBeanContract() {
-        EqualsVerifier.forClass(ConfigurationAddedDTO.class)
+        EqualsVerifier.forClass(ConfigurationEditedDTO.class)
             .verify();
     }
 
     @Test
     void fromShouldThrowWhenConfigurationAddedIsNull() {
-        assertThatThrownBy(() -> ConfigurationAddedDTO.from(null))
+        assertThatThrownBy(() -> ConfigurationEditedDTO.from(null))
             .isInstanceOf(NullPointerException.class);
     }
 
@@ -61,12 +63,25 @@ class ConfigurationEditedDTOTest {
                 .build());
 
 
-        ConfigurationAddedDTO dto = ConfigurationAddedDTO.from(configurationEdited);
+        ConfigurationEditedDTO dto = ConfigurationEditedDTO.from(configurationEdited);
         assertAll(
             () -> assertThat(dto.getEventId()).isEqualTo(EVENT_ID_SERIALIZED),
-            () -> assertThat(dto.getType()).isEqualTo(CassandraMailQueueViewConfigurationModule.TYPE),
+            () -> assertThat(dto.getType()).isEqualTo(TYPE),
             () -> assertThat(dto.getBucketCount()).isEqualTo(BUCKET_COUNT),
             () -> assertThat(dto.getUpdateBrowseStartPace()).isEqualTo(UPDATE_PACE),
             () -> assertThat(dto.getSliceWindow()).isEqualTo(ONE_HOUR));
+    }
+
+    @Test
+    void toEventShouldReturnCorrespondingConfigurationEditedEvent() {
+        ConfigurationEditedDTO dto = new ConfigurationEditedDTO(EVENT_ID_SERIALIZED, TYPE, BUCKET_COUNT, UPDATE_PACE, ONE_HOUR);
+        ConfigurationEdited event = (ConfigurationEdited) dto.toEvent();
+        CassandraMailQueueViewConfiguration mailQueueViewConfiguration = event.getConfiguration();
+        assertAll(
+            () -> assertThat(event.eventId()).isEqualTo(EVENT_ID),
+            () -> assertThat(event.getAggregateId().asAggregateKey()).isEqualTo(CONFIGURATION_AGGREGATE_KEY),
+            () -> assertThat(mailQueueViewConfiguration.getBucketCount()).isEqualTo(BUCKET_COUNT),
+            () -> assertThat(mailQueueViewConfiguration.getUpdateBrowseStartPace()).isEqualTo(UPDATE_PACE),
+            () -> assertThat(mailQueueViewConfiguration.getSliceWindow()).isEqualTo(ONE_HOUR));
     }
 }
