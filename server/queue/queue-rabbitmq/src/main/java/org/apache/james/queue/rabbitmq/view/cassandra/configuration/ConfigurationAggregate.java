@@ -25,18 +25,13 @@ import java.util.Optional;
 import org.apache.james.eventsourcing.AggregateId;
 import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.eventstore.History;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
-
 class ConfigurationAggregate {
 
     private static class State {
-
-        private static final Logger LOGGER = LoggerFactory.getLogger(State.class);
 
         private static State initial() {
             return new State(Optional.empty());
@@ -49,36 +44,13 @@ class ConfigurationAggregate {
             this.maybeConfiguration = maybeConfiguration;
         }
 
-        boolean set(CassandraMailQueueViewConfiguration configuration) {
-            validateConfiguration(configuration);
-            boolean isSame = maybeConfiguration
-                .map(currentConfiguration -> currentConfiguration.equals(configuration))
-                .orElse(false);
-
-            if (!isSame) {
-                maybeConfiguration = Optional.of(configuration);
-                return true;
-            } else {
-                return false;
-            }
+        void set(CassandraMailQueueViewConfiguration configuration) {
+            maybeConfiguration = Optional.of(configuration);
         }
 
-        private void validateConfiguration(CassandraMailQueueViewConfiguration configurationUpdate) {
-            Preconditions.checkNotNull(configurationUpdate);
-
-            maybeConfiguration.ifPresent(currentConfiguration -> {
-                Preconditions.checkArgument(configurationUpdate.getBucketCount() >= currentConfiguration.getBucketCount(),
-                    "can not set 'bucketCount'(" + configurationUpdate.getBucketCount() + ") to be less than the current one: "
-                        + currentConfiguration.getBucketCount());
-
-                long updateSliceWindowInSecond = configurationUpdate.getSliceWindow().getSeconds();
-                long currentSliceWindowInSecond = currentConfiguration.getSliceWindow().getSeconds();
-                Preconditions.checkArgument(
-                    updateSliceWindowInSecond <= currentSliceWindowInSecond
-                        && currentSliceWindowInSecond % updateSliceWindowInSecond == 0,
-                    "update 'sliceWindow'(" + configurationUpdate.getSliceWindow() + ") have to be less than and divisible by the current one: "
-                        + currentConfiguration.getSliceWindow());
-            });
+        private void validateUpdateConfiguration(CassandraMailQueueViewConfiguration configurationUpdate) {
+            maybeConfiguration.ifPresent(
+                currentConfiguration -> currentConfiguration.validateUpdateConfiguration(configurationUpdate));
         }
     }
 
@@ -101,24 +73,29 @@ class ConfigurationAggregate {
     }
 
     List<? extends Event> applyConfiguration(CassandraMailQueueViewConfiguration configuration) {
-        ConfigurationEdited newEvent = new ConfigurationEdited(
-            history.getNextEventId(),
-            configuration);
+        state.validateUpdateConfiguration(configuration);
 
-        return apply(newEvent);
+        boolean configurationDuplicated = state.maybeConfiguration
+            .map(configuration::equals)
+            .orElse(false);
+        if (configurationDuplicated) {
+            return EMPTY_EVENTS;
+        }
+
+        return ImmutableList.of(new ConfigurationEdited(
+            history.getNextEventId(),
+            configuration));
     }
 
     Optional<CassandraMailQueueViewConfiguration> getCurrentConfiguration() {
         return state.maybeConfiguration;
     }
 
-    private List<? extends Event> apply(Event event) {
+    private void apply(Event event) {
         if (event instanceof ConfigurationEdited) {
-            if (state.set(((ConfigurationEdited) event).getConfiguration())) {
-                return ImmutableList.of(event);
-            }
-        }
+            ConfigurationEdited configurationEdited = (ConfigurationEdited) event;
 
-        return EMPTY_EVENTS;
+            state.set(configurationEdited.getConfiguration());
+        }
     }
 }

@@ -75,15 +75,15 @@ public class CassandraMailQueueViewConfiguration {
     public static CassandraMailQueueViewConfiguration from(Configuration configuration) {
         long sliceWindowInSecond = configuration.getLong(SLICE_WINDOW_PROPERTY_NAME);
         Preconditions.checkState(sliceWindowInSecond >= MINIMAL_SLICE_WINDOW_IN_SECONDS,
-            SLICE_WINDOW_PROPERTY_NAME + " is a duration, then have to be positive");
+            SLICE_WINDOW_PROPERTY_NAME + " is a duration, then have to be strictly positive");
 
         int bucketCount = configuration.getInt(BUCKET_COUNT_PROPERTY_NAME);
         Preconditions.checkState(bucketCount >= MINIMAL_BUCKET_COUNT,
-            BUCKET_COUNT_PROPERTY_NAME + " have to be positive");
+            BUCKET_COUNT_PROPERTY_NAME + " have to be strictly positive");
 
         int updateBrowseStartPace = configuration.getInt(UPDATE_BROWSE_START_PACE_PROPERTY_NAME);
         Preconditions.checkState(updateBrowseStartPace >= MINIMAL_UPDATE_BROWSE_START_PACE,
-            UPDATE_BROWSE_START_PACE_PROPERTY_NAME + " have to be positive");
+            UPDATE_BROWSE_START_PACE_PROPERTY_NAME + " have to be strictly positive");
 
         return builder()
             .bucketCount(bucketCount)
@@ -104,8 +104,8 @@ public class CassandraMailQueueViewConfiguration {
         .sliceWindow(DEFAULT_SLICE_WINDOW)
         .build();
 
-    private static final String SLICE_WINDOW_PROPERTY_NAME = "sliceWindow";
-    private static final String BUCKET_COUNT_PROPERTY_NAME = "bucketCount";
+    static final String SLICE_WINDOW_PROPERTY_NAME = "sliceWindow";
+    static final String BUCKET_COUNT_PROPERTY_NAME = "bucketCount";
     private static final String UPDATE_BROWSE_START_PACE_PROPERTY_NAME = "updateBrowseStartPace";
 
     private final int bucketCount;
@@ -130,6 +130,29 @@ public class CassandraMailQueueViewConfiguration {
 
     public Duration getSliceWindow() {
         return sliceWindow;
+    }
+
+    void validateUpdateConfiguration(CassandraMailQueueViewConfiguration configurationUpdate) {
+        Preconditions.checkNotNull(configurationUpdate);
+        validateSliceWindow(configurationUpdate);
+        validateBucketCount(configurationUpdate);
+    }
+
+    private void validateSliceWindow(CassandraMailQueueViewConfiguration configurationUpdate) {
+        long updateSliceWindowInSecond = configurationUpdate.getSliceWindow().getSeconds();
+        long currentSliceWindowInSecond = sliceWindow.getSeconds();
+        Preconditions.checkArgument(
+            updateSliceWindowInSecond <= currentSliceWindowInSecond
+                && currentSliceWindowInSecond % updateSliceWindowInSecond == 0,
+            String.format("new %s (%d) have to be less than and should divide previous one: %d",
+                SLICE_WINDOW_PROPERTY_NAME, updateSliceWindowInSecond, currentSliceWindowInSecond));
+    }
+
+    private void validateBucketCount(CassandraMailQueueViewConfiguration configurationUpdate) {
+        int updateBucketCount = configurationUpdate.getBucketCount();
+        Preconditions.checkArgument(updateBucketCount >= bucketCount,
+            String.format("can not set %s (%d) to be less than the current one: %d",
+                BUCKET_COUNT_PROPERTY_NAME, updateBucketCount, bucketCount));
     }
 
     @Override

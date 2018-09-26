@@ -59,10 +59,6 @@ public class EventsourcingConfigurationManagement {
     public void applyNewConfiguration(CassandraMailQueueViewConfiguration newConfiguration) {
         Preconditions.checkNotNull(newConfiguration);
 
-        ConfigurationAggregate
-            .load(eventStore.getEventsOfAggregate(CONFIGURATION_AGGREGATE_ID))
-            .applyConfiguration(newConfiguration);
-
         eventSourcingSystem.dispatch(new ConfigurationStoreCommand(newConfiguration));
     }
 }

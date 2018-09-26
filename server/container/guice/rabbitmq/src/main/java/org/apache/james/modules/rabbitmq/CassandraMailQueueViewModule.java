@@ -68,8 +68,7 @@ public class CassandraMailQueueViewModule extends AbstractModule {
         } catch (FileNotFoundException e) {
             LOGGER.error("Could not find " + CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME + " configuration file. Using the default one");
         } catch (ConfigurationException e) {
-            LOGGER.error("Error happens while reading configs from " + CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME + " configuration file. " +
-                "Using the default one");
+            throw new RuntimeException(e);
         }
 
         return CassandraMailQueueViewConfiguration.DEFAULT;
