@@ -54,6 +54,9 @@ class ConfigurationAggregate {
             Preconditions.checkNotNull(configurationUpdate);
 
             maybeConfiguration.ifPresent(currentConfiguration -> {
+                Preconditions.checkArgument(!currentConfiguration.equals(configurationUpdate),
+                    "new configuration need to be different from the current configuration: " + currentConfiguration.toString());
+
                 Preconditions.checkArgument(configurationUpdate.getBucketCount() >= currentConfiguration.getBucketCount(),
                     "can not set 'bucketCount'(" + configurationUpdate.getBucketCount() + ") to be less than the current one: "
                         + currentConfiguration.getBucketCount());

@@ -219,7 +219,7 @@ class EventsourcingConfigurationManagementTest {
     }
 
     @Test
-    void storeShouldWorkWhenDeIncreaseUpdatePace(EventStore eventStore) {
+    void storeShouldWorkWhenDecreaseUpdatePace(EventStore eventStore) {
         EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
         testee.store(CassandraMailQueueViewConfiguration.builder()
             .bucketCount(DEFAULT_BUCKET_COUNT)
@@ -236,6 +236,15 @@ class EventsourcingConfigurationManagementTest {
 
         assertThat(testee.load())
             .contains(decreaseTwiceSliceWindowConfiguration);
+    }
+
+    @Test
+    void storeShouldThrowWhenStoreTheSameConfigurationTwice(EventStore eventStore) {
+        EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
+        testee.store(FIRST_CONFIGURATION);
+
+        assertThatThrownBy(() -> testee.store(FIRST_CONFIGURATION))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
