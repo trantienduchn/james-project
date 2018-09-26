@@ -65,11 +65,12 @@ public class CassandraMailQueueViewModule extends AbstractModule {
             Configuration configuration = propertiesProvider.getConfiguration(CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME);
             return CassandraMailQueueViewConfiguration.from(configuration);
         } catch (FileNotFoundException e) {
-            LOGGER.error("Could not find " + CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME + " configuration file.");
-            throw new RuntimeException(e);
+            LOGGER.error("Could not find " + CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME + " configuration file. Using the default one");
         } catch (ConfigurationException e) {
-            LOGGER.error("Error happens while reading configs from " + CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME + " configuration file.");
-            throw new RuntimeException(e);
+            LOGGER.error("Error happens while reading configs from " + CASSANDRA_MAIL_QUEUE_VIEW_CONFIGURATION_NAME + " configuration file. " +
+                "Using the default one");
         }
+
+        return CassandraMailQueueViewConfiguration.DEFAULT;
     }
 }
