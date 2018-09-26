@@ -19,11 +19,14 @@
 
 package org.apache.james.queue.rabbitmq.view.cassandra.configuration;
 
+import static org.apache.james.queue.rabbitmq.view.cassandra.configuration.ConfigurationAggregate.CONFIGURATION_AGGREGATE_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
+import java.util.List;
 
+import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.eventstore.EventStore;
 import org.apache.james.eventsourcing.eventstore.cassandra.CassandraEventStoreExtension;
 import org.junit.jupiter.api.Test;
@@ -90,7 +93,7 @@ class EventsourcingConfigurationManagementTest {
     }
 
     @Test
-    void applyNewConfigurationShouldThrowWhenBucketCountIsLessThanTheCurrentOne(EventStore eventStore) {
+    void applyNewConfigurationShouldNotStoreWhenBucketCountIsLessThanTheCurrentOne(EventStore eventStore) {
         EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
         testee.applyNewConfiguration(CassandraMailQueueViewConfiguration.builder()
             .bucketCount(DEFAULT_BUCKET_COUNT)
@@ -229,11 +232,14 @@ class EventsourcingConfigurationManagementTest {
     }
 
     @Test
-    void applyNewConfigurationShouldThrowWhenStoreTheSameConfigurationTwice(EventStore eventStore) {
+    void applyNewConfigurationShouldIgnoreDuplicateWhenStoreTheSameConfigurationTwice(EventStore eventStore) {
         EventsourcingConfigurationManagement testee = createConfigurationManagement(eventStore);
         testee.applyNewConfiguration(FIRST_CONFIGURATION);
+        testee.applyNewConfiguration(FIRST_CONFIGURATION);
 
-        assertThatThrownBy(() -> testee.applyNewConfiguration(FIRST_CONFIGURATION))
-            .isInstanceOf(IllegalArgumentException.class);
+        List<Event> eventsStored = eventStore.getEventsOfAggregate(CONFIGURATION_AGGREGATE_ID)
+            .getEvents();
+        assertThat(eventsStored)
+            .hasSize(1);
     }
 }

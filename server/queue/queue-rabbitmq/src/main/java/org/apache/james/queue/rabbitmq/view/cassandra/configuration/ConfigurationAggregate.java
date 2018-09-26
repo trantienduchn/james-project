@@ -25,13 +25,18 @@ import java.util.Optional;
 import org.apache.james.eventsourcing.AggregateId;
 import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.eventstore.History;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 
+
 class ConfigurationAggregate {
 
     private static class State {
+
+        private static final Logger LOGGER = LoggerFactory.getLogger(State.class);
 
         private static State initial() {
             return new State(Optional.empty());
@@ -44,19 +49,24 @@ class ConfigurationAggregate {
             this.maybeConfiguration = maybeConfiguration;
         }
 
-        void set(CassandraMailQueueViewConfiguration configuration) {
+        boolean set(CassandraMailQueueViewConfiguration configuration) {
             validateConfiguration(configuration);
+            boolean isSame = maybeConfiguration
+                .map(currentConfiguration -> currentConfiguration.equals(configuration))
+                .orElse(false);
 
-            maybeConfiguration = Optional.of(configuration);
+            if (!isSame) {
+                maybeConfiguration = Optional.of(configuration);
+                return true;
+            } else {
+                return false;
+            }
         }
 
         private void validateConfiguration(CassandraMailQueueViewConfiguration configurationUpdate) {
             Preconditions.checkNotNull(configurationUpdate);
 
             maybeConfiguration.ifPresent(currentConfiguration -> {
-                Preconditions.checkArgument(!currentConfiguration.equals(configurationUpdate),
-                    "new configuration need to be different from the current configuration: " + currentConfiguration.toString());
-
                 Preconditions.checkArgument(configurationUpdate.getBucketCount() >= currentConfiguration.getBucketCount(),
                     "can not set 'bucketCount'(" + configurationUpdate.getBucketCount() + ") to be less than the current one: "
                         + currentConfiguration.getBucketCount());
@@ -78,6 +88,7 @@ class ConfigurationAggregate {
 
     private static final String CONFIGURATION_AGGREGATE_KEY = "CassandraMailQueueViewConfiguration";
     static final AggregateId CONFIGURATION_AGGREGATE_ID = () -> CONFIGURATION_AGGREGATE_KEY;
+    private static final List<? extends Event> EMPTY_EVENTS = ImmutableList.of();
 
     private final History history;
     private final State state;
@@ -93,18 +104,21 @@ class ConfigurationAggregate {
         ConfigurationEdited newEvent = new ConfigurationEdited(
             history.getNextEventId(),
             configuration);
-        apply(newEvent);
 
-        return ImmutableList.of(newEvent);
+        return apply(newEvent);
     }
 
     Optional<CassandraMailQueueViewConfiguration> getCurrentConfiguration() {
         return state.maybeConfiguration;
     }
 
-    private void apply(Event event) {
+    private List<? extends Event> apply(Event event) {
         if (event instanceof ConfigurationEdited) {
-            state.set(((ConfigurationEdited) event).getConfiguration());
+            if (state.set(((ConfigurationEdited) event).getConfiguration())) {
+                return ImmutableList.of(event);
+            }
         }
+
+        return EMPTY_EVENTS;
     }
 }
