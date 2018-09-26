@@ -55,9 +55,12 @@ public class CassandraMailQueueViewConfiguration {
             }
 
             public CassandraMailQueueViewConfiguration build() {
-                Preconditions.checkNotNull(sliceWindow, "'sliceWindow' is compulsory");
-                Preconditions.checkState(bucketCount > 0, "'bucketCount' needs to be a strictly positive integer");
-                Preconditions.checkState(updateBrowseStartPace > 0, "'updateBrowseStartPace' needs to be a strictly positive integer");
+                Preconditions.checkNotNull(sliceWindow,
+                    SLICE_WINDOW_PROPERTY_NAME + " is compulsory");
+                Preconditions.checkState(bucketCount > 0,
+                    BUCKET_COUNT_PROPERTY_NAME + " needs to be a strictly positive integer");
+                Preconditions.checkState(updateBrowseStartPace > 0,
+                    UPDATE_BROWSE_START_PACE_PROPERTY_NAME + " needs to be a strictly positive integer");
 
                 return new CassandraMailQueueViewConfiguration(bucketCount, updateBrowseStartPace, sliceWindow);
             }
@@ -70,13 +73,16 @@ public class CassandraMailQueueViewConfiguration {
 
     public static CassandraMailQueueViewConfiguration from(Configuration configuration) {
         long sliceWindowInSecond = configuration.getLong(SLICE_WINDOW_PROPERTY_NAME);
-        Preconditions.checkState(sliceWindowInSecond >= MINIMAL_SLICE_WINDOW, "'sliceWindow' is a duration, then have to be positive");
+        Preconditions.checkState(sliceWindowInSecond >= MINIMAL_SLICE_WINDOW,
+            SLICE_WINDOW_PROPERTY_NAME + " is a duration, then have to be positive");
 
         int bucketCount = configuration.getInt(BUCKET_COUNT_PROPERTY_NAME);
-        Preconditions.checkState(bucketCount >= MINIMAL_BUCKET_COUNT, "'bucketCount' count have to be positive");
+        Preconditions.checkState(bucketCount >= MINIMAL_BUCKET_COUNT,
+            BUCKET_COUNT_PROPERTY_NAME + " have to be positive");
 
         int updateBrowseStartPace = configuration.getInt(UPDATE_BROWSE_START_PACE_PROPERTY_NAME);
-        Preconditions.checkState(updateBrowseStartPace >= MINIMAL_UPDATE_BROWSE_START_PACE, "'updateBrowseStartPace' have to be positive");
+        Preconditions.checkState(updateBrowseStartPace >= MINIMAL_UPDATE_BROWSE_START_PACE,
+            UPDATE_BROWSE_START_PACE_PROPERTY_NAME + " have to be positive");
 
         return builder()
             .bucketCount(bucketCount)
