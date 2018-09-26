@@ -19,8 +19,8 @@
 
 package org.apache.james.queue.rabbitmq.view.cassandra;
 
-import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices.BucketId;
-import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices.Slice;
+import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice.BucketId;
+import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice.Slice;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -35,6 +35,7 @@ import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
 import org.apache.james.queue.rabbitmq.MailQueueName;
+import org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedItemWithSlicingContext;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.MailKey;
 import org.apache.mailet.base.test.FakeMail;
@@ -50,6 +51,7 @@ class EnqueuedMailsDaoTest {
     private static final BucketId BUCKET_ID = BucketId.of(BUCKET_ID_VALUE);
     private static final Instant NOW = Instant.now();
     private static final Slice SLICE_OF_NOW = Slice.of(NOW);
+    private static final BucketedSlice BUCKETED_SLICE = BucketedSlice.of(SLICE_OF_NOW, BUCKET_ID);
 
     private static final BlobId.Factory BLOB_ID_FACTORY = new HashBlobId.Factory();
     private static final BlobId HEADER_BLOB_ID = BLOB_ID_FACTORY.from("header blob id");
@@ -84,12 +86,12 @@ class EnqueuedMailsDaoTest {
                     .enqueuedTime(NOW)
                     .mimeMessagePartsId(MIME_MESSAGE_PARTS_ID)
                     .build())
-                .slicingContext(EnqueuedItemWithSlicingContext.SlicingContext.of(BucketId.of(BUCKET_ID_VALUE), NOW))
+                .slicingContext(BUCKETED_SLICE)
                 .build())
             .join();
 
         Stream<EnqueuedItemWithSlicingContext> selectedEnqueuedMails = testee
-            .selectEnqueuedMails(OUT_GOING_1, SLICE_OF_NOW, BUCKET_ID)
+            .selectEnqueuedMails(OUT_GOING_1, BUCKETED_SLICE)
             .join();
 
         assertThat(selectedEnqueuedMails).hasSize(1);
@@ -106,7 +108,7 @@ class EnqueuedMailsDaoTest {
                     .enqueuedTime(NOW)
                     .mimeMessagePartsId(MIME_MESSAGE_PARTS_ID)
                     .build())
-                .slicingContext(EnqueuedItemWithSlicingContext.SlicingContext.of(BucketId.of(BUCKET_ID_VALUE), NOW))
+                .slicingContext(BUCKETED_SLICE)
                 .build())
             .join();
 
@@ -119,21 +121,21 @@ class EnqueuedMailsDaoTest {
                     .enqueuedTime(NOW)
                     .mimeMessagePartsId(MIME_MESSAGE_PARTS_ID)
                     .build())
-                .slicingContext(EnqueuedItemWithSlicingContext.SlicingContext.of(BucketId.of(BUCKET_ID_VALUE + 1), NOW))
+                .slicingContext(BucketedSlice.of(BucketId.of(BUCKET_ID_VALUE + 1), NOW))
                 .build())
             .join();
 
-        Stream<EnqueuedItemWithSlicingContext> selectedEnqueuedMails = testee.selectEnqueuedMails(OUT_GOING_1, SLICE_OF_NOW, BUCKET_ID)
+        Stream<EnqueuedItemWithSlicingContext> selectedEnqueuedMails = testee.selectEnqueuedMails(OUT_GOING_1, BUCKETED_SLICE)
             .join();
 
         assertThat(selectedEnqueuedMails)
             .hasSize(1)
             .hasOnlyOneElementSatisfying(selectedEnqueuedMail -> {
                 EnqueuedItem enqueuedItem = selectedEnqueuedMail.getEnqueuedItem();
-                EnqueuedItemWithSlicingContext.SlicingContext slicingContext = selectedEnqueuedMail.getSlicingContext();
+                BucketedSlice slicingContext = selectedEnqueuedMail.getSlicingContext();
                 assertAll(
                     () -> assertThat(slicingContext.getBucketId()).isEqualTo(BUCKET_ID),
-                    () -> assertThat(slicingContext.getTimeRangeStart()).isEqualTo(NOW),
+                    () -> assertThat(slicingContext.getSlice()).isEqualTo(Slice.of(NOW)),
                     () -> assertThat(enqueuedItem.getMailQueueName()).isEqualTo(OUT_GOING_1),
                     () -> assertThat(enqueuedItem.getEnqueuedTime()).isEqualTo(NOW),
                     () -> assertThat(enqueuedItem.getMailKey()).isEqualTo(MAIL_KEY_1),

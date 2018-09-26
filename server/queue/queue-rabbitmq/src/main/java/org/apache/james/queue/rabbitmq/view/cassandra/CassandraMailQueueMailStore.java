@@ -27,7 +27,8 @@ import javax.inject.Inject;
 
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
 import org.apache.james.queue.rabbitmq.MailQueueName;
-import org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices.BucketId;
+import org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice;
+import org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice.BucketId;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedItemWithSlicingContext;
 import org.apache.mailet.Mail;
 
@@ -57,7 +58,7 @@ class CassandraMailQueueMailStore {
 
     CompletableFuture<Void> initializeBrowseStart(MailQueueName mailQueueName) {
         return browseStartDao
-            .insertInitialBrowseStart(mailQueueName, currentSliceStartInstant());
+            .insertInitialBrowseStart(mailQueueName, currentSlice().getStartSliceInstant());
     }
 
     private EnqueuedItemWithSlicingContext addSliceContext(EnqueuedItem enqueuedItem) {
@@ -65,15 +66,14 @@ class CassandraMailQueueMailStore {
 
         return EnqueuedItemWithSlicingContext.builder()
             .enqueuedItem(enqueuedItem)
-            .slicingContext(EnqueuedItemWithSlicingContext.SlicingContext
-                .of(computedBucketId(mail), currentSliceStartInstant()))
+            .slicingContext(BucketedSlice.of(currentSlice(), computedBucketId(mail)))
             .build();
     }
 
-    private Instant currentSliceStartInstant() {
+    private BucketedSlice.Slice currentSlice() {
         long sliceSize = configuration.getSliceWindow().getSeconds();
         long sliceId = clock.instant().getEpochSecond() / sliceSize;
-        return Instant.ofEpochSecond(sliceId * sliceSize);
+        return BucketedSlice.Slice.of(Instant.ofEpochSecond(sliceId * sliceSize));
     }
 
     private BucketId computedBucketId(Mail mail) {

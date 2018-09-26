@@ -19,52 +19,11 @@
 
 package org.apache.james.queue.rabbitmq.view.cassandra.model;
 
-import java.time.Instant;
 import java.util.Objects;
 
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
 
 public class EnqueuedItemWithSlicingContext {
-
-    public static class SlicingContext {
-
-        public static SlicingContext of(BucketedSlices.BucketId bucketId, Instant timeRangeStart) {
-            return new SlicingContext(bucketId, timeRangeStart);
-        }
-
-        private final BucketedSlices.BucketId bucketId;
-        private final Instant timeRangeStart;
-
-        SlicingContext(BucketedSlices.BucketId bucketId, Instant timeRangeStart) {
-            this.bucketId = bucketId;
-            this.timeRangeStart = timeRangeStart;
-        }
-
-        public BucketedSlices.BucketId getBucketId() {
-            return bucketId;
-        }
-
-        public Instant getTimeRangeStart() {
-            return timeRangeStart;
-        }
-
-        @Override
-        public final boolean equals(Object o) {
-            if (o instanceof SlicingContext) {
-                SlicingContext that = (SlicingContext) o;
-
-                return Objects.equals(this.bucketId, that.bucketId)
-                    && Objects.equals(this.timeRangeStart, that.timeRangeStart);
-            }
-            return false;
-        }
-
-        @Override
-        public final int hashCode() {
-            return Objects.hash(bucketId, timeRangeStart);
-        }
-    }
-
     public interface Builder {
 
         @FunctionalInterface
@@ -74,14 +33,14 @@ public class EnqueuedItemWithSlicingContext {
 
         @FunctionalInterface
         interface RequireSlicingContext {
-            LastStage slicingContext(SlicingContext slicingContext);
+            LastStage slicingContext(BucketedSlice slicingContext);
         }
 
         class LastStage {
             private final EnqueuedItem enqueuedItem;
-            private final SlicingContext slicingContext;
+            private final BucketedSlice slicingContext;
 
-            public LastStage(EnqueuedItem enqueuedItem, SlicingContext slicingContext) {
+            public LastStage(EnqueuedItem enqueuedItem, BucketedSlice slicingContext) {
                 this.enqueuedItem = enqueuedItem;
                 this.slicingContext = slicingContext;
             }
@@ -97,14 +56,14 @@ public class EnqueuedItemWithSlicingContext {
     }
 
     private final EnqueuedItem enqueuedItem;
-    private final SlicingContext slicingContext;
+    private final BucketedSlice slicingContext;
 
-    private EnqueuedItemWithSlicingContext(EnqueuedItem enqueuedItem, SlicingContext slicingContext) {
+    private EnqueuedItemWithSlicingContext(EnqueuedItem enqueuedItem, BucketedSlice slicingContext) {
         this.enqueuedItem = enqueuedItem;
         this.slicingContext = slicingContext;
     }
 
-    public SlicingContext getSlicingContext() {
+    public BucketedSlice getSlicingContext() {
         return slicingContext;
     }
 

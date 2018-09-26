@@ -19,9 +19,9 @@
 
 package org.apache.james.queue.rabbitmq.view.cassandra;
 
-import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices.BucketId;
-import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices.Slice;
-import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices.Slice.allSlicesTill;
+import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice.BucketId;
+import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice.Slice;
+import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice.Slice.allSlicesTill;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -41,6 +41,7 @@ import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
 import org.apache.james.queue.rabbitmq.MailQueueName;
+import org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedItemWithSlicingContext;
 import org.apache.james.util.FluentFutureStream;
 import org.apache.mailet.Mail;
@@ -134,14 +135,14 @@ class CassandraMailQueueBrowser {
         return FluentFutureStream.of(
             allBucketIds()
                 .map(bucketId ->
-                    browseBucket(queueName, slice, bucketId).completableFuture()),
+                    browseBucket(queueName, BucketedSlice.of(slice, bucketId)).completableFuture()),
             FluentFutureStream::unboxStream)
             .sorted(Comparator.comparing(enqueuedMail -> enqueuedMail.getEnqueuedItem().getEnqueuedTime()));
     }
 
-    private FluentFutureStream<EnqueuedItemWithSlicingContext> browseBucket(MailQueueName queueName, Slice slice, BucketId bucketId) {
+    private FluentFutureStream<EnqueuedItemWithSlicingContext> browseBucket(MailQueueName queueName, BucketedSlice bucketedSlices) {
         return FluentFutureStream.of(
-            enqueuedMailsDao.selectEnqueuedMails(queueName, slice, bucketId))
+            enqueuedMailsDao.selectEnqueuedMails(queueName, bucketedSlices))
                 .thenFilter(mailReference -> deletedMailsDao.isStillEnqueued(queueName, mailReference.getEnqueuedItem().getMailKey()));
     }
 

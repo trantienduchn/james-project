@@ -75,7 +75,7 @@ class CassandraMailQueueMailDelete {
 
     private CompletableFuture<Optional<Instant>> findNewBrowseStart(MailQueueName mailQueueName) {
         return cassandraMailQueueBrowser.browseReferences(mailQueueName)
-            .map(enqueuedItem -> enqueuedItem.getSlicingContext().getTimeRangeStart())
+            .map(enqueuedItem -> enqueuedItem.getSlicingContext().getSlice().getStartSliceInstant())
             .completableFuture()
             .thenApply(Stream::findFirst);
     }

@@ -30,10 +30,4 @@ class EnqueuedItemWithSlicingContextTest {
         EqualsVerifier.forClass(EnqueuedItemWithSlicingContext.class)
             .verify();
     }
-
-    @Test
-    void slicingContextShouldMatchBeanContract() {
-        EqualsVerifier.forClass(EnqueuedItemWithSlicingContext.SlicingContext.class)
-            .verify();
-    }
 }

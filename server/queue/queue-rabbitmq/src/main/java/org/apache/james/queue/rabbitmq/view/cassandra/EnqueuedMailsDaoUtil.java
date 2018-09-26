@@ -62,7 +62,7 @@ import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.core.MailAddress;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
 import org.apache.james.queue.rabbitmq.MailQueueName;
-import org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices;
+import org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedItemWithSlicingContext;
 import org.apache.james.server.core.MailImpl;
 import org.apache.james.util.streams.Iterators;
@@ -79,8 +79,8 @@ public class EnqueuedMailsDaoUtil {
 
     static EnqueuedItemWithSlicingContext toEnqueuedMail(Row row, BlobId.Factory blobFactory) {
         MailQueueName queueName = MailQueueName.fromString(row.getString(QUEUE_NAME));
-        Instant timeRangeStart = row.getTimestamp(TIME_RANGE_START).toInstant();
-        BucketedSlices.BucketId bucketId = BucketedSlices.BucketId.of(row.getInt(BUCKET_ID));
+        BucketedSlice.Slice slice = BucketedSlice.Slice.of(row.getTimestamp(TIME_RANGE_START).toInstant());
+        BucketedSlice.BucketId bucketId = BucketedSlice.BucketId.of(row.getInt(BUCKET_ID));
         Instant enqueuedTime = row.getTimestamp(ENQUEUED_TIME).toInstant();
         BlobId headerBlobId = blobFactory.from(row.getString(HEADER_BLOB_ID));
         BlobId bodyBlobId = blobFactory.from(row.getString(BODY_BLOB_ID));
@@ -125,10 +125,9 @@ public class EnqueuedMailsDaoUtil {
             .mimeMessagePartsId(mimeMessagePartsId)
             .build();
 
-
         return EnqueuedItemWithSlicingContext.builder()
             .enqueuedItem(enqueuedItem)
-            .slicingContext(EnqueuedItemWithSlicingContext.SlicingContext.of(bucketId, timeRangeStart))
+            .slicingContext(BucketedSlice.of(slice, bucketId))
             .build();
     }
 

@@ -43,8 +43,6 @@ import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueV
 import static org.apache.james.queue.rabbitmq.view.cassandra.EnqueuedMailsDaoUtil.asStringList;
 import static org.apache.james.queue.rabbitmq.view.cassandra.EnqueuedMailsDaoUtil.toHeaderMap;
 import static org.apache.james.queue.rabbitmq.view.cassandra.EnqueuedMailsDaoUtil.toRawAttributeMap;
-import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices.BucketId;
-import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices.Slice;
 
 import java.util.Date;
 import java.util.Optional;
@@ -61,6 +59,7 @@ import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.core.MailAddress;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
 import org.apache.james.queue.rabbitmq.MailQueueName;
+import org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedItemWithSlicingContext;
 import org.apache.mailet.Mail;
 
@@ -118,13 +117,13 @@ class EnqueuedMailsDAO {
 
     CompletableFuture<Void> insert(EnqueuedItemWithSlicingContext enqueuedItemWithSlicing) {
         EnqueuedItem enqueuedItem = enqueuedItemWithSlicing.getEnqueuedItem();
-        EnqueuedItemWithSlicingContext.SlicingContext slicingContext = enqueuedItemWithSlicing.getSlicingContext();
+        BucketedSlice slicingContext = enqueuedItemWithSlicing.getSlicingContext();
         Mail mail = enqueuedItem.getMail();
         MimeMessagePartsId mimeMessagePartsId = enqueuedItem.getPartsId();
 
         return executor.executeVoid(insert.bind()
             .setString(QUEUE_NAME, enqueuedItem.getMailQueueName().asString())
-            .setTimestamp(TIME_RANGE_START, Date.from(slicingContext.getTimeRangeStart()))
+            .setTimestamp(TIME_RANGE_START, Date.from(slicingContext.getSlice().getStartSliceInstant()))
             .setInt(BUCKET_ID, slicingContext.getBucketId().getValue())
             .setTimestamp(ENQUEUED_TIME, Date.from(enqueuedItem.getEnqueuedTime()))
             .setString(MAIL_KEY, mail.getName())
@@ -144,13 +143,13 @@ class EnqueuedMailsDAO {
     }
 
     CompletableFuture<Stream<EnqueuedItemWithSlicingContext>> selectEnqueuedMails(
-        MailQueueName queueName, Slice slice, BucketId bucketId) {
+        MailQueueName queueName, BucketedSlice bucketedSlices) {
 
         return executor.execute(
             selectFrom.bind()
                 .setString(QUEUE_NAME, queueName.asString())
-                .setTimestamp(TIME_RANGE_START, Date.from(slice.getStartSliceInstant()))
-                .setInt(BUCKET_ID, bucketId.getValue()))
+                .setTimestamp(TIME_RANGE_START, Date.from(bucketedSlices.getSlice().getStartSliceInstant()))
+                .setInt(BUCKET_ID, bucketedSlices.getBucketId().getValue()))
             .thenApply(resultSet -> cassandraUtils.convertToStream(resultSet)
                 .map(row -> EnqueuedMailsDaoUtil.toEnqueuedMail(row, blobFactory)));
     }
