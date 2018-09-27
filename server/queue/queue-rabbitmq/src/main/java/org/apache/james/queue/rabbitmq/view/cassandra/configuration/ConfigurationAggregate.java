@@ -54,7 +54,7 @@ class ConfigurationAggregate {
         return new ConfigurationAggregate(history);
     }
 
-    private static final String CONFIGURATION_AGGREGATE_KEY = "CassandraMailQueueViewConfiguration";
+    static final String CONFIGURATION_AGGREGATE_KEY = "CassandraMailQueueViewConfiguration";
     static final AggregateId CONFIGURATION_AGGREGATE_ID = () -> CONFIGURATION_AGGREGATE_KEY;
     private static final List<? extends Event> EMPTY_EVENTS = ImmutableList.of();
 
