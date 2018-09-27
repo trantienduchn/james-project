@@ -91,6 +91,26 @@ public class CassandraMailQueueViewConfiguration {
         return sliceWindow;
     }
 
+    void assertValidSuccessor(CassandraMailQueueViewConfiguration configurationUpdate) {
+        assertValidSuccessorForBuckets(configurationUpdate);
+        assertValidSuccessorForSlice(configurationUpdate);
+    }
+
+    private void assertValidSuccessorForSlice(CassandraMailQueueViewConfiguration configurationUpdate) {
+        long updateSliceWindowInSecond = configurationUpdate.getSliceWindow().getSeconds();
+        long currentSliceWindowInSecond = getSliceWindow().getSeconds();
+        Preconditions.checkArgument(
+            updateSliceWindowInSecond <= currentSliceWindowInSecond
+                && currentSliceWindowInSecond % updateSliceWindowInSecond == 0,
+            "update 'sliceWindow'(" + configurationUpdate.getSliceWindow() + ") have to be less than and divisible by the current one: "
+                + getSliceWindow());
+    }
+
+    private void assertValidSuccessorForBuckets(CassandraMailQueueViewConfiguration configurationUpdate) {
+        Preconditions.checkArgument(configurationUpdate.getBucketCount() >= getBucketCount(),
+            "can not set 'bucketCount'(" + configurationUpdate.getBucketCount() + ") to be less than the current one: " + getBucketCount());
+    }
+
     @Override
     public final boolean equals(Object o) {
         if (o instanceof CassandraMailQueueViewConfiguration) {
