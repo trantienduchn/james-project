@@ -19,17 +19,41 @@
 
 package org.apache.james;
 
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.apache.james.backends.es.EmbeddedElasticSearch;
+import org.apache.james.modules.TestElasticSearchModule;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.rules.TemporaryFolder;
 
-class CassandraWithTikaTest implements JamesServerContract {
+import com.google.inject.Module;
 
-    @RegisterExtension
-    static TikaExtension tikaExtension = new TikaExtension();
 
-    @RegisterExtension
-    static CassandraJmapTestExtension cassandraJmapServer = CassandraJmapTestExtension.builder()
-        .defaultCoreModule()
-        .defaultModulesOverrideWith(tikaExtension.getTikaGuiceModule(), DOMAIN_LIST_CONFIGURATION_MODULE)
-        .defaultExtensions()
-        .build();
+public class EmbeddedElasticSearchExtension implements GuiceModuleTestExtension {
+
+    private final TemporaryFolder temporaryFolder = new TemporaryFolder();
+    private final EmbeddedElasticSearch embeddedElasticSearch = new EmbeddedElasticSearch(temporaryFolder);
+
+    @Override
+    public void beforeAll(ExtensionContext extensionContext) throws Exception {
+        temporaryFolder.create();
+        embeddedElasticSearch.before();
+    }
+
+    @Override
+    public void afterAll(ExtensionContext extensionContext) throws Exception {
+        embeddedElasticSearch.after();
+    }
+
+    @Override
+    public Module getModule() {
+            return new TestElasticSearchModule(embeddedElasticSearch);
+        }
+
+    @Override
+    public void await() {
+        embeddedElasticSearch.awaitForElasticSearch();
+    }
+
+    public EmbeddedElasticSearch getEmbeddedElasticSearch() {
+        return embeddedElasticSearch;
+    }
 }

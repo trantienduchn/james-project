@@ -19,17 +19,32 @@
 
 package org.apache.james;
 
-import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.AfterEachCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
-class CassandraWithTikaTest implements JamesServerContract {
+import com.google.inject.Module;
 
-    @RegisterExtension
-    static TikaExtension tikaExtension = new TikaExtension();
+public interface GuiceModuleTestExtension extends BeforeAllCallback, BeforeEachCallback, AfterAllCallback, AfterEachCallback {
 
-    @RegisterExtension
-    static CassandraJmapTestExtension cassandraJmapServer = CassandraJmapTestExtension.builder()
-        .defaultCoreModule()
-        .defaultModulesOverrideWith(tikaExtension.getTikaGuiceModule(), DOMAIN_LIST_CONFIGURATION_MODULE)
-        .defaultExtensions()
-        .build();
+    default Module getModule() {
+        return binder -> {};
+    }
+
+    default void await() {}
+
+    @Override
+    default void beforeAll(ExtensionContext extensionContext) throws Exception {}
+
+    @Override
+    default void afterAll(ExtensionContext extensionContext) throws Exception {}
+
+    @Override
+    default void afterEach(ExtensionContext extensionContext) throws Exception {}
+
+    @Override
+    default void beforeEach(ExtensionContext extensionContext) throws Exception {}
+
 }

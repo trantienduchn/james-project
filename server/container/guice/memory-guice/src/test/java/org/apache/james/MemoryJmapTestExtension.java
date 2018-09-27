@@ -50,7 +50,7 @@ public class MemoryJmapTestExtension implements BeforeEachCallback, AfterEachCal
             this.addtionalModules = EMPTY_MODULES;
         }
 
-        public Builder modules(Module... addtionalModules) {
+        public Builder addtionalModules(Module... addtionalModules) {
             this.addtionalModules = ImmutableList.copyOf(addtionalModules);
             return this;
         }
@@ -103,7 +103,7 @@ public class MemoryJmapTestExtension implements BeforeEachCallback, AfterEachCal
         return jamesServer;
     }
 
-    private GuiceJamesServer jmapServer(Module... modules) throws IOException {
+    public GuiceJamesServer jmapServer(Module... customModules) throws IOException {
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
             .configurationFromClasspath()
@@ -114,6 +114,7 @@ public class MemoryJmapTestExtension implements BeforeEachCallback, AfterEachCal
             .overrideWith(binder -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
             .overrideWith(binder -> binder.bind(MessageSearchIndex.class).to(SimpleMessageSearchIndex.class))
-            .overrideWith(modules);
+            .overrideWith(addtionalModules)
+            .overrideWith(customModules);
     }
 }
