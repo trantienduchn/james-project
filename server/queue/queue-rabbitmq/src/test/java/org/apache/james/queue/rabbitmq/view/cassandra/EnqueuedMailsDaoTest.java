@@ -22,7 +22,7 @@ package org.apache.james.queue.rabbitmq.view.cassandra;
 import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice.BucketId;
 import static org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlice.Slice;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 import java.time.Instant;
 import java.util.stream.Stream;
@@ -133,13 +133,14 @@ class EnqueuedMailsDaoTest {
             .hasOnlyOneElementSatisfying(selectedEnqueuedMail -> {
                 EnqueuedItem enqueuedItem = selectedEnqueuedMail.getEnqueuedItem();
                 BucketedSlice slicingContext = selectedEnqueuedMail.getSlicingContext();
-                assertAll(
-                    () -> assertThat(slicingContext.getBucketId()).isEqualTo(BUCKET_ID),
-                    () -> assertThat(slicingContext.getSlice()).isEqualTo(Slice.of(NOW)),
-                    () -> assertThat(enqueuedItem.getMailQueueName()).isEqualTo(OUT_GOING_1),
-                    () -> assertThat(enqueuedItem.getEnqueuedTime()).isEqualTo(NOW),
-                    () -> assertThat(enqueuedItem.getMailKey()).isEqualTo(MAIL_KEY_1),
-                    () -> assertThat(enqueuedItem.getPartsId()).isEqualTo(MIME_MESSAGE_PARTS_ID));
+                assertSoftly(softly -> {
+                    softly.assertThat(slicingContext.getBucketId()).isEqualTo(BUCKET_ID);
+                    softly.assertThat(slicingContext.getSlice()).isEqualTo(Slice.of(NOW));
+                    softly.assertThat(enqueuedItem.getMailQueueName()).isEqualTo(OUT_GOING_1);
+                    softly.assertThat(enqueuedItem.getEnqueuedTime()).isEqualTo(NOW);
+                    softly.assertThat(enqueuedItem.getMailKey()).isEqualTo(MAIL_KEY_1);
+                    softly.assertThat(enqueuedItem.getPartsId()).isEqualTo(MIME_MESSAGE_PARTS_ID);
+                });
             });
     }
 }
