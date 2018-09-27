@@ -22,6 +22,7 @@ package org.apache.james.queue.rabbitmq.view.cassandra.configuration;
 import java.time.Duration;
 import java.util.Objects;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
 public class CassandraMailQueueViewConfiguration {
@@ -105,5 +106,14 @@ public class CassandraMailQueueViewConfiguration {
     @Override
     public final int hashCode() {
         return Objects.hash(bucketCount, updateBrowseStartPace, sliceWindow);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+            .add("bucketCount", bucketCount)
+            .add("updateBrowseStartPace", updateBrowseStartPace)
+            .add("sliceWindow", sliceWindow)
+            .toString();
     }
 }
