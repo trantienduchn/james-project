@@ -102,7 +102,7 @@ public class CassandraMailQueueViewConfiguration {
         Preconditions.checkArgument(
             updateSliceWindowInSecond <= currentSliceWindowInSecond
                 && currentSliceWindowInSecond % updateSliceWindowInSecond == 0,
-            "update 'sliceWindow'(" + configurationUpdate.getSliceWindow() + ") have to be less than and divisible by the current one: "
+            "update 'sliceWindow'(" + configurationUpdate.getSliceWindow() + ") have to be less than and divide the previous sliceWindow: "
                 + getSliceWindow());
     }
 
