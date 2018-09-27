@@ -28,7 +28,11 @@ import static org.apache.mailet.base.MailAddressFixture.RECIPIENT3;
 import static org.apache.mailet.base.MailAddressFixture.SENDER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
+import javax.mail.internet.MimeMessage;
+
+import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.MailAddressFixture;
 import org.junit.jupiter.api.Test;
@@ -420,6 +424,22 @@ public interface ManageableMailQueueContract extends MailQueueContract {
         assertThatCode(() ->  Iterators.consumingIterator(items)).doesNotThrowAnyException();
     }
 
+    @Test
+    default void browseShouldReturnMailsWithMimeMessage() throws Exception {
+        ManageableMailQueue mailQueue = getManageableMailQueue();
+        mailQueue.enQueue(defaultMail()
+            .name("mail with blob")
+            .mimeMessage(MimeMessageBuilder.mimeMessageBuilder()
+                .setSubject("mail subject")
+                .setText("mail body")
+                .build())
+            .build());
+
+        MimeMessage mimeMessage = mailQueue.browse().next().getMail().getMessage();
+        assertAll(
+            () -> assertThat(mimeMessage.getSubject()).isEqualTo("mail subject"),
+            () -> assertThat(mimeMessage.getContent()).isEqualTo("mail body"));
+    }
     @Test
     default void browsingShouldNotAffectDequeue() throws Exception {
         getManageableMailQueue().enQueue(defaultMail()
