@@ -22,6 +22,7 @@ package org.apache.james.queue.rabbitmq;
 import java.time.Instant;
 import java.util.Objects;
 
+import com.google.common.base.Preconditions;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.MailKey;
 import org.apache.mailet.Mail;
@@ -57,6 +58,10 @@ public class EnqueuedItem {
             private final MimeMessagePartsId partsId;
 
             ReadyToBuild(MailQueueName mailQueueName, Mail mail, Instant enqueuedTime, MimeMessagePartsId partsId) {
+                Preconditions.checkNotNull(mailQueueName, "'mailQueueName' is mandatory");
+                Preconditions.checkNotNull(mail, "'mail' is mandatory");
+                Preconditions.checkNotNull(enqueuedTime, "'enqueuedTime' is mandatory");
+                Preconditions.checkNotNull(partsId, "'partsId' is mandatory");
                 this.mailQueueName = mailQueueName;
                 this.mail = mail;
                 this.enqueuedTime = enqueuedTime;
