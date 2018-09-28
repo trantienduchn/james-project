@@ -112,12 +112,4 @@ public class CompletableFutureUtil {
         failedFuture.completeExceptionally(throwable);
         return failedFuture;
     }
-
-    public static <T> BiConsumer<T, Throwable> whenSuccess(Runnable runnable) {
-        return (T futureResult, Throwable throwable) -> {
-            if (throwable == null) {
-                runnable.run();
-            }
-        };
-    }
 }
