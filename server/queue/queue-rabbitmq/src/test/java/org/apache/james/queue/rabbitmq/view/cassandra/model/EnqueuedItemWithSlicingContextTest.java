@@ -19,9 +19,19 @@
 
 package org.apache.james.queue.rabbitmq.view.cassandra.model;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.apache.james.blob.api.HashBlobId;
+import org.apache.james.blob.mail.MimeMessagePartsId;
+import org.apache.james.queue.rabbitmq.EnqueuedItem;
+import org.apache.james.queue.rabbitmq.MailQueueName;
+import org.apache.mailet.base.test.FakeMail;
 import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
+
+import javax.mail.MessagingException;
+import java.time.Instant;
 
 class EnqueuedItemWithSlicingContextTest {
 
@@ -35,5 +45,35 @@ class EnqueuedItemWithSlicingContextTest {
     void slicingContextShouldMatchBeanContract() {
         EqualsVerifier.forClass(EnqueuedItemWithSlicingContext.SlicingContext.class)
             .verify();
+    }
+
+    @Test
+    void buildShouldThrowWhenEnqueuedItemIsNull() {
+        EnqueuedItem enqueuedItem = null;
+        EnqueuedItemWithSlicingContext.SlicingContext slicingContext = EnqueuedItemWithSlicingContext.SlicingContext.of(BucketedSlices.BucketId.of(1), Instant.now());
+        assertThatThrownBy(() -> EnqueuedItemWithSlicingContext.builder()
+            .enqueuedItem(enqueuedItem)
+            .slicingContext(slicingContext)
+            .build());
+    }
+
+    @Test
+    void buildShouldThrowWhenSlicingContextIsNull() throws MessagingException {
+        EnqueuedItem enqueuedItem = EnqueuedItem.builder()
+                .mailQueueName(MailQueueName.fromString("mailQueueName"))
+                .mail(FakeMail.builder()
+                    .name("name")
+                    .build())
+                .enqueuedTime(Instant.now())
+                .mimeMessagePartsId(MimeMessagePartsId.builder()
+                    .headerBlobId(new HashBlobId.Factory().from("headerBlodId"))
+                    .bodyBlobId(new HashBlobId.Factory().from("bodyBlodId"))
+                    .build())
+                .build();
+        EnqueuedItemWithSlicingContext.SlicingContext slicingContext = null;
+        assertThatThrownBy(() -> EnqueuedItemWithSlicingContext.builder()
+                .enqueuedItem(enqueuedItem)
+                .slicingContext(slicingContext)
+                .build());
     }
 }

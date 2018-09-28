@@ -22,6 +22,7 @@ package org.apache.james.queue.rabbitmq.view.cassandra.model;
 import java.time.Instant;
 import java.util.Objects;
 
+import com.google.common.base.Preconditions;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
 
 public class EnqueuedItemWithSlicingContext {
@@ -74,14 +75,16 @@ public class EnqueuedItemWithSlicingContext {
 
         @FunctionalInterface
         interface RequireSlicingContext {
-            LastStage slicingContext(SlicingContext slicingContext);
+            ReadyToBuild slicingContext(SlicingContext slicingContext);
         }
 
-        class LastStage {
+        class ReadyToBuild {
             private final EnqueuedItem enqueuedItem;
             private final SlicingContext slicingContext;
 
-            public LastStage(EnqueuedItem enqueuedItem, SlicingContext slicingContext) {
+            ReadyToBuild(EnqueuedItem enqueuedItem, SlicingContext slicingContext) {
+                Preconditions.checkNotNull(enqueuedItem, "'enqueuedItem' is mandatory.");
+                Preconditions.checkNotNull(slicingContext, "'slicingContext' is mandatory.");
                 this.enqueuedItem = enqueuedItem;
                 this.slicingContext = slicingContext;
             }
@@ -93,7 +96,7 @@ public class EnqueuedItemWithSlicingContext {
     }
 
     public static Builder.RequireEnqueuedItem builder() {
-        return enqueuedItem -> slicingContext -> new Builder.LastStage(enqueuedItem, slicingContext);
+        return enqueuedItem -> slicingContext -> new Builder.ReadyToBuild(enqueuedItem, slicingContext);
     }
 
     private final EnqueuedItem enqueuedItem;
