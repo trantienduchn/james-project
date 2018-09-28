@@ -35,6 +35,21 @@ import java.time.Instant;
 
 class EnqueuedItemTest {
 
+    MailQueueName mailQueueName;
+    Mail mail;
+    Instant enqueuedTime;
+    MimeMessagePartsId partsId;
+
+    public EnqueuedItemTest() throws MessagingException {
+        mailQueueName = MailQueueName.fromString("mailQueueName");
+        mail = FakeMail.defaultFakeMail();
+        enqueuedTime = Instant.now();
+        partsId = MimeMessagePartsId.builder()
+                .headerBlobId(new HashBlobId.Factory().from("headerBlobId"))
+                .bodyBlobId(new HashBlobId.Factory().from("bodyBlobId"))
+                .build();
+    }
+
     @Test
     void shouldMatchBeanContract() {
         EqualsVerifier.forClass(EnqueuedItem.class)
@@ -42,67 +57,46 @@ class EnqueuedItemTest {
     }
 
     @Test
-    void buildShouldThrowWhenMailQueueNameIsNull() throws MessagingException {
-        MailQueueName mailQueueName = null;
-        Mail mail = FakeMail.defaultFakeMail();
-        Instant enqueuedTime = Instant.now();
-        MimeMessagePartsId partsId = MimeMessagePartsId.builder()
-                .headerBlobId(new HashBlobId.Factory().from("headerBlobId"))
-                .bodyBlobId(new HashBlobId.Factory().from("bodyBlobId"))
-                .build();
+    void buildShouldThrowWhenMailQueueNameIsNull() {
         assertThatThrownBy(() -> EnqueuedItem.builder()
-                .mailQueueName(mailQueueName)
+                .mailQueueName(null)
                 .mail(mail)
                 .enqueuedTime(enqueuedTime)
                 .mimeMessagePartsId(partsId)
-                .build());
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    void buildShouldThrowWhenMailIsNull() throws MessagingException {
-        MailQueueName mailQueueName = MailQueueName.fromString("mailQueueName");
-        Mail mail = null;
-        Instant enqueuedTime = Instant.now();
-        MimeMessagePartsId partsId = MimeMessagePartsId.builder()
-                .headerBlobId(new HashBlobId.Factory().from("headerBlobId"))
-                .bodyBlobId(new HashBlobId.Factory().from("bodyBlobId"))
-                .build();
+    void buildShouldThrowWhenMailIsNull() {
         assertThatThrownBy(() -> EnqueuedItem.builder()
                 .mailQueueName(mailQueueName)
-                .mail(mail)
+                .mail(null)
                 .enqueuedTime(enqueuedTime)
                 .mimeMessagePartsId(partsId)
-                .build());
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    void buildShouldThrowWhenEnqueuedTimeIsNull() throws MessagingException {
-        MailQueueName mailQueueName = MailQueueName.fromString("mailQueueName");
-        Mail mail = FakeMail.defaultFakeMail();
-        Instant enqueuedTime = null;
-        MimeMessagePartsId partsId = MimeMessagePartsId.builder()
-                .headerBlobId(new HashBlobId.Factory().from("headerBlobId"))
-                .bodyBlobId(new HashBlobId.Factory().from("bodyBlobId"))
-                .build();
+    void buildShouldThrowWhenEnqueuedTimeIsNull() {
         assertThatThrownBy(() -> EnqueuedItem.builder()
                 .mailQueueName(mailQueueName)
                 .mail(mail)
-                .enqueuedTime(enqueuedTime)
+                .enqueuedTime(null)
                 .mimeMessagePartsId(partsId)
-                .build());
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    void buildShouldThrowWhenMimeMessagePartsIdIsNull() throws MessagingException {
-        MailQueueName mailQueueName = MailQueueName.fromString("mailQueueName");
-        Mail mail = FakeMail.defaultFakeMail();
-        Instant enqueuedTime = Instant.now();
-        MimeMessagePartsId partsId = null;
+    void buildShouldThrowWhenMimeMessagePartsIdIsNull() {
         assertThatThrownBy(() -> EnqueuedItem.builder()
                 .mailQueueName(mailQueueName)
                 .mail(mail)
                 .enqueuedTime(enqueuedTime)
-                .mimeMessagePartsId(partsId)
-                .build());
+                .mimeMessagePartsId(null)
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 }
