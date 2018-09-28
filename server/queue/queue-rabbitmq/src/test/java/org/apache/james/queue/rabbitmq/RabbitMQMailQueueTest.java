@@ -124,8 +124,9 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
                 new AsyncRetryExecutor(Executors.newSingleThreadScheduledExecutor()));
 
         RabbitClient rabbitClient = new RabbitClient(new RabbitChannelPool(rabbitMQConnectionFactory));
-        RabbitMQMailQueue.Factory factory = new RabbitMQMailQueue.Factory(
+        RabbitMQMailQueueFactory.PrivateFactory factory = new RabbitMQMailQueueFactory.PrivateFactory(
             metricTestSystem.getSpyMetricFactory(),
+            metricTestSystem.getSpyGaugeRegistry(),
             rabbitClient,
             mimeMessageStore,
             BLOB_ID_FACTORY,

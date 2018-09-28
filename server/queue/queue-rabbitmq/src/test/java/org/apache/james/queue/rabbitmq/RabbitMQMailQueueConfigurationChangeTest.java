@@ -52,6 +52,7 @@ import org.apache.james.blob.cassandra.CassandraBlobsDAO;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.blob.mail.MimeMessageStore;
 import org.apache.james.eventsourcing.eventstore.cassandra.CassandraEventStoreModule;
+import org.apache.james.metrics.api.NoopGaugeRegistry;
 import org.apache.james.metrics.api.NoopMetricFactory;
 import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.ManageableMailQueue;
@@ -121,8 +122,9 @@ class RabbitMQMailQueueConfigurationChangeTest {
             mailQueueViewConfiguration)
             .create(MailQueueName.fromString(SPOOL));
 
-        RabbitMQMailQueue.Factory factory = new RabbitMQMailQueue.Factory(
+        RabbitMQMailQueueFactory.PrivateFactory factory = new RabbitMQMailQueueFactory.PrivateFactory(
             new NoopMetricFactory(),
+            new NoopGaugeRegistry(),
             rabbitClient,
             mimeMessageStore,
             BLOB_ID_FACTORY,
