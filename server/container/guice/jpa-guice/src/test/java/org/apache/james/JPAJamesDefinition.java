@@ -19,31 +19,37 @@
 
 package org.apache.james;
 
-import org.apache.james.mailbox.tika.TikaContainer;
-import org.apache.james.modules.TestTikaModule;
-import org.junit.jupiter.api.extension.ExtensionContext;
+import java.util.List;
 
+import org.apache.james.server.core.configuration.Configuration;
+
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Module;
 
-class TikaExtension implements GuiceModuleTestExtension {
-    private final TikaContainer tika;
+public class JPAJamesDefinition  implements JamesServerExtension.JamesDefinition {
+    private final TemporaryFolderRegistrableExtension folderRegistrableExtension;
+    private final Module[] additionalModules;
 
-    TikaExtension() {
-        this.tika = new TikaContainer();
+    public JPAJamesDefinition(Module... additionalModules) {
+        this.additionalModules = additionalModules;
+
+        this.folderRegistrableExtension = new TemporaryFolderRegistrableExtension();
     }
 
     @Override
-    public void beforeAll(ExtensionContext extensionContext) {
-        tika.start();
+    public GuiceJamesServer getServer() throws Exception {
+        Configuration configuration = Configuration.builder()
+            .workingDirectory(folderRegistrableExtension.getTemporaryFolder().newFolder())
+            .configurationFromClasspath()
+            .build();
+
+        return GuiceJamesServer.forConfiguration(configuration)
+            .combineWith(JPAJamesServerMain.JPA_SERVER_MODULE, JPAJamesServerMain.PROTOCOLS)
+            .overrideWith(additionalModules);
     }
 
     @Override
-    public void afterAll(ExtensionContext extensionContext) {
-        tika.stop();
-    }
-
-    @Override
-    public Module getModule() {
-        return new TestTikaModule(tika);
+    public List<RegistrableExtension> registrableExtensions() {
+        return ImmutableList.of(folderRegistrableExtension);
     }
 }

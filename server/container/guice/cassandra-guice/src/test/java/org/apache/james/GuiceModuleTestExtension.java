@@ -19,32 +19,13 @@
 
 package org.apache.james;
 
-import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
-
 import com.google.inject.Module;
 
-public interface GuiceModuleTestExtension extends BeforeAllCallback, BeforeEachCallback, AfterAllCallback, AfterEachCallback {
+public interface GuiceModuleTestExtension extends RegistrableExtension {
 
     default Module getModule() {
         return binder -> {};
     }
 
     default void await() {}
-
-    @Override
-    default void beforeAll(ExtensionContext extensionContext) throws Exception {}
-
-    @Override
-    default void afterAll(ExtensionContext extensionContext) throws Exception {}
-
-    @Override
-    default void afterEach(ExtensionContext extensionContext) throws Exception {}
-
-    @Override
-    default void beforeEach(ExtensionContext extensionContext) throws Exception {}
-
 }

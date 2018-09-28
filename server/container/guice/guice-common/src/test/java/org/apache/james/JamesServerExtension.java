@@ -19,9 +19,10 @@
 
 package org.apache.james;
 
-import java.io.IOException;
+import java.util.List;
 
-import org.apache.james.server.core.configuration.Configuration;
+import org.apache.james.util.Runnables;
+import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -29,55 +30,62 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
-import org.junit.rules.TemporaryFolder;
 
-import com.google.inject.Module;
+import com.github.fge.lambdas.Throwing;
+import com.google.common.collect.Lists;
 
-public class JPAJamesServerTestExtension implements BeforeEachCallback, BeforeAllCallback, AfterEachCallback, ParameterResolver {
+public class JamesServerExtension implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, AfterAllCallback, ParameterResolver {
+    public interface JamesDefinition {
+        GuiceJamesServer getServer() throws Exception;
 
-    private final TemporaryFolder temporaryFolder;
-    private final Module[] aditionalModules;
+        List<RegistrableExtension> registrableExtensions();
+    }
+
+    private final JamesDefinition jamesDefinition;
     private GuiceJamesServer jamesServer;
 
-    JPAJamesServerTestExtension(Module... aditionalModules) {
-        this.aditionalModules = aditionalModules;
-        this.temporaryFolder = new TemporaryFolder();
+    public JamesServerExtension(JamesDefinition jamesDefinition) {
+        this.jamesDefinition = jamesDefinition;
     }
 
     @Override
-    public void beforeAll(ExtensionContext extensionContext) throws Exception {
-        temporaryFolder.create();
+    public void beforeAll(ExtensionContext extensionContext) {
+        Runnables.runParrallelStream(jamesDefinition.registrableExtensions()
+            .stream()
+            .map(ext -> Throwing.runnable(() -> ext.beforeAll(extensionContext))));
     }
 
     @Override
     public void beforeEach(ExtensionContext extensionContext) throws Exception {
-        jamesServer = createJamesServer();
+        Runnables.runParrallelStream(jamesDefinition.registrableExtensions()
+            .stream()
+            .map(ext -> Throwing.runnable(() -> ext.beforeEach(extensionContext))));
+        jamesServer = jamesDefinition.getServer();
         jamesServer.start();
     }
 
     @Override
-    public void afterEach(ExtensionContext extensionContext) throws Exception {
+    public void afterEach(ExtensionContext extensionContext) {
         jamesServer.stop();
+        Runnables.runParrallelStream(Lists.reverse(jamesDefinition.registrableExtensions())
+            .stream()
+            .map(ext -> Throwing.runnable(() -> ext.afterEach(extensionContext))));
+    }
+
+    @Override
+    public void afterAll(ExtensionContext extensionContext) {
+        Runnables.runParrallelStream(jamesDefinition.registrableExtensions()
+            .stream()
+            .map(ext -> Throwing.runnable(() -> ext.afterAll(extensionContext))));
     }
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return parameterContext.getParameter().getType() == GuiceJamesServer.class;
+        return (parameterContext.getParameter().getType() == GuiceJamesServer.class);
     }
 
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         return jamesServer;
-    }
-
-    private GuiceJamesServer createJamesServer() throws IOException {
-        Configuration configuration = Configuration.builder()
-            .workingDirectory(temporaryFolder.newFolder())
-            .configurationFromClasspath()
-            .build();
-
-        return GuiceJamesServer.forConfiguration(configuration)
-            .combineWith(JPAJamesServerMain.JPA_SERVER_MODULE, JPAJamesServerMain.PROTOCOLS)
-            .overrideWith(aditionalModules);
     }
 }

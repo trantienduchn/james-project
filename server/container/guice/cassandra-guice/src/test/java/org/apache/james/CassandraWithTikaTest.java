@@ -22,14 +22,11 @@ package org.apache.james;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class CassandraWithTikaTest implements JamesServerContract {
-
     @RegisterExtension
-    static TikaExtension tikaExtension = new TikaExtension();
-
-    @RegisterExtension
-    static CassandraJmapTestExtension cassandraJmapServer = CassandraJmapTestExtension.builder()
-        .defaultCoreModule()
-        .defaultModulesOverrideWith(tikaExtension.getTikaGuiceModule(), DOMAIN_LIST_CONFIGURATION_MODULE)
-        .defaultExtensions()
-        .build();
+    static JamesServerExtension testExtension = new JamesServerExtension(
+        CassandraJamesDefinition.builder()
+            .defaultExtensions()
+            .addExtensions(new TikaExtension())
+            .addModules(DOMAIN_LIST_CONFIGURATION_MODULE)
+            .build());
 }

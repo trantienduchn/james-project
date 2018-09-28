@@ -25,8 +25,9 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class JPAJamesServerWithSqlValidationTest extends JPAJamesServerTest {
 
     @RegisterExtension
-    static JPAJamesServerTestExtension jpaJamesExtension = new JPAJamesServerTestExtension(
-        new TestJPAConfigurationModuleWithSqlValidation(), DOMAIN_LIST_CONFIGURATION_MODULE);
+    static JamesServerExtension jpaJamesExtension = new JamesServerExtension(
+        new JPAJamesDefinition(
+            new TestJPAConfigurationModuleWithSqlValidation(), DOMAIN_LIST_CONFIGURATION_MODULE));
 
     @Override
     @Disabled("Failing to create the domain: duplicate with test in JPAJamesServerTest")

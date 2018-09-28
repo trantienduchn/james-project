@@ -22,11 +22,10 @@ package org.apache.james;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class CassandraJamesServerTest implements JamesServerContract {
-
     @RegisterExtension
-    static CassandraJmapTestExtension testExtension = CassandraJmapTestExtension.builder()
-        .defaultCoreModule()
-        .defaultModulesOverrideWith(DOMAIN_LIST_CONFIGURATION_MODULE)
-        .defaultExtensions()
-        .build();
+    static JamesServerExtension testExtension = new JamesServerExtension(
+        CassandraJamesDefinition.builder()
+            .defaultExtensions()
+            .addModules(DOMAIN_LIST_CONFIGURATION_MODULE)
+            .build());
 }

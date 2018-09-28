@@ -49,8 +49,9 @@ class JPAJamesServerTest implements JamesServerContract {
     private static final String PASSWORD = "123456";
 
     @RegisterExtension
-    static JPAJamesServerTestExtension jpaJamesExtension = new JPAJamesServerTestExtension(
-        new TestJPAConfigurationModule(), DOMAIN_LIST_CONFIGURATION_MODULE);
+    static JamesServerExtension jpaJamesExtension = new JamesServerExtension(
+        new JPAJamesDefinition(
+        new TestJPAConfigurationModule(), DOMAIN_LIST_CONFIGURATION_MODULE));
 
     private IMAPMessageReader imapMessageReader;
     private SMTPMessageSender smtpMessageSender;
