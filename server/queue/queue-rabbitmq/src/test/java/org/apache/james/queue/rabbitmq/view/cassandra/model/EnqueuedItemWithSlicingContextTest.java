@@ -35,6 +35,24 @@ import java.time.Instant;
 
 class EnqueuedItemWithSlicingContextTest {
 
+    EnqueuedItem enqueuedItem;
+    EnqueuedItemWithSlicingContext.SlicingContext slicingContext;
+
+    public EnqueuedItemWithSlicingContextTest() throws MessagingException {
+        enqueuedItem = EnqueuedItem.builder()
+                .mailQueueName(MailQueueName.fromString("mailQueueName"))
+                .mail(FakeMail.builder()
+                        .name("name")
+                        .build())
+                .enqueuedTime(Instant.now())
+                .mimeMessagePartsId(MimeMessagePartsId.builder()
+                        .headerBlobId(new HashBlobId.Factory().from("headerBlodId"))
+                        .bodyBlobId(new HashBlobId.Factory().from("bodyBlodId"))
+                        .build())
+                .build();
+        slicingContext = EnqueuedItemWithSlicingContext.SlicingContext.of(BucketedSlices.BucketId.of(1), Instant.now());
+    }
+
     @Test
     void shouldMatchBeanContract() {
         EqualsVerifier.forClass(EnqueuedItemWithSlicingContext.class)
@@ -50,30 +68,20 @@ class EnqueuedItemWithSlicingContextTest {
     @Test
     void buildShouldThrowWhenEnqueuedItemIsNull() {
         EnqueuedItem enqueuedItem = null;
-        EnqueuedItemWithSlicingContext.SlicingContext slicingContext = EnqueuedItemWithSlicingContext.SlicingContext.of(BucketedSlices.BucketId.of(1), Instant.now());
         assertThatThrownBy(() -> EnqueuedItemWithSlicingContext.builder()
-            .enqueuedItem(enqueuedItem)
-            .slicingContext(slicingContext)
-            .build());
+                .enqueuedItem(enqueuedItem)
+                .slicingContext(slicingContext)
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test
-    void buildShouldThrowWhenSlicingContextIsNull() throws MessagingException {
-        EnqueuedItem enqueuedItem = EnqueuedItem.builder()
-                .mailQueueName(MailQueueName.fromString("mailQueueName"))
-                .mail(FakeMail.builder()
-                    .name("name")
-                    .build())
-                .enqueuedTime(Instant.now())
-                .mimeMessagePartsId(MimeMessagePartsId.builder()
-                    .headerBlobId(new HashBlobId.Factory().from("headerBlodId"))
-                    .bodyBlobId(new HashBlobId.Factory().from("bodyBlodId"))
-                    .build())
-                .build();
+    void buildShouldThrowWhenSlicingContextIsNull() {
         EnqueuedItemWithSlicingContext.SlicingContext slicingContext = null;
         assertThatThrownBy(() -> EnqueuedItemWithSlicingContext.builder()
                 .enqueuedItem(enqueuedItem)
                 .slicingContext(slicingContext)
-                .build());
+                .build())
+            .isInstanceOf(NullPointerException.class);
     }
 }
