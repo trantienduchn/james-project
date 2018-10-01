@@ -22,8 +22,9 @@ package org.apache.james.queue.rabbitmq.view.cassandra.model;
 import java.time.Instant;
 import java.util.Objects;
 
-import com.google.common.base.Preconditions;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
+
+import com.google.common.base.Preconditions;
 
 public class EnqueuedItemWithSlicingContext {
 
