@@ -35,12 +35,12 @@ import java.time.Instant;
 
 class EnqueuedItemTest {
 
-    MailQueueName mailQueueName;
-    Mail mail;
-    Instant enqueuedTime;
-    MimeMessagePartsId partsId;
+    private MailQueueName mailQueueName;
+    private Mail mail;
+    private Instant enqueuedTime;
+    private MimeMessagePartsId partsId;
 
-    public EnqueuedItemTest() throws MessagingException {
+    EnqueuedItemTest() throws MessagingException {
         mailQueueName = MailQueueName.fromString("mailQueueName");
         mail = FakeMail.defaultFakeMail();
         enqueuedTime = Instant.now();
