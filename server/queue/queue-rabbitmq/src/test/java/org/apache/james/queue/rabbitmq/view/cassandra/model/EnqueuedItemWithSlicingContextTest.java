@@ -35,10 +35,10 @@ import java.time.Instant;
 
 class EnqueuedItemWithSlicingContextTest {
 
-    EnqueuedItem enqueuedItem;
-    EnqueuedItemWithSlicingContext.SlicingContext slicingContext;
+    private EnqueuedItem enqueuedItem;
+    private EnqueuedItemWithSlicingContext.SlicingContext slicingContext;
 
-    public EnqueuedItemWithSlicingContextTest() throws MessagingException {
+    private EnqueuedItemWithSlicingContextTest() throws MessagingException {
         enqueuedItem = EnqueuedItem.builder()
                 .mailQueueName(MailQueueName.fromString("mailQueueName"))
                 .mail(FakeMail.builder()
