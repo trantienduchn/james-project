@@ -18,7 +18,7 @@
  ****************************************************************/
 package org.apache.james.backend.rabbitmq;
 
-import static org.apache.james.backend.rabbitmq.RabbitMQConfiguration.Builder.DEFAULT_MANAGEMENT_CREDENTIAL;
+import static org.apache.james.backend.rabbitmq.RabbitMQFixture.DEFAULT_MANAGEMENT_CREDENTIAL;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.net.URI;

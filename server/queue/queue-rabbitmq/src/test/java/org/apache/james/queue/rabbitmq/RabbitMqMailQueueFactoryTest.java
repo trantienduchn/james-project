@@ -19,7 +19,7 @@
 
 package org.apache.james.queue.rabbitmq;
 
-import static org.apache.james.backend.rabbitmq.RabbitMQConfiguration.Builder.DEFAULT_MANAGEMENT_CREDENTIAL;
+import static org.apache.james.backend.rabbitmq.RabbitMQFixture.DEFAULT_MANAGEMENT_CREDENTIAL;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;

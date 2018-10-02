@@ -18,9 +18,6 @@
  ****************************************************************/
 package org.apache.james.backend.rabbitmq;
 
-import static org.apache.james.backend.rabbitmq.RabbitMQConfiguration.ManagementCredentials.DEFAULT_PASSWORD;
-import static org.apache.james.backend.rabbitmq.RabbitMQConfiguration.ManagementCredentials.DEFAULT_USER;
-
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Objects;
@@ -34,10 +31,6 @@ import com.google.common.base.Strings;
 public class RabbitMQConfiguration {
 
     public static class ManagementCredentials {
-
-        static final String DEFAULT_USER = "guest";
-        static final String DEFAULT_PASSWORD_STRING = "guest";
-        static final char[] DEFAULT_PASSWORD = DEFAULT_PASSWORD_STRING.toCharArray();
 
         static ManagementCredentials from(Configuration configuration) {
             String user = configuration.getString(MANAGEMENT_CREDENTIAL_USER_PROPERTY);
@@ -105,7 +98,6 @@ public class RabbitMQConfiguration {
     public static class Builder {
         static final int DEFAULT_MAX_RETRIES = 7;
         static final int DEFAULT_MIN_DELAY = 3000;
-        public static final ManagementCredentials DEFAULT_MANAGEMENT_CREDENTIAL = new ManagementCredentials(DEFAULT_USER, DEFAULT_PASSWORD);
 
         private final URI amqpUri;
         private final URI managementUri;
