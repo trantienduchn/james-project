@@ -19,6 +19,7 @@
 
 package org.apache.james.queue.rabbitmq;
 
+import static org.apache.james.backend.rabbitmq.RabbitMQConfiguration.Builder.DEFAULT_MANAGEMENT_CREDENTIAL;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
@@ -60,6 +61,7 @@ class RabbitMqMailQueueFactoryTest implements MailQueueFactoryContract<RabbitMQM
         RabbitMQConfiguration rabbitMQConfiguration = RabbitMQConfiguration.builder()
             .amqpUri(rabbitMQ.amqpUri())
             .managementUri(rabbitMQ.managementUri())
+            .managementCredentials(DEFAULT_MANAGEMENT_CREDENTIAL)
             .build();
 
         RabbitMQConnectionFactory rabbitMQConnectionFactory = new RabbitMQConnectionFactory(

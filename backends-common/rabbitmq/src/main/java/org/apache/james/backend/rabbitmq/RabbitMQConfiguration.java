@@ -35,16 +35,20 @@ public class RabbitMQConfiguration {
 
     public static class ManagementCredentials {
 
-        static final char[] DEFAULT_PASSWORD = "guest".toCharArray();
         static final String DEFAULT_USER = "guest";
+        static final String DEFAULT_PASSWORD_STRING = "guest";
+        static final char[] DEFAULT_PASSWORD = DEFAULT_PASSWORD_STRING.toCharArray();
 
         static ManagementCredentials from(Configuration configuration) {
-            String user = Optional.ofNullable(configuration.getString(MANAGEMENT_CREDENTIAL_USER_PROPERTY))
-                .orElse(DEFAULT_USER);
-            char[] password = Optional.ofNullable(configuration.getString(MANAGEMENT_CREDENTIAL_PASSWORD_PROPERTY))
-                .map(String::toCharArray)
-                .orElse(DEFAULT_PASSWORD);
-            return new ManagementCredentials(user, password);
+            String user = configuration.getString(MANAGEMENT_CREDENTIAL_USER_PROPERTY);
+            Preconditions.checkState(!Strings.isNullOrEmpty(user), "You need to specify the " +
+                MANAGEMENT_CREDENTIAL_USER_PROPERTY + " property as username of rabbitmq management admin account");
+
+            String passwordString = configuration.getString(MANAGEMENT_CREDENTIAL_PASSWORD_PROPERTY);
+            Preconditions.checkState(!Strings.isNullOrEmpty(passwordString), "You need to specify the " +
+                MANAGEMENT_CREDENTIAL_PASSWORD_PROPERTY + " property as password of rabbitmq management admin account");
+
+            return new ManagementCredentials(user, passwordString.toCharArray());
         }
 
         private static final String MANAGEMENT_CREDENTIAL_USER_PROPERTY = "management.user";
@@ -90,26 +94,31 @@ public class RabbitMQConfiguration {
 
     @FunctionalInterface
     public interface RequireManagementUri {
-        Builder managementUri(URI managementUri);
+        RequireManagementCredentials managementUri(URI managementUri);
+    }
+
+    @FunctionalInterface
+    public interface RequireManagementCredentials {
+        Builder managementCredentials(ManagementCredentials managementCredentials);
     }
 
     public static class Builder {
         static final int DEFAULT_MAX_RETRIES = 7;
         static final int DEFAULT_MIN_DELAY = 3000;
-        static final ManagementCredentials DEFAULT_MANAGEMENT_CREDENTIAL = new ManagementCredentials(DEFAULT_USER, DEFAULT_PASSWORD);
+        public static final ManagementCredentials DEFAULT_MANAGEMENT_CREDENTIAL = new ManagementCredentials(DEFAULT_USER, DEFAULT_PASSWORD);
 
         private final URI amqpUri;
         private final URI managementUri;
+        private final ManagementCredentials managementCredentials;
         private Optional<Integer> maxRetries;
         private Optional<Integer> minDelay;
-        private Optional<ManagementCredentials> managementCredential;
 
-        private Builder(URI amqpUri, URI managementUri) {
+        private Builder(URI amqpUri, URI managementUri, ManagementCredentials managementCredentials) {
             this.amqpUri = amqpUri;
             this.managementUri = managementUri;
+            this.managementCredentials = managementCredentials;
             this.maxRetries = Optional.empty();
             this.minDelay = Optional.empty();
-            this.managementCredential = Optional.empty();
         }
 
         public Builder maxRetries(int maxRetries) {
@@ -122,19 +131,15 @@ public class RabbitMQConfiguration {
             return this;
         }
 
-        public Builder managementCredentials(ManagementCredentials managementCredentials) {
-            this.managementCredential = Optional.ofNullable(managementCredentials);
-            return this;
-        }
-
         public RabbitMQConfiguration build() {
             Preconditions.checkNotNull(amqpUri, "'amqpUri' should not be null");
             Preconditions.checkNotNull(managementUri, "'managementUri' should not be null");
-            return new RabbitMQConfiguration(amqpUri, 
-                    managementUri, 
+            Preconditions.checkNotNull(managementCredentials, "'managementCredentials' should not be null");
+            return new RabbitMQConfiguration(amqpUri,
+                    managementUri,
+                    managementCredentials,
                     maxRetries.orElse(DEFAULT_MAX_RETRIES),
-                    minDelay.orElse(DEFAULT_MIN_DELAY),
-                    managementCredential.orElse(DEFAULT_MANAGEMENT_CREDENTIAL));
+                    minDelay.orElse(DEFAULT_MIN_DELAY));
         }
     }
 
@@ -142,7 +147,7 @@ public class RabbitMQConfiguration {
     private static final String MANAGEMENT_URI_PROPERTY_NAME = "management.uri";
 
     public static RequireAmqpUri builder() {
-        return amqpUri -> managementUri -> new Builder(amqpUri, managementUri);
+        return amqpUri -> managementUri -> managementCredentials -> new Builder(amqpUri, managementUri, managementCredentials);
     }
 
     public static RabbitMQConfiguration from(Configuration configuration) {
@@ -176,12 +181,12 @@ public class RabbitMQConfiguration {
     private final int minDelay;
     private final ManagementCredentials managementCredentials;
 
-    private RabbitMQConfiguration(URI uri, URI managementUri, int maxRetries, int minDelay, ManagementCredentials managementCredentials) {
+    private RabbitMQConfiguration(URI uri, URI managementUri, ManagementCredentials managementCredentials, int maxRetries, int minDelay) {
         this.uri = uri;
         this.managementUri = managementUri;
+        this.managementCredentials = managementCredentials;
         this.maxRetries = maxRetries;
         this.minDelay = minDelay;
-        this.managementCredentials = managementCredentials;
     }
 
     public URI getUri() {
