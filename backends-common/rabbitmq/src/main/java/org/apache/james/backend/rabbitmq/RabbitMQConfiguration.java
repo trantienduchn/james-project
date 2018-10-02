@@ -18,7 +18,11 @@
  ****************************************************************/
 package org.apache.james.backend.rabbitmq;
 
+import static org.apache.james.backend.rabbitmq.RabbitMQConfiguration.ManagementCredentials.DEFAULT_PASSWORD;
+import static org.apache.james.backend.rabbitmq.RabbitMQConfiguration.ManagementCredentials.DEFAULT_USER;
+
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -28,6 +32,57 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 
 public class RabbitMQConfiguration {
+
+    public static class ManagementCredentials {
+
+        static final char[] DEFAULT_PASSWORD = "guest".toCharArray();
+        static final String DEFAULT_USER = "guest";
+
+        static ManagementCredentials from(Configuration configuration) {
+            String user = Optional.ofNullable(configuration.getString(MANAGEMENT_CREDENTIAL_USER_PROPERTY))
+                .orElse(DEFAULT_USER);
+            char[] password = Optional.ofNullable(configuration.getString(MANAGEMENT_CREDENTIAL_PASSWORD_PROPERTY))
+                .map(String::toCharArray)
+                .orElse(DEFAULT_PASSWORD);
+            return new ManagementCredentials(user, password);
+        }
+
+        private static final String MANAGEMENT_CREDENTIAL_USER_PROPERTY = "management.user";
+        private static final String MANAGEMENT_CREDENTIAL_PASSWORD_PROPERTY = "management.password";
+        private final String user;
+        private final char[] password;
+
+        ManagementCredentials(String user, char[] password) {
+            Preconditions.checkNotNull(user);
+            Preconditions.checkNotNull(password);
+            this.user = user;
+            this.password = password;
+        }
+
+        public String getUser() {
+            return user;
+        }
+
+        public char[] getPassword() {
+            return password;
+        }
+
+        @Override
+        public final boolean equals(Object o) {
+            if (o instanceof ManagementCredentials) {
+                ManagementCredentials that = (ManagementCredentials) o;
+                return Objects.equals(this.user, that.user)
+                    && Arrays.equals(this.password, that.password);
+            }
+            return false;
+        }
+
+        @Override
+        public final int hashCode() {
+            return Objects.hash(user, Arrays.hashCode(password));
+        }
+    }
+
     @FunctionalInterface
     public interface RequireAmqpUri {
         RequireManagementUri amqpUri(URI amqpUri);
@@ -39,19 +94,22 @@ public class RabbitMQConfiguration {
     }
 
     public static class Builder {
-        public static final int DEFAULT_MAX_RETRIES = 7;
-        public static final int DEFAULT_MIN_DELAY = 3000;
+        static final int DEFAULT_MAX_RETRIES = 7;
+        static final int DEFAULT_MIN_DELAY = 3000;
+        static final ManagementCredentials DEFAULT_MANAGEMENT_CREDENTIAL = new ManagementCredentials(DEFAULT_USER, DEFAULT_PASSWORD);
 
         private final URI amqpUri;
         private final URI managementUri;
         private Optional<Integer> maxRetries;
         private Optional<Integer> minDelay;
+        private Optional<ManagementCredentials> managementCredential;
 
         private Builder(URI amqpUri, URI managementUri) {
             this.amqpUri = amqpUri;
             this.managementUri = managementUri;
             this.maxRetries = Optional.empty();
             this.minDelay = Optional.empty();
+            this.managementCredential = Optional.empty();
         }
 
         public Builder maxRetries(int maxRetries) {
@@ -64,13 +122,19 @@ public class RabbitMQConfiguration {
             return this;
         }
 
+        public Builder managementCredentials(ManagementCredentials managementCredentials) {
+            this.managementCredential = Optional.ofNullable(managementCredentials);
+            return this;
+        }
+
         public RabbitMQConfiguration build() {
             Preconditions.checkNotNull(amqpUri, "'amqpUri' should not be null");
             Preconditions.checkNotNull(managementUri, "'managementUri' should not be null");
             return new RabbitMQConfiguration(amqpUri, 
                     managementUri, 
                     maxRetries.orElse(DEFAULT_MAX_RETRIES),
-                    minDelay.orElse(DEFAULT_MIN_DELAY));
+                    minDelay.orElse(DEFAULT_MIN_DELAY),
+                    managementCredential.orElse(DEFAULT_MANAGEMENT_CREDENTIAL));
         }
     }
 
@@ -90,9 +154,11 @@ public class RabbitMQConfiguration {
         Preconditions.checkState(!Strings.isNullOrEmpty(managementUriAsString), "You need to specify the management URI of RabbitMQ");
         URI managementUri = checkURI(managementUriAsString);
 
+        ManagementCredentials managementCredentials = ManagementCredentials.from(configuration);
         return builder()
             .amqpUri(amqpUri)
             .managementUri(managementUri)
+            .managementCredentials(managementCredentials)
             .build();
     }
 
@@ -108,12 +174,14 @@ public class RabbitMQConfiguration {
     private final URI managementUri;
     private final int maxRetries;
     private final int minDelay;
+    private final ManagementCredentials managementCredentials;
 
-    private RabbitMQConfiguration(URI uri, URI managementUri, int maxRetries, int minDelay) {
+    private RabbitMQConfiguration(URI uri, URI managementUri, int maxRetries, int minDelay, ManagementCredentials managementCredentials) {
         this.uri = uri;
         this.managementUri = managementUri;
         this.maxRetries = maxRetries;
         this.minDelay = minDelay;
+        this.managementCredentials = managementCredentials;
     }
 
     public URI getUri() {
@@ -132,6 +200,10 @@ public class RabbitMQConfiguration {
         return minDelay;
     }
 
+    public ManagementCredentials getManagementCredentials() {
+        return managementCredentials;
+    }
+
     @Override
     public final boolean equals(Object o) {
         if (o instanceof RabbitMQConfiguration) {
@@ -140,13 +212,14 @@ public class RabbitMQConfiguration {
             return Objects.equals(this.uri, that.uri)
                 && Objects.equals(this.managementUri, that.managementUri)
                 && Objects.equals(this.maxRetries, that.maxRetries)
-                && Objects.equals(this.minDelay, that.minDelay);
+                && Objects.equals(this.minDelay, that.minDelay)
+                && Objects.equals(this.managementCredentials, that.managementCredentials);
         }
         return false;
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(uri, managementUri, maxRetries, minDelay);
+        return Objects.hash(uri, managementUri, maxRetries, minDelay, managementCredentials);
     }
 }

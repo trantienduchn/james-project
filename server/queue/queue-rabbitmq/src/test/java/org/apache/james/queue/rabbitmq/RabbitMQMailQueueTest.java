@@ -132,7 +132,7 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
             BLOB_ID_FACTORY,
             mailQueueView,
             clock);
-        RabbitMQManagementApi mqManagementApi = new RabbitMQManagementApi(rabbitMQ.managementUri(), new RabbitMQManagementCredentials("guest", "guest".toCharArray()));
+        RabbitMQManagementApi mqManagementApi = new RabbitMQManagementApi(rabbitMQConfiguration);
         mailQueueFactory = new RabbitMQMailQueueFactory(rabbitClient, mqManagementApi, factory);
         mailQueue = mailQueueFactory.createQueue(SPOOL);
     }

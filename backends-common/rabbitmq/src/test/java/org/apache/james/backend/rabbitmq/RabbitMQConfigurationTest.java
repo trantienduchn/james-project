@@ -18,6 +18,8 @@
  ****************************************************************/
 package org.apache.james.backend.rabbitmq;
 
+import static org.apache.james.backend.rabbitmq.RabbitMQConfiguration.ManagementCredentials.DEFAULT_PASSWORD;
+import static org.apache.james.backend.rabbitmq.RabbitMQConfiguration.ManagementCredentials.DEFAULT_USER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -25,6 +27,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -134,6 +137,37 @@ class RabbitMQConfigurationTest {
     }
 
     @Test
+    void fromShouldReturnDefaultManagementCredentialsWhenNotGiven() {
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        String amqpUri = "amqp://james:james@rabbitmq_host:5672";
+        configuration.addProperty("uri", amqpUri);
+        String managementUri = "http://james:james@rabbitmq_host:15672/api/";
+        configuration.addProperty("management.uri", managementUri);
+
+        assertThat(RabbitMQConfiguration.from(configuration).getManagementCredentials())
+            .isEqualTo(RabbitMQConfiguration.Builder.DEFAULT_MANAGEMENT_CREDENTIAL);
+    }
+
+    @Test
+    void managementCredentialShouldEqualsCustomValueWhenGiven() {
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        String amqpUri = "amqp://james:james@rabbitmq_host:5672";
+        configuration.addProperty("uri", amqpUri);
+        String managementUri = "http://james:james@rabbitmq_host:15672/api/";
+        configuration.addProperty("management.uri", managementUri);
+        String user = "james";
+        configuration.addProperty("management.user", user);
+        String passwordString = "james_password";
+        configuration.addProperty("management.password", passwordString);
+
+        RabbitMQConfiguration.ManagementCredentials credentials = new RabbitMQConfiguration.ManagementCredentials(
+            user, passwordString.toCharArray());
+
+        assertThat(RabbitMQConfiguration.from(configuration).getManagementCredentials())
+            .isEqualTo(credentials);
+    }
+
+    @Test
     void maxRetriesShouldEqualsDefaultValueWhenNotGiven() throws URISyntaxException {
         RabbitMQConfiguration rabbitMQConfiguration = RabbitMQConfiguration.builder()
             .amqpUri(new URI("amqp://james:james@rabbitmq_host:5672"))
@@ -181,5 +215,60 @@ class RabbitMQConfigurationTest {
 
         assertThat(rabbitMQConfiguration.getMinDelay())
             .isEqualTo(minDelay);
+    }
+
+    @Nested
+    class ManagementCredentialsTest {
+        @Test
+        void managementCredentialShouldRespectBeanContract() {
+            EqualsVerifier.forClass(RabbitMQConfiguration.ManagementCredentials.class)
+                .verify();
+        }
+
+        @Test
+        void fromShouldReturnDefaultManagementCredentialsWhenNotGiven() {
+            PropertiesConfiguration configuration = new PropertiesConfiguration();
+
+            assertThat(RabbitMQConfiguration.ManagementCredentials.from(configuration))
+                .isEqualTo(RabbitMQConfiguration.Builder.DEFAULT_MANAGEMENT_CREDENTIAL);
+        }
+
+        @Test
+        void fromShouldReturnDefaultUserWhenNotGiven() {
+            PropertiesConfiguration configuration = new PropertiesConfiguration();
+            String passwordString = "password";
+            configuration.addProperty("management.password", passwordString);
+
+            RabbitMQConfiguration.ManagementCredentials defaultUserCredentials = new RabbitMQConfiguration.ManagementCredentials(
+                DEFAULT_USER, passwordString.toCharArray());
+            assertThat(RabbitMQConfiguration.ManagementCredentials.from(configuration))
+                .isEqualTo(defaultUserCredentials);
+        }
+
+        @Test
+        void fromShouldReturnDefaultPasswordWhenNotGiven() {
+            PropertiesConfiguration configuration = new PropertiesConfiguration();
+            String userString = "guest";
+            configuration.addProperty("management.user", userString);
+
+            RabbitMQConfiguration.ManagementCredentials defaultPasswordCredentials = new RabbitMQConfiguration.ManagementCredentials(
+                userString, DEFAULT_PASSWORD);
+            assertThat(RabbitMQConfiguration.ManagementCredentials.from(configuration))
+                .isEqualTo(defaultPasswordCredentials);
+        }
+
+        @Test
+        void fromShouldCorrespondingCredentialWhenGiven() {
+            PropertiesConfiguration configuration = new PropertiesConfiguration();
+            String userString = "guest";
+            configuration.addProperty("management.user", userString);
+            String passwordString = "password";
+            configuration.addProperty("management.password", passwordString);
+
+            RabbitMQConfiguration.ManagementCredentials credentialWithUserAndPassword = new RabbitMQConfiguration.ManagementCredentials(
+                userString, passwordString.toCharArray());
+            assertThat(RabbitMQConfiguration.ManagementCredentials.from(configuration))
+                .isEqualTo(credentialWithUserAndPassword);
+        }
     }
 }
