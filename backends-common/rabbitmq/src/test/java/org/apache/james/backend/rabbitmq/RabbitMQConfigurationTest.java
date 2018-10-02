@@ -141,7 +141,7 @@ class RabbitMQConfigurationTest {
     }
 
     @Test
-    void fromShouldThrowWhenNotGiven() {
+    void fromShouldThrowWhenManagementCredentialsAreNotGiven() {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
         String amqpUri = "amqp://james:james@rabbitmq_host:5672";
         configuration.addProperty("uri", amqpUri);
@@ -154,7 +154,7 @@ class RabbitMQConfigurationTest {
     }
 
     @Test
-    void fromShouldReturnCustomValueWhenGiven() {
+    void fromShouldReturnCustomValueWhenManagementCredentialsAreGiven() {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
         String amqpUri = "amqp://james:james@rabbitmq_host:5672";
         configuration.addProperty("uri", amqpUri);
