@@ -20,7 +20,6 @@
 package org.apache.james;
 
 import org.apache.james.modules.MailboxModule;
-import org.apache.james.modules.activemq.ActiveMQQueueModule;
 import org.apache.james.modules.data.CassandraDLPConfigurationStoreModule;
 import org.apache.james.modules.data.CassandraDomainListModule;
 import org.apache.james.modules.data.CassandraJmapModule;
@@ -89,7 +88,7 @@ public class CassandraJamesServerMain {
         new CassandraQuotaMailingModule());
 
     public static final Module CASSANDRA_SERVER_CORE_MODULE = Modules.combine(
-        new ActiveMQQueueModule(),
+        new RabbitMQModule(),
         new CassandraDomainListModule(),
         new CassandraDLPConfigurationStoreModule(),
         new CassandraEventStoreModule(),
@@ -107,8 +106,7 @@ public class CassandraJamesServerMain {
         new ElasticSearchMetricReporterModule(),
         new MailboxModule(),
         new TikaMailboxModule(),
-        new SpamAssassinListenerModule(),
-        new RabbitMQModule());
+        new SpamAssassinListenerModule());
 
     public static Module ALL_BUT_JMX_CASSANDRA_MODULE = Modules.combine(
         CASSANDRA_SERVER_CORE_MODULE,
