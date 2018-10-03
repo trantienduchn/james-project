@@ -34,8 +34,6 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import javax.mail.internet.MimeMessage;
-
 import org.apache.james.backend.rabbitmq.DockerRabbitMQ;
 import org.apache.james.backend.rabbitmq.RabbitChannelPool;
 import org.apache.james.backend.rabbitmq.RabbitMQConfiguration;
@@ -46,17 +44,15 @@ import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
 import org.apache.james.blob.api.HashBlobId;
-import org.apache.james.blob.api.Store;
 import org.apache.james.blob.cassandra.CassandraBlobModule;
 import org.apache.james.blob.cassandra.CassandraBlobsDAO;
-import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.blob.mail.MimeMessageStore;
 import org.apache.james.eventsourcing.eventstore.cassandra.CassandraEventStoreModule;
 import org.apache.james.metrics.api.NoopGaugeRegistry;
 import org.apache.james.metrics.api.NoopMetricFactory;
 import org.apache.james.queue.api.MailQueue;
 import org.apache.james.queue.api.ManageableMailQueue;
-import org.apache.james.queue.rabbitmq.view.api.MailQueueView;
+import org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueView;
 import org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule;
 import org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewTestFactory;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMailQueueViewConfiguration;
@@ -96,12 +92,12 @@ class RabbitMQMailQueueConfigurationChangeTest {
     private RabbitMQManagementApi mqManagementApi;
     private RabbitClient rabbitClient;
     private ThreadLocalRandom random;
-    private Store<MimeMessage, MimeMessagePartsId> mimeMessageStore;
+    private MimeMessageStore.Factory mimeMessageStoreFactory;
 
     @BeforeEach
     void setup(DockerRabbitMQ rabbitMQ, CassandraCluster cassandra) throws Exception {
         CassandraBlobsDAO blobsDAO = new CassandraBlobsDAO(cassandra.getConf(), CassandraConfiguration.DEFAULT_CONFIGURATION, BLOB_ID_FACTORY);
-        mimeMessageStore = MimeMessageStore.factory(blobsDAO).mimeMessageStore();
+        mimeMessageStoreFactory = MimeMessageStore.factory(blobsDAO);
         RabbitMQConfiguration rabbitMQConfiguration = RabbitMQConfiguration.builder()
             .amqpUri(rabbitMQ.amqpUri())
             .managementUri(rabbitMQ.managementUri())
@@ -118,17 +114,16 @@ class RabbitMQMailQueueConfigurationChangeTest {
     }
 
     private RabbitMQMailQueue getRabbitMQMailQueue(CassandraCluster cassandra, CassandraMailQueueViewConfiguration mailQueueViewConfiguration) throws Exception {
-        MailQueueView mailQueueView = CassandraMailQueueViewTestFactory.factory(clock, random, cassandra.getConf(), cassandra.getTypesProvider(),
-            mailQueueViewConfiguration)
-            .create(MailQueueName.fromString(SPOOL));
+        CassandraMailQueueView.Factory mailQueueViewFactory = CassandraMailQueueViewTestFactory.factory(clock, random, cassandra.getConf(), cassandra.getTypesProvider(),
+            mailQueueViewConfiguration);
 
         RabbitMQMailQueueFactory.PrivateFactory factory = new RabbitMQMailQueueFactory.PrivateFactory(
             new NoopMetricFactory(),
             new NoopGaugeRegistry(),
             rabbitClient,
-            mimeMessageStore,
+            mimeMessageStoreFactory,
             BLOB_ID_FACTORY,
-            mailQueueView,
+            mailQueueViewFactory,
             clock);
         RabbitMQMailQueueFactory mailQueueFactory = new RabbitMQMailQueueFactory(rabbitClient, mqManagementApi, factory);
         return mailQueueFactory.createQueue(SPOOL);
