@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
 
-class CassandraMailQueueBrowser {
+public class CassandraMailQueueBrowser {
 
     static class CassandraMailQueueIterator implements ManageableMailQueue.MailQueueIterator {
 
