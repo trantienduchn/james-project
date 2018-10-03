@@ -26,13 +26,13 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.util.EnumSet;
 
-import org.apache.activemq.store.PersistenceAdapter;
-import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
+import org.apache.james.backend.rabbitmq.DockerRabbitMQTestRule;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
 import org.apache.james.jmap.methods.GetMessageListMethod;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.modules.TestElasticSearchModule;
 import org.apache.james.modules.TestJMAPServerModule;
+import org.apache.james.modules.TestRabbitMQModule;
 import org.apache.james.server.core.configuration.Configuration;
 import org.junit.After;
 import org.junit.ClassRule;
@@ -51,7 +51,10 @@ public class JamesCapabilitiesServerTest {
 
     @ClassRule
     public static DockerCassandraRule cassandraServer = new DockerCassandraRule();
-    
+
+    @ClassRule
+    public static DockerRabbitMQTestRule rabbitMQTestRule = new DockerRabbitMQTestRule();
+
     @Rule
     public RuleChain chain = RuleChain.outerRule(temporaryFolder).around(embeddedElasticSearch);
 
@@ -69,7 +72,7 @@ public class JamesCapabilitiesServerTest {
 
         return GuiceJamesServer.forConfiguration(configuration)
             .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
-            .overrideWith((binder) -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
+            .overrideWith(new TestRabbitMQModule(rabbitMQTestRule.getDockerRabbitMQ()))
             .overrideWith(new TestElasticSearchModule(embeddedElasticSearch),
                 cassandraServer.getModule(),
                 new TestJMAPServerModule(GetMessageListMethod.DEFAULT_MAXIMUM_LIMIT),
