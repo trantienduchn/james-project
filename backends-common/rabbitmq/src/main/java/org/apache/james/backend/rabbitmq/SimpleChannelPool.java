@@ -21,11 +21,14 @@ package org.apache.james.backend.rabbitmq;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+
 import com.rabbitmq.client.Channel;
 
 public class SimpleChannelPool implements RabbitMQChannelPool {
     private final Channel channel;
 
+    @Inject
     public SimpleChannelPool(RabbitMQConnectionFactory factory) throws IOException {
         this.channel = factory.create().createChannel();
     }
