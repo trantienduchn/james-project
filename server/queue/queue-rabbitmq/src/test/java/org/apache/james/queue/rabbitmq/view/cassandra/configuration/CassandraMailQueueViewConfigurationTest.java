@@ -19,19 +19,85 @@
 
 package org.apache.james.queue.rabbitmq.view.cassandra.configuration;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
 
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 class CassandraMailQueueViewConfigurationTest {
+
+    private static final int DEFAULT_BUCKET_COUNT = 1;
+    private static final int DEFAULT_UPDATE_BROWSE_START_PACE = 100;
+    private static final Duration DEFAULT_SLICE_WINDOW = Duration.ofHours(1);
+
     @Test
     void shouldMatchBeanContract() {
         EqualsVerifier.forClass(CassandraMailQueueViewConfiguration.class).verify();
+    }
+
+    @Test
+    void fromShouldThrowWhenAllPropertiesAreMissing() {
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+
+        assertThatThrownBy(() -> CassandraMailQueueViewConfiguration.from(configuration))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("You need to specify the mailqueueview.cassandra.bucketCount property as the number of nodes from your cassandra cluster");
+    }
+
+    @Test
+    void fromShouldThrowWhenBucketCountIsMissing() {
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.addProperty("mailqueueview.cassandra.updateBrowseStartPace", DEFAULT_UPDATE_BROWSE_START_PACE);
+        configuration.addProperty("mailqueueview.cassandra.slideWindow", DEFAULT_SLICE_WINDOW);
+
+        assertThatThrownBy(() -> CassandraMailQueueViewConfiguration.from(configuration))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("You need to specify the mailqueueview.cassandra.bucketCount property as the number of nodes from your cassandra cluster");
+    }
+
+    @Test
+    void fromShouldThrowWhenUpdateBrowseStartPaceIsMissing() {
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.addProperty("mailqueueview.cassandra.bucketCount", DEFAULT_BUCKET_COUNT);
+        configuration.addProperty("mailqueueview.cassandra.slideWindow", DEFAULT_SLICE_WINDOW);
+
+        assertThatThrownBy(() -> CassandraMailQueueViewConfiguration.from(configuration))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("You need to specify the mailqueueview.cassandra.updateBrowseStartPace property as the average number of en-queue times, then after that, updating cassandra browse start point");
+    }
+
+    @Test
+    void fromShouldThrowWhenSliceWindowIsMissing() {
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.addProperty("mailqueueview.cassandra.bucketCount", DEFAULT_BUCKET_COUNT);
+        configuration.addProperty("mailqueueview.cassandra.updateBrowseStartPace", DEFAULT_UPDATE_BROWSE_START_PACE);
+
+        assertThatThrownBy(() -> CassandraMailQueueViewConfiguration.from(configuration))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("You need to specify the mailqueueview.cassandra.sliceWindow property as the seconds long of each enqueued window");
+    }
+
+    @Test
+    void fromShouldReturnCorrespondingConfigurationWhenGiven() {
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.addProperty("mailqueueview.cassandra.bucketCount", DEFAULT_BUCKET_COUNT);
+        configuration.addProperty("mailqueueview.cassandra.updateBrowseStartPace", DEFAULT_UPDATE_BROWSE_START_PACE);
+        configuration.addProperty("mailqueueview.cassandra.sliceWindow", DEFAULT_SLICE_WINDOW.getSeconds());
+
+        CassandraMailQueueViewConfiguration mailQueueViewConfiguration = CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_UPDATE_BROWSE_START_PACE)
+            .sliceWindow(DEFAULT_SLICE_WINDOW)
+            .build();
+
+        assertThat(CassandraMailQueueViewConfiguration.from(configuration))
+            .isEqualTo(mailQueueViewConfiguration);
     }
 
     @Test

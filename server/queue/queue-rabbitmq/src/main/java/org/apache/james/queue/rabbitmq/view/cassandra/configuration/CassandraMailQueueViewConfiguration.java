@@ -22,6 +22,8 @@ package org.apache.james.queue.rabbitmq.view.cassandra.configuration;
 import java.time.Duration;
 import java.util.Objects;
 
+import org.apache.commons.configuration.Configuration;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
@@ -66,6 +68,30 @@ public class CassandraMailQueueViewConfiguration {
     public static Builder.RequireBucketCount builder() {
         return bucketCount -> updateBrowseStartPace -> sliceWindow -> new Builder.ReadyToBuild(bucketCount, updateBrowseStartPace, sliceWindow);
     }
+
+    public static CassandraMailQueueViewConfiguration from(Configuration configuration) {
+        Integer bucketCount = configuration.getInteger(BUCKET_COUNT_PROPERTY, null);
+        Preconditions.checkState(bucketCount != null, "You need to specify the " +
+            BUCKET_COUNT_PROPERTY + " property as the number of nodes from your cassandra cluster");
+
+        Integer updateBrowseStartPace = configuration.getInteger(UPDATE_BROWSE_START_PACE_PROPERTY, null);
+        Preconditions.checkState(updateBrowseStartPace != null, "You need to specify the " +
+            UPDATE_BROWSE_START_PACE_PROPERTY + " property as the average number of en-queue times, then after that, updating cassandra browse start point");
+
+        Long sliceWindowInSecond = configuration.getLong(SLICE_WINDOW_PROPERTY, null);
+        Preconditions.checkState(sliceWindowInSecond != null, "You need to specify the " +
+            SLICE_WINDOW_PROPERTY + " property as the seconds long of each enqueued window");
+
+        return builder()
+            .bucketCount(bucketCount)
+            .updateBrowseStartPace(updateBrowseStartPace)
+            .sliceWindow(Duration.ofSeconds(sliceWindowInSecond))
+            .build();
+    }
+
+    private static final String BUCKET_COUNT_PROPERTY = "mailqueueview.cassandra.bucketCount";
+    private static final String UPDATE_BROWSE_START_PACE_PROPERTY = "mailqueueview.cassandra.updateBrowseStartPace";
+    private static final String SLICE_WINDOW_PROPERTY = "mailqueueview.cassandra.sliceWindow";
 
     private final int bucketCount;
     private final int updateBrowseStartPace;

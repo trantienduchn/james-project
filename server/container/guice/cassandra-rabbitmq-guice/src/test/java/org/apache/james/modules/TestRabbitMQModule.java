@@ -39,6 +39,10 @@ import com.google.inject.multibindings.Multibinder;
 
 public class TestRabbitMQModule extends AbstractModule {
 
+    private static final int DEFAULT_BUCKET_COUNT = 1;
+    private static final int DEFAULT_BROWSE_START_PACE = 1000;
+    private static final Duration SLICE_WINDOW = Duration.ofHours(1);
+
     private final DockerRabbitMQ rabbitMQ;
 
     public TestRabbitMQModule(DockerRabbitMQ rabbitMQ) {
@@ -47,13 +51,6 @@ public class TestRabbitMQModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(CassandraMailQueueViewConfiguration.class).toInstance(CassandraMailQueueViewConfiguration
-            .builder()
-            .bucketCount(1)
-            .updateBrowseStartPace(1000)
-            .sliceWindow(Duration.ofHours(1))
-            .build());
-
         Multibinder.newSetBinder(binder(), CleanupTasksPerformer.CleanupTask.class)
             .addBinding()
             .to(QueueCleanUp.class);
@@ -67,6 +64,16 @@ public class TestRabbitMQModule extends AbstractModule {
                 .managementUri(rabbitMQ.managementUri())
                 .managementCredentials(DEFAULT_MANAGEMENT_CREDENTIAL)
                 .build();
+    }
+
+    @Provides
+    @Singleton
+    protected CassandraMailQueueViewConfiguration provideMailQueueViewConfiguration() throws URISyntaxException {
+        return CassandraMailQueueViewConfiguration.builder()
+            .bucketCount(DEFAULT_BUCKET_COUNT)
+            .updateBrowseStartPace(DEFAULT_BROWSE_START_PACE)
+            .sliceWindow(SLICE_WINDOW)
+            .build();
     }
 
     public static class QueueCleanUp implements CleanupTasksPerformer.CleanupTask {
