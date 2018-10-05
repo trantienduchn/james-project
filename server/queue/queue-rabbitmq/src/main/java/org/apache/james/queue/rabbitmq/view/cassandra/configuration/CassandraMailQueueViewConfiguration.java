@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.james.util.TimeConverter;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
@@ -72,20 +73,22 @@ public class CassandraMailQueueViewConfiguration {
     public static CassandraMailQueueViewConfiguration from(Configuration configuration) {
         Integer bucketCount = configuration.getInteger(BUCKET_COUNT_PROPERTY, null);
         Preconditions.checkState(bucketCount != null, "You need to specify the " +
-            BUCKET_COUNT_PROPERTY + " property as the number of nodes from your cassandra cluster");
+            BUCKET_COUNT_PROPERTY + " property. The higher the bucket count is, the better the data will be spread in the cluster." +
+            " You might want the bucket count to exceed your Cassandra node count.");
 
         Integer updateBrowseStartPace = configuration.getInteger(UPDATE_BROWSE_START_PACE_PROPERTY, null);
         Preconditions.checkState(updateBrowseStartPace != null, "You need to specify the " +
-            UPDATE_BROWSE_START_PACE_PROPERTY + " property as the average number of en-queue times, then after that, updating cassandra browse start point");
+            UPDATE_BROWSE_START_PACE_PROPERTY + " property. The mailQueue will use this number to randomly update the browsing start point of the mail queue." +
+            " The lower that number is, the more the start point will be up to date (and thus browse quick) but the more unnecessary work will be performed upon dequeues/deletes.");
 
-        Long sliceWindowInSecond = configuration.getLong(SLICE_WINDOW_PROPERTY, null);
-        Preconditions.checkState(sliceWindowInSecond != null, "You need to specify the " +
+        String sliceWindowString = configuration.getString(SLICE_WINDOW_PROPERTY);
+        Preconditions.checkState(sliceWindowString != null, "You need to specify the " +
             SLICE_WINDOW_PROPERTY + " property as the seconds long of each enqueued window");
 
         return builder()
             .bucketCount(bucketCount)
             .updateBrowseStartPace(updateBrowseStartPace)
-            .sliceWindow(Duration.ofSeconds(sliceWindowInSecond))
+            .sliceWindow(Duration.ofMillis(TimeConverter.getMilliSeconds(sliceWindowString)))
             .build();
     }
 
