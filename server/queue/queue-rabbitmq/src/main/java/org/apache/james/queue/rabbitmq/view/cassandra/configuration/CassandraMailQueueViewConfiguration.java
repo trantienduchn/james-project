@@ -58,6 +58,7 @@ public class CassandraMailQueueViewConfiguration {
 
             public CassandraMailQueueViewConfiguration build() {
                 Preconditions.checkNotNull(sliceWindow, "'sliceWindow' is compulsory");
+                Preconditions.checkState(!(sliceWindow.isZero() || sliceWindow.isNegative()), "'sliceWindow' need to be strictly positive");
                 Preconditions.checkState(bucketCount > 0, "'bucketCount' needs to be a strictly positive integer");
                 Preconditions.checkState(updateBrowseStartPace > 0, "'updateBrowseStartPace' needs to be a strictly positive integer");
 
@@ -92,9 +93,9 @@ public class CassandraMailQueueViewConfiguration {
             .build();
     }
 
-    private static final String BUCKET_COUNT_PROPERTY = "mailqueueview.cassandra.bucketCount";
-    private static final String UPDATE_BROWSE_START_PACE_PROPERTY = "mailqueueview.cassandra.updateBrowseStartPace";
-    private static final String SLICE_WINDOW_PROPERTY = "mailqueueview.cassandra.sliceWindow";
+    static final String BUCKET_COUNT_PROPERTY = "mailqueueview.cassandra.bucketCount";
+    static final String UPDATE_BROWSE_START_PACE_PROPERTY = "mailqueueview.cassandra.updateBrowseStartPace";
+    static final String SLICE_WINDOW_PROPERTY = "mailqueueview.cassandra.sliceWindow";
 
     private final int bucketCount;
     private final int updateBrowseStartPace;
