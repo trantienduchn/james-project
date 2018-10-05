@@ -94,7 +94,7 @@ class RabbitMqMailQueueFactoryTest implements MailQueueFactoryContract<RabbitMQM
                 createdRabbitMQMailQueues.add(mailQueueFactory.createQueue("spool")))
             .threadCount(100)
             .operationCount(10)
-            .runSuccessfullyWithin(Duration.ofMinutes(10));
+            .runAcceptingErrorsWithin(Duration.ofMinutes(10));
 
         assertThat(mailQueueFactory.listCreatedMailQueues())
             .hasSize(1)
