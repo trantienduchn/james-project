@@ -19,38 +19,38 @@
 
 package org.apache.james;
 
-import com.google.inject.Module;
-import com.google.inject.multibindings.Multibinder;
-import com.google.inject.util.Modules;
 import org.apache.james.backend.rabbitmq.DockerRabbitMQ;
-import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
+import org.apache.james.backend.rabbitmq.RabbitMQSingleton;
 import org.apache.james.modules.TestRabbitMQModule;
-import org.apache.james.server.CassandraTruncateTableTask;
-import org.apache.james.util.Host;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.testcontainers.containers.GenericContainer;
+
+import com.google.inject.Module;
 
 public class DockerRabbitMQRule implements GuiceModuleTestRule {
 
-    private DockerRabbitMQ rabbitMQContainer = DockerRabbitMQ.withoutCookie();
+    private DockerRabbitMQ rabbitMQContainer = RabbitMQSingleton.singleton;
 
     @Override
     public Statement apply(Statement base, Description description) {
-        try {
-            return base;
-        } finally {
-            rabbitMQContainer.stop();
-        }
+        return base;
+    }
+
+    public void start() {
+
+    }
+
+    public void stop() {
+
     }
 
     @Override
     public void await() {
+
     }
 
     @Override
     public Module getModule() {
-        rabbitMQContainer.start();
         return new TestRabbitMQModule(rabbitMQContainer);
     }
 

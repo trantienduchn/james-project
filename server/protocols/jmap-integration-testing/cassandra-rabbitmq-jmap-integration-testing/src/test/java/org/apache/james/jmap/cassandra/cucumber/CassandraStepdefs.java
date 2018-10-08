@@ -30,6 +30,7 @@ import org.apache.activemq.store.memory.MemoryPersistenceAdapter;
 import org.apache.james.CleanupTasksPerformer;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
+import org.apache.james.backend.rabbitmq.RabbitMQSingleton;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
 import org.apache.james.jmap.methods.integration.cucumber.ImapStepdefs;
 import org.apache.james.jmap.methods.integration.cucumber.MainStepdefs;
@@ -59,7 +60,6 @@ public class CassandraStepdefs {
     private TemporaryFolder temporaryFolder = new TemporaryFolder();
     private EmbeddedElasticSearch embeddedElasticSearch = new EmbeddedElasticSearch(temporaryFolder);
     private DockerCassandraRule cassandraServer = CucumberCassandraSingleton.cassandraServer;
-    private DockerRabbitMQResource rabbitMQ = new DockerRabbitMQResource();
 
     @Inject
     private CassandraStepdefs(MainStepdefs mainStepdefs, ImapStepdefs imapStepdefs) {
@@ -71,7 +71,6 @@ public class CassandraStepdefs {
     public void init() throws Exception {
         temporaryFolder.create();
         embeddedElasticSearch.before();
-        rabbitMQ.before();
         mainStepdefs.messageIdFactory = new CassandraMessageId.Factory();
         Configuration configuration = Configuration.builder()
             .workingDirectory(temporaryFolder.newFolder())
@@ -83,7 +82,7 @@ public class CassandraStepdefs {
             .overrideWith(new TestJMAPServerModule(10))
             .overrideWith(new TestESMetricReporterModule())
             .overrideWith(new TestElasticSearchModule(embeddedElasticSearch))
-            .overrideWith(new TestRabbitMQModule(rabbitMQ.getRabbitMQ()))
+            .overrideWith(new TestRabbitMQModule(RabbitMQSingleton.singleton))
             .overrideWith(cassandraServer.getModule())
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(DefaultTextExtractor.class))
             .overrideWith((binder) -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
@@ -97,7 +96,6 @@ public class CassandraStepdefs {
         ignoreFailures(imapStepdefs::closeConnections,
                 mainStepdefs::tearDown,
                 () -> embeddedElasticSearch.after(),
-                () -> rabbitMQ.after(),
                 () -> temporaryFolder.delete());
     }
 
