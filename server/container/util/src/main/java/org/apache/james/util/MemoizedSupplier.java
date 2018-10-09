@@ -19,12 +19,38 @@
 
 package org.apache.james.util;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.google.common.base.Suppliers;
 
-public class MemoizedSupplier {
-    public static <T> Supplier<T> of(Supplier<T> originalSupplier) {
-        return Suppliers.memoize(originalSupplier::get)::get;
+public class MemoizedSupplier<T> implements Supplier<T> {
+    public static <T> MemoizedSupplier<T> of(Supplier<T> originalSupplier) {
+        return new MemoizedSupplier<>(originalSupplier);
+    }
+
+    private final Supplier<T> memorizeSupplier;
+    private volatile boolean initialized;
+
+    public MemoizedSupplier(Supplier<T> originalSupplier) {
+        this.initialized = false;
+        this.memorizeSupplier = Suppliers.memoize(() -> getValueForInitializing(originalSupplier));
+    }
+
+    private T getValueForInitializing(Supplier<T> originalSupplier) {
+        T value = originalSupplier.get();
+        this.initialized = true;
+        return value;
+    }
+
+    public void ifInitialized(Consumer<T> valueConsumer) {
+        if (initialized) {
+            valueConsumer.accept(memorizeSupplier.get());
+        }
+    }
+
+    @Override
+    public T get() {
+        return memorizeSupplier.get();
     }
 }
