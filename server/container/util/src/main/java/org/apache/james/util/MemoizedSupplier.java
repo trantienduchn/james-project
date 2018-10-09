@@ -24,6 +24,11 @@ import java.util.function.Supplier;
 
 import com.google.common.base.Suppliers;
 
+/**
+ * This supplier is based on memorized supplier from guava(since guava-25.1-jre) with additional
+ * information about value initializing state. Because guava's memorized supplier
+ * doesn't support client to check whether value is initialized or not.
+ */
 public class MemoizedSupplier<T> implements Supplier<T> {
     public static <T> MemoizedSupplier<T> of(Supplier<T> originalSupplier) {
         return new MemoizedSupplier<>(originalSupplier);
