@@ -52,10 +52,6 @@ public class MemoizedSupplier<T> implements Supplier<T> {
 
     @Override
     public T get() {
-        return this.valueReference.updateAndGet(this::initValueIfNeeded);
-    }
-
-    private T initValueIfNeeded(T originalValue) {
-        return originalValue != null ? originalValue : memorizeSupplier.get();
+        return this.valueReference.updateAndGet(originalValue -> memorizeSupplier.get());
     }
 }
