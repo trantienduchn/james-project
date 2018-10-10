@@ -19,6 +19,7 @@
 
 package org.apache.james.util;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -35,27 +36,26 @@ public class MemoizedSupplier<T> implements Supplier<T> {
     }
 
     private final Supplier<T> memorizeSupplier;
-    private volatile boolean initialized;
+    private final AtomicReference<T> valueReference;
 
     public MemoizedSupplier(Supplier<T> originalSupplier) {
-        this.initialized = false;
-        this.memorizeSupplier = Suppliers.memoize(() -> getValueForInitializing(originalSupplier));
-    }
-
-    private T getValueForInitializing(Supplier<T> originalSupplier) {
-        T value = originalSupplier.get();
-        this.initialized = true;
-        return value;
+        this.memorizeSupplier = Suppliers.memoize(originalSupplier::get);
+        this.valueReference = new AtomicReference<>();
     }
 
     public void ifInitialized(Consumer<T> valueConsumer) {
-        if (initialized) {
-            valueConsumer.accept(memorizeSupplier.get());
+        T value = valueReference.get();
+        if (value != null) {
+            valueConsumer.accept(value);
         }
     }
 
     @Override
     public T get() {
-        return memorizeSupplier.get();
+        return this.valueReference.updateAndGet(this::initValueIfNeeded);
+    }
+
+    private T initValueIfNeeded(T originalValue) {
+        return originalValue != null ? originalValue : memorizeSupplier.get();
     }
 }
