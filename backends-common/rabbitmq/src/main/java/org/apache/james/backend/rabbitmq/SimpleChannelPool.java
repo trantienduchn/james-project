@@ -20,36 +20,64 @@
 package org.apache.james.backend.rabbitmq;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
+import com.github.fge.lambdas.Throwing;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 
 public class SimpleChannelPool implements RabbitMQChannelPool {
-    private final Channel channel;
-    private final Connection connection;
+    private final AtomicReference<Channel> channelReference;
+    private final AtomicReference<Connection> connectionReference;
+    private final RabbitMQConnectionFactory connectionFactory;
 
-    public SimpleChannelPool(RabbitMQConnectionFactory factory) throws IOException {
-        this.connection = factory.create();
-        this.channel = connection.createChannel();
+    public SimpleChannelPool(RabbitMQConnectionFactory factory) {
+        this.connectionFactory = factory;
+        this.connectionReference = new AtomicReference<>();
+        this.channelReference = new AtomicReference<>();
     }
 
     @Override
     public synchronized  <T, E extends Throwable> T execute(RabbitFunction<T, E> f) throws E, ConnectionFailedException {
-        return f.execute(channel);
+        return f.execute(getResilientChannel());
     }
 
     @Override
     public synchronized  <E extends Throwable> void execute(RabbitConsumer<E> f) throws E, ConnectionFailedException {
-        f.execute(channel);
+        f.execute(getResilientChannel());
     }
 
     @Override
     public void close() throws Exception {
-        if (channel.isOpen()) {
+        Channel channel = channelReference.get();
+        if (channel != null && channel.isOpen()) {
             channel.close();
         }
-        if (connection.isOpen()) {
+        Connection connection = connectionReference.get();
+        if (connection != null && connection.isOpen()) {
             connection.close();
         }
+    }
+
+    private Connection getResilientConnection() {
+        return connectionReference.updateAndGet(this::getOpenConnection);
+    }
+
+    private Connection getOpenConnection(Connection checkedConnection) {
+        if (checkedConnection != null && checkedConnection.isOpen()) {
+            return checkedConnection;
+        }
+        return connectionFactory.create();
+    }
+
+    private Channel getResilientChannel() {
+        return channelReference.updateAndGet(Throwing.unaryOperator(this::getOpenChannel));
+    }
+
+    private Channel getOpenChannel(Channel checkedChannel) throws IOException {
+        if (checkedChannel != null && checkedChannel.isOpen()) {
+            return checkedChannel;
+        }
+        return getResilientConnection().createChannel();
     }
 }
