@@ -19,8 +19,10 @@
 
 package org.apache.james.backend.rabbitmq;
 
-import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+
+import javax.annotation.PreDestroy;
 
 import com.github.fge.lambdas.Throwing;
 import com.rabbitmq.client.Channel;
@@ -47,16 +49,16 @@ public class SimpleChannelPool implements RabbitMQChannelPool {
         f.execute(getResilientChannel());
     }
 
+    @PreDestroy
     @Override
-    public void close() throws Exception {
-        Channel channel = channelReference.get();
-        if (channel != null && channel.isOpen()) {
-            channel.close();
-        }
-        Connection connection = connectionReference.get();
-        if (connection != null && connection.isOpen()) {
-            connection.close();
-        }
+    public synchronized void close() {
+        Optional.ofNullable(channelReference.get())
+            .filter(Channel::isOpen)
+            .ifPresent(Throwing.<Channel>consumer(Channel::close).sneakyThrow());
+
+        Optional.ofNullable(connectionReference.get())
+            .filter(Connection::isOpen)
+            .ifPresent(Throwing.<Connection>consumer(Connection::close).sneakyThrow());
     }
 
     private Connection getResilientConnection() {
@@ -64,20 +66,19 @@ public class SimpleChannelPool implements RabbitMQChannelPool {
     }
 
     private Connection getOpenConnection(Connection checkedConnection) {
-        if (checkedConnection != null && checkedConnection.isOpen()) {
-            return checkedConnection;
-        }
-        return connectionFactory.create();
+        return Optional.ofNullable(checkedConnection)
+            .filter(Connection::isOpen)
+            .orElseGet(connectionFactory::create);
     }
 
     private Channel getResilientChannel() {
         return channelReference.updateAndGet(Throwing.unaryOperator(this::getOpenChannel));
     }
 
-    private Channel getOpenChannel(Channel checkedChannel) throws IOException {
-        if (checkedChannel != null && checkedChannel.isOpen()) {
-            return checkedChannel;
-        }
-        return getResilientConnection().createChannel();
+    private Channel getOpenChannel(Channel checkedChannel) {
+        return Optional.ofNullable(checkedChannel)
+            .filter(Channel::isOpen)
+            .orElseGet(Throwing.supplier(() -> getResilientConnection().createChannel())
+                .sneakyThrow());
     }
 }
