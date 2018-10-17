@@ -21,6 +21,8 @@ package org.apache.james.webadmin.dto;
 
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class DLPExpressionSampleMatchResponseDTO {
 
     public static DLPExpressionSampleMatchResponseDTO invalid() {
@@ -41,10 +43,12 @@ public class DLPExpressionSampleMatchResponseDTO {
         this.isMatched = isMatched;
     }
 
+    @JsonProperty("isValid")
     public boolean isValid() {
         return isValid;
     }
 
+    @JsonProperty("isMatched")
     public Optional<Boolean> isMatched() {
         return isMatched;
     }

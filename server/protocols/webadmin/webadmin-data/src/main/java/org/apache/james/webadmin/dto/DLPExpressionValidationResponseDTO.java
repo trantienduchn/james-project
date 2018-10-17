@@ -19,6 +19,8 @@
 
 package org.apache.james.webadmin.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class DLPExpressionValidationResponseDTO {
     static final boolean VALID = true;
 
@@ -36,6 +38,7 @@ public class DLPExpressionValidationResponseDTO {
         this.isValid = isValid;
     }
 
+    @JsonProperty("isValid")
     public boolean isValid() {
         return isValid;
     }

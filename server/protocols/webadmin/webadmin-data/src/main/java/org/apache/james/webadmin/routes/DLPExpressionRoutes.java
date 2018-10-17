@@ -33,9 +33,11 @@ import org.apache.james.webadmin.dto.DLPExpressionSampleMatchRequestDTO;
 import org.apache.james.webadmin.dto.DLPExpressionSampleMatchResponseDTO;
 import org.apache.james.webadmin.dto.DLPExpressionValidationRequestDTO;
 import org.apache.james.webadmin.dto.DLPExpressionValidationResponseDTO;
+import org.apache.james.webadmin.utils.ErrorResponder;
 import org.apache.james.webadmin.utils.JsonExtractException;
 import org.apache.james.webadmin.utils.JsonExtractor;
 import org.apache.james.webadmin.utils.JsonTransformer;
+import org.eclipse.jetty.http.HttpStatus;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiModel;
@@ -79,6 +81,7 @@ public class DLPExpressionRoutes implements Routes {
 
     private DLPExpressionValidationResponseDTO validateExpression(Request request, Response response) throws JsonExtractException {
         DLPExpressionValidationRequestDTO requestDTO = validationJsonExtractor.parse(request.body());
+        validateExpressionDTO(requestDTO);
         try {
             Pattern.compile(requestDTO.getExpression());
             return DLPExpressionValidationResponseDTO.valid();
@@ -89,12 +92,32 @@ public class DLPExpressionRoutes implements Routes {
 
     private DLPExpressionSampleMatchResponseDTO sampleMatch(Request request, Response response) throws JsonExtractException {
         DLPExpressionSampleMatchRequestDTO requestDTO = sampleMatchJsonExtractor.parse(request.body());
+        validateSampleMatchDTO(requestDTO);
         try {
             Pattern pattern = Pattern.compile(requestDTO.getExpression());
             boolean isMatched = pattern.asPredicate().test(requestDTO.getSampleValue());
             return DLPExpressionSampleMatchResponseDTO.matches(isMatched);
         } catch (PatternSyntaxException e) {
             return DLPExpressionSampleMatchResponseDTO.invalid();
+        }
+    }
+
+    private void validateExpressionDTO(DLPExpressionValidationRequestDTO requestDTO) {
+        haltBadRequest(requestDTO.getExpression() == null, "The regex expression can not be null");
+    }
+
+    private void validateSampleMatchDTO(DLPExpressionSampleMatchRequestDTO requestDTO) {
+        haltBadRequest(requestDTO.getExpression() == null,"The regex expression can not be null");
+        haltBadRequest(requestDTO.getSampleValue() == null, "The sample match value can not be null");
+    }
+
+    private void haltBadRequest(boolean matchedCondition, String message) {
+        if (matchedCondition) {
+            ErrorResponder.builder()
+                .statusCode(HttpStatus.BAD_REQUEST_400)
+                .type(ErrorResponder.ErrorType.INVALID_ARGUMENT)
+                .message(message)
+                .haltError();
         }
     }
 }
