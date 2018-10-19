@@ -35,6 +35,7 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 
+import com.github.fge.lambdas.consumers.ThrowingConsumer;
 import com.google.common.collect.ImmutableMap;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
@@ -177,6 +178,15 @@ public class DockerRabbitMQ {
         startApp();
     }
 
+    public void forgetNode(String removalClusterNodeName) throws Exception {
+        String stdout = container()
+            .execInContainer("rabbitmqctl", "-n", this.nodeName.get(), "forget_cluster_node", removalClusterNodeName)
+            .getStdout();
+        LOGGER.debug("forget_cluster_node: {}", stdout);
+
+        startApp();
+    }
+
     public void waitForReadyness() {
         waitStrategy().waitUntilReady(container);
     }
@@ -199,5 +209,11 @@ public class DockerRabbitMQ {
                 .setHost(getHostIp())
                 .setPort(getAdminPort())
                 .build();
+    }
+
+    public void performIfRunning(ThrowingConsumer<DockerRabbitMQ> actionPerform) {
+        if (container.isRunning()) {
+            actionPerform.accept(this);
+        }
     }
 }
