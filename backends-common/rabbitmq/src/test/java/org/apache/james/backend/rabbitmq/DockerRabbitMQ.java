@@ -34,6 +34,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
+import org.testcontainers.containers.wait.strategy.WaitStrategy;
 
 import com.github.fge.lambdas.consumers.ThrowingConsumer;
 import com.google.common.collect.ImmutableMap;
@@ -50,6 +51,7 @@ public class DockerRabbitMQ {
     private static final String DEFAULT_RABBITMQ_PASSWORD = "guest";
     private static final String RABBITMQ_ERLANG_COOKIE = "RABBITMQ_ERLANG_COOKIE";
     private static final String RABBITMQ_NODENAME = "RABBITMQ_NODENAME";
+    private static final Duration TEN_MINUTE_TIMEOUT = Duration.ofMinutes(10);
 
     private final GenericContainer<?> container;
     private final Optional<String> nodeName;
@@ -79,10 +81,13 @@ public class DockerRabbitMQ {
         this.nodeName = nodeName;
     }
 
-    private WaitAllStrategy waitStrategy() {
+    private WaitStrategy waitStrategy() {
         return new WaitAllStrategy()
-            .withStrategy(Wait.forHttp("").forPort(DEFAULT_RABBITMQ_ADMIN_PORT).withRateLimiter(RateLimiters.TWENTIES_PER_MINUTE))
-            .withStrategy(new RabbitMQWaitStrategy(this, Duration.ofMinutes(10)));
+            .withStrategy(Wait.forHttp("").forPort(DEFAULT_RABBITMQ_ADMIN_PORT)
+                .withRateLimiter(RateLimiters.DEFAULT)
+                .withStartupTimeout(TEN_MINUTE_TIMEOUT))
+            .withStrategy(new RabbitMQWaitStrategy(this, TEN_MINUTE_TIMEOUT))
+            .withStartupTimeout(TEN_MINUTE_TIMEOUT);
     }
 
     private String randomName() {
