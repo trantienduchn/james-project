@@ -59,17 +59,17 @@ public class DockerRabbitMQ {
     private final String rabbitHostName;
     private final String hostNameSuffix;
 
-    public static DockerRabbitMQ withCookieAndHostName(String hostNamePrefix, String erlangCookie, Network network) {
-        return new DockerRabbitMQ(Optional.ofNullable(hostNamePrefix), Optional.ofNullable(erlangCookie), Optional.of(network));
+    public static DockerRabbitMQ withCookieAndHostName(String hostNamePrefix, String clusterIdentity, String erlangCookie, Network network) {
+        return new DockerRabbitMQ(Optional.ofNullable(hostNamePrefix), Optional.ofNullable(clusterIdentity), Optional.ofNullable(erlangCookie), Optional.of(network));
     }
 
     public static DockerRabbitMQ withoutCookie() {
-        return new DockerRabbitMQ(Optional.empty(), Optional.empty(), Optional.empty());
+        return new DockerRabbitMQ(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     @SuppressWarnings("resource")
-    private DockerRabbitMQ(Optional<String> hostNamePrefix, Optional<String> erlangCookie, Optional<Network> net) {
-        this.hostNameSuffix = UUID.randomUUID().toString();
+    private DockerRabbitMQ(Optional<String> hostNamePrefix, Optional<String> clusterIdentity, Optional<String> erlangCookie, Optional<Network> net) {
+        this.hostNameSuffix = clusterIdentity.orElse(UUID.randomUUID().toString());
         this.rabbitHostName = hostName(hostNamePrefix);
         this.container = new GenericContainer<>(Images.RABBITMQ)
                 .withCreateContainerCmdModifier(cmd -> cmd.withName(this.rabbitHostName))

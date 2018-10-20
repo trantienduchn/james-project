@@ -19,6 +19,7 @@
 package org.apache.james.backend.rabbitmq;
 
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 import org.apache.james.util.Runnables;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -56,9 +57,10 @@ public class DockerClusterRabbitMQExtension implements BeforeAllCallback, Before
             .createNetworkCmdModifiers(ImmutableList.of())
             .build();
 
-        rabbitMQ1 = DockerRabbitMQ.withCookieAndHostName(RABBIT_1, cookie, network);
-        rabbitMQ2 = DockerRabbitMQ.withCookieAndHostName(RABBIT_2, cookie, network);
-        rabbitMQ3 = DockerRabbitMQ.withCookieAndHostName(RABBIT_3, cookie, network);
+        String clusterIdentity = UUID.randomUUID().toString();
+        rabbitMQ1 = DockerRabbitMQ.withCookieAndHostName(RABBIT_1, clusterIdentity, cookie, network);
+        rabbitMQ2 = DockerRabbitMQ.withCookieAndHostName(RABBIT_2, clusterIdentity, cookie, network);
+        rabbitMQ3 = DockerRabbitMQ.withCookieAndHostName(RABBIT_3, clusterIdentity, cookie, network);
 
         Runnables.runParallel(
             rabbitMQ1::start,
