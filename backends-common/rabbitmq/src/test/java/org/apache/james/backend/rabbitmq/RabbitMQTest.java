@@ -57,7 +57,7 @@ import com.rabbitmq.client.ConnectionFactory;
 
 class RabbitMQTest {
 
-    private static class RabbitMQTestExtension extends RabbitMQExtension {
+    private static class RabbitMQNestedTestExtension extends RabbitMQExtension {
 
         @Override
         public void beforeAll(ExtensionContext context) {
@@ -77,7 +77,7 @@ class RabbitMQTest {
     }
 
     @RegisterExtension
-    static RabbitMQTestExtension testExtension = new RabbitMQTestExtension();
+    static RabbitMQNestedTestExtension testExtension = new RabbitMQNestedTestExtension();
 
     @BeforeAll
     static void setup() {
