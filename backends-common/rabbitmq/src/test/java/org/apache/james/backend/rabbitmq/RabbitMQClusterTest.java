@@ -59,6 +59,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
+@Disabled("RabbitMQClusterTest is not stable and usually reach out of wait timeout when starting up 3 dockers or joining them together")
 class RabbitMQClusterTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQClusterTest.class);
