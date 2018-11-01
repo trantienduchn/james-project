@@ -27,7 +27,6 @@ import java.time.Duration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.james.mailbox.tika.TikaConfiguration;
-import org.apache.james.util.StreamUtils;
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -249,9 +248,7 @@ public class TikaConfigurationReaderTest {
                     .port(889)
                     .timeoutInMillis(500)
                     .cacheWeightInBytes(1520000)
-                    .contentTypeBlacklist(StreamUtils
-                        .ofNullable(new String[0])
-                        .collect(ImmutableList.toImmutableList()))
+                    .contentTypeBlacklist(ImmutableList.of())
                     .build());
     }
 
@@ -276,9 +273,7 @@ public class TikaConfigurationReaderTest {
                     .port(889)
                     .timeoutInMillis(500)
                     .cacheWeightInBytes(1520000)
-                    .contentTypeBlacklist(StreamUtils
-                        .ofNullable(new String[] {"application/ics", "application/zip"})
-                        .collect(ImmutableList.toImmutableList()))
+                    .contentTypeBlacklist(ImmutableList.of("application/ics", "application/zip"))
                     .build());
     }
 }

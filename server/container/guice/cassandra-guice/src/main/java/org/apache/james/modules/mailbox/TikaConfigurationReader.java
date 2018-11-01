@@ -20,13 +20,11 @@
 package org.apache.james.modules.mailbox;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.james.mailbox.tika.TikaConfiguration;
-import org.apache.james.util.OptionalUtils;
 import org.apache.james.util.Size;
 import org.apache.james.util.StreamUtils;
 import org.apache.james.util.TimeConverter;
