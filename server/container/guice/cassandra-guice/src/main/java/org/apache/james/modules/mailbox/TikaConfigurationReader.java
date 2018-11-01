@@ -20,14 +20,19 @@
 package org.apache.james.modules.mailbox;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.james.mailbox.tika.TikaConfiguration;
+import org.apache.james.util.OptionalUtils;
 import org.apache.james.util.Size;
+import org.apache.james.util.StreamUtils;
 import org.apache.james.util.TimeConverter;
 
 import com.github.fge.lambdas.Throwing;
+import com.google.common.collect.ImmutableList;
 
 public class TikaConfigurationReader {
     public static final String TIKA_ENABLED = "tika.enabled";
@@ -37,6 +42,7 @@ public class TikaConfigurationReader {
     public static final String TIKA_TIMEOUT_IN_MS = "tika.timeoutInMillis";
     public static final String TIKA_CACHE_EVICTION_PERIOD = "tika.cache.eviction.period";
     public static final String TIKA_CACHE_WEIGHT_MAX = "tika.cache.weight.max";
+    public static final String TIKA_CONTENT_TYPE_BLACKLIST = "tika.contentType.blacklist";
 
     public static TikaConfiguration readTikaConfiguration(Configuration configuration) {
         Optional<Boolean> enabled = Optional.ofNullable(
@@ -65,6 +71,10 @@ public class TikaConfigurationReader {
             .map(Throwing.function(Size::parse))
             .map(Size::asBytes);
 
+        List<String> contentTypeBlacklist = StreamUtils
+            .ofNullable(configuration.getStringArray(TIKA_CONTENT_TYPE_BLACKLIST))
+            .collect(ImmutableList.toImmutableList());
+
         return TikaConfiguration.builder()
             .enable(enabled)
             .host(host)
@@ -73,6 +83,7 @@ public class TikaConfigurationReader {
             .cacheEnable(cacheEnabled)
             .cacheEvictionPeriod(cacheEvictionPeriod)
             .cacheWeightInBytes(cacheWeight)
+            .contentTypeBlacklist(contentTypeBlacklist)
             .build();
     }
 }
