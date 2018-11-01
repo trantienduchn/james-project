@@ -37,6 +37,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -58,6 +59,7 @@ public class TikaTextExtractorTest {
                 .host(tika.getIp())
                 .port(tika.getPort())
                 .timeoutInMillis(tika.getTimeoutInMillis())
+                .contentTypeBlacklist(ImmutableList.of("application/ics", "application/zip"))
                 .build()));
     }
 
@@ -213,5 +215,11 @@ public class TikaTextExtractorTest {
         List<String> listOfString = deserializer.asListOfString(jsonArray);
         
         assertThat(listOfString).containsOnly("first", "second", "third");
+    }
+
+    @Test
+    public void extractContentReturnEmptyWhenContentTypeInBlacklist() throws Exception {
+        assertThat(textExtractor.extractContent(null, "application/ics").getTextualContent())
+            .isEmpty();
     }
 }
