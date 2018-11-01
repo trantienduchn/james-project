@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.http.client.fluent.Request;
@@ -53,6 +54,9 @@ public class TikaHttpClientImpl implements TikaHttpClient {
 
     @Override
     public Optional<InputStream> recursiveMetaDataAsJson(InputStream inputStream, String contentType) {
+        if (isBlacklisted(contentType)) {
+            return Optional.empty();
+        }
         try {
             return Optional.ofNullable(
                     Request.Put(recursiveMetaData)
@@ -65,6 +69,12 @@ public class TikaHttpClientImpl implements TikaHttpClient {
             LOGGER.warn("Failing to call Tika for content type {}", contentType, e);
             return Optional.empty();
         }
+    }
+
+    private boolean isBlacklisted(String contentType) {
+        return tikaConfiguration.getContentTypeBlacklist()
+            .stream()
+            .anyMatch(blackItem -> Objects.equals(blackItem, contentType));
     }
 
 }
