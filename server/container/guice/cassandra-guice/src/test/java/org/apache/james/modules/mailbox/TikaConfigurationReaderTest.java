@@ -263,14 +263,14 @@ public class TikaConfigurationReaderTest {
     @Test
     public void readTikaConfigurationShouldHaveContentTypeBlacklist() throws ConfigurationException {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
-        configuration.load(new StringReader(
-            "tika.enabled=true\n" +
-            "tika.cache.enabled=true\n" +
-            "tika.host=172.0.0.5\n" +
-            "tika.port=889\n" +
-            "tika.timeoutInMillis=500\n" +
-            "tika.cache.weight.max=1520000\n" +
-            "tika.contentType.blacklist=application/ics,application/zip"));
+        // expecting line breaks cause errors on CI
+        configuration.addProperty("tika.enabled", true);
+        configuration.addProperty("tika.cache.enabled", true);
+        configuration.addProperty("tika.host", "172.0.0.5");
+        configuration.addProperty("tika.port", "889");
+        configuration.addProperty("tika.timeoutInMillis", "500");
+        configuration.addProperty("tika.cache.weight.max", "1520000");
+        configuration.addProperty("tika.contentType.blacklist", "application/ics,application/zip");
 
         assertThat(TikaConfigurationReader.readTikaConfiguration(configuration))
             .isEqualTo(
@@ -288,14 +288,13 @@ public class TikaConfigurationReaderTest {
     @Test
     public void readTikaConfigurationShouldHaveContentTypeBlacklistWithWhiteSpace() throws ConfigurationException {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
-        configuration.load(new StringReader(
-            "tika.enabled=true\n" +
-            "tika.cache.enabled=true\n" +
-            "tika.host=172.0.0.5\n" +
-            "tika.port=889\n" +
-            "tika.timeoutInMillis=500\n" +
-            "tika.cache.weight.max=1520000\n" +
-            "tika.contentType.blacklist=application/ics, application/zip"));
+        configuration.addProperty("tika.enabled", true);
+        configuration.addProperty("tika.cache.enabled", true);
+        configuration.addProperty("tika.host", "172.0.0.5");
+        configuration.addProperty("tika.port", "889");
+        configuration.addProperty("tika.timeoutInMillis", "500");
+        configuration.addProperty("tika.cache.weight.max", "1520000");
+        configuration.addProperty("tika.contentType.blacklist", "application/ics, application/zip");
 
         assertThat(TikaConfigurationReader.readTikaConfiguration(configuration))
             .isEqualTo(

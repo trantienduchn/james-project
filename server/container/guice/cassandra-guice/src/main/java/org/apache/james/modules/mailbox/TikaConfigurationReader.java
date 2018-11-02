@@ -19,7 +19,9 @@
 
 package org.apache.james.modules.mailbox;
 
+import java.io.UnsupportedEncodingException;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,11 +30,15 @@ import org.apache.james.mailbox.tika.TikaConfiguration;
 import org.apache.james.util.Size;
 import org.apache.james.util.StreamUtils;
 import org.apache.james.util.TimeConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.fge.lambdas.Throwing;
 import com.google.common.collect.ImmutableList;
 
 public class TikaConfigurationReader {
+    private static final Logger LOGGER = LoggerFactory.getLogger(TikaConfigurationReader.class);
+
     public static final String TIKA_ENABLED = "tika.enabled";
     public static final String TIKA_CACHE_ENABLED = "tika.cache.enabled";
     public static final String TIKA_HOST = "tika.host";
@@ -69,10 +75,18 @@ public class TikaConfigurationReader {
             .map(Throwing.function(Size::parse))
             .map(Size::asBytes);
 
+
+        LOGGER.error("diagnostic problem comes from configuration.getStringArray");
         List<String> contentTypeBlacklist = StreamUtils
             .ofNullable(configuration.getStringArray(TIKA_CONTENT_TYPE_BLACKLIST))
             .map(String::trim)
+            .peek(contentType -> LOGGER.error(base64(contentType)))
             .collect(ImmutableList.toImmutableList());
+
+        LOGGER.error("diagnostic problem comes from immutablelist");
+        // printing blacklist elements by base 64 representation, suspecting unexpected escaping characters
+        contentTypeBlacklist
+            .forEach(contentType -> LOGGER.error(base64(contentType)));
 
         return TikaConfiguration.builder()
             .enable(enabled)
@@ -84,5 +98,13 @@ public class TikaConfigurationReader {
             .cacheWeightInBytes(cacheWeight)
             .contentTypeBlacklist(contentTypeBlacklist)
             .build();
+    }
+
+    private static String base64(String value) {
+        try {
+            return Base64.getEncoder().encodeToString(value.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
