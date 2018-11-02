@@ -284,4 +284,29 @@ public class TikaConfigurationReaderTest {
                     .contentTypeBlacklist(ImmutableList.of("application/ics", "application/zip"))
                     .build());
     }
+
+    @Test
+    public void readTikaConfigurationShouldHaveContentTypeBlacklistWithWhiteSpace() throws ConfigurationException {
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.load(new StringReader(
+            "tika.enabled=true\n" +
+            "tika.cache.enabled=true\n" +
+            "tika.host=172.0.0.5\n" +
+            "tika.port=889\n" +
+            "tika.timeoutInMillis=500\n" +
+            "tika.cache.weight.max=1520000\n" +
+            "tika.contentType.blacklist=application/ics, application/zip"));
+
+        assertThat(TikaConfigurationReader.readTikaConfiguration(configuration))
+            .isEqualTo(
+                TikaConfiguration.builder()
+                    .enabled()
+                    .cacheEnabled()
+                    .host("172.0.0.5")
+                    .port(889)
+                    .timeoutInMillis(500)
+                    .cacheWeightInBytes(1520000)
+                    .contentTypeBlacklist(ImmutableList.of("application/ics", "application/zip"))
+                    .build());
+    }
 }

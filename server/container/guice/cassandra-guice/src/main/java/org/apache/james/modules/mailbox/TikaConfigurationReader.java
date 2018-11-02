@@ -71,6 +71,7 @@ public class TikaConfigurationReader {
 
         List<String> contentTypeBlacklist = StreamUtils
             .ofNullable(configuration.getStringArray(TIKA_CONTENT_TYPE_BLACKLIST))
+            .map(String::trim)
             .collect(ImmutableList.toImmutableList());
 
         return TikaConfiguration.builder()

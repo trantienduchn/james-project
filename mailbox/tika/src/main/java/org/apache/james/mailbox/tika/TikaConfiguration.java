@@ -180,9 +180,9 @@ public class TikaConfiguration {
     private final int timeoutInMillis;
     private final Duration cacheEvictionPeriod;
     private final long cacheWeightInBytes;
-    private final List<String> contentTypeBlacklist;
+    private final ImmutableList<String> contentTypeBlacklist;
 
-    private TikaConfiguration(boolean enabled, boolean cacheEnabled, String host, int port, int timeoutInMillis, Duration cacheEvictionPeriod, long cacheWeightInBytes, List<String> contentTypeBlacklist) {
+    private TikaConfiguration(boolean enabled, boolean cacheEnabled, String host, int port, int timeoutInMillis, Duration cacheEvictionPeriod, long cacheWeightInBytes, ImmutableList<String> contentTypeBlacklist) {
         this.enabled = enabled;
         this.cacheEnabled = cacheEnabled;
         this.host = host;
