@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.james.util.Port;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Ints;
@@ -230,6 +231,7 @@ public class TikaConfiguration {
             TikaConfiguration that = (TikaConfiguration) o;
 
             return Objects.equals(this.enabled, that.enabled)
+                && Objects.equals(this.cacheEnabled, that.cacheEnabled)
                 && Objects.equals(this.port, that.port)
                 && Objects.equals(this.timeoutInMillis, that.timeoutInMillis)
                 && Objects.equals(this.cacheWeightInBytes, that.cacheWeightInBytes)
@@ -242,7 +244,20 @@ public class TikaConfiguration {
 
     @Override
     public final int hashCode() {
-        return Objects.hash(enabled, host, port, timeoutInMillis, cacheEvictionPeriod, cacheWeightInBytes, contentTypeBlacklist);
+        return Objects.hash(enabled, cacheEnabled, host, port, timeoutInMillis, cacheEvictionPeriod, cacheWeightInBytes, contentTypeBlacklist);
     }
 
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+            .add("enabled", enabled)
+            .add("cacheEnabled", cacheEnabled)
+            .add("host", host)
+            .add("port", port)
+            .add("timeoutInMillis", timeoutInMillis)
+            .add("cacheEvictionPeriod", cacheEvictionPeriod)
+            .add("cacheWeightInBytes", cacheWeightInBytes)
+            .add("contentTypeBlacklist", contentTypeBlacklist)
+            .toString();
+    }
 }

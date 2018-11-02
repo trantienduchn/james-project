@@ -31,7 +31,15 @@ import org.junit.Test;
 
 import com.google.common.collect.ImmutableList;
 
+import nl.jqno.equalsverifier.EqualsVerifier;
+
 public class TikaConfigurationReaderTest {
+
+    @Test
+    public void shouldMatchBeanContract() {
+        EqualsVerifier.forClass(TikaConfiguration.class)
+            .verify();
+    }
 
     @Test
     public void readTikaConfigurationShouldAcceptMandatoryValues() throws Exception {
