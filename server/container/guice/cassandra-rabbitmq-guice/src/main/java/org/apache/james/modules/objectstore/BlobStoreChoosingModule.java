@@ -119,8 +119,8 @@ public class BlobStoreChoosingModule extends AbstractModule {
                         choosingConfiguration.toString()));
             }
         } catch (FileNotFoundException e) {
-            LOGGER.error("Could not find " + BLOBSTORE_CONFIGURATION_NAME + " configuration file.");
-            throw new RuntimeException(e);
+            LOGGER.error("Could not find " + BLOBSTORE_CONFIGURATION_NAME + " configuration file, using cassandra blobstore as the default");
+            return cassandraBlobStoreFactory;
         }
     }
 

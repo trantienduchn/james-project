@@ -20,6 +20,7 @@
 package org.apache.james.modules.objectstore;
 
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.configuration.Configuration;
@@ -33,11 +34,18 @@ public class BlobStoreChoosingConfiguration {
         CASSANDRA("cassandra"),
         SWIFT("swift");
 
+        static String supportedImplNames() {
+            return Stream.of(BlobStoreImplName.values())
+                .map(BlobStoreImplName::getName)
+                .collect(Collectors.joining(","));
+        }
+
         static BlobStoreImplName from(String name) {
             return Stream.of(values())
                 .filter(blobName -> blobName.getName().equalsIgnoreCase(name))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(String.format("%s is not a valid name of BlobStores", name)));
+                .orElseThrow(() -> new IllegalArgumentException(String.format("%s is not a valid name of BlobStores, " +
+                    "please use on of supported values in: %s", name, supportedImplNames())));
         }
 
         private final String name;
@@ -52,14 +60,14 @@ public class BlobStoreChoosingConfiguration {
     }
 
     static final String BLOBSTORE_IMPLEMENTATION_PROPERTY = "objectstore.implementation";
-    static final BlobStoreImplName DEFAULT_IMPLEMENTATION = BlobStoreImplName.SWIFT;
 
     static BlobStoreChoosingConfiguration from(Configuration configuration) {
         BlobStoreImplName blobStoreImplName = Optional.ofNullable(configuration.getString(BLOBSTORE_IMPLEMENTATION_PROPERTY))
             .filter(StringUtils::isNotBlank)
             .map(StringUtils::trim)
             .map(BlobStoreImplName::from)
-            .orElse(DEFAULT_IMPLEMENTATION);
+            .orElseThrow(() -> new IllegalStateException(String.format("%s property is missing please use one of " +
+                "supported values in: %s", BLOBSTORE_IMPLEMENTATION_PROPERTY, BlobStoreImplName.supportedImplNames())));
 
         return new BlobStoreChoosingConfiguration(blobStoreImplName);
     }
