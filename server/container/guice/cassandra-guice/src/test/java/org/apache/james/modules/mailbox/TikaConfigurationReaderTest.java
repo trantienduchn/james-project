@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.StringReader;
 import java.time.Duration;
+import java.util.List;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -263,6 +264,8 @@ public class TikaConfigurationReaderTest {
     @Test
     public void readTikaConfigurationShouldHaveContentTypeBlacklist() throws ConfigurationException {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
+        System.out.println("isDelimiterParsingDisabled: " + configuration.isDelimiterParsingDisabled());
+        System.out.println("getListDelimiter: " + configuration.getListDelimiter());
         // expecting line breaks cause errors on CI
         configuration.addProperty("tika.enabled", true);
         configuration.addProperty("tika.cache.enabled", true);
@@ -271,6 +274,18 @@ public class TikaConfigurationReaderTest {
         configuration.addProperty("tika.timeoutInMillis", "500");
         configuration.addProperty("tika.cache.weight.max", "1520000");
         configuration.addProperty("tika.contentType.blacklist", "application/ics,application/zip");
+
+        System.out.println("isDelimiterParsingDisabled: " + configuration.isDelimiterParsingDisabled());
+        System.out.println("getListDelimiter: " + configuration.getListDelimiter());
+        Object blackList = configuration.getProperty("tika.contentType.blacklist");
+        System.out.println("blackList type:" + blackList.getClass());
+        if (blackList instanceof List) {
+            System.out.println("type list");
+            ((List) blackList).stream().forEach(System.out::println);
+        } else if (blackList instanceof String) {
+            System.out.println("type string");
+            System.out.println(blackList);
+        }
 
         assertThat(TikaConfigurationReader.readTikaConfiguration(configuration))
             .isEqualTo(
@@ -294,7 +309,8 @@ public class TikaConfigurationReaderTest {
         configuration.addProperty("tika.port", "889");
         configuration.addProperty("tika.timeoutInMillis", "500");
         configuration.addProperty("tika.cache.weight.max", "1520000");
-        configuration.addProperty("tika.contentType.blacklist", "application/ics, application/zip");
+        // suspecting / character
+        configuration.addProperty("tika.contentType.blacklist", "application1, application2");
 
         assertThat(TikaConfigurationReader.readTikaConfiguration(configuration))
             .isEqualTo(
@@ -305,7 +321,7 @@ public class TikaConfigurationReaderTest {
                     .port(889)
                     .timeoutInMillis(500)
                     .cacheWeightInBytes(1520000)
-                    .contentTypeBlacklist(ImmutableList.of("application/ics", "application/zip"))
+                    .contentTypeBlacklist(ImmutableList.of("application1", "application2"))
                     .build());
     }
 }
