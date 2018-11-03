@@ -264,6 +264,7 @@ public class TikaConfigurationReaderTest {
     @Test
     public void readTikaConfigurationShouldHaveContentTypeBlacklist() throws ConfigurationException {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.setListDelimiter(',');
         System.out.println("isDelimiterParsingDisabled: " + configuration.isDelimiterParsingDisabled());
         System.out.println("getListDelimiter: " + configuration.getListDelimiter());
         // expecting line breaks cause errors on CI
@@ -303,6 +304,7 @@ public class TikaConfigurationReaderTest {
     @Test
     public void readTikaConfigurationShouldHaveContentTypeBlacklistWithWhiteSpace() throws ConfigurationException {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.setListDelimiter(',');
         configuration.addProperty("tika.enabled", true);
         configuration.addProperty("tika.cache.enabled", true);
         configuration.addProperty("tika.host", "172.0.0.5");
