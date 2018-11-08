@@ -1,4 +1,3 @@
 #! /bin/sh -e
 
-update-alternatives --remove james /usr/share/james/james-ldap-server.jar
 update-alternatives --remove james /usr/share/james/james-withoutldap-server.jar
