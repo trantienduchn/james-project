@@ -26,16 +26,16 @@ docker run \
    --rm \
    --volume $PWD/.m2:/root/.m2 \
    --volume $PWD:/origin \
-   --volume $PWD/dockerfiles/run/guice/cassandra/destination:/cassandra/destination \
+   --volume $PWD/dockerfiles/run/guice/cassandra-rabbitmq/destination:/cassandra-rabbitmq/destination \
    -t james/project -s $SHA1
 
 # Build image
-docker build -t james_run dockerfiles/run/guice/cassandra
+docker build -t james_run dockerfiles/run/guice/cassandra-rabbitmq
 
 # Build packages
 docker build -t build-james-packages \
   --build-arg RELEASE=$RELEASE-$SHA1 \
   --build-arg ITERATION=$ITERATION \
   --build-arg BASE=james_run \
-  dockerfiles/packaging/guice/cassandra
+  dockerfiles/packaging/guice/cassandra-rabbitmq
 docker run --rm --name james-packages -v $DIRECTORY:/result build-james-packages

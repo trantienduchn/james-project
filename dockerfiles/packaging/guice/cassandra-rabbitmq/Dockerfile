@@ -14,7 +14,7 @@ ADD scripts/ /packages
 COPY scripts/james.service /packages/package/usr/share/james/
 COPY --from=source /root/james-server.jar /packages/package/usr/share/james/james-withoutldap-server.jar
 COPY --from=source /root/james-cli.jar /packages/package/usr/share/james/james-cli.jar
-COPY --from=source /root/james-server-cassandra-guice.lib/ /packages/package/usr/share/james/james-server-cassandra-guice.lib/
+COPY --from=source /root/james-server-cassandra-rabbitmq-guice.lib/ /packages/package/usr/share/james/james-server-cassandra-rabbitmq-guice.lib/
 COPY --from=source /root/james-server-cli.lib/ /packages/package/usr/share/james/james-server-cli.lib/
 
 RUN mkdir -p /packages/package/var/lib/james
