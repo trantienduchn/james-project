@@ -81,7 +81,11 @@ public class ObjectStorageBlobsDAOProvider implements Provider<ObjectStorageBlob
         Preconditions.checkArgument(namespace != null,
             "Mandatory configuration value " + OBJECTSTORAGE_NAMESPACE + " is missing from " + OBJECTSTORAGE_CONFIGURATION_NAME + " configuration");
 
-        return providersByName.get(provider).get().container(ContainerName.of(namespace)).blobIdFactory(blobIdFactory).build();
+        ContainerName containerName = ContainerName.of(namespace);
+        ObjectStorageBlobsDAO dao = providersByName.get(provider).get().container(containerName).blobIdFactory(blobIdFactory).build();
+        dao.createContainer(containerName);
+
+        return dao;
     }
 
     private ObjectStorageBlobsDAOBuilder.RequireContainerName selectSwiftAuthApi() {
