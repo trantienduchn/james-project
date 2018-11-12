@@ -35,9 +35,9 @@ import com.google.common.base.Preconditions;
 public class SwiftKeystone2ConfigurationReader implements SwiftConfigurationReader {
 
     static final String OBJECTSTORAGE_SWIFT_KEYSTONE_2_USERNAME =
-        "objectstorage.swift.keystone2.username";
+        "objectstore.swift.keystone2.username";
     static final String OBJECTSTORAGE_SWIFT_KEYSTONE_2_TENANTNAME =
-        "objectstorage.swift.keystone2.tenantname";
+        "objectstore.swift.keystone2.tenantname";
 
     public static SwiftKeystone2ObjectStorage.Configuration readSwiftConfiguration(Configuration configuration) {
         String endpointStr = configuration.getString(OBJECTSTORAGE_SWIFT_ENDPOINT, null);

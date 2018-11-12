@@ -38,23 +38,23 @@ import org.junit.jupiter.api.Test;
 class SwiftKeystone2ConfigurationReaderTest {
     private static final String ENDPOINT = "http://auth.example.com/v2.0";
     private static final String CONFIG_ENDPOINT =
-        "objectstorage.swift.endpoint=" + ENDPOINT;
+        "objectstore.swift.endpoint=" + ENDPOINT;
 
     private static final String CREDENTIALS = "this_is_a_secret";
     private static final String CONFIG_CREDENTIALS =
-        "objectstorage.swift.credentials=" + CREDENTIALS;
+        "objectstore.swift.credentials=" + CREDENTIALS;
 
     private static final String REGION = "EMEA";
     private static final String CONFIG_REGION =
-        "objectstorage.swift.region=" + REGION;
+        "objectstore.swift.region=" + REGION;
 
     private static final String USER_NAME = "user";
     private static final String CONFIG_USER_NAME =
-        "objectstorage.swift.keystone2.username=" + USER_NAME;
+        "objectstore.swift.keystone2.username=" + USER_NAME;
 
     private static final String TENANT_NAME = "tenant";
     private static final String CONFIG_TENANT_NAME =
-        "objectstorage.swift.keystone2.tenantname=" + TENANT_NAME;
+        "objectstore.swift.keystone2.tenantname=" + TENANT_NAME;
 
     @Test
     void readBasicKeystone2Configuration() throws Exception {

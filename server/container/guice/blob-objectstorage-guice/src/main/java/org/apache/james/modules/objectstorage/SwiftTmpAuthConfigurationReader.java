@@ -37,13 +37,13 @@ import com.google.common.base.Preconditions;
 public class SwiftTmpAuthConfigurationReader implements SwiftConfigurationReader {
 
     static final String OBJECTSTORAGE_SWIFT_TEMPAUTH_USERNAME =
-        "objectstorage.swift.tempauth.username";
+        "objectstore.swift.tempauth.username";
     static final String OBJECTSTORAGE_SWIFT_TEMPAUTH_TENANTNAME =
-        "objectstorage.swift.tempauth.tenantname";
+        "objectstore.swift.tempauth.tenantname";
     static final String OBJECTSTORAGE_SWIFT_TEMPAUTH_PASS_HEADER_NAME =
-        "objectstorage.swift.tempauth.passheadername";
+        "objectstore.swift.tempauth.passheadername";
     static final String OBJECTSTORAGE_SWIFT_TEMPAUTH_USER_HEADER_NAME =
-        "objectstorage.swift.tempauth.userheadername";
+        "objectstore.swift.tempauth.userheadername";
 
     public static SwiftTempAuthObjectStorage.Configuration readSwiftConfiguration(Configuration configuration) {
         String endpointStr = configuration.getString(OBJECTSTORAGE_SWIFT_ENDPOINT, null);

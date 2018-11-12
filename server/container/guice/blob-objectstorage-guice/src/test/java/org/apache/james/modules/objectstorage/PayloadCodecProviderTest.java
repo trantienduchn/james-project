@@ -34,63 +34,63 @@ class PayloadCodecProviderTest {
 
     private static final FakePropertiesProvider DEFAULT_PROPERTIES_PROVIDER =
         FakePropertiesProvider.builder()
-            .register("objectstorage",
+            .register("objectstore",
                 newConfigBuilder()
-                    .put("objectstorage.payload.codec", PayloadCodecs.DEFAULT.name())
+                    .put("objectstore.payload.codec", PayloadCodecs.DEFAULT.name())
                     .build())
             .build();
 
     private static final FakePropertiesProvider EMPTY_PROPERTIES_PROVIDER =
         FakePropertiesProvider.builder()
-            .register("objectstorage",
+            .register("objectstore",
                 newConfigBuilder().build())
             .build();
 
     private static final FakePropertiesProvider AES_PROPERTIES_PROVIDER =
         FakePropertiesProvider.builder()
-            .register("objectstorage",
+            .register("objectstore",
                 newConfigBuilder()
-                    .put("objectstorage.payload.codec", PayloadCodecs.AES256.name())
-                    .put("objectstorage.aes256.hexsalt", "12345123451234512345")
-                    .put("objectstorage.aes256.password", "james is great")
+                    .put("objectstore.payload.codec", PayloadCodecs.AES256.name())
+                    .put("objectstore.aes256.hexsalt", "12345123451234512345")
+                    .put("objectstore.aes256.password", "james is great")
                     .build())
             .build();
 
     private static final FakePropertiesProvider MISSING_SALT_PROPERTIES_PROVIDER =
         FakePropertiesProvider.builder()
-            .register("objectstorage",
+            .register("objectstore",
                 newConfigBuilder()
-                    .put("objectstorage.payload.codec", PayloadCodecs.AES256.name())
-                    .put("objectstorage.aes256.password", "james is great")
+                    .put("objectstore.payload.codec", PayloadCodecs.AES256.name())
+                    .put("objectstore.aes256.password", "james is great")
                     .build())
             .build();
 
     private static final FakePropertiesProvider EMPTY_SALT_PROPERTIES_PROVIDER =
         FakePropertiesProvider.builder()
-            .register("objectstorage",
+            .register("objectstore",
                 newConfigBuilder()
-                    .put("objectstorage.payload.codec", PayloadCodecs.AES256.name())
-                    .put("objectstorage.aes256.hexsalt", "")
-                    .put("objectstorage.aes256.password", "james is great")
+                    .put("objectstore.payload.codec", PayloadCodecs.AES256.name())
+                    .put("objectstore.aes256.hexsalt", "")
+                    .put("objectstore.aes256.password", "james is great")
                     .build())
             .build();
 
     private static final FakePropertiesProvider MISSING_PASSWORD_PROPERTIES_PROVIDER =
         FakePropertiesProvider.builder()
-            .register("objectstorage",
+            .register("objectstore",
                 newConfigBuilder()
-                    .put("objectstorage.payload.codec", PayloadCodecs.AES256.name())
-                    .put("objectstorage.aes256.hexsalt", "12345123451234512345")
+                    .put("objectstore.payload.codec", PayloadCodecs.AES256.name())
+                    .put("objectstore.aes256.hexsalt", "12345123451234512345")
                     .build())
             .build();
 
     private static final FakePropertiesProvider EMPTY_PASSWORD_PROPERTIES_PROVIDER =
         FakePropertiesProvider.builder()
-            .register("objectstorage",
+            .register("objectstore",
                 newConfigBuilder()
-                    .put("objectstorage.payload.codec", PayloadCodecs.AES256.name())
-                    .put("objectstorage.aes256.hexsalt", "12345123451234512345")
-                    .put("objectstorage.aes256.password", "")
+                    .put("objectstore.payload.codec", PayloadCodecs.AES256.name())
+                    .put("objectstore.aes256.hexsalt", "12345123451234512345")
+                    .put("objectstore.aes256.password", "")
                     .build())
             .build();
 
@@ -114,10 +114,10 @@ class PayloadCodecProviderTest {
     @Test
     void shouldFailIfCodecKeyIsIncorrect() throws Exception {
         FakePropertiesProvider propertiesWithTypo = FakePropertiesProvider.builder()
-            .register("objectstorage",
+            .register("objectstore",
                 newConfigBuilder()
-                    .put("objectstorage.payload.codec", "aes255")
-                    .put("objectstorage.aes256.password", "james is great")
+                    .put("objectstore.payload.codec", "aes255")
+                    .put("objectstore.aes256.password", "james is great")
                     .build())
             .build();
         assertThatThrownBy(() -> new PayloadCodecProvider(propertiesWithTypo).get()).isInstanceOf(IllegalArgumentException.class);

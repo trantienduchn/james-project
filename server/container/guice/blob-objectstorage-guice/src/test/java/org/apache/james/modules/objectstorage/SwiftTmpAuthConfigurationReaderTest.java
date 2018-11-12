@@ -40,31 +40,31 @@ import org.junit.jupiter.api.Test;
 class SwiftTmpAuthConfigurationReaderTest {
     private static final String ENDPOINT = "http://auth.example.com/v2.0";
     private static final String CONFIG_ENDPOINT =
-        "objectstorage.swift.endpoint=" + ENDPOINT;
+        "objectstore.swift.endpoint=" + ENDPOINT;
 
     private static final String CREDENTIALS = "this_is_a_secret";
     private static final String CONFIG_CREDENTIALS =
-        "objectstorage.swift.credentials=" + CREDENTIALS;
+        "objectstore.swift.credentials=" + CREDENTIALS;
 
     private static final String REGION = "EMEA";
     private static final String CONFIG_REGION =
-        "objectstorage.swift.region=" + REGION;
+        "objectstore.swift.region=" + REGION;
 
     private static final String USER_NAME = "user";
     private static final String CONFIG_USER_NAME =
-        "objectstorage.swift.tempauth.username=" + USER_NAME;
+        "objectstore.swift.tempauth.username=" + USER_NAME;
 
     private static final String TENANT_NAME = "tenant";
     private static final String CONFIG_TENANT_NAME =
-        "objectstorage.swift.tempauth.tenantname=" + TENANT_NAME;
+        "objectstore.swift.tempauth.tenantname=" + TENANT_NAME;
 
     private static final String PASS_HEADER_NAME = "X-Pass-Header";
     private static final String CONFIG_PASS_HEADER_NAME =
-        "objectstorage.swift.tempauth.passheadername=" + PASS_HEADER_NAME;
+        "objectstore.swift.tempauth.passheadername=" + PASS_HEADER_NAME;
 
     private static final String USER_HEADER_NAME = "X-User-Header";
     private static final String CONFIG_USER_HEADER_NAME =
-        "objectstorage.swift.tempauth.userheadername=" + USER_HEADER_NAME;
+        "objectstore.swift.tempauth.userheadername=" + USER_HEADER_NAME;
 
     @Test
     void readBasicTempAuthConfiguration() throws Exception {

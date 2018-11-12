@@ -44,22 +44,22 @@ import com.google.common.base.Preconditions;
 public class SwiftKeystone3ConfigurationReader implements SwiftConfigurationReader {
 
     static final String OBJECTSTORAGE_SWIFT_KEYSTONE_3_USER_NAME =
-        "objectstorage.swift.keystone3.user.name";
+        "objectstore.swift.keystone3.user.name";
 
     static final String OBJECTSTORAGE_SWIFT_KEYSTONE_3_USER_DOMAIN =
-        "objectstorage.swift.keystone3.user.domain";
+        "objectstore.swift.keystone3.user.domain";
 
     private static final String OBJECTSTORAGE_SWIFT_KEYSTONE_3_DOMAIN_ID =
-        "objectstorage.swift.keystone3.scope.domainid";
+        "objectstore.swift.keystone3.scope.domainid";
 
     static final String OBJECTSTORAGE_SWIFT_KEYSTONE_3_PROJECT_NAME =
-        "objectstorage.swift.keystone3.scope.project.name";
+        "objectstore.swift.keystone3.scope.project.name";
 
     private static final String OBJECTSTORAGE_SWIFT_KEYSTONE_3_PROJECT_DOMAIN_NAME =
-        "objectstorage.swift.keystone3.scope.project.domainname";
+        "objectstore.swift.keystone3.scope.project.domainname";
 
     private static final String OBJECTSTORAGE_SWIFT_KEYSTONE_3_PROJECT_DOMAIN_ID =
-        "objectstorage.swift.keystone3.scope.project.domainid";
+        "objectstore.swift.keystone3.scope.project.domainid";
 
     public static SwiftKeystone3ObjectStorage.Configuration readSwiftConfiguration(Configuration configuration) {
         String endpointStr = configuration.getString(OBJECTSTORAGE_SWIFT_ENDPOINT, null);

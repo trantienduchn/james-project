@@ -20,7 +20,7 @@
 package org.apache.james.modules.objectstorage;
 
 public interface SwiftConfigurationReader {
-    String OBJECTSTORAGE_SWIFT_ENDPOINT = "objectstorage.swift.endpoint";
-    String OBJECTSTORAGE_SWIFT_CREDENTIALS = "objectstorage.swift.credentials";
-    String OBJECTSTORAGE_SWIFT_REGION = "objectstorage.swift.region";
+    String OBJECTSTORAGE_SWIFT_ENDPOINT = "objectstore.swift.endpoint";
+    String OBJECTSTORAGE_SWIFT_CREDENTIALS = "objectstore.swift.credentials";
+    String OBJECTSTORAGE_SWIFT_REGION = "objectstore.swift.region";
 }

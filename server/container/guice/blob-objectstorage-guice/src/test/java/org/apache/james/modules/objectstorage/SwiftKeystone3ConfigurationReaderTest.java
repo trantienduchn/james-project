@@ -42,37 +42,37 @@ import org.junit.jupiter.api.Test;
 class SwiftKeystone3ConfigurationReaderTest {
     private static final String ENDPOINT = "http://auth.example.com/v2.0";
     private static final String CONFIG_ENDPOINT =
-        "objectstorage.swift.endpoint=" + ENDPOINT;
+        "objectstore.swift.endpoint=" + ENDPOINT;
 
     private static final String CREDENTIALS = "this_is_a_secret";
     private static final String CONFIG_CREDENTIALS =
-        "objectstorage.swift.credentials=" + CREDENTIALS;
+        "objectstore.swift.credentials=" + CREDENTIALS;
 
     private static final String REGION = "EMEA";
     private static final String CONFIG_REGION =
-        "objectstorage.swift.region=" + REGION;
+        "objectstore.swift.region=" + REGION;
 
     private static final String USER_NAME = "user";
     private static final String CONFIG_USER_NAME =
-        "objectstorage.swift.keystone3.user.name=" + USER_NAME;
+        "objectstore.swift.keystone3.user.name=" + USER_NAME;
 
     private static final String USER_DOMAIN_NAME = "user_domain";
     private static final String CONFIG_USER_DOMAIN_NAME =
-        "objectstorage.swift.keystone3.user.domain=" + USER_DOMAIN_NAME;
+        "objectstore.swift.keystone3.user.domain=" + USER_DOMAIN_NAME;
 
     private static final String SCOPE_DOMAIN_ID = "scope_domain";
     private static final String CONFIG_SCOPE_DOMAIN_ID =
-        "objectstorage.swift.keystone3.scope.domainid=" + SCOPE_DOMAIN_ID;
+        "objectstore.swift.keystone3.scope.domainid=" + SCOPE_DOMAIN_ID;
 
     private static final String SCOPE_PROJECT_NAME = "scope_project_name";
     private static final String CONFIG_SCOPE_PROJECT_NAME =
-        "objectstorage.swift.keystone3.scope.project.name=" + SCOPE_PROJECT_NAME;
+        "objectstore.swift.keystone3.scope.project.name=" + SCOPE_PROJECT_NAME;
     private static final String SCOPE_PROJECT_DOMAIN_NAME = "scope_project_domain_name";
     private static final String CONFIG_SCOPE_PROJECT_DOMAIN_NAME =
-        "objectstorage.swift.keystone3.scope.project.domainname=" + SCOPE_PROJECT_DOMAIN_NAME;
+        "objectstore.swift.keystone3.scope.project.domainname=" + SCOPE_PROJECT_DOMAIN_NAME;
     private static final String SCOPE_PROJECT_DOMAIN_ID = "scope_project_domain_id";
     private static final String CONFIG_SCOPE_PROJECT_DOMAIN_ID =
-        "objectstorage.swift.keystone3.scope.project.domainid=" + SCOPE_PROJECT_DOMAIN_ID;
+        "objectstore.swift.keystone3.scope.project.domainid=" + SCOPE_PROJECT_DOMAIN_ID;
 
     @Test
     void readUnscopedKeystone3Configuration() throws Exception {
