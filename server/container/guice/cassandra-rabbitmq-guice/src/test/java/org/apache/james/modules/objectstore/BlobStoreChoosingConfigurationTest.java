@@ -29,6 +29,7 @@ class BlobStoreChoosingConfigurationTest {
 
     private static final String SWIFT = "swift";
     private static final String CASSANDRA = "cassandra";
+    private static final String UNION = "union";
 
     @Test
     void fromShouldThrowWhenBlobStoreImplIsMissing() {
@@ -36,7 +37,7 @@ class BlobStoreChoosingConfigurationTest {
 
         assertThatThrownBy(() -> BlobStoreChoosingConfiguration.from(configuration))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessage("objectstore.implementation property is missing please use one of supported values in: cassandra, swift");
+            .hasMessage("objectstore.implementation property is missing please use one of supported values in: cassandra, swift, union");
     }
 
     @Test
@@ -46,7 +47,7 @@ class BlobStoreChoosingConfigurationTest {
 
         assertThatThrownBy(() -> BlobStoreChoosingConfiguration.from(configuration))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessage("objectstore.implementation property is missing please use one of supported values in: cassandra, swift");
+            .hasMessage("objectstore.implementation property is missing please use one of supported values in: cassandra, swift, union");
     }
 
     @Test
@@ -56,7 +57,7 @@ class BlobStoreChoosingConfigurationTest {
 
         assertThatThrownBy(() -> BlobStoreChoosingConfiguration.from(configuration))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessage("objectstore.implementation property is missing please use one of supported values in: cassandra, swift");
+            .hasMessage("objectstore.implementation property is missing please use one of supported values in: cassandra, swift, union");
     }
 
     @Test
@@ -66,7 +67,7 @@ class BlobStoreChoosingConfigurationTest {
 
         assertThatThrownBy(() -> BlobStoreChoosingConfiguration.from(configuration))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("un_supported is not a valid name of BlobStores, please use one of supported values in: cassandra, swift");
+            .hasMessage("un_supported is not a valid name of BlobStores, please use one of supported values in: cassandra, swift, union");
     }
 
     @Test
@@ -91,6 +92,18 @@ class BlobStoreChoosingConfigurationTest {
                 .getImplementation()
                 .getName())
             .isEqualTo(SWIFT);
+    }
+
+    @Test
+    void fromShouldReturnConfigurationWhenBlobStoreImplIsUnion() {
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.addProperty("objectstore.implementation", UNION);
+
+        assertThat(
+            BlobStoreChoosingConfiguration.from(configuration)
+                .getImplementation()
+                .getName())
+            .isEqualTo(UNION);
     }
 
     @Test

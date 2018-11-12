@@ -20,6 +20,8 @@
 package org.apache.james.modules.objectstore;
 
 import static org.apache.james.modules.objectstore.BlobStoreChoosingModule.BLOBSTORE_CONFIGURATION_NAME;
+import static org.apache.james.modules.objectstore.BlobStoreChoosingModule.BlobStoreFactory;
+import static org.apache.james.modules.objectstore.BlobStoreChoosingModule.UnionBlobStoreFactory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -35,6 +37,7 @@ class BlobStoreChoosingModuleTest {
 
     private static CassandraBlobStoreFactory CASSANDRA_BLOBSTORE_FACTORY = mock(CassandraBlobStoreFactory.class);
     private static SwiftBlobStoreFactory SWIFT_BLOBSTORE_FACTORY = mock(SwiftBlobStoreFactory.class);
+    private static UnionBlobStoreFactory UNION_BLOBSTORE_FACTORY = mock(UnionBlobStoreFactory.class);
 
     @Test
     void provideBlobStoreFactoryShouldThrowWhenMissingPropertyField() throws Exception {
@@ -45,7 +48,7 @@ class BlobStoreChoosingModuleTest {
             .register(BLOBSTORE_CONFIGURATION_NAME, configuration)
             .build();
 
-        assertThatThrownBy(() -> module.provideBlobStoreFactory(propertyProvider, () -> CASSANDRA_BLOBSTORE_FACTORY, () -> SWIFT_BLOBSTORE_FACTORY))
+        assertThatThrownBy(() -> provideBlobStore(module, propertyProvider))
             .isInstanceOf(IllegalStateException.class);
     }
 
@@ -58,7 +61,7 @@ class BlobStoreChoosingModuleTest {
             .register(BLOBSTORE_CONFIGURATION_NAME, configuration)
             .build();
 
-        assertThatThrownBy(() -> module.provideBlobStoreFactory(propertyProvider, () -> CASSANDRA_BLOBSTORE_FACTORY, () -> SWIFT_BLOBSTORE_FACTORY))
+        assertThatThrownBy(() -> provideBlobStore(module, propertyProvider))
             .isInstanceOf(IllegalStateException.class);
     }
 
@@ -71,7 +74,7 @@ class BlobStoreChoosingModuleTest {
             .register(BLOBSTORE_CONFIGURATION_NAME, configuration)
             .build();
 
-        assertThatThrownBy(() -> module.provideBlobStoreFactory(propertyProvider, () -> CASSANDRA_BLOBSTORE_FACTORY, () -> SWIFT_BLOBSTORE_FACTORY))
+        assertThatThrownBy(() -> provideBlobStore(module, propertyProvider))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -82,7 +85,7 @@ class BlobStoreChoosingModuleTest {
             .register("other_configuration_file", new PropertiesConfiguration())
             .build();
 
-        assertThat(module.provideBlobStoreFactory(propertyProvider, () -> CASSANDRA_BLOBSTORE_FACTORY, () -> SWIFT_BLOBSTORE_FACTORY))
+        assertThat(provideBlobStore(module, propertyProvider))
             .isEqualTo(CASSANDRA_BLOBSTORE_FACTORY);
     }
 
@@ -95,7 +98,7 @@ class BlobStoreChoosingModuleTest {
             .register(BLOBSTORE_CONFIGURATION_NAME, configuration)
             .build();
 
-        assertThat(module.provideBlobStoreFactory(propertyProvider, () -> CASSANDRA_BLOBSTORE_FACTORY, () -> SWIFT_BLOBSTORE_FACTORY))
+        assertThat(provideBlobStore(module, propertyProvider))
             .isEqualTo(SWIFT_BLOBSTORE_FACTORY);
     }
 
@@ -108,7 +111,27 @@ class BlobStoreChoosingModuleTest {
             .register(BLOBSTORE_CONFIGURATION_NAME, configuration)
             .build();
 
-        assertThat(module.provideBlobStoreFactory(propertyProvider, () -> CASSANDRA_BLOBSTORE_FACTORY, () -> SWIFT_BLOBSTORE_FACTORY))
+        assertThat(provideBlobStore(module, propertyProvider))
             .isEqualTo(CASSANDRA_BLOBSTORE_FACTORY);
+    }
+
+    @Test
+    void provideBlobStoreFactoryShouldReturnUnionFactoryWhenConfigurationImplIsUnion() throws Exception {
+        BlobStoreChoosingModule module = new BlobStoreChoosingModule();
+        PropertiesConfiguration configuration = new PropertiesConfiguration();
+        configuration.addProperty("objectstore.implementation", BlobStoreImplName.UNION.getName());
+        FakePropertiesProvider propertyProvider = FakePropertiesProvider.builder()
+            .register(BLOBSTORE_CONFIGURATION_NAME, configuration)
+            .build();
+
+        assertThat(provideBlobStore(module, propertyProvider))
+            .isEqualTo(UNION_BLOBSTORE_FACTORY);
+    }
+
+    private BlobStoreFactory provideBlobStore(BlobStoreChoosingModule module, FakePropertiesProvider propertyProvider) throws Exception {
+        return module.provideBlobStoreFactory(propertyProvider,
+            () -> CASSANDRA_BLOBSTORE_FACTORY,
+            () -> SWIFT_BLOBSTORE_FACTORY,
+            () -> UNION_BLOBSTORE_FACTORY);
     }
 }

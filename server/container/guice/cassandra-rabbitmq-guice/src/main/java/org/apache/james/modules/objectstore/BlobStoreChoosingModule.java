@@ -34,6 +34,7 @@ import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.cassandra.CassandraBlobModule;
 import org.apache.james.blob.cassandra.CassandraBlobsDAO;
 import org.apache.james.blob.objectstorage.PayloadCodec;
+import org.apache.james.blob.union.UnionBlobStore;
 import org.apache.james.modules.objectstorage.ObjectStorageBlobsDAOProvider;
 import org.apache.james.modules.objectstorage.PayloadCodecProvider;
 import org.apache.james.utils.PropertiesProvider;
@@ -86,6 +87,24 @@ public class BlobStoreChoosingModule extends AbstractModule {
         }
     }
 
+    static class UnionBlobStoreFactory implements BlobStoreFactory {
+
+        private final CassandraBlobStoreFactory cassandraBlobStoreFactory;
+        private final SwiftBlobStoreFactory swiftBlobStoreFactory;
+
+        @Inject
+        UnionBlobStoreFactory(CassandraBlobStoreFactory cassandraBlobStoreFactory,
+                              SwiftBlobStoreFactory swiftBlobStoreFactory) {
+            this.cassandraBlobStoreFactory = cassandraBlobStoreFactory;
+            this.swiftBlobStoreFactory = swiftBlobStoreFactory;
+        }
+
+        @Override
+        public BlobStore get() {
+            return new UnionBlobStore(swiftBlobStoreFactory.get(), cassandraBlobStoreFactory.get());
+        }
+    }
+
     private static final Logger LOGGER = LoggerFactory.getLogger(BlobStoreChoosingModule.class);
 
     static final String BLOBSTORE_CONFIGURATION_NAME = "objectstore";
@@ -107,7 +126,8 @@ public class BlobStoreChoosingModule extends AbstractModule {
     @Singleton
     BlobStoreFactory provideBlobStoreFactory(PropertiesProvider propertiesProvider,
                                              Provider<CassandraBlobStoreFactory> cassandraBlobStoreFactoryProvider,
-                                             Provider<SwiftBlobStoreFactory> swiftBlobStoreFactoryProvider) throws ConfigurationException {
+                                             Provider<SwiftBlobStoreFactory> swiftBlobStoreFactoryProvider,
+                                             Provider<UnionBlobStoreFactory> unionBlobStoreFactoryProvider) throws ConfigurationException {
         try {
             Configuration configuration = propertiesProvider.getConfiguration(BLOBSTORE_CONFIGURATION_NAME);
             BlobStoreChoosingConfiguration choosingConfiguration = BlobStoreChoosingConfiguration.from(configuration);
@@ -116,6 +136,8 @@ public class BlobStoreChoosingModule extends AbstractModule {
                     return swiftBlobStoreFactoryProvider.get();
                 case CASSANDRA:
                     return cassandraBlobStoreFactoryProvider.get();
+                case UNION:
+                    return unionBlobStoreFactoryProvider.get();
                 default:
                     throw new RuntimeException(String.format("can not get the right blobstore provider with configuration %s",
                         choosingConfiguration.toString()));

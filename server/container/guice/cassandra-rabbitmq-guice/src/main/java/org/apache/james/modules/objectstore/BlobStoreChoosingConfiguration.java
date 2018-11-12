@@ -32,7 +32,8 @@ public class BlobStoreChoosingConfiguration {
 
     public enum BlobStoreImplName {
         CASSANDRA("cassandra"),
-        SWIFT("swift");
+        SWIFT("swift"),
+        UNION("union");
 
         static String supportedImplNames() {
             return Stream.of(BlobStoreImplName.values())
