@@ -1,17 +1,18 @@
-# Guice-Cassandra-Rabbitmq installation guide
+# Guice-Cassandra-Rabbitmq-Swift installation guide
 
 ## Building
 
 ### Requirements
 
  - Java 8 SDK
- - Docker ∕ ElasticSearch 2.4.6 and Cassandra 3.11.3
+ - Docker ∕ ElasticSearch 2.4.6, RabbitMQ Management 3.3.7, Swift ObjectStorage and Cassandra 3.11.3
  - Maven 3
 
 ### Building the artifacts
 
 An usual compilation using maven will produce two artifacts into server/container/guice/cassandra-rabbitmq-guice/target directory:
 
+[WIP] TODO: update .jar & .lib file names
  * james-server-cassandra-rabbitmq-guice.jar
  * james-server-cassandra-rabbitmq-guice.lib
 
@@ -28,13 +29,14 @@ mvn clean install
  * Cassandra 3.11.3
  * ElasticSearch 2.4.6
  * RabbitMQ-Management 3.7.7
+ * Swift ObjectStorage
 ### James Launch
 
 To run james, you have to create a directory containing required configuration files.
 
 James requires the configuration to be in a subfolder of working directory that is called **conf**. You can get a sample
 directory for configuration from
-[dockerfiles/run/guice/cassandra-rabbitmq/destination/conf](https://github.com/apache/james-project/tree/master/dockerfiles/run/guice/cassandra-rabbitmq/destination/conf). You might need to adapt it to your needs.
+[dockerfiles/run/guice/cassandra-rabbitmq-swift/destination/conf](https://github.com/apache/james-project/tree/master/dockerfiles/run/guice/cassandra-rabbitmq-swift/destination/conf). You might need to adapt it to your needs.
 
 You also need to generate a keystore in your conf folder with the following command:
 
@@ -48,6 +50,7 @@ You need to have a Cassandra, ElasticSearch and RabbitMQ instance running. You c
 $ docker run -d --port 9042:9042 --name=cassandra cassandra:3.11.3
 $ docker run -d --port 9200:9200 --port 9300:9300 --name=elasticsearch elasticsearch:2.4.6
 $ docker run -d --port 5672:5672 --port 15672:15672 --name=rabbitmq rabbitmq:3.7.7-management
+$ docker run -d --port 5000:5000 --port 8080:8080 --port 35357:35357 --name=swift jeantil/openstack-keystone-swift:pike
 ```
 
 Once everything is set up, you just have to run the jar with:
