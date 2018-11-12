@@ -92,7 +92,7 @@ public class CassandraJamesServerMain {
     public static final Module PLUGINS = Modules.combine(
         new CassandraQuotaMailingModule());
 
-    public static final Module CASSANDRA_SERVER_CORE_MODULE = Modules.combine(
+    public static final Module CASSANDRA_SERVER_CORE_MODULE_WITHOUT_CASSANDRA_BLOBSTORE = Modules.combine(
         new ActiveMQQueueModule(),
         new CassandraDomainListModule(),
         new CassandraDLPConfigurationStoreModule(),
@@ -100,11 +100,14 @@ public class CassandraJamesServerMain {
         new CassandraMailRepositoryModule(),
         new CassandraMetricsModule(),
         new BlobStoreAPIModule(),
-        new CassandraObjectStoreModule(),
         new CassandraRecipientRewriteTableModule(),
         new CassandraSessionModule(),
         new CassandraSieveRepositoryModule(),
         new CassandraUsersRepositoryModule());
+
+    public static final Module CASSANDRA_SERVER_CORE_MODULE = Modules.combine(
+        CASSANDRA_SERVER_CORE_MODULE_WITHOUT_CASSANDRA_BLOBSTORE,
+        new CassandraObjectStoreModule());
 
     public static final Module CASSANDRA_MAILBOX_MODULE = Modules.combine(
         new CassandraMailboxModule(),
@@ -113,6 +116,12 @@ public class CassandraJamesServerMain {
         new MailboxModule(),
         new TikaMailboxModule(),
         new SpamAssassinListenerModule());
+
+    public static Module ALL_BUT_JMX_AND_BLOBSTORE_CASSANDRA_MODULE = Modules.combine(
+        CASSANDRA_SERVER_CORE_MODULE_WITHOUT_CASSANDRA_BLOBSTORE,
+        CASSANDRA_MAILBOX_MODULE,
+        PROTOCOLS,
+        PLUGINS);
 
     public static Module ALL_BUT_JMX_CASSANDRA_MODULE = Modules.combine(
         CASSANDRA_SERVER_CORE_MODULE,

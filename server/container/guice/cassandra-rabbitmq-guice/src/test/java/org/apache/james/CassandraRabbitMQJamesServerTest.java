@@ -23,6 +23,7 @@ import static org.awaitility.Duration.ONE_HUNDRED_MILLISECONDS;
 
 import org.apache.james.core.Domain;
 import org.apache.james.modules.RabbitMQExtension;
+import org.apache.james.modules.SwiftExtension;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.protocols.ImapGuiceProbe;
 import org.apache.james.modules.protocols.SmtpGuiceProbe;
@@ -57,6 +58,7 @@ class CassandraRabbitMQJamesServerTest implements JmapJamesServerContract {
             .extension(new EmbeddedElasticSearchExtension())
             .extension(new CassandraExtension())
             .extension(new RabbitMQExtension())
+            .extension(new SwiftExtension())
             .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
                     .combineWith(CassandraRabbitMQJamesServerMain.ALL_BUT_JMX_CASSANDRA_RABBITMQ_MODULE)
                     .overrideWith(new TestJMAPServerModule(LIMIT_TO_10_MESSAGES))

@@ -19,8 +19,9 @@
 
 package org.apache.james;
 
-import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_CASSANDRA_MODULE;
+import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_AND_BLOBSTORE_CASSANDRA_MODULE;
 
+import org.apache.james.modules.objectstore.BlobStoreChoosingModule;
 import org.apache.james.modules.rabbitmq.RabbitMQModule;
 import org.apache.james.modules.server.JMXServerModule;
 import org.apache.james.server.core.configuration.Configuration;
@@ -29,8 +30,10 @@ import com.google.inject.Module;
 import com.google.inject.util.Modules;
 
 public class CassandraRabbitMQJamesServerMain {
-    public static final Module ALL_BUT_JMX_CASSANDRA_RABBITMQ_MODULE = Modules.override(ALL_BUT_JMX_CASSANDRA_MODULE)
-        .with(new RabbitMQModule());
+    public static final Module ALL_BUT_JMX_CASSANDRA_RABBITMQ_MODULE = Modules.override(ALL_BUT_JMX_AND_BLOBSTORE_CASSANDRA_MODULE)
+        .with(
+            new RabbitMQModule(),
+            new BlobStoreChoosingModule());
 
     public static void main(String[] args) throws Exception {
         Configuration configuration = Configuration.builder()
