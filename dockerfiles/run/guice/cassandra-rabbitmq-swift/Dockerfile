@@ -20,6 +20,7 @@ WORKDIR /root
 
 # Get data we need to run James : build results and configuration
 ADD destination/james-server-cassandra-rabbitmq-guice.jar /root/james-server.jar
+### [WIP] rename .lib file to james with cassandra + rabbitmq + swfit product jar
 ADD destination/james-server-cassandra-rabbitmq-guice.lib /root/james-server-cassandra-rabbitmq-guice.lib
 ADD destination/james-server-cli.jar /root/james-cli.jar
 ADD destination/james-server-cli.lib /root/james-server-cli.lib
