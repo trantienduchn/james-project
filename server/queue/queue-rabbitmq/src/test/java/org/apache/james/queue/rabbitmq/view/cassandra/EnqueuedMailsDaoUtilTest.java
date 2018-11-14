@@ -20,12 +20,10 @@
 package org.apache.james.queue.rabbitmq.view.cassandra;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.ByteBuffer;
 
 import org.apache.mailet.Attribute;
-import org.apache.mailet.AttributeValue;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
@@ -40,7 +38,7 @@ class EnqueuedMailsDaoUtilTest {
     }
 
     @Test
-    void toAttributesShouldConvertRawAttributeMapButItDoesntWork() {
+    void toAttributesShouldConvertRawAttributeMap() {
         ImmutableMap<String, ByteBuffer> attrMap = ImmutableMap
             .of("Header-1", toByteBuffer("{\"serializer\":\"StringSerializer\",\"value\":\"alice\"}"));
 
