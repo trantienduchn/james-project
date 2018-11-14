@@ -40,6 +40,7 @@ import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueV
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.TIME_RANGE_START;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -70,6 +71,7 @@ import org.apache.mailet.PerRecipientHeaders;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.UDTValue;
 import com.github.fge.lambdas.Throwing;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
@@ -130,6 +132,7 @@ public class EnqueuedMailsDaoUtil {
             .build();
     }
 
+    @VisibleForTesting
     static List<Attribute> toAttributes(Map<String, ByteBuffer> rowAttributes) {
         return rowAttributes.entrySet()
             .stream()
@@ -139,11 +142,9 @@ public class EnqueuedMailsDaoUtil {
 
     private static AttributeValue<?> fromByteBuffer(ByteBuffer byteBuffer) {
         try {
-            byte[] data = new byte[byteBuffer.remaining()];
-            byteBuffer.get(data);
-            return AttributeValue.fromJsonString(new String(data, StandardCharsets.UTF_8));
+            return AttributeValue.fromJsonString(StandardCharsets.UTF_8.decode(byteBuffer).toString());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
