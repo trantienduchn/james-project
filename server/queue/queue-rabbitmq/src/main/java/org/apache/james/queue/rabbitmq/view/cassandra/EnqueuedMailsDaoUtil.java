@@ -141,7 +141,7 @@ public class EnqueuedMailsDaoUtil {
         try {
             byte[] data = new byte[byteBuffer.remaining()];
             byteBuffer.get(data);
-            return AttributeValue.fromJsonString(new String(data));
+            return AttributeValue.fromJsonString(new String(data, StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
