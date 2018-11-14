@@ -16,49 +16,31 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-
-package org.apache.james.jmap.cassandra;
+package org.apache.james.jmap.rabbitmq;
 
 import java.io.IOException;
 
-import org.apache.james.CassandraJmapTestRule;
+import org.apache.james.CassandraRabbitMQSwiftJmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.jmap.methods.integration.SetMessagesMethodTest;
-import org.apache.james.mailbox.cassandra.ids.CassandraMessageId;
-import org.apache.james.mailbox.model.MessageId;
+import org.apache.james.jmap.FixedDateZonedDateTimeProvider;
+import org.apache.james.jmap.JMAPAuthenticationTest;
+import org.apache.james.util.date.ZonedDateTimeProvider;
 import org.junit.ClassRule;
-import org.junit.Ignore;
 import org.junit.Rule;
-import org.junit.Test;
 
-public class CassandraSetMessagesMethodTest extends SetMessagesMethodTest {
+public class RabbitMQJmapAuthenticationTest extends JMAPAuthenticationTest {
 
     @ClassRule
     public static DockerCassandraRule cassandra = new DockerCassandraRule();
 
     @Rule
-    public CassandraJmapTestRule rule = CassandraJmapTestRule.defaultTestRule();
-
-    @Override
-    protected GuiceJamesServer createJmapServer() throws IOException {
-        return rule.jmapServer(cassandra.getModule());
-    }
-
-    @Override
-    protected void await() {
-        rule.await();
-    }
+    public CassandraRabbitMQSwiftJmapTestRule rule = CassandraRabbitMQSwiftJmapTestRule.defaultTestRule();
     
     @Override
-    protected MessageId randomMessageId() {
-        return new CassandraMessageId.Factory().generate();
+    protected GuiceJamesServer createJmapServer(FixedDateZonedDateTimeProvider zonedDateTimeProvider) throws IOException {
+        return rule.jmapServer(cassandra.getModule())
+                .overrideWith(binder -> binder.bind(ZonedDateTimeProvider.class).toInstance(zonedDateTimeProvider));
     }
 
-    @Ignore("Temporally ignored CI failing test")
-    @Override
-    @Test
-    public void setMessagesWithABigBodyShouldReturnCreatedMessageWhenSendingMessage() {
-
-    }
 }
