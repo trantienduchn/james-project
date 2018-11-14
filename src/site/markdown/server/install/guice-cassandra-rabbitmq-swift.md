@@ -28,7 +28,7 @@ mvn clean install
  * Cassandra 3.11.3
  * ElasticSearch 2.4.6
  * RabbitMQ-Management 3.7.7
- * Swift ObjectStorage
+ * Swift ObjectStorage 2.15.1
 ### James Launch
 
 To run james, you have to create a directory containing required configuration files.
