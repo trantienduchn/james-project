@@ -41,6 +41,7 @@ import org.apache.james.blob.objectstorage.swift.SwiftTempAuthObjectStorage;
 import org.apache.james.blob.objectstorage.swift.TenantName;
 import org.apache.james.blob.objectstorage.swift.UserHeaderName;
 import org.apache.james.blob.objectstorage.swift.UserName;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,6 +53,8 @@ public class ObjectStorageBlobsDAOTest implements BlobStoreContract {
     private static final UserName USER_NAME = UserName.of("tester");
     private static final Credentials PASSWORD = Credentials.of("testing");
     private static final Identity SWIFT_IDENTITY = Identity.of(TENANT_NAME, USER_NAME);
+    private static final InputStream EMPTY_STREAM = new ByteArrayInputStream(new byte[]{});
+
     public static final String SAMPLE_SALT = "c603a7327ee3dcbc031d8d34b1096c605feca5e1";
 
     private ContainerName containerName;
@@ -148,6 +151,22 @@ public class ObjectStorageBlobsDAOTest implements BlobStoreContract {
 
         InputStream clearTextIs = encryptedDao.read(blobId);
         assertThat(clearTextIs).hasSameContentAs(new ByteArrayInputStream(bytes));
+    }
+
+    @Test
+    void clearContainerShouldDeleteAllContainerContents() {
+        byte[] bytesOfFirstBlob = "First Blob".getBytes(StandardCharsets.UTF_8);
+        byte[] bytesOfSecondBlob = "Second Blob".getBytes(StandardCharsets.UTF_8);
+        BlobId firstBlobId = testee.save(bytesOfFirstBlob).join();
+        BlobId secondBlobId = testee.save(bytesOfSecondBlob).join();
+
+        testee.clearContainer();
+        SoftAssertions.assertSoftly(softly -> {
+            softly.assertThat(testee.read(firstBlobId))
+                .hasSameContentAs(EMPTY_STREAM);
+            softly.assertThat(testee.read(secondBlobId))
+                .hasSameContentAs(EMPTY_STREAM);
+        });
     }
 }
 
