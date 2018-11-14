@@ -132,7 +132,7 @@ public class EnqueuedMailsDaoUtil {
             .build();
     }
 
-    private static List<Attribute> toAttributes(Map<String, ByteBuffer> rowAttributes) {
+    static List<Attribute> toAttributes(Map<String, ByteBuffer> rowAttributes) {
         return rowAttributes.entrySet()
             .stream()
             .map(entry -> new Attribute(AttributeName.of(entry.getKey()), fromByteBuffer(entry.getValue())))
