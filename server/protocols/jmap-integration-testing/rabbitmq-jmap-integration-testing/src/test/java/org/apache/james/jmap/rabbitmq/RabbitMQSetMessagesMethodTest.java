@@ -17,11 +17,11 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.cassandra;
+package org.apache.james.jmap.rabbitmq;
 
 import java.io.IOException;
 
-import org.apache.james.CassandraJmapTestRule;
+import org.apache.james.CassandraRabbitMQSwiftJmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.jmap.methods.integration.SetMessagesMethodTest;
@@ -32,13 +32,13 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
-public class CassandraSetMessagesMethodTest extends SetMessagesMethodTest {
+public class RabbitMQSetMessagesMethodTest extends SetMessagesMethodTest {
 
     @ClassRule
     public static DockerCassandraRule cassandra = new DockerCassandraRule();
 
     @Rule
-    public CassandraJmapTestRule rule = CassandraJmapTestRule.defaultTestRule();
+    public CassandraRabbitMQSwiftJmapTestRule rule = CassandraRabbitMQSwiftJmapTestRule.defaultTestRule();
 
     @Override
     protected GuiceJamesServer createJmapServer() throws IOException {
@@ -54,6 +54,7 @@ public class CassandraSetMessagesMethodTest extends SetMessagesMethodTest {
     protected MessageId randomMessageId() {
         return new CassandraMessageId.Factory().generate();
     }
+
 
     @Ignore("Temporally ignored CI failing test")
     @Override

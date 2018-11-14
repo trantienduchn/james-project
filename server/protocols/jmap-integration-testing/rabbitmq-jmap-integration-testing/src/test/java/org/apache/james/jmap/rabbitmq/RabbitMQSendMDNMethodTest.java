@@ -16,26 +16,36 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.jmap.methods.integration;
 
+package org.apache.james.jmap.rabbitmq;
+
+import java.io.IOException;
+
+import org.apache.james.CassandraRabbitMQSwiftJmapTestRule;
+import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.spamassassin.SpamAssassinExtension;
+import org.apache.james.jmap.methods.integration.SendMDNMethodTest;
+import org.apache.james.mailbox.cassandra.ids.CassandraMessageId;
+import org.apache.james.mailbox.model.MessageId;
+import org.junit.ClassRule;
+import org.junit.Rule;
 
-public class JamesWithSpamAssassin {
+public class RabbitMQSendMDNMethodTest extends SendMDNMethodTest {
 
-    private final GuiceJamesServer jmapServer;
-    private final SpamAssassinExtension spamAssassinExtension;
+    @ClassRule
+    public static DockerCassandraRule cassandra = new DockerCassandraRule();
 
-    public JamesWithSpamAssassin(GuiceJamesServer jmapServer, SpamAssassinExtension spamAssassinExtension) {
-        this.jmapServer = jmapServer;
-        this.spamAssassinExtension = spamAssassinExtension;
+    @Rule
+    public CassandraRabbitMQSwiftJmapTestRule rule = CassandraRabbitMQSwiftJmapTestRule.defaultTestRule();
+
+    @Override
+    protected GuiceJamesServer createJmapServer() throws IOException {
+        return rule.jmapServer(cassandra.getModule());
     }
-
-    public GuiceJamesServer getJmapServer() {
-        return jmapServer;
+    
+    @Override
+    protected MessageId randomMessageId() {
+        return new CassandraMessageId.Factory().generate();
     }
-
-    public SpamAssassinExtension getSpamAssassinExtension() {
-        return spamAssassinExtension;
-    }
+    
 }

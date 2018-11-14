@@ -17,36 +17,22 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james;
+package org.apache.james.modules;
 
-import org.junit.jupiter.api.extension.ExtensionContext;
+import org.apache.james.modules.objectstorage.guice.DockerSwiftTestRule;
 
-import com.google.inject.Module;
+import com.google.inject.AbstractModule;
 
-public class CassandraExtension implements GuiceModuleTestExtension {
+public class TestSwiftBlobStoreModule extends AbstractModule {
 
-    private final DockerCassandraRule cassandra;
+    private final DockerSwiftTestRule dockerSwiftTestRule;
 
-    public CassandraExtension() {
-        this(new DockerCassandraRule());
-    }
-
-    public CassandraExtension(DockerCassandraRule cassandra) {
-        this.cassandra = cassandra;
+    public TestSwiftBlobStoreModule() {
+        this.dockerSwiftTestRule = new DockerSwiftTestRule();
     }
 
     @Override
-    public void beforeAll(ExtensionContext extensionContext) {
-        cassandra.start();
-    }
-
-    @Override
-    public void afterAll(ExtensionContext extensionContext) {
-        cassandra.stop();
-    }
-
-    @Override
-    public Module getModule() {
-        return cassandra.getModule();
+    protected void configure() {
+        install(dockerSwiftTestRule.getModule());
     }
 }

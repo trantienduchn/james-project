@@ -40,10 +40,12 @@ import org.apache.james.GuiceJamesServer;
 import org.apache.james.jmap.api.access.AccessToken;
 import org.apache.james.mailbox.Role;
 import org.apache.james.modules.protocols.ImapGuiceProbe;
+import org.apache.james.spamassassin.SpamAssassinExtension;
 import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.utils.IMAPMessageReader;
 import org.apache.james.utils.JmapGuiceProbe;
 import org.awaitility.Duration;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -64,16 +66,16 @@ public interface SpamAssassinContract {
     String PAUL_PASSWORD = "paulPassword";
 
     @BeforeEach
-    default void setup(JamesWithSpamAssassin james) throws Throwable {
+    default void setup(GuiceJamesServer jamesServer) throws Throwable {
         RestAssured.requestSpecification = new RequestSpecBuilder()
                 .setContentType(ContentType.JSON)
                 .setAccept(ContentType.JSON)
                 .setConfig(newConfig().encoderConfig(encoderConfig().defaultContentCharset(StandardCharsets.UTF_8)))
-                .setPort(james.getJmapServer().getProbe(JmapGuiceProbe.class).getJmapPort())
+                .setPort(jamesServer.getProbe(JmapGuiceProbe.class).getJmapPort())
                 .build();
         RestAssured.defaultParser = Parser.JSON;
 
-        james.getJmapServer().getProbe(DataProbeImpl.class)
+        jamesServer.getProbe(DataProbeImpl.class)
             .fluent()
             .addDomain(BOBS_DOMAIN)
             .addDomain(RECIPIENTS_DOMAIN)
@@ -82,15 +84,24 @@ public interface SpamAssassinContract {
             .addUser(PAUL, PAUL_PASSWORD);
     }
 
+    @AfterEach
+    default void tearDown() throws Exception {
+        spamAssassin().clear(ALICE);
+    }
+
+    SpamAssassinExtension.SpamAssassin spamAssassin();
+
     default AccessToken accessTokenFor(GuiceJamesServer james, String user, String password) {
         return authenticateJamesUser(baseUri(james), user, password);
     }
 
     @Test
-    default void spamShouldBeDeliveredInSpamMailboxWhenSameMessageHasAlreadyBeenMovedToSpam(JamesWithSpamAssassin james) throws Exception {
-        james.getSpamAssassinExtension().getSpamAssassin().train(ALICE);
-        AccessToken aliceAccessToken = accessTokenFor(james.getJmapServer(), ALICE, ALICE_PASSWORD);
-        AccessToken bobAccessToken = accessTokenFor(james.getJmapServer(), BOB, BOB_PASSWORD);
+    default void spamShouldBeDeliveredInSpamMailboxWhenSameMessageHasAlreadyBeenMovedToSpam(
+        GuiceJamesServer jamesServer) throws Exception {
+
+        spamAssassin().train(ALICE);
+        AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
+        AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
         // Bob is sending a message to Alice
         given()
@@ -137,10 +148,10 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void imapCopiesToSpamMailboxShouldBeConsideredAsSpam(JamesWithSpamAssassin james) throws Exception {
-        james.getSpamAssassinExtension().getSpamAssassin().train(ALICE);
-        AccessToken aliceAccessToken = accessTokenFor(james.getJmapServer(), ALICE, ALICE_PASSWORD);
-        AccessToken bobAccessToken = accessTokenFor(james.getJmapServer(), BOB, BOB_PASSWORD);
+    default void imapCopiesToSpamMailboxShouldBeConsideredAsSpam(GuiceJamesServer jamesServer) throws Exception {
+        spamAssassin().train(ALICE);
+        AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
+        AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
         // Bob is sending a message to Alice
         given()
@@ -164,7 +175,7 @@ public interface SpamAssassinContract {
             .path(ARGUMENTS + ".messageIds");
 
         try (IMAPMessageReader imapMessageReader = new IMAPMessageReader()) {
-            imapMessageReader.connect(LOCALHOST_IP, james.getJmapServer().getProbe(ImapGuiceProbe.class).getImapPort())
+            imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
                 .login(ALICE, ALICE_PASSWORD)
                 .select(IMAPMessageReader.INBOX);
 
@@ -184,10 +195,10 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void imapMovesToSpamMailboxShouldBeConsideredAsSpam(JamesWithSpamAssassin james) throws Exception {
-        james.getSpamAssassinExtension().getSpamAssassin().train(ALICE);
-        AccessToken aliceAccessToken = accessTokenFor(james.getJmapServer(), ALICE, ALICE_PASSWORD);
-        AccessToken bobAccessToken = accessTokenFor(james.getJmapServer(), BOB, BOB_PASSWORD);
+    default void imapMovesToSpamMailboxShouldBeConsideredAsSpam(GuiceJamesServer jamesServer) throws Exception {
+        spamAssassin().train(ALICE);
+        AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
+        AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
         // Bob is sending a message to Alice
         given()
@@ -211,7 +222,7 @@ public interface SpamAssassinContract {
             .path(ARGUMENTS + ".messageIds");
 
         try (IMAPMessageReader imapMessageReader = new IMAPMessageReader()) {
-            imapMessageReader.connect(LOCALHOST_IP, james.getJmapServer().getProbe(ImapGuiceProbe.class).getImapPort())
+            imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
                 .login(ALICE, ALICE_PASSWORD)
                 .select(IMAPMessageReader.INBOX);
 
@@ -231,10 +242,10 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void spamAssassinShouldForgetMessagesMovedOutOfSpamFolderUsingJMAP(JamesWithSpamAssassin james) throws Exception {
-        james.getSpamAssassinExtension().getSpamAssassin().train(ALICE);
-        AccessToken aliceAccessToken = accessTokenFor(james.getJmapServer(), ALICE, ALICE_PASSWORD);
-        AccessToken bobAccessToken = accessTokenFor(james.getJmapServer(), BOB, BOB_PASSWORD);
+    default void spamAssassinShouldForgetMessagesMovedOutOfSpamFolderUsingJMAP(GuiceJamesServer jamesServer) throws Exception {
+        spamAssassin().train(ALICE);
+        AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
+        AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
         // Bob is sending a message to Alice
         given()
@@ -294,10 +305,10 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void movingAMailToTrashShouldNotImpactSpamassassinLearning(JamesWithSpamAssassin james) throws Exception {
-        james.getSpamAssassinExtension().getSpamAssassin().train(ALICE);
-        AccessToken aliceAccessToken = accessTokenFor(james.getJmapServer(), ALICE, ALICE_PASSWORD);
-        AccessToken bobAccessToken = accessTokenFor(james.getJmapServer(), BOB, BOB_PASSWORD);
+    default void movingAMailToTrashShouldNotImpactSpamassassinLearning(GuiceJamesServer jamesServer) throws Exception {
+        spamAssassin().train(ALICE);
+        AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
+        AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
         // Bob is sending a message to Alice
         given()
@@ -357,10 +368,10 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void spamAssassinShouldForgetMessagesMovedOutOfSpamFolderUsingIMAP(JamesWithSpamAssassin james) throws Exception {
-        james.getSpamAssassinExtension().getSpamAssassin().train(ALICE);
-        AccessToken aliceAccessToken = accessTokenFor(james.getJmapServer(), ALICE, ALICE_PASSWORD);
-        AccessToken bobAccessToken = accessTokenFor(james.getJmapServer(), BOB, BOB_PASSWORD);
+    default void spamAssassinShouldForgetMessagesMovedOutOfSpamFolderUsingIMAP(GuiceJamesServer jamesServer) throws Exception {
+        spamAssassin().train(ALICE);
+        AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
+        AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
         // Bob is sending a message to Alice
         given()
@@ -397,7 +408,7 @@ public interface SpamAssassinContract {
 
         // Alice is moving this message out of Spam -> forgetting in SpamAssassin
         try (IMAPMessageReader imapMessageReader = new IMAPMessageReader()) {
-            imapMessageReader.connect(LOCALHOST_IP, james.getJmapServer().getProbe(ImapGuiceProbe.class).getImapPort())
+            imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
                 .login(ALICE, ALICE_PASSWORD)
                 .select("Spam");
 
@@ -417,10 +428,10 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void expungingSpamMessageShouldNotImpactSpamAssassinState(JamesWithSpamAssassin james) throws Exception {
-        james.getSpamAssassinExtension().getSpamAssassin().train(ALICE);
-        AccessToken aliceAccessToken = accessTokenFor(james.getJmapServer(), ALICE, ALICE_PASSWORD);
-        AccessToken bobAccessToken = accessTokenFor(james.getJmapServer(), BOB, BOB_PASSWORD);
+    default void expungingSpamMessageShouldNotImpactSpamAssassinState(GuiceJamesServer jamesServer) throws Exception {
+        spamAssassin().train(ALICE);
+        AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
+        AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
         // Bob is sending a message to Alice
         given()
@@ -457,7 +468,7 @@ public interface SpamAssassinContract {
 
         // Alice is deleting this message
         try (IMAPMessageReader imapMessageReader = new IMAPMessageReader()) {
-            imapMessageReader.connect(LOCALHOST_IP, james.getJmapServer().getProbe(ImapGuiceProbe.class).getImapPort())
+            imapMessageReader.connect(LOCALHOST_IP, jamesServer.getProbe(ImapGuiceProbe.class).getImapPort())
                 .login(ALICE, ALICE_PASSWORD)
                 .select("Spam");
 
@@ -478,10 +489,10 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void deletingSpamMessageShouldNotImpactSpamAssassinState(JamesWithSpamAssassin james) throws Exception {
-        james.getSpamAssassinExtension().getSpamAssassin().train(ALICE);
-        AccessToken aliceAccessToken = accessTokenFor(james.getJmapServer(), ALICE, ALICE_PASSWORD);
-        AccessToken bobAccessToken = accessTokenFor(james.getJmapServer(), BOB, BOB_PASSWORD);
+    default void deletingSpamMessageShouldNotImpactSpamAssassinState(GuiceJamesServer jamesServer) throws Exception {
+        spamAssassin().train(ALICE);
+        AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
+        AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
         // Bob is sending a message to Alice
         given()
@@ -559,11 +570,11 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void spamShouldBeDeliveredInSpamMailboxOrInboxWhenMultipleRecipientsConfigurations(JamesWithSpamAssassin james) throws Exception {
-        james.getSpamAssassinExtension().getSpamAssassin().train(ALICE);
-        AccessToken aliceAccessToken = accessTokenFor(james.getJmapServer(), ALICE, ALICE_PASSWORD);
-        AccessToken bobAccessToken = accessTokenFor(james.getJmapServer(), BOB, BOB_PASSWORD);
-        AccessToken paulAccessToken = accessTokenFor(james.getJmapServer(), PAUL, PAUL_PASSWORD);
+    default void spamShouldBeDeliveredInSpamMailboxOrInboxWhenMultipleRecipientsConfigurations(GuiceJamesServer jamesServer) throws Exception {
+        spamAssassin().train(ALICE);
+        AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
+        AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
+        AccessToken paulAccessToken = accessTokenFor(jamesServer, PAUL, PAUL_PASSWORD);
 
         // Bob is sending a message to Alice & Paul
         given()

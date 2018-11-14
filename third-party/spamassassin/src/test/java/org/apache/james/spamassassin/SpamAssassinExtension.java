@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -54,14 +55,16 @@ public class SpamAssassinExtension implements BeforeAllCallback, AfterEachCallba
                 .withFileFromClasspath("run.sh", "docker/spamassassin/run.sh")
                 .withFileFromClasspath("spamd.sh", "docker/spamassassin/spamd.sh")
                 .withFileFromClasspath("rule-update.sh", "docker/spamassassin/rule-update.sh")
-                .withFileFromClasspath("bayes_pg.sql", "docker/spamassassin/bayes_pg.sql"));
+                .withFileFromClasspath("bayes_pg.sql", "docker/spamassassin/bayes_pg.sql"))
+            .withCreateContainerCmdModifier(cmd -> cmd.withName(containerName()));
         spamAssassinContainer.withStartupTimeout(STARTUP_TIMEOUT);
         spamAssassinContainer.waitingFor(new SpamAssassinWaitStrategy(spamAssassinContainer, STARTUP_TIMEOUT));
     }
 
     @Override
     public void beforeAll(ExtensionContext context) {
-        start();
+        spamAssassinContainer.start();
+        spamAssassin = new SpamAssassin(spamAssassinContainer);
     }
 
     @Override
@@ -71,24 +74,15 @@ public class SpamAssassinExtension implements BeforeAllCallback, AfterEachCallba
 
     @Override
     public void afterAll(ExtensionContext context) {
-        stop();
+        spamAssassinContainer.close();
     }
 
-    public void start() {
-        spamAssassinContainer.start();
-        spamAssassin = new SpamAssassin(spamAssassinContainer);
-    }
-
-    public void clearSpamAssassinDatabase() {
+    private void clearSpamAssassinDatabase() {
         try {
             spamAssassin.clearSpamAssassinDatabase();
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public void stop() {
-        spamAssassinContainer.close();
     }
 
     @Override
@@ -103,6 +97,10 @@ public class SpamAssassinExtension implements BeforeAllCallback, AfterEachCallba
 
     public SpamAssassin getSpamAssassin() {
         return spamAssassin;
+    }
+
+    private String containerName() {
+        return "spam-assassin-" + UUID.randomUUID().toString();
     }
 
     public static class SpamAssassin {
@@ -169,8 +167,12 @@ public class SpamAssassinExtension implements BeforeAllCallback, AfterEachCallba
             spamAssassinContainer.execInContainer("sa-learn", "--dump", "magic", "-u", user);
         }
 
+        public void clear(String user) throws UnsupportedOperationException, IOException, InterruptedException {
+            spamAssassinContainer.execInContainer("sa-learn", "--clear", "-u", user);
+        }
+
         public void clearSpamAssassinDatabase() throws UnsupportedOperationException, IOException, InterruptedException {
-            spamAssassinContainer.execInContainer("sa-learn", "--dump", "magic");
+            spamAssassinContainer.execInContainer("sa-learn", "--clear");
         }
     }
 

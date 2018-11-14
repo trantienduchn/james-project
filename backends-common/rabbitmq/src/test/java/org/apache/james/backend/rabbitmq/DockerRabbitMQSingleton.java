@@ -17,36 +17,15 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james;
+package org.apache.james.backend.rabbitmq;
 
-import org.junit.jupiter.api.extension.ExtensionContext;
+public class DockerRabbitMQSingleton {
 
-import com.google.inject.Module;
+    public static final DockerRabbitMQ SINGLETON = DockerRabbitMQ.withoutCookie();
 
-public class CassandraExtension implements GuiceModuleTestExtension {
-
-    private final DockerCassandraRule cassandra;
-
-    public CassandraExtension() {
-        this(new DockerCassandraRule());
+    static {
+        SINGLETON.start();
     }
 
-    public CassandraExtension(DockerCassandraRule cassandra) {
-        this.cassandra = cassandra;
-    }
-
-    @Override
-    public void beforeAll(ExtensionContext extensionContext) {
-        cassandra.start();
-    }
-
-    @Override
-    public void afterAll(ExtensionContext extensionContext) {
-        cassandra.stop();
-    }
-
-    @Override
-    public Module getModule() {
-        return cassandra.getModule();
-    }
+    // Cleanup will be performed by test container resource reaper
 }

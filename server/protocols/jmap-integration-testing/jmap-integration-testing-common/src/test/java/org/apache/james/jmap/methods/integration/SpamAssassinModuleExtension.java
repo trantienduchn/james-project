@@ -17,48 +17,38 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.cassandra;
+package org.apache.james.jmap.methods.integration;
 
-import java.io.IOException;
+import org.apache.james.GuiceModuleTestExtension;
+import org.apache.james.spamassassin.SpamAssassinExtension;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
-import org.apache.james.CassandraJmapTestRule;
-import org.apache.james.DockerCassandraRule;
-import org.apache.james.GuiceJamesServer;
-import org.apache.james.jmap.methods.integration.SetMessagesMethodTest;
-import org.apache.james.mailbox.cassandra.ids.CassandraMessageId;
-import org.apache.james.mailbox.model.MessageId;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
+import com.google.inject.Module;
 
-public class CassandraSetMessagesMethodTest extends SetMessagesMethodTest {
+public class SpamAssassinModuleExtension implements GuiceModuleTestExtension {
 
-    @ClassRule
-    public static DockerCassandraRule cassandra = new DockerCassandraRule();
+    private final SpamAssassinExtension spamAssassin;
 
-    @Rule
-    public CassandraJmapTestRule rule = CassandraJmapTestRule.defaultTestRule();
-
-    @Override
-    protected GuiceJamesServer createJmapServer() throws IOException {
-        return rule.jmapServer(cassandra.getModule());
+    public SpamAssassinModuleExtension() {
+        this.spamAssassin = new org.apache.james.spamassassin.SpamAssassinExtension();
     }
 
     @Override
-    protected void await() {
-        rule.await();
-    }
-    
-    @Override
-    protected MessageId randomMessageId() {
-        return new CassandraMessageId.Factory().generate();
+    public void beforeAll(ExtensionContext extensionContext) {
+        spamAssassin.beforeAll(extensionContext);
     }
 
-    @Ignore("Temporally ignored CI failing test")
     @Override
-    @Test
-    public void setMessagesWithABigBodyShouldReturnCreatedMessageWhenSendingMessage() {
+    public void afterAll(ExtensionContext extensionContext) {
+        spamAssassin.afterAll(extensionContext);
+    }
 
+    @Override
+    public Module getModule() {
+        return new SpamAssassinModule(spamAssassin);
+    }
+
+    public SpamAssassinExtension spamAssassinExtension() {
+        return spamAssassin;
     }
 }
