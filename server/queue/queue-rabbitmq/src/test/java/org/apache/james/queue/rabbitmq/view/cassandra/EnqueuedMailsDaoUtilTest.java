@@ -22,6 +22,7 @@ package org.apache.james.queue.rabbitmq.view.cassandra;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.mailet.Attribute;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,6 @@ class EnqueuedMailsDaoUtilTest {
     }
 
     private ByteBuffer toByteBuffer(String value) {
-        return ByteBuffer.wrap(value.getBytes());
+        return ByteBuffer.wrap(value.getBytes(StandardCharsets.UTF_8));
     }
 }
