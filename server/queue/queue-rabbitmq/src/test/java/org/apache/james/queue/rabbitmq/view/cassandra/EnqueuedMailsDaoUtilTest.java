@@ -24,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.ByteBuffer;
 
+import org.apache.mailet.Attribute;
+import org.apache.mailet.AttributeValue;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.com.google.common.collect.ImmutableMap;
 
@@ -40,11 +42,10 @@ class EnqueuedMailsDaoUtilTest {
     @Test
     void toAttributesShouldConvertRawAttributeMapButItDoesntWork() {
         ImmutableMap<String, ByteBuffer> attrMap = ImmutableMap
-            .of("Header-1", toByteBuffer("{\"serializer\":\"StringSerializer\",\"value\":\"02f49920-e7c8-11e8-a690-3df818dd6a01\"}"));
+            .of("Header-1", toByteBuffer("{\"serializer\":\"StringSerializer\",\"value\":\"alice\"}"));
 
-        assertThatThrownBy(() -> EnqueuedMailsDaoUtil.toAttributes(attrMap))
-            .isInstanceOf(RuntimeException.class)
-            .hasMessageContaining("java.io.StreamCorruptedException: invalid stream header:");
+        assertThat(EnqueuedMailsDaoUtil.toAttributes(attrMap))
+            .containsExactly(Attribute.convertToAttribute("Header-1", "alice"));
     }
 
     private ByteBuffer toByteBuffer(String value) {

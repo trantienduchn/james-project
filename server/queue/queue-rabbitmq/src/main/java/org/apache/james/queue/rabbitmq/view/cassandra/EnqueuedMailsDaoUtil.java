@@ -39,9 +39,7 @@ import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueV
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.STATE;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.TIME_RANGE_START;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -143,9 +141,8 @@ public class EnqueuedMailsDaoUtil {
         try {
             byte[] data = new byte[byteBuffer.remaining()];
             byteBuffer.get(data);
-            ObjectInputStream objectInputStream = new ObjectInputStream(new ByteArrayInputStream(data));
-            return AttributeValue.fromJsonString((String) objectInputStream.readObject());
-        } catch (IOException | ClassNotFoundException e) {
+            return AttributeValue.fromJsonString(new String(data));
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
