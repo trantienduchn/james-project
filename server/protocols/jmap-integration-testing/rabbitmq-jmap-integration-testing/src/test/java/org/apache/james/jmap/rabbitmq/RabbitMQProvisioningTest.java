@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance   *
  * with the License.  You may obtain a copy of the License at   *
  *                                                              *
- *   http://www.apache.org/licenses/LICENSE-2.0                 *
+ * http://www.apache.org/licenses/LICENSE-2.0                   *
  *                                                              *
  * Unless required by applicable law or agreed to in writing,   *
  * software distributed under the License is distributed on an  *
@@ -24,13 +24,11 @@ import java.io.IOException;
 import org.apache.james.CassandraRabbitMQSwiftJmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.jmap.methods.integration.FilterTest;
-import org.apache.james.mailbox.cassandra.ids.CassandraId;
-import org.apache.james.mailbox.model.MailboxId;
+import org.apache.james.jmap.ProvisioningTest;
 import org.junit.ClassRule;
 import org.junit.Rule;
 
-public class RabbitMQFilterTest extends FilterTest {
+public class RabbitMQProvisioningTest extends ProvisioningTest {
 
     @ClassRule
     public static DockerCassandraRule cassandra = new DockerCassandraRule();
@@ -43,8 +41,4 @@ public class RabbitMQFilterTest extends FilterTest {
         return rule.jmapServer(cassandra.getModule());
     }
 
-    @Override
-    protected MailboxId randomMailboxId() {
-        return CassandraId.timeBased();
-    }
 }

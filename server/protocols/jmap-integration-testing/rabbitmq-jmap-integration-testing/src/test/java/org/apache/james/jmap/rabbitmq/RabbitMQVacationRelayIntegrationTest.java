@@ -24,13 +24,15 @@ import java.io.IOException;
 import org.apache.james.CassandraRabbitMQSwiftJmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.jmap.methods.integration.FilterTest;
-import org.apache.james.mailbox.cassandra.ids.CassandraId;
-import org.apache.james.mailbox.model.MailboxId;
+import org.apache.james.dnsservice.api.DNSService;
+import org.apache.james.dnsservice.api.InMemoryDNSService;
+import org.apache.james.jmap.VacationRelayIntegrationTest;
 import org.junit.ClassRule;
 import org.junit.Rule;
 
-public class RabbitMQFilterTest extends FilterTest {
+public class RabbitMQVacationRelayIntegrationTest extends VacationRelayIntegrationTest {
+
+    private final InMemoryDNSService inMemoryDNSService = new InMemoryDNSService();
 
     @ClassRule
     public static DockerCassandraRule cassandra = new DockerCassandraRule();
@@ -39,12 +41,20 @@ public class RabbitMQFilterTest extends FilterTest {
     public CassandraRabbitMQSwiftJmapTestRule rule = CassandraRabbitMQSwiftJmapTestRule.defaultTestRule();
 
     @Override
-    protected GuiceJamesServer createJmapServer() throws IOException {
-        return rule.jmapServer(cassandra.getModule());
+    protected GuiceJamesServer getJmapServer() throws IOException {
+        return rule.jmapServer(
+                cassandra.getModule(),
+                (binder) -> binder.bind(DNSService.class).toInstance(inMemoryDNSService));
     }
 
     @Override
-    protected MailboxId randomMailboxId() {
-        return CassandraId.timeBased();
+    protected void await() {
+        rule.await();
     }
+
+    @Override
+    protected InMemoryDNSService getInMemoryDns() {
+        return inMemoryDNSService;
+    }
+
 }

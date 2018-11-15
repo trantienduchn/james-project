@@ -24,27 +24,26 @@ import java.io.IOException;
 import org.apache.james.CassandraRabbitMQSwiftJmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.jmap.methods.integration.FilterTest;
-import org.apache.james.mailbox.cassandra.ids.CassandraId;
-import org.apache.james.mailbox.model.MailboxId;
+import org.apache.james.jmap.VacationIntegrationTest;
 import org.junit.ClassRule;
 import org.junit.Rule;
 
-public class RabbitMQFilterTest extends FilterTest {
+public class RabbitMQVacationIntegrationTest extends VacationIntegrationTest {
 
     @ClassRule
     public static DockerCassandraRule cassandra = new DockerCassandraRule();
 
     @Rule
     public CassandraRabbitMQSwiftJmapTestRule rule = CassandraRabbitMQSwiftJmapTestRule.defaultTestRule();
-
+    
     @Override
     protected GuiceJamesServer createJmapServer() throws IOException {
         return rule.jmapServer(cassandra.getModule());
     }
 
     @Override
-    protected MailboxId randomMailboxId() {
-        return CassandraId.timeBased();
+    protected void await() {
+        rule.await();
     }
+    
 }
