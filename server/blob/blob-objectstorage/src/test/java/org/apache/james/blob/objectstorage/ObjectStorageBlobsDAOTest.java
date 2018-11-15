@@ -53,6 +53,8 @@ public class ObjectStorageBlobsDAOTest implements BlobStoreContract {
     private static final UserName USER_NAME = UserName.of("tester");
     private static final Credentials PASSWORD = Credentials.of("testing");
     private static final Identity SWIFT_IDENTITY = Identity.of(TENANT_NAME, USER_NAME);
+    private static final InputStream EMPTY_STREAM = new ByteArrayInputStream(new byte[]{});
+
     public static final String SAMPLE_SALT = "c603a7327ee3dcbc031d8d34b1096c605feca5e1";
 
     private ContainerName containerName;
@@ -161,9 +163,9 @@ public class ObjectStorageBlobsDAOTest implements BlobStoreContract {
         testee.clearContainer();
         SoftAssertions.assertSoftly(softly -> {
             softly.assertThat(testee.read(firstBlobId))
-                .isEqualTo(new ByteArrayInputStream(new byte[]{}));
+                .hasSameContentAs(EMPTY_STREAM);
             softly.assertThat(testee.read(secondBlobId))
-                .isEqualTo(new ByteArrayInputStream(new byte[]{}));
+                .hasSameContentAs(EMPTY_STREAM);
         });
     }
 }
