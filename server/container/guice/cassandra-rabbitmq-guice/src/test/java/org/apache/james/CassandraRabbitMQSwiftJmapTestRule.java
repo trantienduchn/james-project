@@ -37,18 +37,18 @@ import org.junit.runners.model.Statement;
 
 import com.google.inject.Module;
 
-public class RabbitMQJmapTestRule implements TestRule {
+public class CassandraRabbitMQSwiftJmapTestRule implements TestRule {
 
     private static final int LIMIT_TO_10_MESSAGES = 10;
     private final TemporaryFolder temporaryFolder;
 
-    public static RabbitMQJmapTestRule defaultTestRule() {
-        return new RabbitMQJmapTestRule(new EmbeddedElasticSearchRule());
+    public static CassandraRabbitMQSwiftJmapTestRule defaultTestRule() {
+        return new CassandraRabbitMQSwiftJmapTestRule(new EmbeddedElasticSearchRule());
     }
 
     private final GuiceModuleTestRule guiceModuleTestRule;
 
-    public RabbitMQJmapTestRule(GuiceModuleTestRule... guiceModuleTestRule) {
+    public CassandraRabbitMQSwiftJmapTestRule(GuiceModuleTestRule... guiceModuleTestRule) {
         TempFilesystemTestRule tempFilesystemTestRule = new TempFilesystemTestRule();
         this.temporaryFolder = tempFilesystemTestRule.getTemporaryFolder();
         this.guiceModuleTestRule =

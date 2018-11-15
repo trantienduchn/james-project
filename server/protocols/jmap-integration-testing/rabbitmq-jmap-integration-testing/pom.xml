@@ -61,11 +61,6 @@
         </dependency>
         <dependency>
             <groupId>${james.groupId}</groupId>
-            <artifactId>james-server-dnsservice-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>${james.groupId}</groupId>
             <artifactId>james-server-cassandra-guice</artifactId>
             <type>test-jar</type>
             <scope>test</scope>
@@ -79,6 +74,11 @@
             <groupId>${james.groupId}</groupId>
             <artifactId>james-server-cassandra-rabbitmq-guice</artifactId>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>${james.groupId}</groupId>
+            <artifactId>james-server-dnsservice-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
