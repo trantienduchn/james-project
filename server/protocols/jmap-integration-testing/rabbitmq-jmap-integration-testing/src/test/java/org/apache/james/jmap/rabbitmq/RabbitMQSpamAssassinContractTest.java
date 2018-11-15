@@ -19,9 +19,10 @@
 package org.apache.james.jmap.rabbitmq;
 
 import org.apache.james.jmap.methods.integration.SpamAssassinContract;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-@ExtendWith(RabbitMQJmapExtension.class)
-public class RabbitMQSpamAssassinContractTest implements SpamAssassinContract {
+class RabbitMQSpamAssassinContractTest implements SpamAssassinContract {
 
+    @RegisterExtension
+    static RabbitMQJmapExtension jmapExtension = new RabbitMQJmapExtension();
 }
