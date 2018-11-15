@@ -21,9 +21,9 @@ package org.apache.james.jmap.rabbitmq;
 
 import java.io.IOException;
 
+import org.apache.james.CassandraRabbitMQSwiftJmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.RabbitMQJmapTestRule;
 import org.apache.james.jmap.VacationIntegrationTest;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -34,7 +34,7 @@ public class RabbitMQVacationIntegrationTest extends VacationIntegrationTest {
     public static DockerCassandraRule cassandra = new DockerCassandraRule();
 
     @Rule
-    public RabbitMQJmapTestRule rule = RabbitMQJmapTestRule.defaultTestRule();
+    public CassandraRabbitMQSwiftJmapTestRule rule = CassandraRabbitMQSwiftJmapTestRule.defaultTestRule();
     
     @Override
     protected GuiceJamesServer createJmapServer() throws IOException {

@@ -20,9 +20,9 @@ package org.apache.james.jmap.rabbitmq;
 
 import java.io.IOException;
 
+import org.apache.james.CassandraRabbitMQSwiftJmapTestRule;
 import org.apache.james.DockerCassandraRule;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.RabbitMQJmapTestRule;
 import org.apache.james.jmap.FixedDateZonedDateTimeProvider;
 import org.apache.james.jmap.JMAPAuthenticationTest;
 import org.apache.james.util.date.ZonedDateTimeProvider;
@@ -35,7 +35,7 @@ public class RabbitMQJmapAuthenticationTest extends JMAPAuthenticationTest {
     public static DockerCassandraRule cassandra = new DockerCassandraRule();
 
     @Rule
-    public RabbitMQJmapTestRule rule = RabbitMQJmapTestRule.defaultTestRule();
+    public CassandraRabbitMQSwiftJmapTestRule rule = CassandraRabbitMQSwiftJmapTestRule.defaultTestRule();
     
     @Override
     protected GuiceJamesServer createJmapServer(FixedDateZonedDateTimeProvider zonedDateTimeProvider) throws IOException {
