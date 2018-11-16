@@ -141,8 +141,8 @@ public class ObjectStorageBlobsDAO implements BlobStore {
     }
 
     @VisibleForTesting
-    public void clearContainer() {
-        blobStore.clearContainer(containerName.value());
+    public void deleteContainer() {
+        blobStore.deleteContainer(containerName.value());
     }
 }
 

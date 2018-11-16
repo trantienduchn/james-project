@@ -52,7 +52,7 @@ public class DockerSwiftTestRule implements GuiceModuleTestRule {
 
         @Override
         public Result run() {
-            blobsDAO.clearContainer();
+            blobsDAO.deleteContainer();
 
             return Result.COMPLETED;
         }
