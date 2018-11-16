@@ -25,10 +25,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.junit.jupiter.api.Test;
 
+import nl.jqno.equalsverifier.EqualsVerifier;
+
 class BlobStoreChoosingConfigurationTest {
 
     private static final String SWIFT = "swift";
     private static final String CASSANDRA = "cassandra";
+
+    @Test
+    void shouldMatchBeanContract() {
+        EqualsVerifier.forClass(BlobStoreChoosingConfiguration.class)
+            .verify();
+    }
 
     @Test
     void fromShouldThrowWhenBlobStoreImplIsMissing() {
