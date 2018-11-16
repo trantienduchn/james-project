@@ -58,24 +58,31 @@ public class BlobStoreChoosingModule extends AbstractModule {
     @VisibleForTesting
     @Provides
     @Singleton
-    BlobStore provideBlobStore(PropertiesProvider propertiesProvider,
-                               Provider<CassandraBlobsDAO> cassandraBlobStoreProvider,
-                               Provider<ObjectStorageBlobsDAO> swiftBlobStoreProvider) throws ConfigurationException {
+    BlobStoreChoosingConfiguration provideChoosingConfiguration(PropertiesProvider propertiesProvider) throws ConfigurationException {
         try {
             Configuration configuration = propertiesProvider.getConfiguration(BLOBSTORE_CONFIGURATION_NAME);
-            BlobStoreChoosingConfiguration choosingConfiguration = BlobStoreChoosingConfiguration.from(configuration);
-            switch (choosingConfiguration.getImplementation()) {
-                case SWIFT:
-                    return swiftBlobStoreProvider.get();
-                case CASSANDRA:
-                    return cassandraBlobStoreProvider.get();
-                default:
-                    throw new RuntimeException(String.format("can not get the right blobstore provider with configuration %s",
-                        choosingConfiguration.toString()));
-            }
+            return BlobStoreChoosingConfiguration.from(configuration);
         } catch (FileNotFoundException e) {
             LOGGER.warn("Could not find " + BLOBSTORE_CONFIGURATION_NAME + " configuration file, using cassandra blobstore as the default");
-            return cassandraBlobStoreProvider.get();
+            return BlobStoreChoosingConfiguration.cassandra();
+        }
+    }
+
+    @VisibleForTesting
+    @Provides
+    @Singleton
+    BlobStore provideBlobStore(BlobStoreChoosingConfiguration choosingConfiguration,
+                               Provider<CassandraBlobsDAO> cassandraBlobStoreProvider,
+                               Provider<ObjectStorageBlobsDAO> swiftBlobStoreProvider) {
+
+        switch (choosingConfiguration.getImplementation()) {
+            case SWIFT:
+                return swiftBlobStoreProvider.get();
+            case CASSANDRA:
+                return cassandraBlobStoreProvider.get();
+            default:
+                throw new RuntimeException(String.format("can not get the right blobstore provider with configuration %s",
+                    choosingConfiguration.toString()));
         }
     }
 
