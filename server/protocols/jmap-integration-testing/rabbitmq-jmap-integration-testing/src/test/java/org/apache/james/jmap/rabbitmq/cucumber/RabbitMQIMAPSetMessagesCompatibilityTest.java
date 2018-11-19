@@ -29,7 +29,7 @@ import cucumber.api.junit.Cucumber;
 @RunWith(Cucumber.class)
 @CucumberOptions(features = "classpath:cucumber/ImapSetMessagesMailboxesUpdatesCompatibility.feature",
     glue = {"org.apache.james.jmap.methods.integration", "org.apache.james.jmap.rabbitmq.cucumber"},
-    tags = {"not @Ignore", "@BasicFeature"},
+    tags = {"not @Ignore"},
     strict = true)
 @Category(EnableCucumber.class)
 public class RabbitMQIMAPSetMessagesCompatibilityTest {
