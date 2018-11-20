@@ -97,9 +97,10 @@ public interface SpamAssassinContract {
 
     @Test
     default void spamShouldBeDeliveredInSpamMailboxWhenSameMessageHasAlreadyBeenMovedToSpam(
-        GuiceJamesServer jamesServer) throws Exception {
+        GuiceJamesServer jamesServer,
+        SpamAssassinExtension.SpamAssassin spamAssassin) throws Exception {
 
-        spamAssassin().train(ALICE);
+        spamAssassin.train(ALICE);
         AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
         AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
@@ -148,8 +149,9 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void imapCopiesToSpamMailboxShouldBeConsideredAsSpam(GuiceJamesServer jamesServer) throws Exception {
-        spamAssassin().train(ALICE);
+    default void imapCopiesToSpamMailboxShouldBeConsideredAsSpam(GuiceJamesServer jamesServer,
+                                                                 SpamAssassinExtension.SpamAssassin spamAssassin) throws Exception {
+        spamAssassin.train(ALICE);
         AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
         AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
@@ -195,8 +197,9 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void imapMovesToSpamMailboxShouldBeConsideredAsSpam(GuiceJamesServer jamesServer) throws Exception {
-        spamAssassin().train(ALICE);
+    default void imapMovesToSpamMailboxShouldBeConsideredAsSpam(GuiceJamesServer jamesServer,
+                                                                SpamAssassinExtension.SpamAssassin spamAssassin) throws Exception {
+        spamAssassin.train(ALICE);
         AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
         AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
@@ -242,8 +245,9 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void spamAssassinShouldForgetMessagesMovedOutOfSpamFolderUsingJMAP(GuiceJamesServer jamesServer) throws Exception {
-        spamAssassin().train(ALICE);
+    default void spamAssassinShouldForgetMessagesMovedOutOfSpamFolderUsingJMAP(GuiceJamesServer jamesServer,
+                                                                               SpamAssassinExtension.SpamAssassin spamAssassin) throws Exception {
+        spamAssassin.train(ALICE);
         AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
         AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
@@ -305,8 +309,9 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void movingAMailToTrashShouldNotImpactSpamassassinLearning(GuiceJamesServer jamesServer) throws Exception {
-        spamAssassin().train(ALICE);
+    default void movingAMailToTrashShouldNotImpactSpamassassinLearning(GuiceJamesServer jamesServer,
+                                                                       SpamAssassinExtension.SpamAssassin spamAssassin) throws Exception {
+        spamAssassin.train(ALICE);
         AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
         AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
@@ -368,8 +373,9 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void spamAssassinShouldForgetMessagesMovedOutOfSpamFolderUsingIMAP(GuiceJamesServer jamesServer) throws Exception {
-        spamAssassin().train(ALICE);
+    default void spamAssassinShouldForgetMessagesMovedOutOfSpamFolderUsingIMAP(GuiceJamesServer jamesServer,
+                                                                               SpamAssassinExtension.SpamAssassin spamAssassin) throws Exception {
+        spamAssassin.train(ALICE);
         AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
         AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
@@ -428,8 +434,9 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void expungingSpamMessageShouldNotImpactSpamAssassinState(GuiceJamesServer jamesServer) throws Exception {
-        spamAssassin().train(ALICE);
+    default void expungingSpamMessageShouldNotImpactSpamAssassinState(GuiceJamesServer jamesServer,
+                                                                      SpamAssassinExtension.SpamAssassin spamAssassin) throws Exception {
+        spamAssassin.train(ALICE);
         AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
         AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
@@ -489,8 +496,9 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void deletingSpamMessageShouldNotImpactSpamAssassinState(GuiceJamesServer jamesServer) throws Exception {
-        spamAssassin().train(ALICE);
+    default void deletingSpamMessageShouldNotImpactSpamAssassinState(GuiceJamesServer jamesServer,
+                                                                     SpamAssassinExtension.SpamAssassin spamAssassin) throws Exception {
+        spamAssassin.train(ALICE);
         AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
         AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
 
@@ -570,8 +578,9 @@ public interface SpamAssassinContract {
     }
 
     @Test
-    default void spamShouldBeDeliveredInSpamMailboxOrInboxWhenMultipleRecipientsConfigurations(GuiceJamesServer jamesServer) throws Exception {
-        spamAssassin().train(ALICE);
+    default void spamShouldBeDeliveredInSpamMailboxOrInboxWhenMultipleRecipientsConfigurations(GuiceJamesServer jamesServer,
+                                                                                               SpamAssassinExtension.SpamAssassin spamAssassin) throws Exception {
+        spamAssassin.train(ALICE);
         AccessToken aliceAccessToken = accessTokenFor(jamesServer, ALICE, ALICE_PASSWORD);
         AccessToken bobAccessToken = accessTokenFor(jamesServer, BOB, BOB_PASSWORD);
         AccessToken paulAccessToken = accessTokenFor(jamesServer, PAUL, PAUL_PASSWORD);
