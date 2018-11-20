@@ -20,15 +20,16 @@
 package org.apache.james.jmap.methods.integration;
 
 import org.apache.james.GuiceModuleTestExtension;
+import org.apache.james.spamassassin.SpamAssassinExtension;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import com.google.inject.Module;
 
-public class SpamAssassinExtension implements GuiceModuleTestExtension {
+public class SpamAssassinModuleExtension implements GuiceModuleTestExtension {
 
-    private final org.apache.james.spamassassin.SpamAssassinExtension spamAssassin;
+    private final SpamAssassinExtension spamAssassin;
 
-    public SpamAssassinExtension() {
+    public SpamAssassinModuleExtension() {
         this.spamAssassin = new org.apache.james.spamassassin.SpamAssassinExtension();
     }
 
@@ -47,7 +48,7 @@ public class SpamAssassinExtension implements GuiceModuleTestExtension {
         return new SpamAssassinModule(spamAssassin);
     }
 
-    public org.apache.james.spamassassin.SpamAssassinExtension spamAssassinExtension() {
+    public SpamAssassinExtension spamAssassinExtension() {
         return spamAssassin;
     }
 }

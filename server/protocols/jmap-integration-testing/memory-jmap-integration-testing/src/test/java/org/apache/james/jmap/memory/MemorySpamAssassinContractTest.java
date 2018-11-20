@@ -25,19 +25,20 @@ import org.apache.james.JamesServerExtension;
 import org.apache.james.JamesServerExtensionBuilder;
 import org.apache.james.MemoryJamesServerMain;
 import org.apache.james.jmap.methods.integration.SpamAssassinContract;
-import org.apache.james.jmap.methods.integration.SpamAssassinExtension;
+import org.apache.james.jmap.methods.integration.SpamAssassinModuleExtension;
 import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.store.search.MessageSearchIndex;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.mailbox.store.search.SimpleMessageSearchIndex;
 import org.apache.james.modules.TestJMAPServerModule;
+import org.apache.james.spamassassin.SpamAssassinExtension;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class MemorySpamAssassinContractTest implements SpamAssassinContract {
 
     private static final int LIMIT_TO_20_MESSAGES = 20;
 
-    private static final SpamAssassinExtension spamAssassinExtension = new SpamAssassinExtension();
+    private static final SpamAssassinModuleExtension spamAssassinExtension = new SpamAssassinModuleExtension();
     @RegisterExtension
     static JamesServerExtension testExtension = new JamesServerExtensionBuilder()
         .extension(spamAssassinExtension)
@@ -50,7 +51,7 @@ class MemorySpamAssassinContractTest implements SpamAssassinContract {
         .build();
 
     @Override
-    public org.apache.james.spamassassin.SpamAssassinExtension.SpamAssassin spamAssassin() {
+    public SpamAssassinExtension.SpamAssassin spamAssassin() {
         return spamAssassinExtension.spamAssassinExtension().getSpamAssassin();
     }
 }
