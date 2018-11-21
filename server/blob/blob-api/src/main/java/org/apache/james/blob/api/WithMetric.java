@@ -16,32 +16,14 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
+package org.apache.james.blob.api;
 
-package org.apache.james.blob.memory;
+public interface WithMetric {
 
-import org.apache.james.blob.api.BlobId;
-import org.apache.james.blob.api.BlobStore;
-import org.apache.james.blob.api.BlobStoreMetricsContract;
-import org.apache.james.blob.api.HashBlobId;
-import org.junit.jupiter.api.BeforeEach;
+    String SAVE_BYTES_TIMER_NAME = "saveBytes";
+    String SAVE_INPUT_STREAM_TIMER_NAME = "saveInputStream";
+    String READ_BYTES_TIMER_NAME = "readBytes";
+    String READ_TIMER_NAME = "read";
 
-public class MemoryBlobStoreTest implements BlobStoreMetricsContract {
-
-    private static final HashBlobId.Factory BLOB_ID_FACTORY = new HashBlobId.Factory();
-    private MemoryBlobStore memoryBlobStore;
-
-    @BeforeEach
-    void setUp() {
-        memoryBlobStore = new MemoryBlobStore(metricsTestExtension.getMetricFactory(), BLOB_ID_FACTORY);
-    }
-
-    @Override
-    public BlobStore testee() {
-        return memoryBlobStore;
-    }
-
-    @Override
-    public BlobId.Factory blobIdFactory() {
-        return BLOB_ID_FACTORY;
-    }
+    String metricNamePrefix();
 }

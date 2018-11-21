@@ -36,6 +36,7 @@ import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.BlobStoreContract;
 import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.memory.MemoryBlobStore;
+import org.apache.james.metrics.api.NoopMetricFactory;
 import org.apache.james.util.CompletableFutureUtil;
 import org.apache.james.util.StreamUtils;
 import org.assertj.core.api.SoftAssertions;
@@ -118,8 +119,8 @@ class UnionBlobStoreTest implements BlobStoreContract {
 
     @BeforeEach
     void setup() {
-        currentBlobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
-        legacyBlobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
+        currentBlobStore = memoryBlobStore();
+        legacyBlobStore = memoryBlobStore();
         unionBlobStore = UnionBlobStore.builder()
             .current(currentBlobStore)
             .legacy(legacyBlobStore)
@@ -141,7 +142,7 @@ class UnionBlobStoreTest implements BlobStoreContract {
 
         @Test
         void saveShouldFallBackToLegacyWhenCurrentGotException() throws Exception {
-            MemoryBlobStore legacyBlobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
+            MemoryBlobStore legacyBlobStore = memoryBlobStore();
             UnionBlobStore unionBlobStore = UnionBlobStore.builder()
                 .current(new ThrowingBlobStore())
                 .legacy(legacyBlobStore)
@@ -158,7 +159,7 @@ class UnionBlobStoreTest implements BlobStoreContract {
 
         @Test
         void saveInputStreamShouldFallBackToLegacyWhenCurrentGotException() throws Exception {
-            MemoryBlobStore legacyBlobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
+            MemoryBlobStore legacyBlobStore = memoryBlobStore();
             UnionBlobStore unionBlobStore = UnionBlobStore.builder()
                 .current(new ThrowingBlobStore())
                 .legacy(legacyBlobStore)
@@ -179,7 +180,7 @@ class UnionBlobStoreTest implements BlobStoreContract {
 
         @Test
         void saveShouldFallBackToLegacyWhenCurrentCompletedExceptionally() throws Exception {
-            MemoryBlobStore legacyBlobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
+            MemoryBlobStore legacyBlobStore = memoryBlobStore();
             UnionBlobStore unionBlobStore = UnionBlobStore.builder()
                 .current(new FutureThrowingBlobStore())
                 .legacy(legacyBlobStore)
@@ -196,7 +197,7 @@ class UnionBlobStoreTest implements BlobStoreContract {
 
         @Test
         void saveInputStreamShouldFallBackToLegacyWhenCurrentCompletedExceptionally() throws Exception {
-            MemoryBlobStore legacyBlobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
+            MemoryBlobStore legacyBlobStore = memoryBlobStore();
             UnionBlobStore unionBlobStore = UnionBlobStore.builder()
                 .current(new FutureThrowingBlobStore())
                 .legacy(legacyBlobStore)
@@ -218,7 +219,7 @@ class UnionBlobStoreTest implements BlobStoreContract {
 
         @Test
         void readShouldReturnFallbackToLegacyWhenCurrentGotException() throws Exception {
-            MemoryBlobStore legacyBlobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
+            MemoryBlobStore legacyBlobStore = memoryBlobStore();
             UnionBlobStore unionBlobStore = UnionBlobStore.builder()
                 .current(new ThrowingBlobStore())
                 .legacy(legacyBlobStore)
@@ -231,7 +232,7 @@ class UnionBlobStoreTest implements BlobStoreContract {
 
         @Test
         void readBytesShouldReturnFallbackToLegacyWhenCurrentGotException() throws Exception {
-            MemoryBlobStore legacyBlobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
+            MemoryBlobStore legacyBlobStore = memoryBlobStore();
 
             UnionBlobStore unionBlobStore = UnionBlobStore.builder()
                 .current(new ThrowingBlobStore())
@@ -250,7 +251,7 @@ class UnionBlobStoreTest implements BlobStoreContract {
 
         @Test
         void readShouldReturnFallbackToLegacyWhenCurrentCompletedExceptionally() throws Exception {
-            MemoryBlobStore legacyBlobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
+            MemoryBlobStore legacyBlobStore = memoryBlobStore();
             UnionBlobStore unionBlobStore = UnionBlobStore.builder()
                 .current(new FutureThrowingBlobStore())
                 .legacy(legacyBlobStore)
@@ -263,7 +264,7 @@ class UnionBlobStoreTest implements BlobStoreContract {
 
         @Test
         void readBytesShouldReturnFallbackToLegacyWhenCurrentCompletedExceptionally() throws Exception {
-            MemoryBlobStore legacyBlobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
+            MemoryBlobStore legacyBlobStore = memoryBlobStore();
             UnionBlobStore unionBlobStore = UnionBlobStore.builder()
                 .current(new FutureThrowingBlobStore())
                 .legacy(legacyBlobStore)
@@ -447,5 +448,9 @@ class UnionBlobStoreTest implements BlobStoreContract {
 
         assertThat(pushBackIS)
             .hasSameContentAs(new ByteArrayInputStream(new byte[0]));
+    }
+
+    private MemoryBlobStore memoryBlobStore() {
+        return new MemoryBlobStore(new NoopMetricFactory(), BLOB_ID_FACTORY);
     }
 }
