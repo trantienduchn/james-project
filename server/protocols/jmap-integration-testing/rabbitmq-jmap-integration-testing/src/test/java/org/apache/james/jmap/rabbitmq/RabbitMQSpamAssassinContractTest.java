@@ -31,7 +31,7 @@ import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.RabbitMQExtension;
 import org.apache.james.modules.SwiftBlobStoreExtension;
 import org.apache.james.modules.TestJMAPServerModule;
-import org.apache.james.modules.objectstore.BlobStoreChoosingConfiguration;
+import org.apache.james.modules.blobstore.BlobStoreChoosingConfiguration;
 import org.apache.james.spamassassin.SpamAssassinExtension;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -51,7 +51,7 @@ class RabbitMQSpamAssassinContractTest implements SpamAssassinContract {
             .combineWith(CassandraRabbitMQJamesServerMain.MODULES)
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
             .overrideWith(binder -> binder.bind(BlobStoreChoosingConfiguration.class)
-                .toInstance(BlobStoreChoosingConfiguration.swift()))
+                .toInstance(BlobStoreChoosingConfiguration.objectStorage()))
             .overrideWith(new TestJMAPServerModule(LIMIT_TO_20_MESSAGES)))
         .build();
 
