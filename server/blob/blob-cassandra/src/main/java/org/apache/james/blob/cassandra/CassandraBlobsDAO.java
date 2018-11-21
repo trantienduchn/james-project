@@ -126,6 +126,7 @@ public class CassandraBlobsDAO implements BlobStore, WithMetric {
             .value(BlobParts.CHUNK_NUMBER, bindMarker(BlobParts.CHUNK_NUMBER))
             .value(BlobParts.DATA, bindMarker(BlobParts.DATA)));
     }
+
     @Override
     public CompletableFuture<BlobId> save(byte[] data) {
         return metricFactory.runPublishingTimerMetric(metricNamePrefix() + SAVE_BYTES_TIMER_NAME, saveBytes(data));
