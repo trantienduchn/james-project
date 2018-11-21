@@ -34,7 +34,7 @@ import org.apache.james.modules.TestElasticSearchModule;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.TestRabbitMQModule;
 import org.apache.james.modules.TestSwiftBlobStoreModule;
-import org.apache.james.modules.objectstore.BlobStoreChoosingConfiguration;
+import org.apache.james.modules.blobstore.BlobStoreChoosingConfiguration;
 import org.apache.james.server.core.configuration.Configuration;
 import org.apache.james.spamassassin.SpamAssassinExtension;
 import org.apache.james.util.Runnables;
@@ -78,7 +78,7 @@ public class RabbitMQJmapExtension implements BeforeAllCallback, AfterAllCallbac
                     .overrideWith(new TestRabbitMQModule(DockerRabbitMQSingleton.SINGLETON))
                     .overrideWith(new TestSwiftBlobStoreModule())
                     .overrideWith(binder -> binder.bind(BlobStoreChoosingConfiguration.class)
-                        .toInstance(BlobStoreChoosingConfiguration.swift()))
+                        .toInstance(BlobStoreChoosingConfiguration.objectStorage()))
                     .overrideWith(new TestJMAPServerModule(LIMIT_TO_20_MESSAGES))
                     .overrideWith(new TestESMetricReporterModule())
                     .overrideWith(cassandra.getModule())
