@@ -44,8 +44,10 @@ import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.api.ObjectStoreException;
+import org.apache.james.blob.api.WithMetric;
 import org.apache.james.blob.cassandra.BlobTable.BlobParts;
 import org.apache.james.blob.cassandra.utils.DataChunker;
+import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.util.FluentFutureStream;
 import org.apache.james.util.OptionalUtils;
 import org.slf4j.Logger;
@@ -62,7 +64,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.Bytes;
 
-public class CassandraBlobsDAO implements BlobStore {
+public class CassandraBlobsDAO implements BlobStore, WithMetric {
     private static final Logger LOGGER = LoggerFactory.getLogger(CassandraBlobsDAO.class);
     private final CassandraAsyncExecutor cassandraAsyncExecutor;
     private final PreparedStatement insert;
@@ -72,9 +74,11 @@ public class CassandraBlobsDAO implements BlobStore {
     private final DataChunker dataChunker;
     private final CassandraConfiguration configuration;
     private final HashBlobId.Factory blobIdFactory;
+    private final MetricFactory metricFactory;
 
     @Inject
-    public CassandraBlobsDAO(Session session, CassandraConfiguration cassandraConfiguration, HashBlobId.Factory blobIdFactory) {
+    public CassandraBlobsDAO(MetricFactory metricFactory, Session session, CassandraConfiguration cassandraConfiguration,
+                             HashBlobId.Factory blobIdFactory) {
         this.cassandraAsyncExecutor = new CassandraAsyncExecutor(session);
         this.configuration = cassandraConfiguration;
         this.blobIdFactory = blobIdFactory;
@@ -84,11 +88,17 @@ public class CassandraBlobsDAO implements BlobStore {
 
         this.insertPart = prepareInsertPart(session);
         this.selectPart = prepareSelectPart(session);
+        this.metricFactory = metricFactory;
     }
 
     @VisibleForTesting
-    public CassandraBlobsDAO(Session session) {
-        this(session, CassandraConfiguration.DEFAULT_CONFIGURATION, new HashBlobId.Factory());
+    public CassandraBlobsDAO(MetricFactory metricFactory, Session session) {
+        this(metricFactory, session, CassandraConfiguration.DEFAULT_CONFIGURATION, new HashBlobId.Factory());
+    }
+
+    @Override
+    public String metricNamePrefix() {
+        return "CassandraBlobsDAO:";
     }
 
     private PreparedStatement prepareSelect(Session session) {
@@ -116,9 +126,12 @@ public class CassandraBlobsDAO implements BlobStore {
             .value(BlobParts.CHUNK_NUMBER, bindMarker(BlobParts.CHUNK_NUMBER))
             .value(BlobParts.DATA, bindMarker(BlobParts.DATA)));
     }
-
     @Override
     public CompletableFuture<BlobId> save(byte[] data) {
+        return metricFactory.runPublishingTimerMetric(metricNamePrefix() + SAVE_BYTES_TIMER_NAME, saveBytes(data));
+    }
+
+    private CompletableFuture<BlobId> saveBytes(byte[] data) {
         Preconditions.checkNotNull(data);
 
         HashBlobId blobId = blobIdFactory.forPayload(data);
@@ -159,6 +172,12 @@ public class CassandraBlobsDAO implements BlobStore {
 
     @Override
     public CompletableFuture<byte[]> readBytes(BlobId blobId) {
+        return metricFactory.runPublishingTimerMetric(
+            metricNamePrefix() + READ_BYTES_TIMER_NAME,
+            readBytesFromBlobId(blobId));
+    }
+
+    private CompletableFuture<byte[]> readBytesFromBlobId(BlobId blobId) {
         return cassandraAsyncExecutor.executeSingleRow(
             select.bind()
                 .setString(BlobTable.ID, blobId.asString()))
@@ -221,6 +240,11 @@ public class CassandraBlobsDAO implements BlobStore {
 
     @Override
     public InputStream read(BlobId blobId) {
+        return metricFactory.runPublishingTimerMetric(metricNamePrefix() + READ_TIMER_NAME,
+            () -> readFromBlobId(blobId));
+    }
+
+    private InputStream readFromBlobId(BlobId blobId) {
         try {
             Pipe pipe = Pipe.open();
             ConsumerChainer<ByteBuffer> consumer = Throwing.consumer(
@@ -243,6 +267,11 @@ public class CassandraBlobsDAO implements BlobStore {
 
     @Override
     public CompletableFuture<BlobId> save(InputStream data) {
+        return metricFactory.runPublishingTimerMetric(metricNamePrefix() + SAVE_INPUT_STREAM_TIMER_NAME,
+            saveInputStream(data));
+    }
+
+    private CompletableFuture<BlobId> saveInputStream(InputStream data) {
         Preconditions.checkNotNull(data);
         return CompletableFuture
             .supplyAsync(Throwing.supplier(() -> IOUtils.toByteArray(data)).sneakyThrow())

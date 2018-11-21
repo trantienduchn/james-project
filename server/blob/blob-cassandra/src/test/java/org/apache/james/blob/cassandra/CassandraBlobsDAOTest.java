@@ -28,7 +28,7 @@ import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.BlobStore;
-import org.apache.james.blob.api.BlobStoreContract;
+import org.apache.james.blob.api.BlobStoreMetricsContract;
 import org.apache.james.blob.api.HashBlobId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.google.common.base.Strings;
 
-public class CassandraBlobsDAOTest implements BlobStoreContract {
+public class CassandraBlobsDAOTest implements BlobStoreMetricsContract {
     private static final int CHUNK_SIZE = 10240;
     private static final int MULTIPLE_CHUNK_SIZE = 3;
 
@@ -47,7 +47,8 @@ public class CassandraBlobsDAOTest implements BlobStoreContract {
 
     @BeforeEach
     void setUp(CassandraCluster cassandra) {
-        testee = new CassandraBlobsDAO(cassandra.getConf(),
+        testee = new CassandraBlobsDAO(metricsTestExtension.getMetricFactory(),
+            cassandra.getConf(),
             CassandraConfiguration.builder()
                 .blobPartSize(CHUNK_SIZE)
                 .build(),
