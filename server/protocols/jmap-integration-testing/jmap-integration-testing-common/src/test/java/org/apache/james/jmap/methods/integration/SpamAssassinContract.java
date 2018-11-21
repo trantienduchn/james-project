@@ -85,11 +85,9 @@ public interface SpamAssassinContract {
     }
 
     @AfterEach
-    default void tearDown() throws Exception {
-        spamAssassin().clear(ALICE);
+    default void tearDown(SpamAssassinExtension.SpamAssassin spamAssassin) throws Exception {
+        spamAssassin.clear(ALICE);
     }
-
-    SpamAssassinExtension.SpamAssassin spamAssassin();
 
     default AccessToken accessTokenFor(GuiceJamesServer james, String user, String password) {
         return authenticateJamesUser(baseUri(james), user, password);

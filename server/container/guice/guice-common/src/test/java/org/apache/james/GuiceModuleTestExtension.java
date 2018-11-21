@@ -35,13 +35,13 @@ public interface GuiceModuleTestExtension extends RegistrableExtension {
 
     default void await() {}
 
-    default Class<?> supportedParameterClass() {
-        return null;
+    default Optional<Class<?>> supportedParameterClass() {
+        return Optional.empty();
     }
 
     @Override
     default boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return Optional.ofNullable(supportedParameterClass())
+        return supportedParameterClass()
             .map(clazz -> parameterContext.getParameter().getType() == clazz)
             .orElse(false);
     }
