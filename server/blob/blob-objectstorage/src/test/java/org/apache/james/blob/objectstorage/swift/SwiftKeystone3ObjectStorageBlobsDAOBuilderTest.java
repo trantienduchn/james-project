@@ -32,6 +32,7 @@ import org.apache.james.blob.objectstorage.DockerSwiftExtension;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobsDAO;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobsDAOBuilder;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobsDAOContract;
+import org.apache.james.metrics.api.NoopMetricFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -100,7 +101,8 @@ class SwiftKeystone3ObjectStorageBlobsDAOBuilderTest implements ObjectStorageBlo
         ObjectStorageBlobsDAOBuilder.ReadyToBuild builder = ObjectStorageBlobsDAO
             .builder(testConfig)
             .container(null)
-            .blobIdFactory(new HashBlobId.Factory());
+            .blobIdFactory(new HashBlobId.Factory())
+            .metricFactory(new NoopMetricFactory());
 
         assertThatThrownBy(builder::build).isInstanceOf(IllegalStateException.class);
     }
@@ -110,7 +112,19 @@ class SwiftKeystone3ObjectStorageBlobsDAOBuilderTest implements ObjectStorageBlo
         ObjectStorageBlobsDAOBuilder.ReadyToBuild builder = ObjectStorageBlobsDAO
             .builder(testConfig)
             .container(containerName)
-            .blobIdFactory(null);
+            .blobIdFactory(null)
+            .metricFactory(new NoopMetricFactory());
+
+        assertThatThrownBy(builder::build).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void metricFactoryIsMandatoryToBuildBlobsDAO() throws Exception {
+        ObjectStorageBlobsDAOBuilder.ReadyToBuild builder = ObjectStorageBlobsDAO
+            .builder(testConfig)
+            .container(containerName)
+            .blobIdFactory(new HashBlobId.Factory())
+            .metricFactory(null);
 
         assertThatThrownBy(builder::build).isInstanceOf(IllegalStateException.class);
     }
@@ -123,7 +137,8 @@ class SwiftKeystone3ObjectStorageBlobsDAOBuilderTest implements ObjectStorageBlo
         ObjectStorageBlobsDAOBuilder.ReadyToBuild builder = ObjectStorageBlobsDAO
             .builder(config)
             .container(containerName)
-            .blobIdFactory(new HashBlobId.Factory());
+            .blobIdFactory(new HashBlobId.Factory())
+            .metricFactory(new NoopMetricFactory());
 
         assertBlobsDAOCanStoreAndRetrieve(builder);
     }

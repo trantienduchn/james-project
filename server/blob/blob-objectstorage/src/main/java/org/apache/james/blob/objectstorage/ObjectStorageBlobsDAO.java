@@ -28,9 +28,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.ObjectStoreException;
+import org.apache.james.blob.api.WithMetric;
 import org.apache.james.blob.objectstorage.swift.SwiftKeystone2ObjectStorage;
 import org.apache.james.blob.objectstorage.swift.SwiftKeystone3ObjectStorage;
 import org.apache.james.blob.objectstorage.swift.SwiftTempAuthObjectStorage;
+import org.apache.james.metrics.api.MetricFactory;
 import org.jclouds.blobstore.domain.Blob;
 import org.jclouds.blobstore.options.CopyOptions;
 import org.jclouds.domain.Location;
@@ -41,7 +43,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
 
-public class ObjectStorageBlobsDAO implements BlobStore {
+public class ObjectStorageBlobsDAO implements BlobStore, WithMetric {
     private static final InputStream EMPTY_STREAM = new ByteArrayInputStream(new byte[0]);
     public static final Location DEFAULT_LOCATION = null;
 
@@ -51,13 +53,15 @@ public class ObjectStorageBlobsDAO implements BlobStore {
     private final ContainerName containerName;
     private final org.jclouds.blobstore.BlobStore blobStore;
     private final PayloadCodec payloadCodec;
+    private final MetricFactory metricFactory;
 
     ObjectStorageBlobsDAO(ContainerName containerName, BlobId.Factory blobIdFactory,
-                          org.jclouds.blobstore.BlobStore blobStore, PayloadCodec payloadCodec) {
+                          org.jclouds.blobstore.BlobStore blobStore, PayloadCodec payloadCodec, MetricFactory metricFactory) {
         this.blobIdFactory = blobIdFactory;
         this.containerName = containerName;
         this.blobStore = blobStore;
         this.payloadCodec = payloadCodec;
+        this.metricFactory = metricFactory;
     }
 
     public static ObjectStorageBlobsDAOBuilder.RequireContainerName builder(SwiftTempAuthObjectStorage.Configuration testConfig) {
@@ -85,11 +89,17 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
     @Override
     public CompletableFuture<BlobId> save(byte[] data) {
-        return save(new ByteArrayInputStream(data));
+        return metricFactory.runPublishingTimerMetric(metricNamePrefix() + SAVE_BYTES_TIMER_NAME,
+            saveInputStream(new ByteArrayInputStream(data)));
     }
 
     @Override
     public CompletableFuture<BlobId> save(InputStream data) {
+        return metricFactory.runPublishingTimerMetric(metricNamePrefix() + SAVE_INPUT_STREAM_TIMER_NAME,
+            saveInputStream(data));
+    }
+
+    private CompletableFuture<BlobId> saveInputStream(InputStream data) {
         Preconditions.checkNotNull(data);
 
         BlobId tmpId = blobIdFactory.randomId();
@@ -117,12 +127,22 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
     @Override
     public CompletableFuture<byte[]> readBytes(BlobId blobId) {
+        return metricFactory.runPublishingTimerMetric(metricNamePrefix() + READ_BYTES_TIMER_NAME,
+            readBytesFromBlobId(blobId));
+    }
+
+    private CompletableFuture<byte[]> readBytesFromBlobId(BlobId blobId) {
         return CompletableFuture
-            .supplyAsync(Throwing.supplier(() -> IOUtils.toByteArray(read(blobId))).sneakyThrow());
+            .supplyAsync(Throwing.supplier(() -> IOUtils.toByteArray(readFromBlobId(blobId))).sneakyThrow());
     }
 
     @Override
     public InputStream read(BlobId blobId) throws ObjectStoreException {
+        return metricFactory.runPublishingTimerMetric(metricNamePrefix() + READ_TIMER_NAME,
+            () -> readFromBlobId(blobId));
+    }
+
+    private InputStream readFromBlobId(BlobId blobId) throws ObjectStoreException {
         Blob blob = blobStore.getBlob(containerName.value(), blobId.asString());
 
         try {
@@ -138,5 +158,9 @@ public class ObjectStorageBlobsDAO implements BlobStore {
         }
 
     }
-}
 
+    @Override
+    public String metricNamePrefix() {
+        return "ObjectStorageBlobsDAO:";
+    }
+}

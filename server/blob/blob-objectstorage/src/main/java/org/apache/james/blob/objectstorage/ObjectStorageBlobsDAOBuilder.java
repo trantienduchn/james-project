@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.apache.james.blob.api.BlobId;
+import org.apache.james.metrics.api.MetricFactory;
 import org.jclouds.blobstore.BlobStore;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -31,7 +32,8 @@ import com.google.common.base.Preconditions;
 public class ObjectStorageBlobsDAOBuilder {
 
     public static RequireContainerName forBlobStore(Supplier<BlobStore> supplier) {
-        return containerName -> blobIdFactory -> new ReadyToBuild(supplier, blobIdFactory, containerName);
+        return containerName -> blobIdFactory -> metricFactory ->
+            new ReadyToBuild(supplier, blobIdFactory, containerName, metricFactory);
     }
 
     @FunctionalInterface
@@ -41,7 +43,12 @@ public class ObjectStorageBlobsDAOBuilder {
 
     @FunctionalInterface
     public interface RequireBlobIdFactory {
-        ReadyToBuild blobIdFactory(BlobId.Factory blobIdFactory);
+        RequireMetricFactory blobIdFactory(BlobId.Factory blobIdFactory);
+    }
+
+    @FunctionalInterface
+    public interface RequireMetricFactory {
+        ReadyToBuild metricFactory(MetricFactory metricFactory);
     }
 
     public static class ReadyToBuild {
@@ -49,9 +56,12 @@ public class ObjectStorageBlobsDAOBuilder {
         private final Supplier<BlobStore> supplier;
         private final ContainerName containerName;
         private final BlobId.Factory blobIdFactory;
+        private final MetricFactory metricFactory;
         private Optional<PayloadCodec> payloadCodec;
 
-        public ReadyToBuild(Supplier<BlobStore> supplier, BlobId.Factory blobIdFactory, ContainerName containerName) {
+        public ReadyToBuild(Supplier<BlobStore> supplier, BlobId.Factory blobIdFactory, ContainerName containerName,
+                            MetricFactory metricFactory) {
+            this.metricFactory = metricFactory;
             this.blobIdFactory = blobIdFactory;
             this.containerName = containerName;
             this.payloadCodec = Optional.empty();
@@ -71,8 +81,10 @@ public class ObjectStorageBlobsDAOBuilder {
         public ObjectStorageBlobsDAO build() {
             Preconditions.checkState(containerName != null);
             Preconditions.checkState(blobIdFactory != null);
+            Preconditions.checkState(metricFactory != null);
 
-            return new ObjectStorageBlobsDAO(containerName, blobIdFactory, supplier.get(), payloadCodec.orElse(PayloadCodec.DEFAULT_CODEC));
+            return new ObjectStorageBlobsDAO(containerName, blobIdFactory, supplier.get(),
+                payloadCodec.orElse(PayloadCodec.DEFAULT_CODEC), metricFactory);
         }
 
         @VisibleForTesting

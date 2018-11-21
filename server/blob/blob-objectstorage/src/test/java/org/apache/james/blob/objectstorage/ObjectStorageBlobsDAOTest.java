@@ -30,7 +30,7 @@ import java.util.UUID;
 import org.apache.commons.io.IOUtils;
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.BlobStore;
-import org.apache.james.blob.api.BlobStoreContract;
+import org.apache.james.blob.api.BlobStoreMetricsContract;
 import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.api.ObjectStoreException;
 import org.apache.james.blob.objectstorage.crypto.CryptoConfig;
@@ -47,7 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(DockerSwiftExtension.class)
-public class ObjectStorageBlobsDAOTest implements BlobStoreContract {
+public class ObjectStorageBlobsDAOTest implements BlobStoreMetricsContract {
     private static final TenantName TENANT_NAME = TenantName.of("test");
     private static final UserName USER_NAME = UserName.of("tester");
     private static final Credentials PASSWORD = Credentials.of("testing");
@@ -77,7 +77,8 @@ public class ObjectStorageBlobsDAOTest implements BlobStoreContract {
         ObjectStorageBlobsDAOBuilder.ReadyToBuild daoBuilder = ObjectStorageBlobsDAO
             .builder(testConfig)
             .container(containerName)
-            .blobIdFactory(blobIdFactory);
+            .blobIdFactory(blobIdFactory)
+            .metricFactory(metricsTestExtension.getMetricFactory());
         blobStore = daoBuilder.getSupplier().get();
         testee = daoBuilder.build();
         testee.createContainer(containerName);
@@ -121,6 +122,7 @@ public class ObjectStorageBlobsDAOTest implements BlobStoreContract {
             .builder(testConfig)
             .container(containerName)
             .blobIdFactory(blobIdFactory())
+            .metricFactory(metricsTestExtension.getMetricFactory())
             .payloadCodec(new AESPayloadCodec(CRYPTO_CONFIG))
             .build();
         byte[] bytes = "James is the best!".getBytes(StandardCharsets.UTF_8);
@@ -136,6 +138,7 @@ public class ObjectStorageBlobsDAOTest implements BlobStoreContract {
             .builder(testConfig)
             .container(containerName)
             .blobIdFactory(blobIdFactory())
+            .metricFactory(metricsTestExtension.getMetricFactory())
             .payloadCodec(new AESPayloadCodec(CRYPTO_CONFIG))
             .build();
         byte[] bytes = "James is the best!".getBytes(StandardCharsets.UTF_8);
