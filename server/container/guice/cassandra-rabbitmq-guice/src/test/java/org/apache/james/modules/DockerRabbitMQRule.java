@@ -19,19 +19,12 @@
 
 package org.apache.james.modules;
 
-import static org.apache.james.backend.rabbitmq.RabbitMQFixture.DEFAULT_MANAGEMENT_CREDENTIAL;
-
-import com.google.inject.Module;
-import com.google.inject.multibindings.Multibinder;
-import com.google.inject.util.Modules;
-import org.apache.james.CleanupTasksPerformer;
 import org.apache.james.GuiceModuleTestRule;
 import org.apache.james.backend.rabbitmq.DockerRabbitMQ;
-import org.apache.james.backend.rabbitmq.RabbitMQConfiguration;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import java.net.URISyntaxException;
+import com.google.inject.Module;
 
 public class DockerRabbitMQRule implements GuiceModuleTestRule {
 
@@ -48,21 +41,7 @@ public class DockerRabbitMQRule implements GuiceModuleTestRule {
 
     @Override
     public Module getModule() {
-        return Modules.combine((binder) -> {
-                try {
-                    binder.bind(RabbitMQConfiguration.class)
-                        .toInstance(RabbitMQConfiguration.builder()
-                            .amqpUri(rabbitMQ.amqpUri())
-                            .managementUri(rabbitMQ.managementUri())
-                            .managementCredentials(DEFAULT_MANAGEMENT_CREDENTIAL)
-                            .build());
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
-            },
-            binder -> Multibinder.newSetBinder(binder, CleanupTasksPerformer.CleanupTask.class)
-                .addBinding()
-                .to(TestRabbitMQModule.QueueCleanUp.class));
+        return new TestRabbitMQModule(rabbitMQ);
     }
 
     public DockerRabbitMQ dockerRabbitMQ() {

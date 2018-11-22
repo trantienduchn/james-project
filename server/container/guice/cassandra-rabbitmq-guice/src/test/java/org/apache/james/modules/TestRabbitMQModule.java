@@ -24,10 +24,10 @@ import static org.apache.james.backend.rabbitmq.RabbitMQFixture.DEFAULT_MANAGEME
 import java.net.URISyntaxException;
 import java.time.Duration;
 
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import org.apache.james.CleanupTasksPerformer;
 import org.apache.james.backend.rabbitmq.DockerRabbitMQ;
 import org.apache.james.backend.rabbitmq.RabbitMQConfiguration;
 import org.apache.james.queue.rabbitmq.RabbitMQManagementApi;
@@ -35,9 +35,23 @@ import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMai
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.multibindings.Multibinder;
+import com.google.inject.Scopes;
 
 public class TestRabbitMQModule extends AbstractModule {
+
+    public static class QueueCleanUp {
+        private final RabbitMQManagementApi api;
+
+        @Inject
+        public QueueCleanUp(RabbitMQManagementApi api) {
+            this.api = api;
+        }
+
+        @PreDestroy
+        public void deleteQueues() {
+            api.deleteAllQueues();
+        }
+    }
 
     private final DockerRabbitMQ rabbitMQ;
 
@@ -54,9 +68,7 @@ public class TestRabbitMQModule extends AbstractModule {
             .sliceWindow(Duration.ofHours(1))
             .build());
 
-        Multibinder.newSetBinder(binder(), CleanupTasksPerformer.CleanupTask.class)
-            .addBinding()
-            .to(QueueCleanUp.class);
+        bind(QueueCleanUp.class).in(Scopes.SINGLETON);
     }
 
     @Provides
@@ -67,21 +79,5 @@ public class TestRabbitMQModule extends AbstractModule {
                 .managementUri(rabbitMQ.managementUri())
                 .managementCredentials(DEFAULT_MANAGEMENT_CREDENTIAL)
                 .build();
-    }
-
-    public static class QueueCleanUp implements CleanupTasksPerformer.CleanupTask {
-        private final RabbitMQManagementApi api;
-
-        @Inject
-        public QueueCleanUp(RabbitMQManagementApi api) {
-            this.api = api;
-        }
-
-        @Override
-        public Result run() {
-            api.deleteAllQueues();
-
-            return Result.COMPLETED;
-        }
     }
 }
