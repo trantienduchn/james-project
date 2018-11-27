@@ -23,6 +23,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.james.blob.api.BlobId;
@@ -55,13 +57,16 @@ public class ObjectStorageBlobsDAO implements BlobStore {
     private final ContainerName containerName;
     private final org.jclouds.blobstore.BlobStore blobStore;
     private final PayloadCodec payloadCodec;
+    private final Executor executor;
 
     ObjectStorageBlobsDAO(ContainerName containerName, BlobId.Factory blobIdFactory,
-                          org.jclouds.blobstore.BlobStore blobStore, PayloadCodec payloadCodec) {
+                          org.jclouds.blobstore.BlobStore blobStore, PayloadCodec payloadCodec,
+                          int executorPoolSize) {
         this.blobIdFactory = blobIdFactory;
         this.containerName = containerName;
         this.blobStore = blobStore;
         this.payloadCodec = payloadCodec;
+        this.executor = Executors.newFixedThreadPool(executorPoolSize);
     }
 
     public static ObjectStorageBlobsDAOBuilder.RequireContainerName builder(SwiftTempAuthObjectStorage.Configuration testConfig) {
@@ -103,7 +108,7 @@ public class ObjectStorageBlobsDAO implements BlobStore {
     private CompletableFuture<BlobId> updateBlobId(BlobId from, BlobId to) {
         String containerName = this.containerName.value();
         return CompletableFuture
-            .supplyAsync(() -> blobStore.copyBlob(containerName, from.asString(), containerName, to.asString(), CopyOptions.NONE))
+            .supplyAsync(() -> blobStore.copyBlob(containerName, from.asString(), containerName, to.asString(), CopyOptions.NONE), executor)
             .thenAcceptAsync(any -> blobStore.removeBlob(containerName, from.asString()))
             .thenApply(any -> to);
     }
@@ -115,14 +120,14 @@ public class ObjectStorageBlobsDAO implements BlobStore {
         Blob blob = blobStore.blobBuilder(id.asString()).payload(payload).build();
 
         return CompletableFuture
-            .supplyAsync(() -> blobStore.putBlob(containerName, blob))
+            .supplyAsync(() -> blobStore.putBlob(containerName, blob), executor)
             .thenApply(any -> blobIdFactory.from(hashingInputStream.hash().toString()));
     }
 
     @Override
     public CompletableFuture<byte[]> readBytes(BlobId blobId) {
         return CompletableFuture
-            .supplyAsync(Throwing.supplier(() -> IOUtils.toByteArray(read(blobId))).sneakyThrow());
+            .supplyAsync(Throwing.supplier(() -> IOUtils.toByteArray(read(blobId))).sneakyThrow(), executor);
     }
 
     @Override

@@ -43,6 +43,7 @@ public class ObjectStorageBlobConfiguration {
     private static final String OBJECTSTORAGE_PAYLOAD_CODEC = "objectstorage.payload.codec";
     public static final String OBJECTSTORAGE_AES256_HEXSALT = "objectstorage.aes256.hexsalt";
     public static final String OBJECTSTORAGE_AES256_PASSWORD = "objectstorage.aes256.password";
+    public static final String OBJECTSTORAGE_EXECUTOR_POOL_SIZE = "objectstorage.executorPoolSize";
 
     public static ObjectStorageBlobConfiguration from(Configuration configuration) throws ConfigurationException {
         String provider = configuration.getString(OBJECTSTORAGE_PROVIDER, null);
@@ -52,6 +53,7 @@ public class ObjectStorageBlobConfiguration {
         Optional<String> aesSalt = Optional.ofNullable(configuration.getString(OBJECTSTORAGE_AES256_HEXSALT, null));
         Optional<char[]> aesPassword = Optional.ofNullable(configuration.getString(OBJECTSTORAGE_AES256_PASSWORD, null))
             .map(String::toCharArray);
+        Optional<Integer> executorPoolSize = Optional.ofNullable(configuration.getInteger(OBJECTSTORAGE_EXECUTOR_POOL_SIZE, null));
 
         if (Strings.isNullOrEmpty(provider)) {
             throw new ConfigurationException("Mandatory configuration value " + OBJECTSTORAGE_PROVIDER + " is missing from " + OBJECTSTORAGE_CONFIGURATION_NAME + " configuration");
@@ -79,6 +81,7 @@ public class ObjectStorageBlobConfiguration {
         return defineAuthApi(configuration, authApi, requireAuthConfiguration)
             .aesSalt(aesSalt)
             .aesPassword(aesPassword)
+            .executorPoolSize(executorPoolSize)
             .build();
     }
 
@@ -151,6 +154,7 @@ public class ObjectStorageBlobConfiguration {
             private final Optional<SwiftKeystone3ObjectStorage.Configuration> keystone3Configuration;
             private Optional<String> aesSalt;
             private Optional<char[]> aesPassword;
+            private Optional<Integer> executorPoolSize;
 
             public ReadyToBuild(PayloadCodecFactory payloadCodecFactory, String provider, ContainerName container, String authApiName,
                                 Optional<SwiftTempAuthObjectStorage.Configuration> tempAuth,
@@ -185,6 +189,11 @@ public class ObjectStorageBlobConfiguration {
                 return this;
             }
 
+            public ReadyToBuild executorPoolSize(Optional<Integer> executorPoolSize) {
+                this.executorPoolSize = executorPoolSize;
+                return this;
+            }
+
             public ObjectStorageBlobConfiguration build() {
                 if (payloadCodecFactory == PayloadCodecFactory.AES256) {
                     aesSalt.filter(s -> !s.isEmpty())
@@ -194,7 +203,7 @@ public class ObjectStorageBlobConfiguration {
                 }
 
                 return new ObjectStorageBlobConfiguration(payloadCodecFactory, provider, container, aesSalt, aesPassword,
-                    authApiName, tempAuth, keystone2Configuration, keystone3Configuration);
+                    authApiName, tempAuth, keystone2Configuration, keystone3Configuration, executorPoolSize);
             }
 
         }
@@ -210,6 +219,7 @@ public class ObjectStorageBlobConfiguration {
     private final Optional<SwiftKeystone3ObjectStorage.Configuration> keystone3Configuration;
     private Optional<String> aesSalt;
     private Optional<char[]> aesPassword;
+    private Optional<Integer> executorPoolSize;
 
     @VisibleForTesting
     ObjectStorageBlobConfiguration(PayloadCodecFactory payloadCodec, String provider, ContainerName namespace,
@@ -217,7 +227,8 @@ public class ObjectStorageBlobConfiguration {
                                    Optional<char[]> aesPassword, String authApi,
                                    Optional<SwiftTempAuthObjectStorage.Configuration> tempAuth,
                                    Optional<SwiftKeystone2ObjectStorage.Configuration> keystone2Configuration,
-                                   Optional<SwiftKeystone3ObjectStorage.Configuration> keystone3Configuration) {
+                                   Optional<SwiftKeystone3ObjectStorage.Configuration> keystone3Configuration,
+                                   Optional<Integer> executorPoolSize) {
         this.payloadCodec = payloadCodec;
         this.aesSalt = aesSalt;
         this.aesPassword = aesPassword;
@@ -227,6 +238,7 @@ public class ObjectStorageBlobConfiguration {
         this.tempAuth = tempAuth;
         this.keystone2Configuration = keystone2Configuration;
         this.keystone3Configuration = keystone3Configuration;
+        this.executorPoolSize = executorPoolSize;
     }
 
     public String getAuthApi() {
@@ -266,6 +278,10 @@ public class ObjectStorageBlobConfiguration {
         return aesPassword;
     }
 
+    public Optional<Integer> getExecutorPoolSize() {
+        return executorPoolSize;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -283,12 +299,13 @@ public class ObjectStorageBlobConfiguration {
             Objects.equals(keystone2Configuration, that.keystone2Configuration) &&
             Objects.equals(keystone3Configuration, that.keystone3Configuration) &&
             Objects.equals(aesSalt, that.aesSalt) &&
-            Objects.equals(aesPassword, that.aesPassword);
+            Objects.equals(aesPassword, that.aesPassword) &&
+            Objects.equals(executorPoolSize, that.executorPoolSize);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(payloadCodec, authApi, namespace, provider, tempAuth, keystone2Configuration, keystone3Configuration, aesSalt, aesPassword);
+        return Objects.hash(payloadCodec, authApi, namespace, provider, tempAuth, keystone2Configuration, keystone3Configuration, aesSalt, aesPassword, executorPoolSize);
     }
 
     @Override
@@ -303,6 +320,7 @@ public class ObjectStorageBlobConfiguration {
             .add("keystone3Configuration", keystone3Configuration)
             .add("aesSalt", aesSalt)
             .add("aesPassword", aesPassword)
+            .add("executorPoolSize", executorPoolSize)
             .toString();
     }
 }

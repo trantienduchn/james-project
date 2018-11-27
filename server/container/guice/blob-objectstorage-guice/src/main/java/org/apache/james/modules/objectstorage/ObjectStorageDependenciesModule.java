@@ -75,6 +75,7 @@ public class ObjectStorageDependenciesModule extends AbstractModule {
         ObjectStorageBlobsDAO dao = selectDaoBuilder(configuration)
             .container(configuration.getNamespace())
             .blobIdFactory(blobIdFactory)
+            .executorPoolSize(configuration.getExecutorPoolSize())
             .build();
         dao.createContainer(configuration.getNamespace()).get(1, TimeUnit.MINUTES);
         return dao;

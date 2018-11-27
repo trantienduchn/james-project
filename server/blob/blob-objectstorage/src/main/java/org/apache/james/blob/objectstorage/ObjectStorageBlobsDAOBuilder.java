@@ -30,6 +30,8 @@ import com.google.common.base.Preconditions;
 
 public class ObjectStorageBlobsDAOBuilder {
 
+    private static final int DEFAULT_POOL_SIZE = 10;
+
     public static RequireContainerName forBlobStore(Supplier<BlobStore> supplier) {
         return containerName -> blobIdFactory -> new ReadyToBuild(supplier, blobIdFactory, containerName);
     }
@@ -50,12 +52,14 @@ public class ObjectStorageBlobsDAOBuilder {
         private final ContainerName containerName;
         private final BlobId.Factory blobIdFactory;
         private Optional<PayloadCodec> payloadCodec;
+        private Optional<Integer> executorPoolSize;
 
         public ReadyToBuild(Supplier<BlobStore> supplier, BlobId.Factory blobIdFactory, ContainerName containerName) {
             this.blobIdFactory = blobIdFactory;
             this.containerName = containerName;
             this.payloadCodec = Optional.empty();
             this.supplier = supplier;
+            this.executorPoolSize = Optional.empty();
         }
 
         public ReadyToBuild payloadCodec(PayloadCodec payloadCodec) {
@@ -68,11 +72,16 @@ public class ObjectStorageBlobsDAOBuilder {
             return this;
         }
 
+        public ReadyToBuild executorPoolSize(Optional<Integer> executorPoolSize) {
+            this.executorPoolSize = executorPoolSize;
+            return this;
+        }
+
         public ObjectStorageBlobsDAO build() {
             Preconditions.checkState(containerName != null);
             Preconditions.checkState(blobIdFactory != null);
 
-            return new ObjectStorageBlobsDAO(containerName, blobIdFactory, supplier.get(), payloadCodec.orElse(PayloadCodec.DEFAULT_CODEC));
+            return new ObjectStorageBlobsDAO(containerName, blobIdFactory, supplier.get(), payloadCodec.orElse(PayloadCodec.DEFAULT_CODEC), executorPoolSize.orElse(DEFAULT_POOL_SIZE));
         }
 
         @VisibleForTesting
