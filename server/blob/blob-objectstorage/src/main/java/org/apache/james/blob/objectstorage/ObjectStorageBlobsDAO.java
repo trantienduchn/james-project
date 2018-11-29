@@ -147,4 +147,9 @@ public class ObjectStorageBlobsDAO implements BlobStore {
     public void deleteContainer() {
         blobStore.deleteContainer(containerName.value());
     }
+
+    @VisibleForTesting
+    public PayloadCodec getPayloadCodec() {
+        return payloadCodec;
+    }
 }
