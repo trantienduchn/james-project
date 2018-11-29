@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Duration.ONE_HUNDRED_MILLISECONDS;
 import static org.junit.jupiter.api.TestInstance.Lifecycle;
 
+import org.apache.james.blob.objectstorage.AESPayloadCodec;
 import org.apache.james.blob.objectstorage.DefaultPayloadCodec;
 import org.apache.james.blob.objectstorage.PayloadCodec;
 import org.apache.james.core.Domain;
@@ -103,12 +104,12 @@ class CassandraRabbitMQJamesServerTest {
             .build();
 
         @Test
-        void encryptedPayloadShouldBeConfiguredWhenProvidingEncryptedPayloadConfigurationButNot(GuiceJamesServer jamesServer) {
+        void encryptedPayloadShouldBeConfiguredWhenProvidingEncryptedPayloadConfiguration(GuiceJamesServer jamesServer) {
             PayloadCodec payloadCodec = jamesServer.getProbe(DockerSwiftTestRule.TestSwiftBlobStoreProbe.class)
                 .getSwiftPayloadCodec();
 
             assertThat(payloadCodec)
-                .isInstanceOf(DefaultPayloadCodec.class);
+                .isInstanceOf(AESPayloadCodec.class);
         }
     }
 
