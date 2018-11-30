@@ -16,19 +16,24 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-package org.apache.james.mailbox;
 
-import org.apache.james.core.User;
+package org.apache.james.mailbox.store.json.event.dto;
 
-public interface Event {
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-    MailboxSession getSession();
+public class MailboxSessionIdDataTransferObject {
 
-    default User getUser() {
-        return getSession().getUser().getCoreUser();
+    @JsonProperty()
+    private long sessionId;
+
+    public MailboxSessionIdDataTransferObject() {
     }
 
-    default long getSessionId() {
-        return getSession().getSessionId();
+    public MailboxSessionIdDataTransferObject(long sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public long getSessionId() {
+        return sessionId;
     }
 }

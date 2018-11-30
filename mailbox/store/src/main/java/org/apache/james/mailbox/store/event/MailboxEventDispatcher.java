@@ -26,6 +26,7 @@ import java.util.SortedMap;
 
 import javax.inject.Inject;
 
+import org.apache.james.core.User;
 import org.apache.james.core.quota.QuotaCount;
 import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.Event;
@@ -81,7 +82,7 @@ public class MailboxEventDispatcher {
      * @param mailbox The mailbox
      */
     public void added(MailboxSession session, SortedMap<MessageUid, MessageMetaData> uids, Mailbox mailbox, Map<MessageUid, MailboxMessage> cachedMessages) {
-        listener.event(eventFactory.added(session, uids, mailbox, cachedMessages));
+        listener.event(eventFactory.added(session.getSessionId(), session.getUser().getCoreUser(), uids, mailbox, cachedMessages));
     }
 
     public void added(MailboxSession session, Mailbox mailbox, MailboxMessage mailboxMessage) {
@@ -109,7 +110,7 @@ public class MailboxEventDispatcher {
      */
     public void expunged(MailboxSession session,  Map<MessageUid, MessageMetaData> uids, Mailbox mailbox) {
         if (!uids.isEmpty()) {
-            listener.event(eventFactory.expunged(session, uids, mailbox));
+            listener.event(eventFactory.expunged(session.getSessionId(), session.getUser().getCoreUser(), uids, mailbox));
         }
     }
 
@@ -126,7 +127,7 @@ public class MailboxEventDispatcher {
      */
     public void flagsUpdated(MailboxSession session, List<MessageUid> uids, Mailbox mailbox, List<UpdatedFlags> uflags) {
         if (!uids.isEmpty()) {
-            listener.event(eventFactory.flagsUpdated(session, uids, mailbox, uflags));
+            listener.event(eventFactory.flagsUpdated(session.getSessionId(), session.getUser().getCoreUser(), uids, mailbox, uflags));
         }
     }
 
@@ -139,7 +140,7 @@ public class MailboxEventDispatcher {
      * MailboxListener will get triggered then
      */
     public void mailboxRenamed(MailboxSession session, MailboxPath from, Mailbox to) {
-        listener.event(eventFactory.mailboxRenamed(session, from, to));
+        listener.event(eventFactory.mailboxRenamed(session.getSessionId(), session.getUser().getCoreUser(), from, to));
     }
 
     /**
@@ -147,7 +148,7 @@ public class MailboxEventDispatcher {
      * MailboxListener will get triggered then
      */
     public void mailboxDeleted(MailboxSession session, Mailbox mailbox, QuotaRoot quotaRoot, QuotaCount deletedMessageCount, QuotaSize totalDeletedSize) {
-        listener.event(eventFactory.mailboxDeleted(session, mailbox, quotaRoot, deletedMessageCount, totalDeletedSize));
+        listener.event(eventFactory.mailboxDeleted(session.getSessionId(), session.getUser().getCoreUser(), mailbox, quotaRoot, deletedMessageCount, totalDeletedSize));
     }
 
     /**
@@ -155,22 +156,22 @@ public class MailboxEventDispatcher {
      * MailboxListener will get triggered then
      */
     public void mailboxAdded(MailboxSession session, Mailbox mailbox) {
-        listener.event(eventFactory.mailboxAdded(session, mailbox));
+        listener.event(eventFactory.mailboxAdded(session.getSessionId(), session.getUser().getCoreUser(), mailbox));
     }
 
     public void aclUpdated(MailboxSession session, MailboxPath mailboxPath, ACLDiff aclDiff, MailboxId mailboxId) {
-        listener.event(eventFactory.aclUpdated(session, mailboxPath, aclDiff, mailboxId));
+        listener.event(eventFactory.aclUpdated(session.getSessionId(), session.getUser().getCoreUser(), mailboxPath, aclDiff, mailboxId));
     }
 
     public void moved(MailboxSession session, MessageMoves messageMoves, Map<MessageUid, MailboxMessage> messages) {
-        MessageMoveEvent moveEvent = eventFactory.moved(session, messageMoves, messages);
+        MessageMoveEvent moveEvent = eventFactory.moved(session.getSessionId(), session.getUser().getCoreUser(), messageMoves, messages);
         if (!moveEvent.isNoop()) {
             listener.event(moveEvent);
         }
     }
 
-    public void quota(MailboxSession session, QuotaRoot quotaRoot, Quota<QuotaCount> countQuota, Quota<QuotaSize> sizeQuota) {
-        listener.event(new MailboxListener.QuotaUsageUpdatedEvent(session, quotaRoot, countQuota, sizeQuota, Instant.now()));
+    public void quota(User user, QuotaRoot quotaRoot, Quota<QuotaCount> countQuota, Quota<QuotaSize> sizeQuota) {
+        listener.event(new MailboxListener.QuotaUsageUpdatedEvent(user, quotaRoot, countQuota, sizeQuota, Instant.now()));
     }
 
     public void event(Event event) {

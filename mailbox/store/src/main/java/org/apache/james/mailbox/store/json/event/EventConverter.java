@@ -27,10 +27,10 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.james.core.User;
 import org.apache.james.core.quota.QuotaCount;
 import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.MailboxListener;
-import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageMetaData;
@@ -41,9 +41,10 @@ import org.apache.james.mailbox.store.json.event.dto.EventDataTransferObject;
 import org.apache.james.mailbox.store.json.event.dto.EventType;
 import org.apache.james.mailbox.store.json.event.dto.MailboxDataTransferObject;
 import org.apache.james.mailbox.store.json.event.dto.MailboxPathDataTransferObject;
-import org.apache.james.mailbox.store.json.event.dto.MailboxSessionDataTransferObject;
+import org.apache.james.mailbox.store.json.event.dto.MailboxSessionIdDataTransferObject;
 import org.apache.james.mailbox.store.json.event.dto.MessageMetaDataDataTransferObject;
 import org.apache.james.mailbox.store.json.event.dto.UpdatedFlagsDataTransferObject;
+import org.apache.james.mailbox.store.json.event.dto.UserDataTransferObject;
 import org.apache.james.mailbox.store.mail.model.Mailbox;
 import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.slf4j.Logger;
@@ -68,35 +69,42 @@ public class EventConverter {
         MailboxDataTransferObject mailboxDataTransferObject = mailboxConverter.extractMailboxDataTransferObject(event);
         if (event instanceof MailboxListener.Added) {
             return constructMeteDataHoldingEventProxy(EventType.ADDED,
-                event.getSession(),
+                event.getSessionId(),
+                event.getUser(),
                 mailboxDataTransferObject,
                 ((MailboxListener.Added) event).getUids(),
                 (MailboxListener.Added) event);
         } else if (event instanceof MailboxListener.Expunged) {
             return constructMeteDataHoldingEventProxy(EventType.DELETED,
-                event.getSession(), mailboxDataTransferObject,
+                event.getSessionId(),
+                event.getUser(),
+                mailboxDataTransferObject,
                 ((MailboxListener.Expunged) event).getUids(),
                 (MailboxListener.Expunged) event);
         } else if (event instanceof MailboxListener.FlagsUpdated) {
-            return constructFalgsUpdatedProxy(event.getSession(),
+            return constructFalgsUpdatedProxy(event.getSessionId(),
+                event.getUser(),
                 mailboxDataTransferObject,
                 ((MailboxListener.FlagsUpdated) event).getUids(),
                 ((MailboxListener.FlagsUpdated) event).getUpdatedFlags());
         } else if (event instanceof MailboxListener.MailboxRenamed) {
-            return constructMailboxRenamedProxy(event.getSession(),
+            return constructMailboxRenamedProxy(event.getSessionId(),
+                event.getUser(),
                 mailboxDataTransferObject,
                 event.getMailboxPath());
         } else if (event instanceof MailboxListener.MailboxDeletion) {
             MailboxListener.MailboxDeletion deletionEvent = (MailboxListener.MailboxDeletion) event;
             return constructMailboxDeletionProxy(EventType.MAILBOX_DELETED,
-                event.getSession(),
+                event.getSessionId(),
+                event.getUser(),
                 mailboxDataTransferObject,
                 deletionEvent.getQuotaRoot(),
                 deletionEvent.getDeletedMessageCount(),
                 deletionEvent.getTotalDeletedSize());
         } else if (event instanceof MailboxListener.MailboxAdded) {
             return constructMailboxAddedProxy(EventType.MAILBOX_ADDED,
-                event.getSession(),
+                event.getSessionId(),
+                event.getUser(),
                 mailboxDataTransferObject);
         } else {
             throw new Exception("You are trying to serialize an event that can't be serialized");
@@ -105,30 +113,40 @@ public class EventConverter {
 
     public MailboxListener.MailboxEvent retrieveEvent(EventDataTransferObject eventDataTransferObject) throws Exception {
         Mailbox mailbox = mailboxConverter.retrieveMailbox(eventDataTransferObject.getMailbox());
+        User user = eventDataTransferObject.getUserDTO().getUser();
+        long sessionId = eventDataTransferObject.getSessionIdDTO().getSessionId();
         switch (eventDataTransferObject.getType()) {
             case ADDED:
-                return eventFactory.added(eventDataTransferObject.getSession().getMailboxSession(),
+                return eventFactory.added(sessionId,
+                    user,
                     retrieveMetadata(eventDataTransferObject.getMetaDataProxyMap()),
                     mailbox,
                     ImmutableMap.<MessageUid, MailboxMessage>of());
             case DELETED:
-                return eventFactory.expunged(eventDataTransferObject.getSession().getMailboxSession(),
+                return eventFactory.expunged(sessionId,
+                    user,
                     retrieveMetadata(eventDataTransferObject.getMetaDataProxyMap()),
                     mailbox);
             case FLAGS:
-                return eventFactory.flagsUpdated(eventDataTransferObject.getSession().getMailboxSession(),
+                return eventFactory.flagsUpdated(sessionId,
+                    user,
                     eventDataTransferObject.getUids(),
                     mailbox,
                     retrieveUpdatedFlags(eventDataTransferObject.getUpdatedFlags()));
             case MAILBOX_ADDED:
-                return eventFactory.mailboxAdded(eventDataTransferObject.getSession().getMailboxSession(), mailbox);
+                return eventFactory.mailboxAdded(sessionId,
+                    user,
+                    mailbox);
             case MAILBOX_DELETED:
-                return eventFactory.mailboxDeleted(eventDataTransferObject.getSession().getMailboxSession(), mailbox, 
+                return eventFactory.mailboxDeleted(sessionId,
+                    user,
+                    mailbox,
                     eventDataTransferObject.getQuotaRoot().orElseThrow(() -> new EventNotValidException("Not a Deletion event, missing quotaRoot")),
                     eventDataTransferObject.getDeletedMessageCount().orElseThrow(() -> new EventNotValidException("Not a Deletion event, missing quotaCount")),
                     eventDataTransferObject.getTotalDeletedSize().orElseThrow(() -> new EventNotValidException("Not a Deletion event, missing quotaSize")));
             case MAILBOX_RENAMED:
-                return eventFactory.mailboxRenamed(eventDataTransferObject.getSession().getMailboxSession(),
+                return eventFactory.mailboxRenamed(sessionId,
+                    user,
                     eventDataTransferObject.getFrom().getPath(),
                     mailbox);
             default:
@@ -137,24 +155,28 @@ public class EventConverter {
     }
 
     private EventDataTransferObject constructMailboxAddedProxy(EventType eventType,
-                                                               MailboxSession mailboxSession,
+                                                               long sessionId,
+                                                               User user,
                                                                MailboxDataTransferObject mailboxIntermediate) {
         return EventDataTransferObject.builder()
             .type(eventType)
-            .session(new MailboxSessionDataTransferObject(mailboxSession))
+            .sessionId(new MailboxSessionIdDataTransferObject(sessionId))
+            .user(new UserDataTransferObject(user))
             .mailbox(mailboxIntermediate)
             .build();
     }
 
     private EventDataTransferObject constructMailboxDeletionProxy(EventType eventType,
-                                                               MailboxSession mailboxSession,
-                                                               MailboxDataTransferObject mailboxIntermediate, 
-                                                               QuotaRoot quotaRoot, 
-                                                               QuotaCount deletedMessageCount,
-                                                               QuotaSize totalDeletedSize) {
+                                                                  long sessionId,
+                                                                  User user,
+                                                                  MailboxDataTransferObject mailboxIntermediate,
+                                                                  QuotaRoot quotaRoot,
+                                                                  QuotaCount deletedMessageCount,
+                                                                  QuotaSize totalDeletedSize) {
         return EventDataTransferObject.builder()
             .type(eventType)
-            .session(new MailboxSessionDataTransferObject(mailboxSession))
+            .sessionId(new MailboxSessionIdDataTransferObject(sessionId))
+            .user(new UserDataTransferObject(user))
             .mailbox(mailboxIntermediate)
             .quotaRoot(Optional.of(quotaRoot))
             .deletedMessageCount(Optional.of(deletedMessageCount))
@@ -162,18 +184,21 @@ public class EventConverter {
             .build();
     }
 
-    private EventDataTransferObject constructMailboxRenamedProxy(MailboxSession mailboxSession,
+    private EventDataTransferObject constructMailboxRenamedProxy(long sessionId,
+                                                                 User user,
                                                                  MailboxDataTransferObject mailboxIntermediate,
                                                                  MailboxPath from) {
         return EventDataTransferObject.builder()
             .type(EventType.MAILBOX_RENAMED)
-            .session(new MailboxSessionDataTransferObject(mailboxSession))
+            .sessionId(new MailboxSessionIdDataTransferObject(sessionId))
+            .user(new UserDataTransferObject(user))
             .mailbox(mailboxIntermediate)
             .from(new MailboxPathDataTransferObject(from))
             .build();
     }
 
-    private EventDataTransferObject constructFalgsUpdatedProxy(MailboxSession session,
+    private EventDataTransferObject constructFalgsUpdatedProxy(long sessionId,
+                                                               User user,
                                                                MailboxDataTransferObject mailboxIntermediate,
                                                                List<MessageUid> uids,
                                                                List<UpdatedFlags> updatedFlagsList) {
@@ -182,7 +207,8 @@ public class EventConverter {
             .collect(Guavate.toImmutableList());
         return EventDataTransferObject.builder()
             .type(EventType.FLAGS)
-            .session(new MailboxSessionDataTransferObject(session))
+            .sessionId(new MailboxSessionIdDataTransferObject(sessionId))
+            .user(new UserDataTransferObject(user))
             .mailbox(mailboxIntermediate)
             .uids(uids)
             .updatedFlags(updatedFlagsDataTransferObjects)
@@ -190,7 +216,8 @@ public class EventConverter {
     }
 
     private EventDataTransferObject constructMeteDataHoldingEventProxy(EventType eventType,
-                                                                       MailboxSession mailboxSession,
+                                                                       long sessionId,
+                                                                       User user,
                                                                        MailboxDataTransferObject mailboxIntermediate,
                                                                        List<MessageUid> uids,
                                                                        MailboxListener.MetaDataHoldingEvent event) {
@@ -202,7 +229,8 @@ public class EventConverter {
         }
         return EventDataTransferObject.builder()
             .type(eventType)
-            .session(new MailboxSessionDataTransferObject(mailboxSession))
+            .sessionId(new MailboxSessionIdDataTransferObject(sessionId))
+            .user(new UserDataTransferObject(user))
             .mailbox(mailboxIntermediate)
             .uids(uids)
             .metaData(metaDataProxyMap)
