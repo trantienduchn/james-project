@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -32,6 +33,7 @@ import javax.mail.util.SharedByteArrayInputStream;
 
 import org.apache.james.mailbox.DefaultMailboxes;
 import org.apache.james.mailbox.MailboxListener;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxSessionMapperFactory;
@@ -59,8 +61,8 @@ import com.google.common.collect.ImmutableSortedMap;
 public class SpamAssassinListenerTest {
 
     public static final String USER = "user";
-    public static final MockMailboxSession MAILBOX_SESSION = new MockMailboxSession(USER);
-    public static final int UID_VALIDITY = 43;
+    private static final MockMailboxSession MAILBOX_SESSION = new MockMailboxSession(USER);
+    private static final int UID_VALIDITY = 43;
     private SpamAssassin spamAssassin;
     private SpamAssassinListener listener;
     private SimpleMailbox inbox;
@@ -72,10 +74,13 @@ public class SpamAssassinListenerTest {
     private MailboxId spamCapitalMailboxId;
     private MailboxId trashMailboxId;
     private MailboxMapper mailboxMapper;
+    private MailboxManager mockMailboxManager;
 
     @Before
     public void setup() throws MailboxException {
         spamAssassin = mock(SpamAssassin.class);
+        mockMailboxManager = mock(MailboxManager.class);
+
         InMemoryMailboxSessionMapperFactory mapperFactory = new InMemoryMailboxSessionMapperFactory();
         mailboxMapper = mapperFactory.getMailboxMapper(MAILBOX_SESSION);
         inbox = new SimpleMailbox(MailboxPath.forUser(USER, DefaultMailboxes.INBOX), UID_VALIDITY);
@@ -87,7 +92,10 @@ public class SpamAssassinListenerTest {
         spamCapitalMailboxId = mailboxMapper.save(new SimpleMailbox(MailboxPath.forUser(USER, "SPAM"), UID_VALIDITY));
         trashMailboxId = mailboxMapper.save(new SimpleMailbox(MailboxPath.forUser(USER, "Trash"), UID_VALIDITY));
 
-        listener = new SpamAssassinListener(spamAssassin, mapperFactory, MailboxListener.ExecutionMode.SYNCHRONOUS);
+        listener = new SpamAssassinListener(spamAssassin, mapperFactory, MailboxListener.ExecutionMode.SYNCHRONOUS, mockMailboxManager);
+
+        when(mockMailboxManager.createSystemSession(USER))
+            .thenReturn(MAILBOX_SESSION);
     }
 
     @After
