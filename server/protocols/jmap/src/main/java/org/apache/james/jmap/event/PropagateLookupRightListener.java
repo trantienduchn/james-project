@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.RightManager;
 import org.apache.james.mailbox.acl.ACLDiff;
@@ -40,10 +41,12 @@ public class PropagateLookupRightListener implements MailboxListener {
     private static final Logger LOGGER = LoggerFactory.getLogger(PropagateLookupRightListener.class);
 
     private final RightManager rightManager;
+    private final MailboxManager mailboxManager;
 
     @Inject
-    public PropagateLookupRightListener(RightManager rightManager) {
+    public PropagateLookupRightListener(RightManager rightManager, MailboxManager mailboxManager) {
         this.rightManager = rightManager;
+        this.mailboxManager = mailboxManager;
     }
 
     @Override
@@ -53,7 +56,7 @@ public class PropagateLookupRightListener implements MailboxListener {
 
     @Override
     public void event(Event event) {
-        MailboxSession mailboxSession = event.getSession();
+        MailboxSession mailboxSession = createMailboxSession(event);
 
         if (event instanceof MailboxACLUpdated) {
             MailboxACLUpdated aclUpdateEvent = (MailboxACLUpdated) event;
@@ -62,6 +65,14 @@ public class PropagateLookupRightListener implements MailboxListener {
         } else if (event instanceof MailboxRenamed) {
             MailboxRenamed renamedEvent = (MailboxRenamed) event;
             updateLookupRightOnParent(mailboxSession, renamedEvent.getNewPath());
+        }
+    }
+
+    private MailboxSession createMailboxSession(Event event) {
+        try {
+            return mailboxManager.createSystemSession(event.getUser().asString());
+        } catch (MailboxException e) {
+            throw new RuntimeException("unable to create system session of user:" + event.getUser().toString(), e);
         }
     }
 
