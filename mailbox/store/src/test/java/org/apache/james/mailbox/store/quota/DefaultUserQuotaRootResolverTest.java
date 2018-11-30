@@ -90,15 +90,6 @@ public class DefaultUserQuotaRootResolverTest {
         assertThat(testee.retrieveAssociatedMailboxes(QUOTA_ROOT, MAILBOX_SESSION)).containsOnly(MAILBOX_PATH, MAILBOX_PATH_2);
     }
 
-    @Test
-    public void getQuotaRootShouldReturnUserValueWhenCalledWithMailboxId() throws Exception {
-        MailboxMapper mockedMapper = mock(MailboxMapper.class);
-        when(mockedFactory.getMailboxMapper(MAILBOX_SESSION)).thenReturn(mockedMapper);
-        when(mockedMapper.findMailboxById(MAILBOX_ID)).thenReturn(MAILBOX);
-
-        assertThat(testee.getQuotaRoot(MAILBOX_ID, MAILBOX_SESSION)).isEqualTo(QUOTA_ROOT);
-    }
-
     @Test(expected = MailboxException.class)
     public void retrieveAssociatedMailboxesShouldThrowWhenQuotaRootContainsSeparator2Times() throws Exception {
         testee.retrieveAssociatedMailboxes(QuotaRoot.quotaRoot("#private&be&nwa", Optional.empty()), MAILBOX_SESSION);
