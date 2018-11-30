@@ -42,6 +42,7 @@ import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageManager;
 import org.apache.james.mailbox.MessageUid;
+import org.apache.james.mailbox.mock.MockMailboxSession;
 import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageMetaData;
@@ -68,6 +69,7 @@ public class SelectedMailboxImplTest {
     private static final MessageUid EMITTED_EVENT_UID = MessageUid.of(5);
     private static final int MOD_SEQ = 12;
     private static final int SIZE = 38;
+    private static final String TELLIER = "tellier@linagora.com";
 
     private ExecutorService executorService;
     private MailboxManager mailboxManager;
@@ -80,7 +82,7 @@ public class SelectedMailboxImplTest {
     @Before
     public void setUp() throws Exception {
         executorService = Executors.newFixedThreadPool(1);
-        mailboxPath = MailboxPath.forUser("tellier@linagora.com", MailboxConstants.INBOX);
+        mailboxPath = MailboxPath.forUser(TELLIER, MailboxConstants.INBOX);
         mailboxManager = mock(MailboxManager.class);
         messageManager = mock(MessageManager.class);
         imapSession = mock(ImapSession.class);
@@ -99,6 +101,8 @@ public class SelectedMailboxImplTest {
 
         when(mailbox.generateAssociatedPath())
             .thenReturn(mailboxPath);
+        when(mailboxManager.createSystemSession(any()))
+            .thenReturn(new MockMailboxSession(TELLIER));
     }
 
     @After

@@ -330,7 +330,7 @@ public class SelectedMailboxImpl implements SelectedMailbox, MailboxListener {
     private void mailboxEvent(MailboxEvent mailboxEvent) {
         // Check if the event was for the mailbox we are observing
         if (mailboxEvent.getMailboxPath().equals(getPath())) {
-            final long eventSessionId = mailboxEvent.getSession().getSessionId();
+            final long eventSessionId = mailboxEvent.getSessionId();
             if (mailboxEvent instanceof MessageEvent) {
                 final MessageEvent messageEvent = (MessageEvent) mailboxEvent;
                 if (messageEvent instanceof Added) {
