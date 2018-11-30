@@ -39,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.fge.lambdas.Throwing;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
@@ -143,12 +142,10 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
     }
 
-    @VisibleForTesting
     public void deleteContainer() {
         blobStore.deleteContainer(containerName.value());
     }
 
-    @VisibleForTesting
     public PayloadCodec getPayloadCodec() {
         return payloadCodec;
     }
