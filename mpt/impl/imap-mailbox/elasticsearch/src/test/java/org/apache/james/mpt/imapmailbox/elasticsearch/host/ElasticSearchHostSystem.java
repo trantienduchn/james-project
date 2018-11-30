@@ -95,6 +95,10 @@ public class ElasticSearchHostSystem extends JamesImapHostSystem {
 
         InMemoryMailboxSessionMapperFactory factory = new InMemoryMailboxSessionMapperFactory();
         InMemoryMessageId.Factory messageIdFactory = new InMemoryMessageId.Factory();
+        this.mailboxManager = new InMemoryIntegrationResources()
+            .createMailboxManager(new SimpleGroupMembershipResolver(),
+                authenticator,
+                authorizator);
 
         ElasticSearchListeningMessageSearchIndex searchIndex = new ElasticSearchListeningMessageSearchIndex(
             factory,
@@ -107,12 +111,9 @@ public class ElasticSearchHostSystem extends JamesImapHostSystem {
                 ElasticSearchSearcher.DEFAULT_SEARCH_SIZE,
                 new InMemoryId.Factory(), messageIdFactory,
                 MailboxElasticSearchConstants.DEFAULT_MAILBOX_READ_ALIAS, MailboxElasticSearchConstants.MESSAGE_TYPE),
-            new MessageToElasticSearchJson(new DefaultTextExtractor(), ZoneId.systemDefault(), IndexAttachments.YES));
+            new MessageToElasticSearchJson(new DefaultTextExtractor(), ZoneId.systemDefault(), IndexAttachments.YES),
+            mailboxManager);
 
-        this.mailboxManager = new InMemoryIntegrationResources()
-            .createMailboxManager(new SimpleGroupMembershipResolver(),
-                authenticator,
-                authorizator);
         this.mailboxManager.setMessageSearchIndex(searchIndex);
         this.mailboxManager.addGlobalListener(searchIndex, new MockMailboxSession("admin"));
 
