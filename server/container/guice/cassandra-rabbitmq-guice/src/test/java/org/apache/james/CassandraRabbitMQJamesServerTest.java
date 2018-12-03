@@ -95,10 +95,7 @@ class CassandraRabbitMQJamesServerTest {
     @TestInstance(Lifecycle.PER_CLASS)
     class WithEncryptedSwift implements ContractSuite {
         @RegisterExtension
-        JamesServerExtension testExtension = new JamesServerExtensionBuilder()
-            .extension(new EmbeddedElasticSearchExtension())
-            .extension(new CassandraExtension())
-            .extension(new RabbitMQExtension())
+        JamesServerExtension testExtension = baseExtensionBuilder()
             .extension(new SwiftBlobStoreExtension(PayloadCodecFactory.AES256))
             .server(CONFIGURATION_BUILDER)
             .build();
@@ -117,12 +114,8 @@ class CassandraRabbitMQJamesServerTest {
     @TestInstance(Lifecycle.PER_CLASS)
     class WithDefaultSwift implements ContractSuite {
         @RegisterExtension
-        JamesServerExtension testExtension = new JamesServerExtensionBuilder()
-            .extension(new EmbeddedElasticSearchExtension())
-            .extension(new CassandraExtension())
-            .extension(new RabbitMQExtension())
+        JamesServerExtension testExtension = baseExtensionBuilder()
             .extension(new SwiftBlobStoreExtension())
-            .server(CONFIGURATION_BUILDER)
             .build();
 
         @Test
@@ -139,11 +132,14 @@ class CassandraRabbitMQJamesServerTest {
     @TestInstance(Lifecycle.PER_CLASS)
     class WithoutSwift implements ContractSuite {
         @RegisterExtension
-        JamesServerExtension testExtension = new JamesServerExtensionBuilder()
+        JamesServerExtension testExtension = baseExtensionBuilder().build();
+    }
+
+    private static JamesServerExtensionBuilder baseExtensionBuilder() {
+        return new JamesServerExtensionBuilder()
             .extension(new EmbeddedElasticSearchExtension())
             .extension(new CassandraExtension())
             .extension(new RabbitMQExtension())
-            .server(CONFIGURATION_BUILDER)
-            .build();
+            .server(CONFIGURATION_BUILDER);
     }
 }
