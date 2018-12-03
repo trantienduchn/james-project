@@ -28,7 +28,7 @@ public interface Event {
         return getSession().getUser().getCoreUser();
     }
 
-    default long getSessionId() {
+    default MailboxSession.SessionId getSessionId() {
         return getSession().getSessionId();
     }
 }
