@@ -37,7 +37,8 @@ public class EventDataTransferObject {
 
         private EventType type;
         private MailboxDataTransferObject mailbox;
-        private MailboxSessionDataTransferObject session;
+        private MailboxSessionIdDataTransferObject sessionId;
+        private UserDataTransferObject user;
         private List<MessageUid> uids;
         private Map<MessageUid, MessageMetaDataDataTransferObject> metaData;
         private List<UpdatedFlagsDataTransferObject> updatedFlags;
@@ -56,8 +57,13 @@ public class EventDataTransferObject {
             return this;
         }
 
-        public Builder session(MailboxSessionDataTransferObject session) {
-            this.session = session;
+        public Builder sessionId(MailboxSessionIdDataTransferObject sessionId) {
+            this.sessionId = sessionId;
+            return this;
+        }
+
+        public Builder user(UserDataTransferObject user) {
+            this.user = user;
             return this;
         }
 
@@ -97,7 +103,7 @@ public class EventDataTransferObject {
         }
 
         public EventDataTransferObject build() {
-            return new EventDataTransferObject(type, mailbox, session, uids, metaData, updatedFlags, from, quotaRoot, deletedMessageCount, totalDeletedSize);
+            return new EventDataTransferObject(type, mailbox, sessionId, user, uids, metaData, updatedFlags, from, quotaRoot, deletedMessageCount, totalDeletedSize);
         }
 
     }
@@ -111,7 +117,9 @@ public class EventDataTransferObject {
     @JsonProperty()
     private MailboxDataTransferObject mailbox;
     @JsonProperty()
-    private MailboxSessionDataTransferObject session;
+    private MailboxSessionIdDataTransferObject sessionId;
+    @JsonProperty()
+    private UserDataTransferObject user;
     @JsonProperty()
     private List<MessageUid> uids;
     @JsonProperty()
@@ -131,7 +139,8 @@ public class EventDataTransferObject {
 
     public EventDataTransferObject(EventType type,
                                    MailboxDataTransferObject mailbox,
-                                   MailboxSessionDataTransferObject session,
+                                   MailboxSessionIdDataTransferObject sessionId,
+                                   UserDataTransferObject user,
                                    List<MessageUid> uids,
                                    Map<MessageUid, MessageMetaDataDataTransferObject> metaData,
                                    List<UpdatedFlagsDataTransferObject> updatedFlags,
@@ -141,7 +150,8 @@ public class EventDataTransferObject {
                                    Optional<QuotaSize> totalDeletedSize) {
         this.type = type;
         this.mailbox = mailbox;
-        this.session = session;
+        this.sessionId = sessionId;
+        this.user = user;
         this.uids = uids;
         this.metaData = metaData;
         this.updatedFlags = updatedFlags;
@@ -162,8 +172,13 @@ public class EventDataTransferObject {
     }
 
     @JsonIgnore
-    public MailboxSessionDataTransferObject getSession() {
-        return session;
+    public MailboxSessionIdDataTransferObject getSessionIdDTO() {
+        return sessionId;
+    }
+
+    @JsonIgnore
+    public UserDataTransferObject getUserDTO() {
+        return user;
     }
 
     @JsonIgnore
