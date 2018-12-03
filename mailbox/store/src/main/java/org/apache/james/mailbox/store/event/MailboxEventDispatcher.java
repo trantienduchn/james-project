@@ -170,8 +170,8 @@ public class MailboxEventDispatcher {
         }
     }
 
-    public void quota(User user, QuotaRoot quotaRoot, Quota<QuotaCount> countQuota, Quota<QuotaSize> sizeQuota) {
-        listener.event(new MailboxListener.QuotaUsageUpdatedEvent(user, quotaRoot, countQuota, sizeQuota, Instant.now()));
+    public void quota(MailboxSession.SessionId sessionId, User user, QuotaRoot quotaRoot, Quota<QuotaCount> countQuota, Quota<QuotaSize> sizeQuota) {
+        listener.event(new MailboxListener.QuotaUsageUpdatedEvent(sessionId, user, quotaRoot, countQuota, sizeQuota, Instant.now()));
     }
 
     public void event(Event event) {

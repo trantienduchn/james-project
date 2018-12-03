@@ -21,11 +21,8 @@ package org.apache.james.mailbox;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import org.apache.james.core.User;
 import org.apache.james.core.quota.QuotaCount;
@@ -75,13 +72,17 @@ public interface MailboxListener {
     }
 
     class QuotaUsageUpdatedEvent implements QuotaEvent, Serializable {
+
+        private final MailboxSession.SessionId sessionId;
         private final User user;
         private final QuotaRoot quotaRoot;
         private final Quota<QuotaCount> countQuota;
         private final Quota<QuotaSize> sizeQuota;
         private final Instant instant;
 
-        public QuotaUsageUpdatedEvent(User user, QuotaRoot quotaRoot, Quota<QuotaCount> countQuota, Quota<QuotaSize> sizeQuota, Instant instant) {
+        public QuotaUsageUpdatedEvent(MailboxSession.SessionId sessionId, User user, QuotaRoot quotaRoot, Quota<QuotaCount> countQuota,
+                                      Quota<QuotaSize> sizeQuota, Instant instant) {
+            this.sessionId = sessionId;
             this.user = user;
             this.quotaRoot = quotaRoot;
             this.countQuota = countQuota;
@@ -89,14 +90,19 @@ public interface MailboxListener {
             this.instant = instant;
         }
 
-        @Override
-        public MailboxSession getSession() {
-            throw new UnsupportedOperationException("this method will be removed");
+        public QuotaUsageUpdatedEvent(User user, QuotaRoot quotaRoot,
+                                      Quota<QuotaCount> countQuota, Quota<QuotaSize> sizeQuota, Instant instant) {
+            this(MailboxSession.SessionId.zero(), user, quotaRoot, countQuota, sizeQuota, instant);
         }
 
         @Override
         public User getUser() {
             return user;
+        }
+
+        @Override
+        public MailboxSession.SessionId getSessionId() {
+            return sessionId;
         }
 
         public Quota<QuotaCount> getCountQuota() {
@@ -141,84 +147,16 @@ public interface MailboxListener {
      * A mailbox event.
      */
     abstract class MailboxEvent implements Event, Serializable {
-        public static class DummyMailboxSession implements MailboxSession {
 
-            @Override
-            public SessionType getType() {
-                return null;
-            }
-
-            @Override
-            public SessionId getSessionId() {
-                return MailboxSession.SessionId.zero();
-            }
-
-            @Override
-            public boolean isOpen() {
-                return false;
-            }
-
-            @Override
-            public void close() {
-
-            }
-
-            @Override
-            public User getUser() {
-                return null;
-            }
-
-            @Override
-            public String getPersonalSpace() {
-                return null;
-            }
-
-            @Override
-            public String getOtherUsersSpace() {
-                return null;
-            }
-
-            @Override
-            public Collection<String> getSharedSpaces() {
-                return null;
-            }
-
-            @Override
-            public Map<Object, Object> getAttributes() {
-                return null;
-            }
-
-            @Override
-            public char getPathDelimiter() {
-                return 0;
-            }
-        }
-
-        private final MailboxSession session;
         private final MailboxPath path;
         private final MailboxId mailboxId;
         private final User user;
         private final MailboxSession.SessionId sessionId;
 
-        public MailboxEvent(MailboxSession session, MailboxPath path, MailboxId mailboxId) {
-            this.session = session;
-            this.path = path;
-            this.mailboxId = mailboxId;
-            // To pass some tests, which pass null MailboxSession to the constructors
-            this.user = Optional.ofNullable(session)
-                .map(MailboxSession::getUser)
-                .map(MailboxSession.User::getCoreUser)
-                .orElse(null);
-            this.sessionId = Optional.ofNullable(session)
-                .map(MailboxSession::getSessionId)
-                .orElseGet(MailboxSession.SessionId::zero);
-        }
-
         public MailboxEvent(MailboxSession.SessionId sessionId, User user, MailboxPath path, MailboxId mailboxId) {
             this.user = user;
             this.path = path;
             this.mailboxId = mailboxId;
-            this.session = new DummyMailboxSession();
             this.sessionId = sessionId;
         }
 
@@ -231,18 +169,6 @@ public interface MailboxListener {
         @Override
         public User getUser() {
             return user;
-        }
-
-
-        /**
-         * Gets the {@link MailboxSession} in which's context the {@link MailboxEvent}
-         * happened
-         *
-         * @return session
-         */
-        @Override
-        public MailboxSession getSession() {
-            return session;
         }
 
         /**
@@ -289,14 +215,6 @@ public interface MailboxListener {
         private final QuotaCount deletedMessageCOunt;
         private final QuotaSize totalDeletedSize;
 
-        public MailboxDeletion(MailboxSession session, MailboxPath path, QuotaRoot quotaRoot, QuotaCount deletedMessageCOunt, QuotaSize totalDeletedSize,
-                               MailboxId mailboxId) {
-            super(session, path, mailboxId);
-            this.quotaRoot = quotaRoot;
-            this.deletedMessageCOunt = deletedMessageCOunt;
-            this.totalDeletedSize = totalDeletedSize;
-        }
-
         public MailboxDeletion(MailboxSession.SessionId sessionId, User user, MailboxPath path, QuotaRoot quotaRoot, QuotaCount deletedMessageCOunt, QuotaSize totalDeletedSize,
                                MailboxId mailboxId) {
             super(sessionId, user, path, mailboxId);
@@ -327,10 +245,6 @@ public interface MailboxListener {
          */
         private static final long serialVersionUID = 1L;
 
-        public MailboxAdded(MailboxSession session, MailboxPath path, MailboxId mailboxId) {
-            super(session, path, mailboxId);
-        }
-
         public MailboxAdded(MailboxSession.SessionId sessionId, User user, MailboxPath path, MailboxId mailboxId) {
             super(sessionId, user, path, mailboxId);
         }
@@ -344,10 +258,6 @@ public interface MailboxListener {
          *
          */
         private static final long serialVersionUID = 1L;
-
-        public MailboxRenamed(MailboxSession session, MailboxPath path, MailboxId mailboxId) {
-            super(session, path, mailboxId);
-        }
 
         public MailboxRenamed(MailboxSession.SessionId sessionId, User user, MailboxPath path, MailboxId mailboxId) {
             super(sessionId, user, path, mailboxId);
@@ -368,11 +278,6 @@ public interface MailboxListener {
     class MailboxACLUpdated extends MailboxEvent {
         private final ACLDiff aclDiff;
         private static final long serialVersionUID = 1L;
-
-        public MailboxACLUpdated(MailboxSession session, MailboxPath path, ACLDiff aclDiff, MailboxId mailboxId) {
-            super(session, path, mailboxId);
-            this.aclDiff = aclDiff;
-        }
 
         public MailboxACLUpdated(MailboxSession.SessionId sessionId, User user, MailboxPath path, ACLDiff aclDiff, MailboxId mailboxId) {
             super(sessionId, user, path, mailboxId);
@@ -395,10 +300,6 @@ public interface MailboxListener {
          */
         private static final long serialVersionUID = 1L;
 
-        public MessageEvent(MailboxSession session, MailboxPath path, MailboxId mailboxId) {
-            super(session, path, mailboxId);
-        }
-
         public MessageEvent(MailboxSession.SessionId sessionId, User user, MailboxPath path, MailboxId mailboxId) {
             super(sessionId, user, path, mailboxId);
         }
@@ -412,10 +313,6 @@ public interface MailboxListener {
     }
 
     abstract class MetaDataHoldingEvent extends MessageEvent {
-
-        public MetaDataHoldingEvent(MailboxSession session, MailboxPath path, MailboxId mailboxId) {
-            super(session, path, mailboxId);
-        }
 
         public MetaDataHoldingEvent(MailboxSession.SessionId sessionId, User user, MailboxPath path, MailboxId mailboxId) {
             super(sessionId, user, path, mailboxId);
@@ -436,10 +333,6 @@ public interface MailboxListener {
          *
          */
         private static final long serialVersionUID = 1L;
-
-        public Expunged(MailboxSession session, MailboxPath path, MailboxId mailboxId) {
-            super(session, path, mailboxId);
-        }
 
         public Expunged(MailboxSession.SessionId sessionId, User user, MailboxPath path, MailboxId mailboxId) {
             super(sessionId, user, path, mailboxId);
@@ -464,10 +357,6 @@ public interface MailboxListener {
          */
         private static final long serialVersionUID = 1L;
 
-        public FlagsUpdated(MailboxSession session, MailboxPath path, MailboxId mailboxId) {
-            super(session, path, mailboxId);
-        }
-
         public FlagsUpdated(MailboxSession.SessionId sessionId, User user, MailboxPath path, MailboxId mailboxId) {
             super(sessionId, user, path, mailboxId);
         }
@@ -484,10 +373,6 @@ public interface MailboxListener {
          *
          */
         private static final long serialVersionUID = 1L;
-
-        public Added(MailboxSession session, MailboxPath path, MailboxId mailboxId) {
-            super(session, path, mailboxId);
-        }
 
         public Added(MailboxSession.SessionId sessionId, User user, MailboxPath path, MailboxId mailboxId) {
             super(sessionId, user, path, mailboxId);

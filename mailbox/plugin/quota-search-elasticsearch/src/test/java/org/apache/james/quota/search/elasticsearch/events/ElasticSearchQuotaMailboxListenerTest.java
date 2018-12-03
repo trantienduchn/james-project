@@ -31,6 +31,7 @@ import org.apache.james.backends.es.ElasticSearchConfiguration;
 import org.apache.james.backends.es.ElasticSearchIndexer;
 import org.apache.james.backends.es.EmbeddedElasticSearch;
 import org.apache.james.backends.es.utils.TestingClientProvider;
+import org.apache.james.core.User;
 import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener.QuotaUsageUpdatedEvent;
 import org.apache.james.mailbox.MailboxSession;
@@ -50,8 +51,17 @@ import org.junit.rules.TemporaryFolder;
 public class ElasticSearchQuotaMailboxListenerTest {
 
     private static final int BATCH_SIZE = 1;
-    private static final MailboxSession MAILBOX_SESSION = null;
-    private static final Event EVENT = () -> MAILBOX_SESSION;
+    private static final Event DUMB_EVENT = new Event() {
+        @Override
+        public User getUser() {
+            return null;
+        }
+
+        @Override
+        public MailboxSession.SessionId getSessionId() {
+            return null;
+        }
+    };
 
     private TemporaryFolder temporaryFolder = new TemporaryFolder();
     private EmbeddedElasticSearch embeddedElasticSearch = new EmbeddedElasticSearch(temporaryFolder);
@@ -77,7 +87,7 @@ public class ElasticSearchQuotaMailboxListenerTest {
 
     @Test
     public void eventShouldDoNothingWhenNoQuotaEvent() throws Exception {
-        quotaMailboxListener.event(EVENT);
+        quotaMailboxListener.event(DUMB_EVENT);
 
         embeddedElasticSearch.awaitForElasticSearch();
 

@@ -21,6 +21,7 @@ package org.apache.james.imap.processor.base;
 
 import java.util.List;
 
+import org.apache.james.core.User;
 import org.apache.james.mailbox.MailboxListener.FlagsUpdated;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageUid;
@@ -35,7 +36,11 @@ public class FakeMailboxListenerFlagsUpdate extends FlagsUpdated {
     public List<UpdatedFlags> flags;
 
     public FakeMailboxListenerFlagsUpdate(MailboxSession session, List<MessageUid> uids, List<UpdatedFlags> flags, MailboxPath path, MailboxId mailboxId) {
-        super(session, path, mailboxId);
+        this(session.getSessionId(), session.getUser().getCoreUser(), uids, flags, path, mailboxId);
+    }
+
+    FakeMailboxListenerFlagsUpdate(MailboxSession.SessionId sessionId, User user, List<MessageUid> uids, List<UpdatedFlags> flags, MailboxPath path, MailboxId mailboxId) {
+        super(sessionId, user, path, mailboxId);
         this.uids = uids;
         this.flags = flags;
     }

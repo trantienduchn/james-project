@@ -104,11 +104,6 @@ public class MessageMoveEvent implements Event {
     }
 
     @Override
-    public MailboxSession getSession() {
-        throw new UnsupportedOperationException("wiil be removed");
-    }
-
-    @Override
     public User getUser() {
         return user;
     }
