@@ -19,6 +19,9 @@
 
 package org.apache.james.mailbox.store.json.event.dto;
 
+import org.apache.james.mailbox.MailboxSession;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MailboxSessionIdDataTransferObject {
@@ -29,11 +32,16 @@ public class MailboxSessionIdDataTransferObject {
     public MailboxSessionIdDataTransferObject() {
     }
 
-    public MailboxSessionIdDataTransferObject(long sessionId) {
-        this.sessionId = sessionId;
+    public MailboxSessionIdDataTransferObject(MailboxSession.SessionId sessionId) {
+        this.sessionId = sessionId.getValue();
     }
 
     public long getSessionId() {
         return sessionId;
+    }
+
+    @JsonIgnore
+    public MailboxSession.SessionId toSessionId() {
+        return MailboxSession.SessionId.of(sessionId);
     }
 }

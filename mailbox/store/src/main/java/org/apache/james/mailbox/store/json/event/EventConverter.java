@@ -31,6 +31,7 @@ import org.apache.james.core.User;
 import org.apache.james.core.quota.QuotaCount;
 import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.mailbox.MailboxListener;
+import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageMetaData;
@@ -114,7 +115,7 @@ public class EventConverter {
     public MailboxListener.MailboxEvent retrieveEvent(EventDataTransferObject eventDataTransferObject) throws Exception {
         Mailbox mailbox = mailboxConverter.retrieveMailbox(eventDataTransferObject.getMailbox());
         User user = eventDataTransferObject.getUserDTO().getUser();
-        long sessionId = eventDataTransferObject.getSessionIdDTO().getSessionId();
+        MailboxSession.SessionId sessionId = eventDataTransferObject.getSessionIdDTO().toSessionId();
         switch (eventDataTransferObject.getType()) {
             case ADDED:
                 return eventFactory.added(sessionId,
@@ -155,7 +156,7 @@ public class EventConverter {
     }
 
     private EventDataTransferObject constructMailboxAddedProxy(EventType eventType,
-                                                               long sessionId,
+                                                               MailboxSession.SessionId sessionId,
                                                                User user,
                                                                MailboxDataTransferObject mailboxIntermediate) {
         return EventDataTransferObject.builder()
@@ -167,7 +168,7 @@ public class EventConverter {
     }
 
     private EventDataTransferObject constructMailboxDeletionProxy(EventType eventType,
-                                                                  long sessionId,
+                                                                  MailboxSession.SessionId sessionId,
                                                                   User user,
                                                                   MailboxDataTransferObject mailboxIntermediate,
                                                                   QuotaRoot quotaRoot,
@@ -184,7 +185,7 @@ public class EventConverter {
             .build();
     }
 
-    private EventDataTransferObject constructMailboxRenamedProxy(long sessionId,
+    private EventDataTransferObject constructMailboxRenamedProxy(MailboxSession.SessionId sessionId,
                                                                  User user,
                                                                  MailboxDataTransferObject mailboxIntermediate,
                                                                  MailboxPath from) {
@@ -197,7 +198,7 @@ public class EventConverter {
             .build();
     }
 
-    private EventDataTransferObject constructFalgsUpdatedProxy(long sessionId,
+    private EventDataTransferObject constructFalgsUpdatedProxy(MailboxSession.SessionId sessionId,
                                                                User user,
                                                                MailboxDataTransferObject mailboxIntermediate,
                                                                List<MessageUid> uids,
@@ -216,7 +217,7 @@ public class EventConverter {
     }
 
     private EventDataTransferObject constructMeteDataHoldingEventProxy(EventType eventType,
-                                                                       long sessionId,
+                                                                       MailboxSession.SessionId sessionId,
                                                                        User user,
                                                                        MailboxDataTransferObject mailboxIntermediate,
                                                                        List<MessageUid> uids,
