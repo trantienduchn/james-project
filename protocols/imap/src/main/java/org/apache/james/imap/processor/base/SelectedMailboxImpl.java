@@ -67,7 +67,7 @@ public class SelectedMailboxImpl implements SelectedMailbox, MailboxListener {
 
     private final ImapSession session;
 
-    private final long sessionId;
+    private final MailboxSession.SessionId sessionId;
     private final Set<MessageUid> flagUpdateUids = new TreeSet<>();
     private final Flags.Flag uninterestingFlag = Flags.Flag.RECENT;
     private final Set<MessageUid> expungedUids = new TreeSet<>();
@@ -330,7 +330,7 @@ public class SelectedMailboxImpl implements SelectedMailbox, MailboxListener {
     private void mailboxEvent(MailboxEvent mailboxEvent) {
         // Check if the event was for the mailbox we are observing
         if (mailboxEvent.getMailboxPath().equals(getPath())) {
-            final long eventSessionId = mailboxEvent.getSessionId();
+            MailboxSession.SessionId eventSessionId = mailboxEvent.getSessionId();
             if (mailboxEvent instanceof MessageEvent) {
                 final MessageEvent messageEvent = (MessageEvent) mailboxEvent;
                 if (messageEvent instanceof Added) {
