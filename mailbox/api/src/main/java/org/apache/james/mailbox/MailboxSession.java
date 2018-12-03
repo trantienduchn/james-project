@@ -19,6 +19,7 @@
 
 package org.apache.james.mailbox;
 
+import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -34,14 +35,15 @@ public interface MailboxSession {
 
     class SessionId {
 
-        public static SessionId zero() {
-            return of(0L);
+        public static SessionId random() {
+            return of(RANDOM.nextLong());
         }
 
         public static SessionId of(long sessionId) {
             return new SessionId(sessionId);
         }
 
+        private static final SecureRandom RANDOM = new SecureRandom();
         private final long sessionId;
 
         private SessionId(long sessionId) {

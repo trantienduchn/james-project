@@ -165,6 +165,6 @@ public class SelectedMailboxImplTest {
     private void emitEvent(MailboxListener mailboxListener) {
         TreeMap<MessageUid, MessageMetaData> result = new TreeMap<>();
         result.put(EMITTED_EVENT_UID, new SimpleMessageMetaData(EMITTED_EVENT_UID, MOD_SEQ, new Flags(), SIZE, new Date(), new DefaultMessageId()));
-        mailboxListener.event(new EventFactory().added(MailboxSession.SessionId.zero(), mock(User.class), result, mailbox, ImmutableMap.of()));
+        mailboxListener.event(new EventFactory().added(MailboxSession.SessionId.random(), mock(User.class), result, mailbox, ImmutableMap.of()));
     }
 }

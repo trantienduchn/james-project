@@ -92,7 +92,7 @@ public interface MailboxListener {
 
         public QuotaUsageUpdatedEvent(User user, QuotaRoot quotaRoot,
                                       Quota<QuotaCount> countQuota, Quota<QuotaSize> sizeQuota, Instant instant) {
-            this(MailboxSession.SessionId.zero(), user, quotaRoot, countQuota, sizeQuota, instant);
+            this(MailboxSession.SessionId.random(), user, quotaRoot, countQuota, sizeQuota, instant);
         }
 
         @Override
