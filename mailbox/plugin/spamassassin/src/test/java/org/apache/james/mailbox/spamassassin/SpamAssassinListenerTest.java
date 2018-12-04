@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.Optional;
 
 import javax.mail.Flags;
 import javax.mail.util.SharedByteArrayInputStream;
@@ -249,7 +248,7 @@ public class SpamAssassinListenerTest {
         SimpleMailboxMessage message = createMessage(inboxId);
         EventFactory eventFactory = new EventFactory();
         AddedImpl addedEvent = eventFactory.new AddedImpl(
-                Optional.of(MAILBOX_SESSION.getSessionId()),
+                MAILBOX_SESSION.getSessionId(),
                 MAILBOX_SESSION.getUser().getCoreUser(),
                 inbox,
                 ImmutableSortedMap.of(MessageUid.of(45), new SimpleMessageMetaData(message)),
@@ -265,7 +264,7 @@ public class SpamAssassinListenerTest {
         SimpleMailboxMessage message = createMessage(mailboxId1);
         EventFactory eventFactory = new EventFactory();
         AddedImpl addedEvent = eventFactory.new AddedImpl(
-                Optional.of(MAILBOX_SESSION.getSessionId()),
+                MAILBOX_SESSION.getSessionId(),
                 MAILBOX_SESSION.getUser().getCoreUser(),
                 mailbox1,
                 ImmutableSortedMap.of(MessageUid.of(45), new SimpleMessageMetaData(message)),

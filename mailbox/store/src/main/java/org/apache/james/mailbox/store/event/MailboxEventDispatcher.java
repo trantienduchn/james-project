@@ -22,7 +22,6 @@ package org.apache.james.mailbox.store.event;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.SortedMap;
 
 import javax.inject.Inject;
@@ -165,7 +164,7 @@ public class MailboxEventDispatcher {
     }
 
     public void moved(MailboxSession session, MessageMoves messageMoves, Map<MessageUid, MailboxMessage> messages) {
-        MessageMoveEvent moveEvent = eventFactory.moved(session.getSessionId(), session.getUser().getCoreUser(), messageMoves, messages);
+        MessageMoveEvent moveEvent = eventFactory.moved(session.getUser().getCoreUser(), messageMoves, messages);
         if (!moveEvent.isNoop()) {
             listener.event(moveEvent);
         }
