@@ -69,7 +69,7 @@ public abstract class ListeningMessageSearchIndex implements MessageSearchIndex,
      *
      * @return mailboxManager
      */
-    public MailboxManager getMailboxManager() {
+    protected MailboxManager getMailboxManager() {
         return mailboxManager;
     }
 
