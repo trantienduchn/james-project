@@ -37,7 +37,7 @@ public class EventDataTransferObject {
 
         private EventType type;
         private MailboxDataTransferObject mailbox;
-        private MailboxSessionIdDataTransferObject sessionId;
+        private Optional<MailboxSessionIdDataTransferObject> sessionId;
         private UserDataTransferObject user;
         private List<MessageUid> uids;
         private Map<MessageUid, MessageMetaDataDataTransferObject> metaData;
@@ -58,7 +58,7 @@ public class EventDataTransferObject {
         }
 
         public Builder sessionId(Optional<MailboxSessionIdDataTransferObject> sessionId) {
-            sessionId.ifPresent(sessionIdDTO -> this.sessionId = sessionIdDTO);
+            this.sessionId = sessionId;
             return this;
         }
 
@@ -117,7 +117,7 @@ public class EventDataTransferObject {
     @JsonProperty()
     private MailboxDataTransferObject mailbox;
     @JsonProperty()
-    private MailboxSessionIdDataTransferObject sessionId;
+    private Optional<MailboxSessionIdDataTransferObject> sessionId;
     @JsonProperty()
     private UserDataTransferObject user;
     @JsonProperty()
@@ -139,7 +139,7 @@ public class EventDataTransferObject {
 
     public EventDataTransferObject(EventType type,
                                    MailboxDataTransferObject mailbox,
-                                   MailboxSessionIdDataTransferObject sessionId,
+                                   Optional<MailboxSessionIdDataTransferObject> sessionId,
                                    UserDataTransferObject user,
                                    List<MessageUid> uids,
                                    Map<MessageUid, MessageMetaDataDataTransferObject> metaData,
@@ -173,7 +173,7 @@ public class EventDataTransferObject {
 
     @JsonIgnore
     public Optional<MailboxSessionIdDataTransferObject> getSessionIdDTO() {
-        return Optional.ofNullable(sessionId);
+        return sessionId;
     }
 
     @JsonIgnore

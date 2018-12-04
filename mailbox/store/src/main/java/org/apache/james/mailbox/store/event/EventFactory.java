@@ -194,20 +194,36 @@ public class EventFactory {
         }
     }
 
-    public MailboxListener.Added added(Optional<MailboxSession.SessionId> sessionId, User user, SortedMap<MessageUid, MessageMetaData> uids, Mailbox mailbox, Map<MessageUid, MailboxMessage> cachedMessages) {
-        return new AddedImpl(sessionId, user, mailbox, uids, cachedMessages);
+    public MailboxListener.Added added(Optional<MailboxSession.SessionId> maybeSessionId, User user, SortedMap<MessageUid, MessageMetaData> uids, Mailbox mailbox, Map<MessageUid, MailboxMessage> cachedMessages) {
+        return new AddedImpl(maybeSessionId, user, mailbox, uids, cachedMessages);
     }
 
-    public MailboxListener.Expunged expunged(Optional<MailboxSession.SessionId> sessionId, User user,  Map<MessageUid, MessageMetaData> uids, Mailbox mailbox) {
+    public MailboxListener.Added added(MailboxSession.SessionId sessionId, User user, SortedMap<MessageUid, MessageMetaData> uids, Mailbox mailbox, Map<MessageUid, MailboxMessage> cachedMessages) {
+        return added(Optional.ofNullable(sessionId), user, uids, mailbox, cachedMessages);
+    }
+
+    public MailboxListener.Expunged expunged(Optional<MailboxSession.SessionId> sessionId, User user, Map<MessageUid, MessageMetaData> uids, Mailbox mailbox) {
         return new ExpungedImpl(sessionId, user, mailbox, uids);
+    }
+
+    public MailboxListener.Expunged expunged(MailboxSession.SessionId sessionId, User user,  Map<MessageUid, MessageMetaData> uids, Mailbox mailbox) {
+        return expunged(Optional.ofNullable(sessionId), user, uids, mailbox);
     }
 
     public MailboxListener.FlagsUpdated flagsUpdated(Optional<MailboxSession.SessionId> sessionId, User user, List<MessageUid> uids, Mailbox mailbox, List<UpdatedFlags> uflags) {
         return new FlagsUpdatedImpl(sessionId, user, mailbox, uids, uflags);
     }
 
+    public MailboxListener.FlagsUpdated flagsUpdated(MailboxSession.SessionId sessionId, User user, List<MessageUid> uids, Mailbox mailbox, List<UpdatedFlags> uflags) {
+        return flagsUpdated(Optional.ofNullable(sessionId), user, uids, mailbox, uflags);
+    }
+
     public MailboxListener.MailboxRenamed mailboxRenamed(Optional<MailboxSession.SessionId> sessionId, User user, MailboxPath from, Mailbox to) {
         return new MailboxRenamedEventImpl(sessionId, user, from, to);
+    }
+
+    public MailboxListener.MailboxRenamed mailboxRenamed(MailboxSession.SessionId sessionId, User user, MailboxPath from, Mailbox to) {
+        return mailboxRenamed(Optional.ofNullable(sessionId), user, from, to);
     }
 
     public MailboxListener.MailboxDeletion mailboxDeleted(Optional<MailboxSession.SessionId> sessionId, User user, Mailbox mailbox, QuotaRoot quotaRoot,
@@ -215,17 +231,26 @@ public class EventFactory {
         return new MailboxDeletionImpl(sessionId, user, mailbox, quotaRoot, deletedMessageCount, totalDeletedSize);
     }
 
+    public MailboxListener.MailboxDeletion mailboxDeleted(MailboxSession.SessionId sessionId, User user, Mailbox mailbox, QuotaRoot quotaRoot,
+                                                          QuotaCount deletedMessageCount, QuotaSize totalDeletedSize) {
+        return new MailboxDeletionImpl(Optional.ofNullable(sessionId), user, mailbox, quotaRoot, deletedMessageCount, totalDeletedSize);
+    }
+
     public MailboxListener.MailboxAdded mailboxAdded(Optional<MailboxSession.SessionId> sessionId, User user, Mailbox mailbox) {
         return new MailboxAddedImpl(sessionId, user, mailbox);
     }
 
-    public MailboxListener.MailboxACLUpdated aclUpdated(Optional<MailboxSession.SessionId> sessionId, User user, MailboxPath mailboxPath, ACLDiff aclDiff, MailboxId mailboxId) {
-        return new MailboxListener.MailboxACLUpdated(sessionId, user, mailboxPath, aclDiff, mailboxId);
+    public MailboxListener.MailboxAdded mailboxAdded(MailboxSession.SessionId sessionId, User user, Mailbox mailbox) {
+        return new MailboxAddedImpl(Optional.ofNullable(sessionId), user, mailbox);
     }
 
-    public MessageMoveEvent moved(Optional<MailboxSession.SessionId> sessionId, User user, MessageMoves messageMoves, Map<MessageUid, MailboxMessage> messages) {
+    public MailboxListener.MailboxACLUpdated aclUpdated(MailboxSession.SessionId sessionId, User user, MailboxPath mailboxPath, ACLDiff aclDiff, MailboxId mailboxId) {
+        return new MailboxListener.MailboxACLUpdated(Optional.ofNullable(sessionId), user, mailboxPath, aclDiff, mailboxId);
+    }
+
+    public MessageMoveEvent moved(MailboxSession.SessionId sessionId, User user, MessageMoves messageMoves, Map<MessageUid, MailboxMessage> messages) {
         return MessageMoveEvent.builder()
-                .sessionId(sessionId)
+                .sessionId(Optional.ofNullable(sessionId))
                 .user(user)
                 .messageMoves(messageMoves)
                 .messages(messages)
