@@ -57,8 +57,8 @@ public class EventDataTransferObject {
             return this;
         }
 
-        public Builder sessionId(MailboxSessionIdDataTransferObject sessionId) {
-            this.sessionId = sessionId;
+        public Builder sessionId(Optional<MailboxSessionIdDataTransferObject> sessionId) {
+            sessionId.ifPresent(sessionIdDTO -> this.sessionId = sessionIdDTO);
             return this;
         }
 
@@ -172,8 +172,8 @@ public class EventDataTransferObject {
     }
 
     @JsonIgnore
-    public MailboxSessionIdDataTransferObject getSessionIdDTO() {
-        return sessionId;
+    public Optional<MailboxSessionIdDataTransferObject> getSessionIdDTO() {
+        return Optional.ofNullable(sessionId);
     }
 
     @JsonIgnore

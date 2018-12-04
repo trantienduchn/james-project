@@ -330,7 +330,8 @@ public class SelectedMailboxImpl implements SelectedMailbox, MailboxListener {
     private void mailboxEvent(MailboxEvent mailboxEvent) {
         // Check if the event was for the mailbox we are observing
         if (mailboxEvent.getMailboxPath().equals(getPath())) {
-            MailboxSession.SessionId eventSessionId = mailboxEvent.getSessionId();
+            MailboxSession.SessionId eventSessionId = extractSessionId(mailboxEvent);
+
             if (mailboxEvent instanceof MessageEvent) {
                 final MessageEvent messageEvent = (MessageEvent) mailboxEvent;
                 if (messageEvent instanceof Added) {
@@ -409,6 +410,12 @@ public class SelectedMailboxImpl implements SelectedMailbox, MailboxListener {
                 path = mailboxRenamed.getNewPath();
             }
         }
+    }
+
+    private MailboxSession.SessionId extractSessionId(MailboxEvent mailboxEvent) {
+        return mailboxEvent.getSessionId()
+            .orElseThrow(() -> new RuntimeException(String.format("Event of of mailbox %s does not carry sessionId",
+                mailboxEvent.getMailboxId().serialize())));
     }
 
     @Override
