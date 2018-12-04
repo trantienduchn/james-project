@@ -34,10 +34,6 @@ public interface MailboxSession {
 
     class SessionId {
 
-        public static SessionId zero() {
-            return of(0L);
-        }
-
         public static SessionId of(long sessionId) {
             return new SessionId(sessionId);
         }
