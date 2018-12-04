@@ -74,17 +74,16 @@ public class SpamAssassinListener implements SpamEventListener {
 
     @Override
     public void event(Event event) {
-        String username = event.getUser().asString();
         if (event instanceof MessageMoveEvent) {
             MessageMoveEvent messageMoveEvent = (MessageMoveEvent) event;
             if (isMessageMovedToSpamMailbox(messageMoveEvent)) {
                 LOGGER.debug("Spam event detected");
                 ImmutableList<InputStream> messages = retrieveMessages(messageMoveEvent);
-                spamAssassin.learnSpam(messages, username);
+                spamAssassin.learnSpam(messages, event.getUser());
             }
             if (isMessageMovedOutOfSpamMailbox(messageMoveEvent)) {
                 ImmutableList<InputStream> messages = retrieveMessages(messageMoveEvent);
-                spamAssassin.learnHam(messages, username);
+                spamAssassin.learnHam(messages, event.getUser());
             }
         }
         if (event instanceof EventFactory.AddedImpl) {
@@ -95,7 +94,7 @@ public class SpamAssassinListener implements SpamEventListener {
                     .stream()
                     .map(Throwing.function(MailboxMessage::getFullContent))
                     .collect(Guavate.toImmutableList());
-                spamAssassin.learnHam(contents, username);
+                spamAssassin.learnHam(contents, event.getUser());
             }
         }
     }
