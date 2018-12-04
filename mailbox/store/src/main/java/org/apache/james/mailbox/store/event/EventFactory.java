@@ -193,20 +193,41 @@ public class EventFactory {
         }
     }
 
+    public MailboxListener.Added added(MailboxSession session, SortedMap<MessageUid, MessageMetaData> uids, Mailbox mailbox, Map<MessageUid, MailboxMessage> cachedMessages) {
+        return added(session.getSessionId(), session.getUser().getCoreUser(), uids, mailbox, cachedMessages);
+    }
+
     public MailboxListener.Added added(MailboxSession.SessionId sessionId, User user, SortedMap<MessageUid, MessageMetaData> uids, Mailbox mailbox, Map<MessageUid, MailboxMessage> cachedMessages) {
         return new AddedImpl(sessionId, user, mailbox, uids, cachedMessages);
+    }
+
+    public MailboxListener.Expunged expunged(MailboxSession session,  Map<MessageUid, MessageMetaData> uids, Mailbox mailbox) {
+        return expunged(session.getSessionId(), session.getUser().getCoreUser(), uids, mailbox);
     }
 
     public MailboxListener.Expunged expunged(MailboxSession.SessionId sessionId, User user, Map<MessageUid, MessageMetaData> uids, Mailbox mailbox) {
         return new ExpungedImpl(sessionId, user, mailbox, uids);
     }
 
+    public MailboxListener.FlagsUpdated flagsUpdated(MailboxSession session, List<MessageUid> uids, Mailbox mailbox, List<UpdatedFlags> uflags) {
+        return flagsUpdated(session.getSessionId(), session.getUser().getCoreUser(), uids, mailbox, uflags);
+    }
+
     public MailboxListener.FlagsUpdated flagsUpdated(MailboxSession.SessionId sessionId, User user, List<MessageUid> uids, Mailbox mailbox, List<UpdatedFlags> uflags) {
         return new FlagsUpdatedImpl(sessionId, user, mailbox, uids, uflags);
     }
 
+    public MailboxListener.MailboxRenamed mailboxRenamed(MailboxSession session, MailboxPath from, Mailbox to) {
+        return mailboxRenamed(session.getSessionId(), session.getUser().getCoreUser(), from, to);
+    }
+
     public MailboxListener.MailboxRenamed mailboxRenamed(MailboxSession.SessionId sessionId, User user, MailboxPath from, Mailbox to) {
         return new MailboxRenamedEventImpl(sessionId, user, from, to);
+    }
+
+    public MailboxListener.MailboxDeletion mailboxDeleted(MailboxSession session, Mailbox mailbox, QuotaRoot quotaRoot,
+                                                          QuotaCount deletedMessageCount, QuotaSize totalDeletedSize) {
+        return mailboxDeleted(session.getSessionId(), session.getUser().getCoreUser(), mailbox, quotaRoot, deletedMessageCount, totalDeletedSize);
     }
 
     public MailboxListener.MailboxDeletion mailboxDeleted(MailboxSession.SessionId sessionId, User user, Mailbox mailbox, QuotaRoot quotaRoot,
@@ -214,17 +235,25 @@ public class EventFactory {
         return new MailboxDeletionImpl(sessionId, user, mailbox, quotaRoot, deletedMessageCount, totalDeletedSize);
     }
 
+    public MailboxListener.MailboxAdded mailboxAdded(MailboxSession session, Mailbox mailbox) {
+        return mailboxAdded(session.getSessionId(), session.getUser().getCoreUser(), mailbox);
+    }
+
     public MailboxListener.MailboxAdded mailboxAdded(MailboxSession.SessionId sessionId, User user, Mailbox mailbox) {
         return new MailboxAddedImpl(sessionId, user, mailbox);
+    }
+
+    public MailboxListener.MailboxACLUpdated aclUpdated(MailboxSession session, MailboxPath mailboxPath, ACLDiff aclDiff, MailboxId mailboxId) {
+        return aclUpdated(session.getSessionId(), session.getUser().getCoreUser(), mailboxPath, aclDiff, mailboxId);
     }
 
     public MailboxListener.MailboxACLUpdated aclUpdated(MailboxSession.SessionId sessionId, User user, MailboxPath mailboxPath, ACLDiff aclDiff, MailboxId mailboxId) {
         return new MailboxListener.MailboxACLUpdated(sessionId, user, mailboxPath, aclDiff, mailboxId);
     }
 
-    public MessageMoveEvent moved(User user, MessageMoves messageMoves, Map<MessageUid, MailboxMessage> messages) {
+    public MessageMoveEvent moved(MailboxSession session, MessageMoves messageMoves, Map<MessageUid, MailboxMessage> messages) {
         return MessageMoveEvent.builder()
-                .user(user)
+                .user(session.getUser().getCoreUser())
                 .messageMoves(messageMoves)
                 .messages(messages)
                 .build();
