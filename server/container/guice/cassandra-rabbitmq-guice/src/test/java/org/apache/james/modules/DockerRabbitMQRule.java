@@ -23,7 +23,6 @@ import static org.apache.james.backend.rabbitmq.RabbitMQFixture.DEFAULT_MANAGEME
 
 import java.net.URISyntaxException;
 
-import org.apache.james.CleanupTasksPerformer;
 import org.apache.james.GuiceModuleTestRule;
 import org.apache.james.backend.rabbitmq.DockerRabbitMQ;
 import org.apache.james.backend.rabbitmq.DockerRabbitMQSingleton;
@@ -32,7 +31,7 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
 import com.google.inject.Module;
-import com.google.inject.multibindings.Multibinder;
+import com.google.inject.Scopes;
 import com.google.inject.util.Modules;
 
 public class DockerRabbitMQRule implements GuiceModuleTestRule {
@@ -60,9 +59,7 @@ public class DockerRabbitMQRule implements GuiceModuleTestRule {
                     throw new RuntimeException(e);
                 }
             },
-            binder -> Multibinder.newSetBinder(binder, CleanupTasksPerformer.CleanupTask.class)
-                .addBinding()
-                .to(TestRabbitMQModule.QueueCleanUp.class));
+            binder -> binder.bind(TestRabbitMQModule.QueueCleanUp.class).in(Scopes.SINGLETON));
     }
 
     public DockerRabbitMQ dockerRabbitMQ() {
