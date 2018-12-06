@@ -72,11 +72,12 @@ public class ListeningCurrentQuotaUpdaterTest {
     @Test
     public void addedEventShouldIncreaseCurrentQuotaValues() throws Exception {
         MailboxListener.Added added = mock(MailboxListener.Added.class);
+        when(added.getMailboxId()).thenReturn(MAILBOX_ID);
         when(added.getMetaData(MessageUid.of(36))).thenReturn(new SimpleMessageMetaData(MessageUid.of(36),0,new Flags(), SIZE, new Date(), new DefaultMessageId()));
         when(added.getMetaData(MessageUid.of(38))).thenReturn(new SimpleMessageMetaData(MessageUid.of(38),0,new Flags(), SIZE, new Date(), new DefaultMessageId()));
         when(added.getUids()).thenReturn(Lists.newArrayList(MessageUid.of(36), MessageUid.of(38)));
         when(added.getUser()).thenReturn(USER_BENWA);
-        when(mockedQuotaRootResolver.getQuotaRoot(eq(USER_BENWA))).thenReturn(QUOTA_ROOT);
+        when(mockedQuotaRootResolver.getQuotaRoot(eq(MAILBOX_ID))).thenReturn(QUOTA_ROOT);
 
         testee.event(added);
 
@@ -91,7 +92,7 @@ public class ListeningCurrentQuotaUpdaterTest {
         when(expunged.getUids()).thenReturn(Lists.newArrayList(MessageUid.of(36), MessageUid.of(38)));
         when(expunged.getMailboxId()).thenReturn(MAILBOX_ID);
         when(expunged.getUser()).thenReturn(USER_BENWA);
-        when(mockedQuotaRootResolver.getQuotaRoot(eq(USER_BENWA))).thenReturn(QUOTA_ROOT);
+        when(mockedQuotaRootResolver.getQuotaRoot(eq(MAILBOX_ID))).thenReturn(QUOTA_ROOT);
 
         testee.event(expunged);
 
@@ -104,7 +105,7 @@ public class ListeningCurrentQuotaUpdaterTest {
         when(expunged.getUids()).thenReturn(Lists.<MessageUid>newArrayList());
         when(expunged.getMailboxId()).thenReturn(MAILBOX_ID);
         when(expunged.getUser()).thenReturn(USER_BENWA);
-        when(mockedQuotaRootResolver.getQuotaRoot(eq(USER_BENWA))).thenReturn(QUOTA_ROOT);
+        when(mockedQuotaRootResolver.getQuotaRoot(eq(MAILBOX_ID))).thenReturn(QUOTA_ROOT);
 
         testee.event(expunged);
 
@@ -117,7 +118,7 @@ public class ListeningCurrentQuotaUpdaterTest {
         when(added.getUids()).thenReturn(Lists.<MessageUid>newArrayList());
         when(added.getMailboxId()).thenReturn(MAILBOX_ID);
         when(added.getUser()).thenReturn(USER_BENWA);
-        when(mockedQuotaRootResolver.getQuotaRoot(eq(USER_BENWA))).thenReturn(QUOTA_ROOT);
+        when(mockedQuotaRootResolver.getQuotaRoot(eq(MAILBOX_ID))).thenReturn(QUOTA_ROOT);
 
         testee.event(added);
 
@@ -132,7 +133,7 @@ public class ListeningCurrentQuotaUpdaterTest {
         when(deletion.getTotalDeletedSize()).thenReturn(QuotaSize.size(5));
         when(deletion.getMailboxId()).thenReturn(MAILBOX_ID);
         when(deletion.getUser()).thenReturn(USER_BENWA);
-        when(mockedQuotaRootResolver.getQuotaRoot(eq(USER_BENWA))).thenReturn(QUOTA_ROOT);
+        when(mockedQuotaRootResolver.getQuotaRoot(eq(MAILBOX_ID))).thenReturn(QUOTA_ROOT);
 
         testee.event(deletion);
 
@@ -147,7 +148,7 @@ public class ListeningCurrentQuotaUpdaterTest {
         when(deletion.getTotalDeletedSize()).thenReturn(QuotaSize.size(0));
         when(deletion.getMailboxId()).thenReturn(MAILBOX_ID);
         when(deletion.getUser()).thenReturn(USER_BENWA);
-        when(mockedQuotaRootResolver.getQuotaRoot(eq(USER_BENWA))).thenReturn(QUOTA_ROOT);
+        when(mockedQuotaRootResolver.getQuotaRoot(eq(MAILBOX_ID))).thenReturn(QUOTA_ROOT);
 
         testee.event(deletion);
 

@@ -25,9 +25,11 @@ import java.util.Optional;
 import javax.inject.Inject;
 
 import org.apache.james.core.User;
+import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxConstants;
+import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.QuotaRoot;
 import org.apache.james.mailbox.quota.UserQuotaRootResolver;
@@ -42,10 +44,12 @@ public class DefaultUserQuotaRootResolver implements UserQuotaRootResolver {
 
     public static final String SEPARATOR = "&"; // Character illegal for mailbox naming in regard of RFC 3501 section 5.1
 
+    private final MailboxManager mailboxManager;
     private final MailboxSessionMapperFactory factory;
 
     @Inject
-    public DefaultUserQuotaRootResolver(MailboxSessionMapperFactory factory) {
+    public DefaultUserQuotaRootResolver(MailboxManager mailboxManager, MailboxSessionMapperFactory factory) {
+        this.mailboxManager = mailboxManager;
         this.factory = factory;
     }
 
@@ -68,7 +72,14 @@ public class DefaultUserQuotaRootResolver implements UserQuotaRootResolver {
     }
 
     @Override
-    public QuotaRoot getQuotaRoot(User user) {
+    public QuotaRoot getQuotaRoot(MailboxId mailboxId) throws MailboxException {
+        MailboxSession session = mailboxManager.createSystemSession("DefaultUserQuotaRootResolver");
+        User user = User.fromUsername(
+            factory.getMailboxMapper(session)
+                .findMailboxById(mailboxId)
+                .generateAssociatedPath()
+                .getUser());
+
         return forUser(user);
     }
 
