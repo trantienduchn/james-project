@@ -68,6 +68,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.julienrf</groupId>
             <artifactId>play-json-derived-codecs_${scala.base}</artifactId>
             <version>4.0.1</version>
@@ -76,6 +81,11 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>${scala.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>org.scala-lang.modules</groupId>
+          <artifactId>scala-java8-compat_2.12</artifactId>
+          <version>0.9.0</version>
         </dependency>
     </dependencies>
 
