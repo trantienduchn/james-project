@@ -58,8 +58,7 @@ public class CassandraMailQueueMailDelete {
 
     Mono<Void> considerDeleted(MailKey mailKey, MailQueueName mailQueueName) {
         return deletedMailsDao
-            .markAsDeleted(mailQueueName, mailKey)
-            .doOnTerminate(() -> maybeUpdateBrowseStart(mailQueueName));
+            .markAsDeleted(mailQueueName, mailKey);
     }
 
     Mono<Boolean> isDeleted(Mail mail, MailQueueName mailQueueName) {
@@ -71,7 +70,7 @@ public class CassandraMailQueueMailDelete {
         updateNewBrowseStart(mailQueueName, newBrowseStart);
     }
 
-    private void maybeUpdateBrowseStart(MailQueueName mailQueueName) {
+    public void maybeUpdateBrowseStart(MailQueueName mailQueueName) {
         if (shouldUpdateBrowseStart()) {
             updateBrowseStart(mailQueueName);
         }
