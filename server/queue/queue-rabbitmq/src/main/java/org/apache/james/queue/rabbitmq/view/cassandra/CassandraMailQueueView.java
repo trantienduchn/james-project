@@ -122,7 +122,8 @@ public class CassandraMailQueueView implements MailQueueView {
     }
 
     private Mono<Void> delete(MailKey mailKey) {
-        return cassandraMailQueueMailDelete.considerDeleted(mailKey, mailQueueName);
+        return cassandraMailQueueMailDelete.considerDeleted(mailKey, mailQueueName)
+            .doOnTerminate(() -> cassandraMailQueueMailDelete.maybeUpdateBrowseStart(mailQueueName));
     }
 
     @Override
