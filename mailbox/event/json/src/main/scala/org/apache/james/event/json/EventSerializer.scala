@@ -25,20 +25,30 @@ import java.util.Optional
 import julienrf.json.derived
 import org.apache.james.core.quota.{QuotaCount, QuotaSize, QuotaValue}
 import org.apache.james.core.{Domain, User}
-import org.apache.james.mailbox.MailboxListener.{QuotaEvent => JavaQuotaEvent, QuotaUsageUpdatedEvent => JavaQuotaUsageUpdatedEvent}
-import org.apache.james.mailbox.model.{QuotaRoot, Quota => JavaQuota}
+import org.apache.james.mailbox.MailboxListener.{MailboxAdded => JavaMailboxAdded, QuotaUsageUpdatedEvent => JavaQuotaUsageUpdatedEvent}
+import org.apache.james.mailbox.MailboxSession.SessionId
+import org.apache.james.mailbox.model.{MailboxId, QuotaRoot, MailboxPath => JavaMailboxPath, Quota => JavaQuota}
+import org.apache.james.mailbox.{Event => JavaEvent}
 import play.api.libs.json.{JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, Json, OFormat, Reads, Writes}
 
 import scala.collection.JavaConverters._
-import scala.compat.java8.OptionConverters
 
-private sealed trait QuotaEvent {
-  def getQuotaRoot: QuotaRoot
-
-  def toJava: JavaQuotaEvent
+private sealed trait Event {
+  def toJava: JavaEvent
 }
 
 private object DTO {
+
+  object MailboxPath {
+    def fromJava(javaMailboxPath: JavaMailboxPath): MailboxPath = DTO.MailboxPath(
+      javaMailboxPath.getNamespace,
+      Option(javaMailboxPath.getUser),
+      javaMailboxPath.getName)
+  }
+
+  case class MailboxPath(namespace: String, user: Option[String], name: String) {
+    def toJava: JavaMailboxPath = new JavaMailboxPath(namespace, user.orNull, name)
+  }
 
   case class Quota[T <: QuotaValue[T]](used: T, limit: T, limits: Map[JavaQuota.Scope, T]) {
     def toJava: JavaQuota[T] =
@@ -50,25 +60,62 @@ private object DTO {
   }
 
   case class QuotaUsageUpdatedEvent(user: User, quotaRoot: QuotaRoot, countQuota: Quota[QuotaCount],
-                                    sizeQuota: Quota[QuotaSize], time: Instant) extends QuotaEvent {
-    override def getQuotaRoot: QuotaRoot = quotaRoot
-
-    override def toJava: JavaQuotaEvent =
-      new JavaQuotaUsageUpdatedEvent(user, getQuotaRoot, countQuota.toJava, sizeQuota.toJava, time)
+                                    sizeQuota: Quota[QuotaSize], time: Instant) extends Event {
+    override def toJava: JavaEvent = new JavaQuotaUsageUpdatedEvent(user, quotaRoot, countQuota.toJava, sizeQuota.toJava, time)
   }
 
+  case class MailboxAdded(mailboxPath: MailboxPath, mailboxId: MailboxId, user: User, sessionId: SessionId) extends Event {
+    override def toJava: JavaEvent = new JavaMailboxAdded(sessionId, user, mailboxPath.toJava, mailboxId)
+  }
 }
 
-private object JsonSerialize {
+private object ScalaConverter {
+  private def toScala[T <: QuotaValue[T]](java: JavaQuota[T]): DTO.Quota[T] = DTO.Quota(
+    used = java.getUsed,
+    limit = java.getLimit,
+    limits = java.getLimitByScope.asScala.toMap)
+
+  private def toScala(event: JavaQuotaUsageUpdatedEvent): DTO.QuotaUsageUpdatedEvent = DTO.QuotaUsageUpdatedEvent(
+    user = event.getUser,
+    quotaRoot = event.getQuotaRoot,
+    countQuota = toScala(event.getCountQuota),
+    sizeQuota = toScala(event.getSizeQuota),
+    time = event.getInstant)
+
+  private def toScala(event: JavaMailboxAdded): DTO.MailboxAdded = DTO.MailboxAdded(
+    mailboxPath = DTO.MailboxPath.fromJava(event.getMailboxPath),
+    mailboxId = event.getMailboxId,
+    user = event.getUser,
+    sessionId = event.getSessionId)
+
+  def toScala(javaEvent: JavaEvent): Event = javaEvent match {
+    case e: JavaQuotaUsageUpdatedEvent => toScala(e)
+    case e: JavaMailboxAdded => toScala(e)
+    case _ => throw new RuntimeException("no Scala convertion known")
+  }
+}
+
+private class JsonSerialize(mailboxIdFactory: MailboxId.Factory) {
   implicit val userWriters: Writes[User] = (user: User) => JsString(user.asString)
   implicit val quotaRootWrites: Writes[QuotaRoot] = quotaRoot => JsString(quotaRoot.getValue)
   implicit val quotaValueWrites: Writes[QuotaValue[_]] = value => if (value.isUnlimited) JsNull else JsNumber(value.asLong())
   implicit val quotaScopeWrites: Writes[JavaQuota.Scope] = value => JsString(value.name)
   implicit val quotaCountWrites: Writes[DTO.Quota[QuotaCount]] = Json.writes[DTO.Quota[QuotaCount]]
   implicit val quotaSizeWrites: Writes[DTO.Quota[QuotaSize]] = Json.writes[DTO.Quota[QuotaSize]]
+  implicit val mailboxPathWrites: Writes[DTO.MailboxPath] = Json.writes[DTO.MailboxPath]
+  implicit val mailboxIdWrites: Writes[MailboxId] = value => JsString(value.serialize())
+  implicit val sessionIdWrites: Writes[SessionId] = value => JsNumber(value.getValue)
 
   implicit val userReads: Reads[User] = {
     case JsString(userAsString) => JsSuccess(User.fromUsername(userAsString))
+    case _ => JsError()
+  }
+  implicit val mailboxIdReads: Reads[MailboxId] = {
+    case JsString(serializedMailboxId) => JsSuccess(mailboxIdFactory.fromString(serializedMailboxId))
+    case _ => JsError()
+  }
+  implicit val sessionIdReads: Reads[SessionId] = {
+    case JsNumber(id) => JsSuccess(SessionId.of(id.longValue()))
     case _ => JsError()
   }
   implicit val quotaRootReads: Reads[QuotaRoot] = {
@@ -102,34 +149,21 @@ private object JsonSerialize {
 
   implicit val quotaCReads: Reads[DTO.Quota[QuotaCount]] = Json.reads[DTO.Quota[QuotaCount]]
   implicit val quotaSReads: Reads[DTO.Quota[QuotaSize]] = Json.reads[DTO.Quota[QuotaSize]]
+  implicit val mailboxPathReads: Reads[DTO.MailboxPath] = Json.reads[DTO.MailboxPath]
 
-  implicit val quotaEventOFormat: OFormat[QuotaEvent] = derived.oformat()
+  implicit val quotaEventOFormat: OFormat[Event] = derived.oformat()
 
-  def toJson(event: QuotaEvent): String = Json.toJson(event).toString()
+  def toJson(event: Event): String = Json.toJson(event).toString()
 
-  def fromJson(json: String): JsResult[QuotaEvent] = Json.fromJson[QuotaEvent](Json.parse(json))
+  def fromJson(json: String): JsResult[Event] = Json.fromJson[Event](Json.parse(json))
 }
 
-object QuotaEvent {
+class EventSerializer(mailboxIdFactory: MailboxId.Factory) {
+  def toJson(event: JavaEvent): String = new JsonSerialize(mailboxIdFactory).toJson(ScalaConverter.toScala(event))
 
-  private def toScala[T <: QuotaValue[T]](java: JavaQuota[T]): DTO.Quota[T] =
-    DTO.Quota(used = java.getUsed, limit = java.getLimit, limits = java.getLimitByScope.asScala.toMap)
-
-  private def toScala(event: JavaQuotaUsageUpdatedEvent): DTO.QuotaUsageUpdatedEvent =
-    DTO.QuotaUsageUpdatedEvent(
-      user = event.getUser,
-      quotaRoot = event.getQuotaRoot,
-      countQuota = toScala(event.getCountQuota),
-      sizeQuota = toScala(event.getSizeQuota),
-      time = event.getInstant)
-
-  def toJson(event: JavaQuotaEvent): String = event match {
-    case e: JavaQuotaUsageUpdatedEvent => JsonSerialize.toJson(toScala(e))
-    case _ => throw new RuntimeException("no encoder found")
-  }
-
-  def fromJson(json: String): JsResult[JavaQuotaEvent] = {
-    JsonSerialize.fromJson(json)
+  def fromJson(json: String): JsResult[JavaEvent] = {
+    new JsonSerialize(mailboxIdFactory)
+      .fromJson(json)
       .map(event => event.toJava)
   }
 }
