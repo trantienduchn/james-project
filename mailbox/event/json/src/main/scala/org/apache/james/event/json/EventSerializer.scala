@@ -34,12 +34,17 @@ import org.apache.james.mailbox.MailboxSession.SessionId
 import org.apache.james.mailbox.model.{MailboxId, MessageId, QuotaRoot, MailboxACL => JavaMailboxACL, Quota => JavaQuota}
 import org.apache.james.event.json.DTOs.{Flags, MailboxPath, Quota}
 import org.apache.james.mailbox.MailboxListener.{Added => JavaAdded, Expunged => JavaExpunged, MailboxAdded => JavaMailboxAdded, MailboxDeletion => JavaMailboxDeletion, MailboxRenamed => JavaMailboxRenamed, QuotaUsageUpdatedEvent => JavaQuotaUsageUpdatedEvent}
+import org.apache.james.event.json.DTOs.{MailboxPath, Quota}
+import org.apache.james.mailbox.MailboxListener.{Added => JavaAdded, Expunged => JavaExpunged, FlagsUpdated => JavaFlagsUpdated,
+  MailboxAdded => JavaMailboxAdded, MailboxDeletion => JavaMailboxDeletion, MailboxRenamed => JavaMailboxRenamed,
+  QuotaUsageUpdatedEvent => JavaQuotaUsageUpdatedEvent}
 import org.apache.james.mailbox.MailboxSession.SessionId
 import org.apache.james.mailbox.model.{MailboxId, MessageId, QuotaRoot, MessageMetaData => JavaMessageMetaData, Quota => JavaQuota}
 import org.apache.james.mailbox.{MessageUid, Event => JavaEvent}
 import play.api.libs.json.{JsArray, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, Json, OFormat, Reads, Writes}
 
 import scala.collection.JavaConverters._
+import scala.collection.convert.wrapAll._
 
 private sealed trait Event {
   def toJava: JavaEvent
@@ -88,6 +93,17 @@ private object DTO {
       path.toJava,
       mailboxId,
       expunged.mapValues(_.toJava).asJava)
+  }
+
+  case class FlagsUpdated(sessionId: SessionId, user: User, path: MailboxPath, mailboxId: MailboxId,
+                          updatedFlags: List[DTOs.UpdatedFlags]) extends Event {
+    override def toJava: JavaEvent = new JavaFlagsUpdated(
+      sessionId,
+      user,
+      path.toJava,
+      mailboxId,
+      updatedFlags.map(_.uid).asJava,
+      updatedFlags.map(_.toJava).asJava)
   }
 }
 
@@ -149,9 +165,18 @@ private object ScalaConverter {
     expunged = event.getExpunged.asScala.mapValues(DTOs.MessageMetaData.fromJava).toMap
   )
 
+  private def toScala(event: JavaFlagsUpdated): DTO.FlagsUpdated = DTO.FlagsUpdated(
+    sessionId = event.getSessionId,
+    user = event.getUser,
+    path = DTOs.MailboxPath.fromJava(event.getMailboxPath),
+    mailboxId = event.getMailboxId,
+    updatedFlags = event.getUpdatedFlags.asScala.map(DTOs.UpdatedFlags.toUpdatedFlags).toList
+  )
+
   def toScala(javaEvent: JavaEvent): Event = javaEvent match {
     case e: JavaAdded => toScala(e)
     case e: JavaExpunged => toScala(e)
+    case e: JavaFlagsUpdated => toScala(e)
     case e: JavaMailboxACLUpdated => toScala(e)
     case e: JavaMailboxAdded => toScala(e)
     case e: JavaMailboxDeletion => toScala(e)
@@ -178,6 +203,7 @@ private class JsonSerialize(mailboxIdFactory: MailboxId.Factory, messageIdFactor
   implicit val messageUidWrites: Writes[MessageUid] = value => JsNumber(value.asLong())
   implicit val flagsWrites: Writes[JavaMailFlags] = value => JsArray(Flags.fromJavaFlags(value).map(flag => JsString(flag)))
   implicit val messageMetaDataWrites: Writes[DTOs.MessageMetaData] = Json.writes[DTOs.MessageMetaData]
+  implicit val updatedFlagsWrites: Writes[DTOs.UpdatedFlags] = Json.writes[DTOs.UpdatedFlags]
 
   implicit val aclEntryKeyReads: Reads[JavaMailboxACL.EntryKey] = {
     case JsString(keyAsString) => JsSuccess(JavaMailboxACL.EntryKey.deserialize(keyAsString))
@@ -266,6 +292,7 @@ private class JsonSerialize(mailboxIdFactory: MailboxId.Factory, messageIdFactor
   implicit val quotaSReads: Reads[DTOs.Quota[QuotaSize]] = Json.reads[DTOs.Quota[QuotaSize]]
   implicit val mailboxPathReads: Reads[DTOs.MailboxPath] = Json.reads[DTOs.MailboxPath]
   implicit val messageMetaDataReads: Reads[DTOs.MessageMetaData] = Json.reads[DTOs.MessageMetaData]
+  implicit val updatedFlagsReads: Reads[DTOs.UpdatedFlags] = Json.reads[DTOs.UpdatedFlags]
 
   implicit val eventOFormat: OFormat[Event] = derived.oformat()
 
