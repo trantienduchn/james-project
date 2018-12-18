@@ -44,7 +44,6 @@ import org.apache.james.mailbox.{MessageUid, Event => JavaEvent}
 import play.api.libs.json.{JsArray, JsError, JsNull, JsNumber, JsObject, JsResult, JsString, JsSuccess, Json, OFormat, Reads, Writes}
 
 import scala.collection.JavaConverters._
-import scala.collection.convert.wrapAll._
 
 private sealed trait Event {
   def toJava: JavaEvent
@@ -102,7 +101,6 @@ private object DTO {
       user,
       path.toJava,
       mailboxId,
-      updatedFlags.map(_.uid).asJava,
       updatedFlags.map(_.toJava).asJava)
   }
 }
