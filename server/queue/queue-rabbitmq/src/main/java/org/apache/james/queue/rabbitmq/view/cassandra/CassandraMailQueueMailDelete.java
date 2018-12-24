@@ -24,7 +24,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import javax.inject.Inject;
 
-import org.apache.james.queue.rabbitmq.MailQueueName;
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMailQueueViewConfiguration;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.MailKey;
 import org.apache.mailet.Mail;
@@ -52,38 +52,38 @@ public class CassandraMailQueueMailDelete {
         this.random = random;
     }
 
-    Mono<Void> considerDeleted(Mail mail, MailQueueName mailQueueName) {
+    Mono<Void> considerDeleted(Mail mail, RabbitMQQueueName mailQueueName) {
         return considerDeleted(MailKey.fromMail(mail), mailQueueName);
     }
 
-    Mono<Void> considerDeleted(MailKey mailKey, MailQueueName mailQueueName) {
+    Mono<Void> considerDeleted(MailKey mailKey, RabbitMQQueueName mailQueueName) {
         return deletedMailsDao
             .markAsDeleted(mailQueueName, mailKey)
             .doOnTerminate(() -> maybeUpdateBrowseStart(mailQueueName));
     }
 
-    Mono<Boolean> isDeleted(Mail mail, MailQueueName mailQueueName) {
+    Mono<Boolean> isDeleted(Mail mail, RabbitMQQueueName mailQueueName) {
         return deletedMailsDao.isDeleted(mailQueueName, MailKey.fromMail(mail));
     }
 
-    void updateBrowseStart(MailQueueName mailQueueName) {
+    void updateBrowseStart(RabbitMQQueueName mailQueueName) {
         Mono<Instant> newBrowseStart = findNewBrowseStart(mailQueueName);
         updateNewBrowseStart(mailQueueName, newBrowseStart);
     }
 
-    private void maybeUpdateBrowseStart(MailQueueName mailQueueName) {
+    private void maybeUpdateBrowseStart(RabbitMQQueueName mailQueueName) {
         if (shouldUpdateBrowseStart()) {
             updateBrowseStart(mailQueueName);
         }
     }
 
-    private Mono<Instant> findNewBrowseStart(MailQueueName mailQueueName) {
+    private Mono<Instant> findNewBrowseStart(RabbitMQQueueName mailQueueName) {
         return cassandraMailQueueBrowser.browseReferences(mailQueueName)
             .map(enqueuedItem -> enqueuedItem.getSlicingContext().getTimeRangeStart())
             .next();
     }
 
-    private Mono<Void> updateNewBrowseStart(MailQueueName mailQueueName, Mono<Instant> maybeNewBrowseStart) {
+    private Mono<Void> updateNewBrowseStart(RabbitMQQueueName mailQueueName, Mono<Instant> maybeNewBrowseStart) {
         return maybeNewBrowseStart
             .flatMap(newBrowseStartInstant -> browseStartDao.updateBrowseStart(mailQueueName, newBrowseStartInstant));
     }

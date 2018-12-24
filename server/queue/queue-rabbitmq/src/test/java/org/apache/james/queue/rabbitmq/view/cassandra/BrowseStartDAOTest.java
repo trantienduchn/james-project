@@ -23,9 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.CassandraClusterExtension;
-import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -34,8 +34,8 @@ import reactor.core.publisher.Mono;
 
 class BrowseStartDAOTest {
 
-    private static final MailQueueName OUT_GOING_1 = MailQueueName.fromString("OUT_GOING_1");
-    private static final MailQueueName OUT_GOING_2 = MailQueueName.fromString("OUT_GOING_2");
+    private static final RabbitMQQueueName OUT_GOING_1 = RabbitMQQueueName.fromString("OUT_GOING_1");
+    private static final RabbitMQQueueName OUT_GOING_2 = RabbitMQQueueName.fromString("OUT_GOING_2");
     private static final Instant NOW = Instant.now();
     private static final Instant NOW_PLUS_TEN_SECONDS = NOW.plusSeconds(10);
 

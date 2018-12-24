@@ -29,12 +29,13 @@ import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueV
 
 import javax.inject.Inject;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
-import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.MailKey;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
+
 import reactor.core.publisher.Mono;
 
 public class DeletedMailsDAO {
@@ -63,20 +64,20 @@ public class DeletedMailsDAO {
             .and(eq(MAIL_KEY, bindMarker(MAIL_KEY))));
     }
 
-    Mono<Void> markAsDeleted(MailQueueName mailQueueName, MailKey mailKey) {
+    Mono<Void> markAsDeleted(RabbitMQQueueName mailQueueName, MailKey mailKey) {
         return Mono.fromCompletionStage(executor.executeVoid(insertOne.bind()
             .setString(QUEUE_NAME, mailQueueName.asString())
             .setString(MAIL_KEY, mailKey.getMailKey())));
     }
 
-    Mono<Boolean> isDeleted(MailQueueName mailQueueName, MailKey mailKey) {
+    Mono<Boolean> isDeleted(RabbitMQQueueName mailQueueName, MailKey mailKey) {
         return Mono.fromCompletionStage(executor.executeReturnExists(
             selectOne.bind()
                 .setString(QUEUE_NAME, mailQueueName.asString())
                 .setString(MAIL_KEY, mailKey.getMailKey())));
     }
 
-    Mono<Boolean> isStillEnqueued(MailQueueName mailQueueName, MailKey mailKey) {
+    Mono<Boolean> isStillEnqueued(RabbitMQQueueName mailQueueName, MailKey mailKey) {
         return isDeleted(mailQueueName, mailKey)
             .map(b -> !b);
     }

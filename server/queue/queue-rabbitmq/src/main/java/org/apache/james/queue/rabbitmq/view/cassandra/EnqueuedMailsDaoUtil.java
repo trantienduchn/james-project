@@ -53,12 +53,12 @@ import java.util.Optional;
 import javax.mail.internet.AddressException;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.core.MailAddress;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
-import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedItemWithSlicingContext;
 import org.apache.james.server.core.MailImpl;
@@ -78,7 +78,7 @@ import com.google.common.collect.ImmutableMap;
 public class EnqueuedMailsDaoUtil {
 
     static EnqueuedItemWithSlicingContext toEnqueuedMail(Row row, BlobId.Factory blobFactory) {
-        MailQueueName queueName = MailQueueName.fromString(row.getString(QUEUE_NAME));
+        RabbitMQQueueName queueName = RabbitMQQueueName.fromString(row.getString(QUEUE_NAME));
         Instant timeRangeStart = row.getTimestamp(TIME_RANGE_START).toInstant();
         BucketedSlices.BucketId bucketId = BucketedSlices.BucketId.of(row.getInt(BUCKET_ID));
         Instant enqueuedTime = row.getTimestamp(ENQUEUED_TIME).toInstant();

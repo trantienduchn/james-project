@@ -34,13 +34,14 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
-import org.apache.james.queue.rabbitmq.MailQueueName;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.google.common.annotations.VisibleForTesting;
+
 import reactor.core.publisher.Mono;
 
 public class BrowseStartDAO {
@@ -78,25 +79,25 @@ public class BrowseStartDAO {
             .value(QUEUE_NAME, bindMarker(QUEUE_NAME)));
     }
 
-    Mono<Instant> findBrowseStart(MailQueueName queueName) {
+    Mono<Instant> findBrowseStart(RabbitMQQueueName queueName) {
         return selectOne(queueName)
             .map(this::getBrowseStart);
     }
 
-    Mono<Void> updateBrowseStart(MailQueueName mailQueueName, Instant sliceStart) {
+    Mono<Void> updateBrowseStart(RabbitMQQueueName mailQueueName, Instant sliceStart) {
         return Mono.fromCompletionStage(executor.executeVoid(updateOne.bind()
             .setTimestamp(BROWSE_START, Date.from(sliceStart))
             .setString(QUEUE_NAME, mailQueueName.asString())));
     }
 
-    Mono<Void> insertInitialBrowseStart(MailQueueName mailQueueName, Instant sliceStart) {
+    Mono<Void> insertInitialBrowseStart(RabbitMQQueueName mailQueueName, Instant sliceStart) {
         return Mono.fromCompletionStage(executor.executeVoid(insertOne.bind()
             .setTimestamp(BROWSE_START, Date.from(sliceStart))
             .setString(QUEUE_NAME, mailQueueName.asString())));
     }
 
     @VisibleForTesting
-    Mono<Row> selectOne(MailQueueName queueName) {
+    Mono<Row> selectOne(RabbitMQQueueName queueName) {
         return Mono.fromCompletionStage(executor.executeSingleRow(
             selectOne.bind()
                 .setString(QUEUE_NAME, queueName.asString())))

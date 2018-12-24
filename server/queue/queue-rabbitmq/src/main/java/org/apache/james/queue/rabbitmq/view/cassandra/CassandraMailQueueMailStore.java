@@ -24,8 +24,8 @@ import java.time.Instant;
 
 import javax.inject.Inject;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
-import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMailQueueViewConfiguration;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.BucketedSlices.BucketId;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedItemWithSlicingContext;
@@ -57,7 +57,7 @@ public class CassandraMailQueueMailStore {
         return enqueuedMailsDao.insert(enqueuedItemAndSlicing);
     }
 
-    Mono<Void> initializeBrowseStart(MailQueueName mailQueueName) {
+    Mono<Void> initializeBrowseStart(RabbitMQQueueName mailQueueName) {
         return browseStartDao
             .insertInitialBrowseStart(mailQueueName, currentSliceStartInstant());
     }

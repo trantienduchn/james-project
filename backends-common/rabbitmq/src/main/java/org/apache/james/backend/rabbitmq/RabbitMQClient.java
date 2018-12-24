@@ -17,21 +17,18 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.queue.rabbitmq;
+package org.apache.james.backend.rabbitmq;
 
 import java.io.IOException;
 import java.util.Optional;
 
 import javax.inject.Inject;
 
-import org.apache.james.backend.rabbitmq.RabbitMQChannelPool;
-import org.apache.james.queue.api.MailQueue;
-
 import com.google.common.collect.ImmutableMap;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.GetResponse;
 
-class RabbitClient {
+public class RabbitMQClient {
 
     private static final boolean AUTO_ACK = true;
     private static final boolean AUTO_DELETE = true;
@@ -45,11 +42,11 @@ class RabbitClient {
     private final RabbitMQChannelPool channelPool;
 
     @Inject
-    RabbitClient(RabbitMQChannelPool channelPool) {
+    public RabbitMQClient(RabbitMQChannelPool channelPool) {
         this.channelPool = channelPool;
     }
 
-    void attemptQueueCreation(MailQueueName name) {
+    public void attemptQueueCreation(RabbitMQQueueName name) {
         channelPool.execute(channel -> {
             try {
                 channel.exchangeDeclare(name.toRabbitExchangeName().asString(), "direct", DURABLE);
@@ -61,27 +58,27 @@ class RabbitClient {
         });
     }
 
-    void publish(MailQueueName name, byte[] message) throws MailQueue.MailQueueException {
+    public void publish(RabbitMQQueueName name, byte[] message) {
         channelPool.execute(channel -> {
             try {
                 channel.basicPublish(name.toRabbitExchangeName().asString(), ROUTING_KEY, new AMQP.BasicProperties(), message);
             } catch (IOException e) {
-                throw new MailQueue.MailQueueException("Unable to publish to RabbitMQ", e);
+                throw new RuntimeException("Unable to publish to RabbitMQ", e);
             }
         });
     }
 
-    void ack(long deliveryTag) throws IOException {
+    public void ack(long deliveryTag) throws IOException {
         RabbitMQChannelPool.RabbitConsumer<IOException> consumer = channel -> channel.basicAck(deliveryTag, !MULTIPLE);
         channelPool.execute(consumer);
     }
 
-    void nack(long deliveryTag) throws IOException {
+    public void nack(long deliveryTag) throws IOException {
         RabbitMQChannelPool.RabbitConsumer<IOException> consumer = channel -> channel.basicNack(deliveryTag, !MULTIPLE, REQUEUE);
         channelPool.execute(consumer);
     }
 
-    Optional<GetResponse> poll(MailQueueName name) throws IOException {
+    public Optional<GetResponse> poll(RabbitMQQueueName name) throws IOException {
         RabbitMQChannelPool.RabbitFunction<Optional<GetResponse>, IOException> f = channel ->
             Optional.ofNullable(channel.basicGet(name.toWorkQueueName().asString(), !AUTO_ACK));
         return channelPool.execute(f);

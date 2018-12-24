@@ -32,12 +32,12 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.blob.api.Store;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.blob.mail.MimeMessageStore;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
-import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMailQueueViewConfiguration;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedItemWithSlicingContext;
 import org.apache.mailet.Mail;
@@ -45,6 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Preconditions;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -99,13 +100,13 @@ public class CassandraMailQueueBrowser {
         this.clock = clock;
     }
 
-    Flux<ManageableMailQueue.MailQueueItemView> browse(MailQueueName queueName) {
+    Flux<ManageableMailQueue.MailQueueItemView> browse(RabbitMQQueueName queueName) {
         return browseReferences(queueName)
             .flatMapSequential(this::toMailFuture)
             .map(ManageableMailQueue.MailQueueItemView::new);
     }
 
-    Flux<EnqueuedItemWithSlicingContext> browseReferences(MailQueueName queueName) {
+    Flux<EnqueuedItemWithSlicingContext> browseReferences(RabbitMQQueueName queueName) {
         return browseStartDao.findBrowseStart(queueName)
             .flatMapMany(this::allSlicesStartingAt)
             .flatMapSequential(slice -> browseSlice(queueName, slice))
@@ -131,14 +132,14 @@ public class CassandraMailQueueBrowser {
         return mail;
     }
 
-    private Mono<List<EnqueuedItemWithSlicingContext>> browseSlice(MailQueueName queueName, Slice slice) {
+    private Mono<List<EnqueuedItemWithSlicingContext>> browseSlice(RabbitMQQueueName queueName, Slice slice) {
         return
             allBucketIds()
                 .flatMap(bucketId -> browseBucket(queueName, slice, bucketId))
                 .collectSortedList(Comparator.comparing(enqueuedMail -> enqueuedMail.getEnqueuedItem().getEnqueuedTime()));
     }
 
-    private Flux<EnqueuedItemWithSlicingContext> browseBucket(MailQueueName queueName, Slice slice, BucketId bucketId) {
+    private Flux<EnqueuedItemWithSlicingContext> browseBucket(RabbitMQQueueName queueName, Slice slice, BucketId bucketId) {
         return enqueuedMailsDao.selectEnqueuedMails(queueName, slice, bucketId)
             .filterWhen(mailReference -> deletedMailsDao.isStillEnqueued(queueName, mailReference.getEnqueuedItem().getMailKey()));
     }

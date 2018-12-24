@@ -21,18 +21,18 @@ package org.apache.james.queue.rabbitmq.view.api;
 
 import java.util.concurrent.CompletableFuture;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
-import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.apache.mailet.Mail;
 
 public interface MailQueueView {
 
     interface Factory {
-        MailQueueView create(MailQueueName mailQueueName);
+        MailQueueView create(RabbitMQQueueName mailQueueName);
     }
 
-    void initialize(MailQueueName mailQueueName);
+    void initialize(RabbitMQQueueName mailQueueName);
 
     CompletableFuture<Void> storeMail(EnqueuedItem enqueuedItem);
 

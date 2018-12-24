@@ -50,18 +50,19 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
 import org.apache.james.backends.cassandra.utils.CassandraUtils;
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
-import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedItemWithSlicingContext;
 import org.apache.mailet.Mail;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -140,7 +141,7 @@ public class EnqueuedMailsDAO {
     }
 
     Flux<EnqueuedItemWithSlicingContext> selectEnqueuedMails(
-        MailQueueName queueName, Slice slice, BucketId bucketId) {
+        RabbitMQQueueName queueName, Slice slice, BucketId bucketId) {
 
         return Mono.fromCompletionStage(executor.execute(
             selectFrom.bind()

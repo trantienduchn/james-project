@@ -28,6 +28,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.apache.james.backend.rabbitmq.RabbitMQClient;
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.metrics.api.Metric;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.queue.api.MailQueue;
@@ -67,14 +69,14 @@ class Dequeuer {
 
     private static final int TEN_MS = 10;
 
-    private final MailQueueName name;
-    private final RabbitClient rabbitClient;
+    private final RabbitMQQueueName name;
+    private final RabbitMQClient rabbitClient;
     private final Function<MailReferenceDTO, Mail> mailLoader;
     private final Metric dequeueMetric;
     private final MailReferenceSerializer mailReferenceSerializer;
     private final MailQueueView mailQueueView;
 
-    Dequeuer(MailQueueName name, RabbitClient rabbitClient, Function<MailReferenceDTO, Mail> mailLoader,
+    Dequeuer(RabbitMQQueueName name, RabbitMQClient rabbitClient, Function<MailReferenceDTO, Mail> mailLoader,
              MailReferenceSerializer serializer, MetricFactory metricFactory,
              MailQueueView mailQueueView) {
         this.name = name;

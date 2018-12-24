@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.queue.rabbitmq;
+package org.apache.james.backend.rabbitmq;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -26,7 +26,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
-public final class MailQueueName {
+public final class RabbitMQQueueName {
 
     static class WorkQueueName {
         static Optional<WorkQueueName> fromString(String name) {
@@ -51,8 +51,8 @@ public final class MailQueueName {
             return WORKQUEUE_PREFIX + name;
         }
 
-        MailQueueName toMailQueueName() {
-            return MailQueueName.fromString(name);
+        RabbitMQQueueName toRabbitMQQueueName() {
+            return RabbitMQQueueName.fromString(name);
         }
 
         @Override
@@ -114,19 +114,19 @@ public final class MailQueueName {
     private static final String EXCHANGE_PREFIX = PREFIX + "-exchange-";
     @VisibleForTesting static final String WORKQUEUE_PREFIX = PREFIX + "-workqueue-";
 
-    public static MailQueueName fromString(String name) {
+    public static RabbitMQQueueName fromString(String name) {
         Preconditions.checkNotNull(name);
-        return new MailQueueName(name);
+        return new RabbitMQQueueName(name);
     }
 
-    static Optional<MailQueueName> fromRabbitWorkQueueName(String workQueueName) {
+    static Optional<RabbitMQQueueName> fromRabbitWorkQueueName(String workQueueName) {
         return WorkQueueName.fromString(workQueueName)
-            .map(WorkQueueName::toMailQueueName);
+            .map(WorkQueueName::toRabbitMQQueueName);
     }
 
     private final String name;
 
-    private MailQueueName(String name) {
+    private RabbitMQQueueName(String name) {
         this.name = name;
     }
 
@@ -144,8 +144,8 @@ public final class MailQueueName {
 
     @Override
     public final boolean equals(Object o) {
-        if (o instanceof MailQueueName) {
-            MailQueueName that = (MailQueueName) o;
+        if (o instanceof RabbitMQQueueName) {
+            RabbitMQQueueName that = (RabbitMQQueueName) o;
             return Objects.equals(name, that.name);
         }
         return false;

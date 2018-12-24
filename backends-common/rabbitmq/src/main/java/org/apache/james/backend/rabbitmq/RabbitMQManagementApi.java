@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.queue.rabbitmq;
+package org.apache.james.backend.rabbitmq;
 
 import java.util.Date;
 import java.util.List;
@@ -25,7 +25,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import org.apache.james.backend.rabbitmq.RabbitMQConfiguration;
 import org.apache.james.util.OptionalUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -71,7 +70,7 @@ public class RabbitMQManagementApi {
     private final Api api;
 
     @Inject
-    RabbitMQManagementApi(RabbitMQConfiguration configuration) {
+    public RabbitMQManagementApi(RabbitMQConfiguration configuration) {
         RabbitMQConfiguration.ManagementCredentials credentials = configuration.getManagementCredentials();
         api = Feign.builder()
             .requestInterceptor(new BasicAuthRequestInterceptor(credentials.getUser(), new String(credentials.getPassword())))
@@ -84,11 +83,11 @@ public class RabbitMQManagementApi {
             .target(Api.class, configuration.getManagementUri().toString());
     }
 
-    Stream<MailQueueName> listCreatedMailQueueNames() {
+    public Stream<RabbitMQQueueName> listCreatedMailQueueNames() {
         return api.listQueues()
             .stream()
             .map(x -> x.name)
-            .map(MailQueueName::fromRabbitWorkQueueName)
+            .map(RabbitMQQueueName::fromRabbitWorkQueueName)
             .flatMap(OptionalUtils::toStream)
             .distinct();
     }

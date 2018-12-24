@@ -21,6 +21,7 @@ package org.apache.james.queue.rabbitmq;
 
 import java.util.concurrent.TimeUnit;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.queue.api.MailQueueItemDecoratorFactory;
 import org.apache.james.queue.api.ManageableMailQueue;
@@ -37,14 +38,14 @@ public class RabbitMQMailQueue implements ManageableMailQueue {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQMailQueue.class);
 
-    private final MailQueueName name;
+    private final RabbitMQQueueName name;
     private final MetricFactory metricFactory;
     private final Enqueuer enqueuer;
     private final Dequeuer dequeuer;
     private final MailQueueView mailQueueView;
     private final MailQueueItemDecoratorFactory decoratorFactory;
 
-    RabbitMQMailQueue(MetricFactory metricFactory, MailQueueName name,
+    RabbitMQMailQueue(MetricFactory metricFactory, RabbitMQQueueName name,
                       Enqueuer enqueuer, Dequeuer dequeuer,
                       MailQueueView mailQueueView, MailQueueItemDecoratorFactory decoratorFactory) {
         this.metricFactory = metricFactory;

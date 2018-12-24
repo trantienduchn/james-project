@@ -22,6 +22,7 @@ package org.apache.james.queue.rabbitmq;
 import java.time.Instant;
 import java.util.Objects;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.MailKey;
 import org.apache.mailet.Mail;
@@ -34,7 +35,7 @@ public class EnqueuedItem {
 
         @FunctionalInterface
         interface RequireMailQueueName {
-            RequireMail mailQueueName(MailQueueName mailQueueName);
+            RequireMail mailQueueName(RabbitMQQueueName mailQueueName);
         }
 
         @FunctionalInterface
@@ -53,12 +54,12 @@ public class EnqueuedItem {
         }
 
         class ReadyToBuild {
-            private final MailQueueName mailQueueName;
+            private final RabbitMQQueueName mailQueueName;
             private final Mail mail;
             private final Instant enqueuedTime;
             private final MimeMessagePartsId partsId;
 
-            ReadyToBuild(MailQueueName mailQueueName, Mail mail, Instant enqueuedTime, MimeMessagePartsId partsId) {
+            ReadyToBuild(RabbitMQQueueName mailQueueName, Mail mail, Instant enqueuedTime, MimeMessagePartsId partsId) {
                 Preconditions.checkNotNull(mailQueueName, "'mailQueueName' is mandatory");
                 Preconditions.checkNotNull(mail, "'mail' is mandatory");
                 Preconditions.checkNotNull(enqueuedTime, "'enqueuedTime' is mandatory");
@@ -79,13 +80,13 @@ public class EnqueuedItem {
         return queueName -> mail -> enqueuedTime -> partsId -> new Builder.ReadyToBuild(queueName, mail, enqueuedTime, partsId);
     }
 
-    private final MailQueueName mailQueueName;
+    private final RabbitMQQueueName mailQueueName;
     private final Mail mail;
     private final MailKey mailKey;
     private final Instant enqueuedTime;
     private final MimeMessagePartsId partsId;
 
-    EnqueuedItem(MailQueueName mailQueueName, Mail mail, Instant enqueuedTime, MimeMessagePartsId partsId) {
+    EnqueuedItem(RabbitMQQueueName mailQueueName, Mail mail, Instant enqueuedTime, MimeMessagePartsId partsId) {
         this.mailQueueName = mailQueueName;
         this.mail = mail;
         this.enqueuedTime = enqueuedTime;
@@ -94,7 +95,7 @@ public class EnqueuedItem {
         this.mailKey = MailKey.of(mail.getName());
     }
 
-    public MailQueueName getMailQueueName() {
+    public RabbitMQQueueName getMailQueueName() {
         return mailQueueName;
     }
 

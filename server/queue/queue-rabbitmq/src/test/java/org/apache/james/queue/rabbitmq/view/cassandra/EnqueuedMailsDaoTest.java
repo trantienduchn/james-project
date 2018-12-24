@@ -27,6 +27,7 @@ import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import java.time.Instant;
 import java.util.List;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.utils.CassandraUtils;
@@ -34,7 +35,6 @@ import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
-import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.EnqueuedItemWithSlicingContext;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.MailKey;
 import org.apache.mailet.base.test.FakeMail;
@@ -44,7 +44,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 class EnqueuedMailsDaoTest {
 
-    private static final MailQueueName OUT_GOING_1 = MailQueueName.fromString("OUT_GOING_1");
+    private static final RabbitMQQueueName OUT_GOING_1 = RabbitMQQueueName.fromString("OUT_GOING_1");
     private static final MailKey MAIL_KEY_1 = MailKey.of("mailkey1");
     private static int BUCKET_ID_VALUE = 10;
     private static final BucketId BUCKET_ID = BucketId.of(BUCKET_ID_VALUE);

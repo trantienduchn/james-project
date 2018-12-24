@@ -33,8 +33,10 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.apache.james.backend.rabbitmq.RabbitMQClient;
 import org.apache.james.backend.rabbitmq.RabbitMQConfiguration;
 import org.apache.james.backend.rabbitmq.RabbitMQExtension;
+import org.apache.james.backend.rabbitmq.RabbitMQManagementApi;
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.components.CassandraModule;
@@ -90,7 +92,7 @@ class RabbitMQMailQueueConfigurationChangeTest {
 
     private UpdatableTickingClock clock;
     private RabbitMQManagementApi mqManagementApi;
-    private RabbitClient rabbitClient;
+    private RabbitMQClient rabbitClient;
     private ThreadLocalRandom random;
     private MimeMessageStore.Factory mimeMessageStoreFactory;
 
@@ -106,7 +108,7 @@ class RabbitMQMailQueueConfigurationChangeTest {
             .managementUri(rabbitMQExtension.getRabbitMQ().managementUri())
             .managementCredentials(DEFAULT_MANAGEMENT_CREDENTIAL)
             .build();
-        rabbitClient = new RabbitClient(rabbitMQExtension.getRabbitChannelPool());
+        rabbitClient = new RabbitMQClient(rabbitMQExtension.getRabbitChannelPool());
         mqManagementApi = new RabbitMQManagementApi(rabbitMQConfiguration);
     }
 

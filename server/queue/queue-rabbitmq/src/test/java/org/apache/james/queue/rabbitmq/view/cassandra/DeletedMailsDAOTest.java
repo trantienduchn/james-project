@@ -21,9 +21,9 @@ package org.apache.james.queue.rabbitmq.view.cassandra;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.CassandraClusterExtension;
-import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.apache.james.queue.rabbitmq.view.cassandra.model.MailKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,8 +31,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 
 class DeletedMailsDAOTest {
 
-    private static final MailQueueName OUT_GOING_1 = MailQueueName.fromString("OUT_GOING_1");
-    private static final MailQueueName OUT_GOING_2 = MailQueueName.fromString("OUT_GOING_2");
+    private static final RabbitMQQueueName OUT_GOING_1 = RabbitMQQueueName.fromString("OUT_GOING_1");
+    private static final RabbitMQQueueName OUT_GOING_2 = RabbitMQQueueName.fromString("OUT_GOING_2");
     private static final MailKey MAIL_KEY_1 = MailKey.of("mailkey1");
     private static final MailKey MAIL_KEY_2 = MailKey.of("mailkey2");
 

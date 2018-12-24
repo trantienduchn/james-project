@@ -21,6 +21,11 @@ package org.apache.james.queue.rabbitmq;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
+
+import javax.mail.MessagingException;
+
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.mailet.Mail;
@@ -29,18 +34,15 @@ import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-import javax.mail.MessagingException;
-import java.time.Instant;
-
 class EnqueuedItemTest {
 
-    private MailQueueName mailQueueName;
+    private RabbitMQQueueName mailQueueName;
     private Mail mail;
     private Instant enqueuedTime;
     private MimeMessagePartsId partsId;
 
     EnqueuedItemTest() throws MessagingException {
-        mailQueueName = MailQueueName.fromString("mailQueueName");
+        mailQueueName = RabbitMQQueueName.fromString("mailQueueName");
         mail = FakeMail.defaultFakeMail();
         enqueuedTime = Instant.now();
         partsId = MimeMessagePartsId.builder()

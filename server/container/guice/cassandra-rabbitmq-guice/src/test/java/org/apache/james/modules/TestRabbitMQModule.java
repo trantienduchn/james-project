@@ -30,7 +30,7 @@ import javax.inject.Singleton;
 import org.apache.james.CleanupTasksPerformer;
 import org.apache.james.backend.rabbitmq.DockerRabbitMQ;
 import org.apache.james.backend.rabbitmq.RabbitMQConfiguration;
-import org.apache.james.queue.rabbitmq.RabbitMQManagementApi;
+import org.apache.james.backend.rabbitmq.RabbitMQManagementApi;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMailQueueViewConfiguration;
 
 import com.google.inject.AbstractModule;

@@ -33,8 +33,11 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.james.backend.rabbitmq.DockerRabbitMQ;
+import org.apache.james.backend.rabbitmq.RabbitMQClient;
 import org.apache.james.backend.rabbitmq.RabbitMQConfiguration;
 import org.apache.james.backend.rabbitmq.RabbitMQExtension;
+import org.apache.james.backend.rabbitmq.RabbitMQManagementApi;
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.components.CassandraModule;
@@ -117,7 +120,7 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
             .managementCredentials(DEFAULT_MANAGEMENT_CREDENTIAL)
             .build();
 
-        RabbitClient rabbitClient = new RabbitClient(rabbitMQExtension.getRabbitChannelPool());
+        RabbitMQClient rabbitClient = new RabbitMQClient(rabbitMQExtension.getRabbitChannelPool());
         RabbitMQMailQueueFactory.PrivateFactory factory = new RabbitMQMailQueueFactory.PrivateFactory(
             metricTestSystem.getSpyMetricFactory(),
             metricTestSystem.getSpyGaugeRegistry(),
@@ -215,7 +218,7 @@ public class RabbitMQMailQueueTest implements ManageableMailQueueContract, MailQ
         String name = "myQueue";
         mailQueueFactory.createQueue(name);
 
-        boolean initialized = CassandraMailQueueViewTestFactory.isInitialized(cassandra.getConf(), MailQueueName.fromString(name));
+        boolean initialized = CassandraMailQueueViewTestFactory.isInitialized(cassandra.getConf(), RabbitMQQueueName.fromString(name));
         assertThat(initialized).isTrue();
     }
 

@@ -23,9 +23,9 @@ import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
-import org.apache.james.queue.rabbitmq.MailQueueName;
 import org.apache.james.queue.rabbitmq.view.api.DeleteCondition;
 import org.apache.james.queue.rabbitmq.view.api.MailQueueView;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMailQueueViewConfiguration;
@@ -57,7 +57,7 @@ public class CassandraMailQueueView implements MailQueueView {
         }
 
         @Override
-        public MailQueueView create(MailQueueName mailQueueName) {
+        public MailQueueView create(RabbitMQQueueName mailQueueName) {
             return new CassandraMailQueueView(storeHelper, mailQueueName, cassandraMailQueueBrowser, cassandraMailQueueMailDelete);
         }
     }
@@ -66,10 +66,10 @@ public class CassandraMailQueueView implements MailQueueView {
     private final CassandraMailQueueBrowser cassandraMailQueueBrowser;
     private final CassandraMailQueueMailDelete cassandraMailQueueMailDelete;
 
-    private final MailQueueName mailQueueName;
+    private final RabbitMQQueueName mailQueueName;
 
     CassandraMailQueueView(CassandraMailQueueMailStore storeHelper,
-                           MailQueueName mailQueueName,
+                           RabbitMQQueueName mailQueueName,
                            CassandraMailQueueBrowser cassandraMailQueueBrowser,
                            CassandraMailQueueMailDelete cassandraMailQueueMailDelete) {
         this.mailQueueName = mailQueueName;
@@ -79,7 +79,7 @@ public class CassandraMailQueueView implements MailQueueView {
     }
 
     @Override
-    public void initialize(MailQueueName mailQueueName) {
+    public void initialize(RabbitMQQueueName mailQueueName) {
         storeHelper.initializeBrowseStart(mailQueueName).block();
     }
 

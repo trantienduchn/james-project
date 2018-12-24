@@ -27,6 +27,8 @@ import java.util.concurrent.CompletableFuture;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
+import org.apache.james.backend.rabbitmq.RabbitMQClient;
+import org.apache.james.backend.rabbitmq.RabbitMQQueueName;
 import org.apache.james.blob.api.Store;
 import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.metrics.api.Metric;
@@ -39,15 +41,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.fge.lambdas.Throwing;
 
 class Enqueuer {
-    private final MailQueueName name;
-    private final RabbitClient rabbitClient;
+    private final RabbitMQQueueName name;
+    private final RabbitMQClient rabbitClient;
     private final Store<MimeMessage, MimeMessagePartsId> mimeMessageStore;
     private final MailReferenceSerializer mailReferenceSerializer;
     private final Metric enqueueMetric;
     private final MailQueueView mailQueueView;
     private final Clock clock;
 
-    Enqueuer(MailQueueName name, RabbitClient rabbitClient, Store<MimeMessage, MimeMessagePartsId> mimeMessageStore,
+    Enqueuer(RabbitMQQueueName name, RabbitMQClient rabbitClient, Store<MimeMessage, MimeMessagePartsId> mimeMessageStore,
              MailReferenceSerializer serializer, MetricFactory metricFactory,
              MailQueueView mailQueueView, Clock clock) {
         this.name = name;

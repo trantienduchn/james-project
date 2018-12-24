@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.queue.rabbitmq;
+package org.apache.james.backend.rabbitmq;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,67 +26,67 @@ import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-class MailQueueNameTest {
+class RabbitMQQueueNameTest {
 
     @Test
     void fromStringShouldThrowWhenNull() {
-        assertThatThrownBy(() -> MailQueueName.fromString(null))
+        assertThatThrownBy(() -> RabbitMQQueueName.fromString(null))
             .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void fromStringShouldReturnInstanceWhenEmptyString() {
-        assertThat(MailQueueName.fromString("")).isNotNull();
+        assertThat(RabbitMQQueueName.fromString("")).isNotNull();
     }
 
     @Test
     void fromStringShouldReturnInstanceWhenArbitraryString() {
-        assertThat(MailQueueName.fromString("whatever")).isNotNull();
+        assertThat(RabbitMQQueueName.fromString("whatever")).isNotNull();
     }
 
     @Test
     void fromRabbitWorkQueueNameShouldThrowWhenNull() {
-        assertThatThrownBy(() -> MailQueueName.fromRabbitWorkQueueName(null))
+        assertThatThrownBy(() -> RabbitMQQueueName.fromRabbitWorkQueueName(null))
             .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void fromRabbitWorkQueueNameShouldReturnEmptyWhenArbitraryString() {
-        assertThat(MailQueueName.fromRabbitWorkQueueName("whatever"))
+        assertThat(RabbitMQQueueName.fromRabbitWorkQueueName("whatever"))
             .isEmpty();
     }
 
     @Test
     void fromRabbitWorkQueueNameShouldReturnInstanceWhenPrefixOnlyString() {
-        assertThat(MailQueueName.fromRabbitWorkQueueName(MailQueueName.WORKQUEUE_PREFIX))
-            .contains(MailQueueName.fromString(""));
+        assertThat(RabbitMQQueueName.fromRabbitWorkQueueName(RabbitMQQueueName.WORKQUEUE_PREFIX))
+            .contains(RabbitMQQueueName.fromString(""));
     }
 
     @Test
     void fromRabbitWorkQueueNameShouldReturnInstanceWhenValidQueueName() {
-        assertThat(MailQueueName.fromRabbitWorkQueueName(MailQueueName.WORKQUEUE_PREFIX + "myQueue"))
-            .contains(MailQueueName.fromString("myQueue"));
+        assertThat(RabbitMQQueueName.fromRabbitWorkQueueName(RabbitMQQueueName.WORKQUEUE_PREFIX + "myQueue"))
+            .contains(RabbitMQQueueName.fromString("myQueue"));
     }
 
     @Test
     void shouldConformToBeanContract() {
-        EqualsVerifier.forClass(MailQueueName.class).verify();
+        EqualsVerifier.forClass(RabbitMQQueueName.class).verify();
     }
 
     @Test
     void exchangeNameShouldConformToBeanContract() {
-        EqualsVerifier.forClass(MailQueueName.ExchangeName.class).verify();
+        EqualsVerifier.forClass(RabbitMQQueueName.ExchangeName.class).verify();
     }
 
     @Test
     void workQueueNameShouldConformToBeanContract() {
-        EqualsVerifier.forClass(MailQueueName.WorkQueueName.class).verify();
+        EqualsVerifier.forClass(RabbitMQQueueName.WorkQueueName.class).verify();
     }
 
     @Test
     void fromRabbitWorkQueueNameShouldReturnIdentityWhenToRabbitWorkQueueName() {
-        MailQueueName myQueue = MailQueueName.fromString("myQueue");
-        assertThat(MailQueueName.fromRabbitWorkQueueName(myQueue.toWorkQueueName().asString()))
+        RabbitMQQueueName myQueue = RabbitMQQueueName.fromString("myQueue");
+        assertThat(RabbitMQQueueName.fromRabbitWorkQueueName(myQueue.toWorkQueueName().asString()))
             .contains(myQueue);
     }
 
