@@ -19,13 +19,37 @@
 
 package org.apache.james.mailbox.events;
 
-public interface RegistrationKey {
+import org.apache.james.mailbox.MailboxListener;
 
-    interface Factory {
-        Class<? extends RegistrationKey> forClass();
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 
-        RegistrationKey fromString(String asString);
+import reactor.core.publisher.Flux;
+
+class MailboxListenerRegistry {
+    private final Multimap<RegistrationKey, MailboxListener> listeners;
+
+    MailboxListenerRegistry() {
+        this.listeners = Multimaps.synchronizedMultimap(HashMultimap.create());
     }
 
-    String asString();
+    synchronized void addListener(RegistrationKey registationKey, MailboxListener listener, Runnable runIfEmpty) {
+        if (listeners.get(registationKey).isEmpty()) {
+            runIfEmpty.run();
+        }
+        listeners.put(registationKey, listener);
+    }
+
+    synchronized void removeListener(RegistrationKey registationKey, MailboxListener listener, Runnable runIfEmpty) {
+        boolean wasRemoved = listeners.remove(registationKey, listener);
+        if (wasRemoved && listeners.get(registationKey).isEmpty()) {
+            runIfEmpty.run();
+        }
+    }
+
+    Flux<MailboxListener> getLocalMailboxListeners(RegistrationKey registationKey) {
+        return Flux.fromIterable(listeners.get(registationKey));
+    }
+
 }

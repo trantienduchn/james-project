@@ -19,14 +19,38 @@
 
 package org.apache.james.mailbox.events;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.apache.james.mailbox.model.TestId;
 import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 class MailboxIdRegistrationKeyTest {
+    private static final MailboxIdRegistrationKey.Factory FACTORY = new MailboxIdRegistrationKey.Factory(new TestId.Factory());
+
     @Test
     void shouldRespectBeanContract() {
         EqualsVerifier.forClass(MailboxIdRegistrationKey.class)
             .verify();
+    }
+
+    @Test
+    void asStringShouldReturnSerializedMailboxId() {
+        assertThat(new MailboxIdRegistrationKey(TestId.of(42)).asString())
+            .isEqualTo("42");
+    }
+
+    @Test
+    void fromStringShouldReturnCorrespondingRegistrationKey() {
+        assertThat(FACTORY.fromString("42"))
+            .isEqualTo(new MailboxIdRegistrationKey(TestId.of(42)));
+    }
+
+    @Test
+    void fromStringShouldThrowOnInvalidValues() {
+        assertThatThrownBy(() -> FACTORY.fromString("invalid"))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 }
