@@ -34,15 +34,23 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 
+import org.apache.james.core.User;
 import org.apache.james.mailbox.MailboxListener;
+import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.model.MailboxConstants;
 import org.apache.james.mailbox.model.MailboxId;
+import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.TestId;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableSet;
 
 public interface EventBusContract {
-    MailboxListener.MailboxEvent event = mock(MailboxListener.MailboxEvent.class);
+    MailboxListener.MailboxEvent EVENT = new MailboxListener.MailboxAdded(
+        MailboxSession.SessionId.of(42),
+        User.fromUsername("user"),
+        new MailboxPath(MailboxConstants.USER_NAMESPACE, "user", "mailboxName"),
+        TestId.of(18));
 
     class GroupA extends Group {}
 
@@ -68,7 +76,7 @@ public interface EventBusContract {
 
         eventBus().register(listener, new GroupA());
 
-        eventBus().dispatch(event, NO_KEYS).block();
+        eventBus().dispatch(EVENT, NO_KEYS).block();
 
         verify(listener, times(1)).event(any());
     }
@@ -80,7 +88,7 @@ public interface EventBusContract {
 
         eventBus().register(listener, new GroupA());
 
-        assertThatCode(() -> eventBus().dispatch(event, NO_KEYS).block())
+        assertThatCode(() -> eventBus().dispatch(EVENT, NO_KEYS).block())
             .doesNotThrowAnyException();
     }
 
@@ -91,7 +99,7 @@ public interface EventBusContract {
 
         eventBus().register(listener, KEY_1);
 
-        assertThatCode(() -> eventBus().dispatch(event, NO_KEYS).block())
+        assertThatCode(() -> eventBus().dispatch(EVENT, NO_KEYS).block())
             .doesNotThrowAnyException();
     }
 
@@ -102,7 +110,7 @@ public interface EventBusContract {
         eventBus().register(listener, new GroupA());
         eventBus().register(listener2, new GroupB());
 
-        eventBus().dispatch(event, NO_KEYS).block();
+        eventBus().dispatch(EVENT, NO_KEYS).block();
 
         verify(listener, times(1)).event(any());
         verify(listener2, times(1)).event(any());
@@ -115,7 +123,7 @@ public interface EventBusContract {
 
         registration.unregister();
 
-        eventBus().dispatch(event, NO_KEYS).block();
+        eventBus().dispatch(EVENT, NO_KEYS).block();
         verifyZeroInteractions(listener);
     }
 
@@ -159,7 +167,7 @@ public interface EventBusContract {
         eventBus().register(listener, new GroupA()).unregister();
         eventBus().register(listener, new GroupA());
 
-        eventBus().dispatch(event, NO_KEYS).block();
+        eventBus().dispatch(EVENT, NO_KEYS).block();
 
         verify(listener, times(1)).event(any());
     }
@@ -169,7 +177,7 @@ public interface EventBusContract {
         MailboxListener listener = newListener();
         eventBus().register(listener, KEY_1);
 
-        eventBus().dispatch(event, NO_KEYS).block();
+        eventBus().dispatch(EVENT, NO_KEYS).block();
 
         verifyZeroInteractions(listener);
     }
@@ -179,7 +187,7 @@ public interface EventBusContract {
         MailboxListener listener = newListener();
         eventBus().register(listener, KEY_1);
 
-        eventBus().dispatch(event, ImmutableSet.of(KEY_2)).block();
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_2)).block();
 
         verifyZeroInteractions(listener);
     }
@@ -189,7 +197,7 @@ public interface EventBusContract {
         MailboxListener listener = newListener();
         eventBus().register(listener, KEY_1);
 
-        eventBus().dispatch(event, ImmutableSet.of(KEY_1)).block();
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_1)).block();
 
         verify(listener, times(1)).event(any());
     }
@@ -201,7 +209,7 @@ public interface EventBusContract {
         eventBus().register(listener, KEY_1);
         eventBus().register(listener2, KEY_2);
 
-        eventBus().dispatch(event, ImmutableSet.of(KEY_1)).block();
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_1)).block();
 
         verify(listener, times(1)).event(any());
         verifyZeroInteractions(listener2);
@@ -214,7 +222,7 @@ public interface EventBusContract {
         eventBus().register(listener, KEY_1);
         eventBus().register(listener2, KEY_1);
 
-        eventBus().dispatch(event, ImmutableSet.of(KEY_1)).block();
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_1)).block();
 
         verify(listener, times(1)).event(any());
         verify(listener2, times(1)).event(any());
@@ -226,7 +234,7 @@ public interface EventBusContract {
         eventBus().register(listener, KEY_1);
         eventBus().register(listener, KEY_1);
 
-        eventBus().dispatch(event, ImmutableSet.of(KEY_1)).block();
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_1)).block();
 
         verify(listener, times(1)).event(any());
     }
@@ -237,7 +245,7 @@ public interface EventBusContract {
         eventBus().register(listener, KEY_1);
         eventBus().register(listener, KEY_1).unregister();
 
-        eventBus().dispatch(event, ImmutableSet.of(KEY_1)).block();
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_1)).block();
 
         verifyZeroInteractions(listener);
     }
@@ -249,7 +257,7 @@ public interface EventBusContract {
         eventBus().register(listener, KEY_1).unregister();
         registration.unregister();
 
-        eventBus().dispatch(event, ImmutableSet.of(KEY_1)).block();
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_1)).block();
 
         verifyZeroInteractions(listener);
     }
@@ -260,7 +268,7 @@ public interface EventBusContract {
         eventBus().register(listener, KEY_1);
         eventBus().register(listener, KEY_2).unregister();
 
-        eventBus().dispatch(event, ImmutableSet.of(KEY_1)).block();
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_1)).block();
 
         verify(listener, times(1)).event(any());
     }
@@ -281,7 +289,7 @@ public interface EventBusContract {
         MailboxListener listener = newListener();
         eventBus().register(listener, KEY_1);
 
-        eventBus().dispatch(event, ImmutableSet.of(KEY_1, KEY_2)).block();
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_1, KEY_2)).block();
 
         verify(listener, times(1)).event(any());
     }
@@ -292,7 +300,7 @@ public interface EventBusContract {
         eventBus().register(listener, KEY_1);
         eventBus().register(listener, KEY_2);
 
-        eventBus().dispatch(event, ImmutableSet.of(KEY_1, KEY_2)).block();
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_1, KEY_2)).block();
 
         verify(listener, times(1)).event(any());
     }
@@ -302,7 +310,7 @@ public interface EventBusContract {
         MailboxListener listener = newListener();
         eventBus().register(listener, KEY_1).unregister();
 
-        eventBus().dispatch(event, ImmutableSet.of(KEY_1)).block();
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_1)).block();
 
         verifyZeroInteractions(listener);
     }
@@ -313,7 +321,7 @@ public interface EventBusContract {
 
         eventBus().register(listener, new GroupA());
 
-        eventBus().dispatch(event, NO_KEYS).block();
+        eventBus().dispatch(EVENT, NO_KEYS).block();
 
         verify(listener, times(1)).event(any());
     }
@@ -326,11 +334,11 @@ public interface EventBusContract {
         doAnswer(invocation -> {
             latch.await();
             return null;
-        }).when(listener).event(event);
+        }).when(listener).event(EVENT);
 
         assertTimeout(Duration.ofSeconds(2),
             () -> {
-                eventBus().dispatch(event, NO_KEYS).block();
+                eventBus().dispatch(EVENT, NO_KEYS).block();
                 latch.countDown();
             });
     }
