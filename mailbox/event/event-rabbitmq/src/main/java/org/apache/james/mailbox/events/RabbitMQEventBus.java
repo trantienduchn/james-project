@@ -84,20 +84,24 @@ class RabbitMQEventBus implements EventBus {
 
     @Override
     public Registration register(MailboxListener listener, Group group) {
-        return groupRegistrations.compute(group, (groupToRegister, oldGroupRegistration) -> {
-            if (oldGroupRegistration != null) {
-                throw new GroupAlreadyRegistered(group);
-            }
-            return newRegistrationGroup(listener, groupToRegister);
-        });
+        return groupRegistrations
+            .compute(group, (groupToRegister, oldGroupRegistration) -> {
+                if (oldGroupRegistration != null) {
+                    throw new GroupAlreadyRegistered(group);
+                }
+                return newRegistrationGroup(listener, groupToRegister);
+            })
+            .start();
     }
 
     private GroupRegistration newRegistrationGroup(MailboxListener listener, Group group) {
-        GroupRegistration groupRegistration = new GroupRegistration(connectionMono, sender, eventSerializer, listener, group,
+        return new GroupRegistration(
+            connectionMono,
+            sender,
+            eventSerializer,
+            listener,
+            group,
             () -> groupRegistrations.remove(group));
-        groupRegistration.registerGroup();
-
-        return groupRegistration;
     }
 
     @Override

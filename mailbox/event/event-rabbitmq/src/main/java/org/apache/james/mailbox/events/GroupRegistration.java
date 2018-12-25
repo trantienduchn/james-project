@@ -56,7 +56,7 @@ class GroupRegistration implements Registration {
         }
 
         static WorkQueueName of(Group group) {
-            return new WorkQueueName(group.getClass().getName());
+            return of(group.getClass());
         }
 
         static final String MAILBOX_EVENT_WORK_QUEUE_PREFIX = MAILBOX_EVENT + "-workQueue-";
@@ -93,10 +93,11 @@ class GroupRegistration implements Registration {
         this.unregisterGroup = unregisterGroup;
     }
 
-    void registerGroup() {
+    GroupRegistration start() {
         createGroupWorkQueue()
             .doOnSuccess(any -> this.subscribeWorkQueue())
             .block();
+        return this;
     }
 
     private Mono<Void> createGroupWorkQueue() {

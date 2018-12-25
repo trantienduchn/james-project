@@ -84,6 +84,7 @@ class RabbitMQEventBusTest implements EventBusContract {
         ALL_GROUPS.stream()
             .map(groupClass -> GroupRegistration.WorkQueueName.of(groupClass).asString())
             .forEach(queueName -> sender.delete(queueSpecification(queueName)).block());
+        sender.delete(queueSpecification(MAILBOX_WORK_QUEUE_NAME)).block();
     }
 
     private void createQueue() {
