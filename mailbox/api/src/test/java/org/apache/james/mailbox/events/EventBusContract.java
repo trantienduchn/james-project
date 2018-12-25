@@ -65,7 +65,7 @@ public interface EventBusContract {
     ImmutableSet<RegistrationKey> NO_KEYS = ImmutableSet.of();
     MailboxIdRegistrationKey KEY_1 = new MailboxIdRegistrationKey(ID_1);
     MailboxIdRegistrationKey KEY_2 = new MailboxIdRegistrationKey(ID_2);
-    List<Class<?>> ALL_GROUPS = ImmutableList.of(GroupA.class, GroupB.class);
+    List<Class<? extends Group>> ALL_GROUPS = ImmutableList.of(GroupA.class, GroupB.class);
 
     EventBus eventBus();
 

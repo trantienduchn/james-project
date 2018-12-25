@@ -23,7 +23,6 @@ import static org.apache.james.backend.rabbitmq.RabbitMQFixture.AUTO_DELETE;
 import static org.apache.james.backend.rabbitmq.RabbitMQFixture.DURABLE;
 import static org.apache.james.backend.rabbitmq.RabbitMQFixture.EXCLUSIVE;
 import static org.apache.james.backend.rabbitmq.RabbitMQFixture.NO_ARGUMENTS;
-import static org.apache.james.mailbox.events.GroupRegistration.MAILBOX_EVENT_WORK_QUEUE_PREFIX;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.EMPTY_ROUTING_KEY;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXCHANGE_NAME;
@@ -82,9 +81,9 @@ class RabbitMQEventBusTest implements EventBusContract {
     @AfterEach
     void tearDown() {
         eventBus.stop();
-        ALL_GROUPS
-            .forEach(groupClass -> sender
-                .delete(queueSpecification(MAILBOX_EVENT_WORK_QUEUE_PREFIX + groupClass.getName())).block());
+        ALL_GROUPS.stream()
+            .map(groupClass -> GroupRegistration.WorkQueueName.of(groupClass).asString())
+            .forEach(queueName -> sender.delete(queueSpecification(queueName)).block());
     }
 
     private void createQueue() {

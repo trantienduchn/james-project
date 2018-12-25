@@ -30,6 +30,7 @@ import java.util.Objects;
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.MailboxListener;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Delivery;
@@ -47,14 +48,36 @@ import reactor.rabbitmq.Sender;
 
 class GroupRegistration implements Registration {
 
+    static class WorkQueueName {
+
+        @VisibleForTesting
+        static WorkQueueName of(Class<? extends Group> clazz) {
+            return new WorkQueueName(clazz.getName());
+        }
+
+        static WorkQueueName of(Group group) {
+            return new WorkQueueName(group.getClass().getName());
+        }
+
+        static final String MAILBOX_EVENT_WORK_QUEUE_PREFIX = MAILBOX_EVENT + "-workQueue-";
+
+        private final String name;
+
+        private WorkQueueName(String name) {
+            this.name = name;
+        }
+
+        String asString() {
+            return MAILBOX_EVENT_WORK_QUEUE_PREFIX + name;
+        }
+    }
+
     private static final boolean AUTO_DELETE = true;
     private static final boolean EXCLUSIVE = true;
     private static final ImmutableMap<String, Object> NO_ARGUMENTS = ImmutableMap.of();
 
-    static final String MAILBOX_EVENT_WORK_QUEUE_PREFIX = MAILBOX_EVENT + "-workQueue-";
-
     private final MailboxListener mailboxListener;
-    private final String queueName;
+    private final WorkQueueName queueName;
     private final Receiver receiver;
     private final Runnable unregisterGroup;
     private final Sender sender;
@@ -64,7 +87,7 @@ class GroupRegistration implements Registration {
                               MailboxListener mailboxListener, Group group, Runnable unregisterGroup) {
         this.eventSerializer = eventSerializer;
         this.mailboxListener = mailboxListener;
-        this.queueName = MAILBOX_EVENT_WORK_QUEUE_PREFIX + group.getClass().getName();
+        this.queueName = WorkQueueName.of(group);
         this.sender = sender;
         this.receiver = RabbitFlux.createReceiver(new ReceiverOptions().connectionMono(connectionSupplier));
         this.unregisterGroup = unregisterGroup;
@@ -78,20 +101,20 @@ class GroupRegistration implements Registration {
 
     private Mono<Void> createGroupWorkQueue() {
         return Flux.concat(
-            sender.declareQueue(QueueSpecification.queue(queueName)
+            sender.declareQueue(QueueSpecification.queue(queueName.asString())
                 .durable(DURABLE)
                 .exclusive(!EXCLUSIVE)
                 .autoDelete(!AUTO_DELETE)
                 .arguments(NO_ARGUMENTS)),
             sender.bind(BindingSpecification.binding()
                 .exchange(MAILBOX_EVENT_EXCHANGE_NAME)
-                .queue(queueName)
+                .queue(queueName.asString())
                 .routingKey(EMPTY_ROUTING_KEY)))
             .then();
     }
 
     private void subscribeWorkQueue() {
-        receiver.consumeAutoAck(queueName)
+        receiver.consumeAutoAck(queueName.asString())
             .subscribeOn(Schedulers.parallel())
             .map(Delivery::getBody)
             .filter(Objects::nonNull)
