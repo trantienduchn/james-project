@@ -19,6 +19,10 @@
 
 package org.apache.james.mailbox.events;
 
+import static org.apache.james.backend.rabbitmq.RabbitMQFixture.AUTO_DELETE;
+import static org.apache.james.backend.rabbitmq.RabbitMQFixture.DURABLE;
+import static org.apache.james.backend.rabbitmq.RabbitMQFixture.EXCLUSIVE;
+import static org.apache.james.backend.rabbitmq.RabbitMQFixture.NO_ARGUMENTS;
 import static org.apache.james.mailbox.events.GroupRegistration.MAILBOX_EVENT_WORK_QUEUE_PREFIX;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.EMPTY_ROUTING_KEY;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT;
@@ -39,7 +43,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import com.google.common.collect.ImmutableMap;
 import com.rabbitmq.client.Connection;
 
 import reactor.core.publisher.Mono;
@@ -53,11 +56,6 @@ import reactor.rabbitmq.SenderOptions;
 
 class RabbitMQEventBusTest implements EventBusContract {
     private static final String MAILBOX_WORK_QUEUE_NAME = MAILBOX_EVENT + "-workQueue";
-
-    private static final boolean AUTO_DELETE = true;
-    private static final boolean EXCLUSIVE = true;
-    private static final ImmutableMap<String, Object> NO_ARGUMENTS = ImmutableMap.of();
-    private static final boolean DURABLE = true;
 
     @RegisterExtension
     static RabbitMQExtension rabbitMQExtension = new RabbitMQExtension();

@@ -26,6 +26,7 @@ import org.awaitility.Awaitility;
 import org.awaitility.Duration;
 import org.awaitility.core.ConditionFactory;
 
+import com.google.common.collect.ImmutableMap;
 import com.rabbitmq.client.AMQP;
 
 public class RabbitMQFixture {
@@ -37,6 +38,7 @@ public class RabbitMQFixture {
     public static final String DIRECT = "direct";
     public static final boolean EXCLUSIVE = true;
     public static final boolean AUTO_DELETE = true;
+    public static final ImmutableMap<String, Object> NO_ARGUMENTS = ImmutableMap.of();
     public static final String WORK_QUEUE = "workQueue";
 
     static final String DEFAULT_USER = "guest";
