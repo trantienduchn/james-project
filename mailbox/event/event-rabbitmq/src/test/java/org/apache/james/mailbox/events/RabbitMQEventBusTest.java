@@ -19,6 +19,7 @@
 
 package org.apache.james.mailbox.events;
 
+import static org.apache.james.mailbox.events.GroupRegistration.MAILBOX_EVENT_WORK_QUEUE_PREFIX;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.EMPTY_ROUTING_KEY;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXCHANGE_NAME;
@@ -28,21 +29,18 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.james.backend.rabbitmq.RabbitMQConnectionFactory;
 import org.apache.james.backend.rabbitmq.RabbitMQExtension;
-import org.apache.james.core.User;
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.Event;
-import org.apache.james.mailbox.MailboxListener;
-import org.apache.james.mailbox.MailboxSession;
-import org.apache.james.mailbox.model.MailboxConstants;
-import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.model.TestMessageId;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
+import com.rabbitmq.client.Connection;
 
 import reactor.core.publisher.Mono;
 import reactor.rabbitmq.BindingSpecification;
@@ -53,7 +51,7 @@ import reactor.rabbitmq.ReceiverOptions;
 import reactor.rabbitmq.Sender;
 import reactor.rabbitmq.SenderOptions;
 
-class RabbitMQEventBusTest {
+class RabbitMQEventBusTest implements EventBusContract {
     private static final String MAILBOX_WORK_QUEUE_NAME = MAILBOX_EVENT + "-workQueue";
 
     private static final boolean AUTO_DELETE = true;
@@ -61,66 +59,75 @@ class RabbitMQEventBusTest {
     private static final ImmutableMap<String, Object> NO_ARGUMENTS = ImmutableMap.of();
     private static final boolean DURABLE = true;
 
-    private static final MailboxListener.MailboxAdded EVENT = new MailboxListener.MailboxAdded(
-        MailboxSession.SessionId.of(42),
-        User.fromUsername("user"),
-        new MailboxPath(MailboxConstants.USER_NAMESPACE, "user", "mailboxName"),
-        TestId.of(18));
-
     @RegisterExtension
     static RabbitMQExtension rabbitMQExtension = new RabbitMQExtension();
 
     private RabbitMQEventBus eventBus;
     private EventSerializer eventSerializer;
     private RabbitMQConnectionFactory connectionFactory;
+    private Mono<Connection> connectionMono;
+    private Sender sender;
 
     @BeforeEach
     void setUp() {
         connectionFactory = rabbitMQExtension.getConnectionFactory();
+        connectionMono = Mono.fromSupplier(connectionFactory::create).cache();
 
         eventSerializer = new EventSerializer(new TestId.Factory(), new TestMessageId.Factory());
         eventBus = new RabbitMQEventBus(connectionFactory, eventSerializer);
         eventBus.start().block();
+        sender = RabbitFlux.createSender(new SenderOptions().connectionMono(connectionMono));
 
         createQueue();
     }
 
-    private void createQueue() {
-        SenderOptions senderOption = new SenderOptions()
-            .connectionMono(Mono.fromSupplier(connectionFactory::create));
-        Sender sender = RabbitFlux.createSender(senderOption);
+    @AfterEach
+    void tearDown() {
+        eventBus.stop();
+        ALL_GROUPS
+            .forEach(groupClass -> sender
+                .delete(queueSpecification(MAILBOX_EVENT_WORK_QUEUE_PREFIX + groupClass.getName())).block());
+    }
 
-        sender.declareQueue(QueueSpecification.queue(MAILBOX_WORK_QUEUE_NAME)
+    private void createQueue() {
+        sender.declareQueue(queueSpecification(MAILBOX_WORK_QUEUE_NAME)).block();
+        sender.bind(BindingSpecification.binding()
+                .exchange(MAILBOX_EVENT_EXCHANGE_NAME)
+                .queue(MAILBOX_WORK_QUEUE_NAME)
+                .routingKey(EMPTY_ROUTING_KEY))
+            .block();
+    }
+
+    private QueueSpecification queueSpecification(String queueName) {
+        return QueueSpecification.queue(queueName)
             .durable(DURABLE)
             .exclusive(!EXCLUSIVE)
             .autoDelete(!AUTO_DELETE)
-            .arguments(NO_ARGUMENTS))
-            .block();
-        sender.bind(BindingSpecification.binding()
-            .exchange(MAILBOX_EVENT_EXCHANGE_NAME)
-            .queue(MAILBOX_WORK_QUEUE_NAME)
-            .routingKey(EMPTY_ROUTING_KEY))
-            .block();
+            .arguments(NO_ARGUMENTS);
+    }
+
+    @Override
+    public EventBus eventBus() {
+        return eventBus;
     }
 
     @Test
     void dispatchShouldPublishSerializedEventToRabbitMQ() {
-        eventBus.dispatch(EVENT, ImmutableSet.of()).block();
+        eventBus.dispatch(EVENT, NO_KEYS).block();
 
         assertThat(dequeueEvent()).isEqualTo(EVENT);
     }
 
     @Test
     void dispatchShouldPublishSerializedEventToRabbitMQWhenNotBlocking() {
-        eventBus.dispatch(EVENT, ImmutableSet.of());
+        eventBus.dispatch(EVENT, NO_KEYS);
 
         assertThat(dequeueEvent()).isEqualTo(EVENT);
     }
 
 
     private Event dequeueEvent() {
-        RabbitMQConnectionFactory connectionFactory = rabbitMQExtension.getConnectionFactory();
-        Receiver receiver = RabbitFlux.createReceiver(new ReceiverOptions().connectionMono(Mono.just(connectionFactory.create())));
+        Receiver receiver = RabbitFlux.createReceiver(new ReceiverOptions().connectionMono(connectionMono));
 
         byte[] eventInBytes = receiver.consumeAutoAck(MAILBOX_WORK_QUEUE_NAME)
             .blockFirst()
@@ -128,5 +135,75 @@ class RabbitMQEventBusTest {
 
         return eventSerializer.fromJson(new String(eventInBytes, StandardCharsets.UTF_8))
             .get();
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void registerShouldAllowDuplicatedRegistration() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void dispatchShouldNotifyRegisteredListeners() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void dispatchShouldNotNotifyRegisteredListenerWhenEmptyKeySet() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void dispatchShouldAcceptSeveralKeys() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void dispatchShouldNotifyOnlyRegisteredListener() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void unregisterShouldHaveNotNotifyWhenCalledOnDifferentKeys() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void dispatchShouldCallListenerOnceWhenSeveralKeysMatching() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void callingAllUnregisterMethodShouldUnregisterTheListener() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void unregisterShouldBeIdempotentForKeyRegistrations() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void dispatchShouldNotifyAllListenersRegisteredOnAKey() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void dispatchShouldNotNotifyListenerRegisteredOnOtherKeys() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void unregisterShouldRemoveDoubleRegisteredListener() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void dispatchShouldNotThrowWhenARegisteredListenerFails() {
+    }
+
+    @Disabled("Dispatching for RegistrationKey is not yet implemented")
+    @Override
+    public void dispatchShouldNotNotifyUnregisteredListener() {
     }
 }

@@ -20,13 +20,19 @@
 package org.apache.james.mailbox.events;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import javax.annotation.PreDestroy;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.backend.rabbitmq.RabbitMQConnectionFactory;
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
+
+import com.rabbitmq.client.Connection;
 
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -36,29 +42,39 @@ import reactor.rabbitmq.RabbitFlux;
 import reactor.rabbitmq.Sender;
 import reactor.rabbitmq.SenderOptions;
 
-public class RabbitMQEventBus implements EventBus {
+class RabbitMQEventBus implements EventBus {
+
     static final String MAILBOX_EVENT = "mailboxEvent";
     static final String MAILBOX_EVENT_EXCHANGE_NAME = MAILBOX_EVENT + "-exchange";
     static final String EMPTY_ROUTING_KEY = "";
 
-    private static final boolean DURABLE = true;
+    static final boolean DURABLE = true;
     private static final String DIRECT_EXCHANGE = "direct";
 
     private final EventSerializer eventSerializer;
     private final Sender sender;
+    private final Mono<Connection> connectionMono;
+    private final Collection<GroupRegistration> groupRegistrations;
 
     RabbitMQEventBus(RabbitMQConnectionFactory rabbitMQConnectionFactory, EventSerializer eventSerializer) {
+        this.connectionMono = Mono.fromSupplier(rabbitMQConnectionFactory::create).cache();
         this.eventSerializer = eventSerializer;
-        SenderOptions senderOption = new SenderOptions().connectionMono(Mono.fromSupplier(rabbitMQConnectionFactory::create));
-        this.sender = RabbitFlux.createSender(senderOption);
+        this.sender = RabbitFlux.createSender(new SenderOptions().connectionMono(connectionMono));
+        this.groupRegistrations = new ConcurrentLinkedQueue<>();
     }
 
-    Mono<Void> start() {
+    public Mono<Void> start() {
         return sender.declareExchange(ExchangeSpecification.exchange(MAILBOX_EVENT_EXCHANGE_NAME)
                 .durable(DURABLE)
                 .type(DIRECT_EXCHANGE))
             .subscribeOn(Schedulers.elastic())
             .then();
+    }
+
+    @PreDestroy
+    public void stop() {
+        sender.close();
+        groupRegistrations.forEach(GroupRegistration::unregister);
     }
 
     @Override
@@ -68,7 +84,15 @@ public class RabbitMQEventBus implements EventBus {
 
     @Override
     public Registration register(MailboxListener listener, Group group) {
-        throw new NotImplementedException("will implement latter");
+        if (groupRegistrations.stream().anyMatch(groupRegistration -> groupRegistration.getGroup().equals(group))) {
+            throw new GroupAlreadyRegistered(group);
+        }
+
+        GroupRegistration groupRegistration = new GroupRegistration(connectionMono, sender, eventSerializer, listener, group, groupRegistrations::remove);
+        groupRegistration.registerGroup();
+
+        groupRegistrations.add(groupRegistration);
+        return groupRegistration;
     }
 
     @Override
