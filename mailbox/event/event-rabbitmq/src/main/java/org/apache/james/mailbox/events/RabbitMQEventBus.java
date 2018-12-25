@@ -20,9 +20,9 @@
 package org.apache.james.mailbox.events;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PreDestroy;
 
@@ -54,13 +54,13 @@ class RabbitMQEventBus implements EventBus {
     private final EventSerializer eventSerializer;
     private final Sender sender;
     private final Mono<Connection> connectionMono;
-    private final Collection<GroupRegistration> groupRegistrations;
+    private final Map<Group, GroupRegistration> groupRegistrations;
 
     RabbitMQEventBus(RabbitMQConnectionFactory rabbitMQConnectionFactory, EventSerializer eventSerializer) {
         this.connectionMono = Mono.fromSupplier(rabbitMQConnectionFactory::create).cache();
         this.eventSerializer = eventSerializer;
         this.sender = RabbitFlux.createSender(new SenderOptions().connectionMono(connectionMono));
-        this.groupRegistrations = new ConcurrentLinkedQueue<>();
+        this.groupRegistrations = new ConcurrentHashMap<>();
     }
 
     public Mono<Void> start() {
@@ -74,7 +74,7 @@ class RabbitMQEventBus implements EventBus {
     @PreDestroy
     public void stop() {
         sender.close();
-        groupRegistrations.forEach(GroupRegistration::unregister);
+        groupRegistrations.values().forEach(GroupRegistration::unregister);
     }
 
     @Override
@@ -84,14 +84,19 @@ class RabbitMQEventBus implements EventBus {
 
     @Override
     public Registration register(MailboxListener listener, Group group) {
-        if (groupRegistrations.stream().anyMatch(groupRegistration -> groupRegistration.getGroup().equals(group))) {
-            throw new GroupAlreadyRegistered(group);
-        }
+        return groupRegistrations.compute(group, (groupToRegister, oldGroupRegistration) -> {
+            if (oldGroupRegistration != null) {
+                throw new GroupAlreadyRegistered(group);
+            }
+            return newRegistrationGroup(listener, groupToRegister);
+        });
+    }
 
-        GroupRegistration groupRegistration = new GroupRegistration(connectionMono, sender, eventSerializer, listener, group, groupRegistrations::remove);
+    private GroupRegistration newRegistrationGroup(MailboxListener listener, Group group) {
+        GroupRegistration groupRegistration = new GroupRegistration(connectionMono, sender, eventSerializer, listener, group,
+            () -> groupRegistrations.remove(group));
         groupRegistration.registerGroup();
 
-        groupRegistrations.add(groupRegistration);
         return groupRegistration;
     }
 

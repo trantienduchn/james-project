@@ -26,7 +26,6 @@ import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXC
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.MailboxListener;
@@ -57,16 +56,14 @@ class GroupRegistration implements Registration {
     private final MailboxListener mailboxListener;
     private final String queueName;
     private final Receiver receiver;
-    private final Consumer<GroupRegistration> unregisterGroup;
+    private final Runnable unregisterGroup;
     private final Sender sender;
     private final EventSerializer eventSerializer;
-    private final Group group;
 
     GroupRegistration(Mono<Connection> connectionSupplier, Sender sender, EventSerializer eventSerializer,
-                              MailboxListener mailboxListener, Group group, Consumer<GroupRegistration> unregisterGroup) {
+                              MailboxListener mailboxListener, Group group, Runnable unregisterGroup) {
         this.eventSerializer = eventSerializer;
         this.mailboxListener = mailboxListener;
-        this.group = group;
         this.queueName = MAILBOX_EVENT_WORK_QUEUE_PREFIX + group.getClass().getName();
         this.sender = sender;
         this.receiver = RabbitFlux.createReceiver(new ReceiverOptions().connectionMono(connectionSupplier));
@@ -108,10 +105,6 @@ class GroupRegistration implements Registration {
     @Override
     public void unregister() {
         receiver.close();
-        unregisterGroup.accept(this);
-    }
-
-    public Group getGroup() {
-        return group;
+        unregisterGroup.run();
     }
 }
