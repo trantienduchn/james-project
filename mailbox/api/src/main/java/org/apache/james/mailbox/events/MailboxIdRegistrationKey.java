@@ -35,6 +35,11 @@ public class MailboxIdRegistrationKey implements RegistrationKey {
     }
 
     @Override
+    public String asString() {
+        return mailboxId.serialize();
+    }
+
+    @Override
     public final boolean equals(Object o) {
         if (o instanceof MailboxIdRegistrationKey) {
             MailboxIdRegistrationKey that = (MailboxIdRegistrationKey) o;

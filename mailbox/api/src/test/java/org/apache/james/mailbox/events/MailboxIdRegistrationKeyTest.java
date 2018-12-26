@@ -19,6 +19,9 @@
 
 package org.apache.james.mailbox.events;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.apache.james.mailbox.model.TestId;
 import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -28,5 +31,11 @@ class MailboxIdRegistrationKeyTest {
     void shouldRespectBeanContract() {
         EqualsVerifier.forClass(MailboxIdRegistrationKey.class)
             .verify();
+    }
+
+    @Test
+    void asStringShouldReturnSerializedMailboxId() {
+        assertThat(new MailboxIdRegistrationKey(TestId.of(42)).asString())
+            .isEqualTo("42");
     }
 }

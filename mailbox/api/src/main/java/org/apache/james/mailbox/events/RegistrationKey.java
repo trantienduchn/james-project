@@ -20,4 +20,6 @@
 package org.apache.james.mailbox.events;
 
 public interface RegistrationKey {
+
+    String asString();
 }
