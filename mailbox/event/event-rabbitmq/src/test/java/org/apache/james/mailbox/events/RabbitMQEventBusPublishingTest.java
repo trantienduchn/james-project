@@ -66,8 +66,11 @@ class RabbitMQEventBusPublishingTest {
     void setUp() {
         connectionFactory = rabbitMQExtension.getConnectionFactory();
 
-        eventSerializer = new EventSerializer(new TestId.Factory(), new TestMessageId.Factory());
-        eventBus = new RabbitMQEventBus(connectionFactory, eventSerializer);
+
+        TestId.Factory mailboxIdFactory = new TestId.Factory();
+        RoutingKeyConverter routingKeyConverter = RoutingKeyConverter.forFactories(new MailboxIdRegistrationKey.Factory(mailboxIdFactory));
+        eventSerializer = new EventSerializer(mailboxIdFactory, new TestMessageId.Factory());
+        eventBus = new RabbitMQEventBus(connectionFactory, eventSerializer, routingKeyConverter);
         eventBus.start();
 
         createQueue();

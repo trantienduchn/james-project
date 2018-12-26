@@ -30,6 +30,7 @@ import java.util.Set;
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.Event;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.rabbitmq.ExchangeSpecification;
@@ -53,14 +54,28 @@ class EventDispatcher {
     }
 
     Mono<Void> dispatch(Event event, Set<RegistrationKey> keys) {
-        Mono<OutboundMessage> outboundMessage = Mono.just(event)
+        Mono<byte[]> serializedEvent = Mono.just(event)
             .publishOn(Schedulers.parallel())
             .map(this::serializeEvent)
-            .map(payload -> new OutboundMessage(MAILBOX_EVENT_EXCHANGE_NAME, EMPTY_ROUTING_KEY, payload));
+            .cache();
 
-        Mono<Void> publishMono = sender.send(outboundMessage).cache();
-        publishMono.subscribe();
-        return publishMono;
+        Mono<Void> dispatchMono = doDispatch(serializedEvent, keys).cache();
+        dispatchMono.subscribe();
+
+        return dispatchMono;
+    }
+
+    private Mono<Void> doDispatch(Mono<byte[]> serializedEvent, Set<RegistrationKey> keys) {
+        Flux<String> routingKeys = Flux.concat(
+            Mono.just(EMPTY_ROUTING_KEY),
+            Flux.fromIterable(keys)
+                .map(RoutingKeyConverter::toRoutingKey));
+
+        Flux<OutboundMessage> outboundMessages = routingKeys
+            .flatMap(routingKey -> serializedEvent
+                .map(payload -> new OutboundMessage(MAILBOX_EVENT_EXCHANGE_NAME, routingKey, payload)));
+
+        return sender.send(outboundMessages);
     }
 
     private byte[] serializeEvent(Event event) {

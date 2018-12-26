@@ -23,7 +23,6 @@ import java.util.Set;
 
 import javax.annotation.PreDestroy;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.backend.rabbitmq.RabbitMQConnectionFactory;
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.Event;
@@ -46,28 +45,32 @@ class RabbitMQEventBus implements EventBus {
 
     private final Sender sender;
     private final GroupRegistrationHandler groupRegistrationHandler;
+    private final KeyRegistrationHandler keyRegistrationHandler;
     private final EventDispatcher eventDispatcher;
 
-    RabbitMQEventBus(RabbitMQConnectionFactory rabbitMQConnectionFactory, EventSerializer eventSerializer) {
+    RabbitMQEventBus(RabbitMQConnectionFactory rabbitMQConnectionFactory, EventSerializer eventSerializer, RoutingKeyConverter routingKeyConverter) {
         Mono<Connection> connectionMono = Mono.fromSupplier(rabbitMQConnectionFactory::create).cache();
         this.sender = RabbitFlux.createSender(new SenderOptions().connectionMono(connectionMono));
         this.groupRegistrationHandler = new GroupRegistrationHandler(eventSerializer, sender, connectionMono);
         this.eventDispatcher = new EventDispatcher(eventSerializer, sender);
+        this.keyRegistrationHandler = new KeyRegistrationHandler(eventSerializer, sender, connectionMono, routingKeyConverter);
     }
 
     public void start() {
         eventDispatcher.start();
+        keyRegistrationHandler.start();
     }
 
     @PreDestroy
     public void stop() {
         groupRegistrationHandler.stop();
+        keyRegistrationHandler.stop();
         sender.close();
     }
 
     @Override
     public Registration register(MailboxListener listener, RegistrationKey key) {
-        throw new NotImplementedException("will implement latter");
+        return keyRegistrationHandler.register(listener, key);
     }
 
     @Override
