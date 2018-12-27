@@ -171,7 +171,7 @@ public interface EventBusContract {
 
         eventBus().register(listener, KEY_1);
 
-        assertThatCode(() -> eventBus().dispatch(EVENT, NO_KEYS).block())
+        assertThatCode(() -> eventBus().dispatch(EVENT, KEY_1).block())
             .doesNotThrowAnyException();
     }
 
