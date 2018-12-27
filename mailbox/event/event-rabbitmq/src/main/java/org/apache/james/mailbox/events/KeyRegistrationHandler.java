@@ -54,6 +54,7 @@ class KeyRegistrationHandler {
     private final RoutingKeyConverter routingKeyConverter;
     private final Receiver receiver;
     private final RegistrationQueueName registrationQueue;
+    private final RegistrationBinder registrationBinder;
     private Disposable receiverSubscriber;
 
     KeyRegistrationHandler(EventSerializer eventSerializer, Sender sender, Mono<Connection> connectionMono, RoutingKeyConverter routingKeyConverter) {
@@ -63,6 +64,7 @@ class KeyRegistrationHandler {
         this.mailboxListenerRegistry = new MailboxListenerRegistry();
         this.receiver = RabbitFlux.createReceiver(new ReceiverOptions().connectionMono(connectionMono));
         this.registrationQueue = new RegistrationQueueName();
+        this.registrationBinder = new RegistrationBinder(sender, registrationQueue);
     }
 
     void start() {
@@ -90,9 +92,13 @@ class KeyRegistrationHandler {
     }
 
     Registration register(MailboxListener listener, RegistrationKey key) {
-        KeyRegistration keyRegistration = new KeyRegistration(sender, key, registrationQueue, () -> mailboxListenerRegistry.removeListener(key, listener));
-        keyRegistration.createRegistrationBinding().block();
-        mailboxListenerRegistry.addListener(key, listener);
+        Runnable bindIfEmpty = () -> registrationBinder.bind(key).block();
+        Runnable unbindIfEmpty = () -> registrationBinder.unbind(key).block();
+        Runnable unregister = () -> mailboxListenerRegistry.removeListener(key, listener, unbindIfEmpty);
+
+        KeyRegistration keyRegistration = new KeyRegistration(unregister);
+        mailboxListenerRegistry.addListener(key, listener, bindIfEmpty);
+
         return keyRegistration;
     }
 

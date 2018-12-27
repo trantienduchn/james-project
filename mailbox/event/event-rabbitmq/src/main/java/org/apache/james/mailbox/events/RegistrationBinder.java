@@ -19,36 +19,36 @@
 
 package org.apache.james.mailbox.events;
 
-import org.apache.james.mailbox.MailboxListener;
+import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXCHANGE_NAME;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
+import reactor.core.publisher.Mono;
+import reactor.rabbitmq.BindingSpecification;
+import reactor.rabbitmq.Sender;
 
-import reactor.core.publisher.Flux;
+class RegistrationBinder {
+    private final Sender sender;
+    private final RegistrationQueueName registrationQueue;
 
-class MailboxListenerRegistry {
-    private final Multimap<RegistrationKey, MailboxListener> listeners;
-
-    MailboxListenerRegistry() {
-        this.listeners = Multimaps.synchronizedMultimap(HashMultimap.create());
+    RegistrationBinder(Sender sender, RegistrationQueueName registrationQueue) {
+        this.sender = sender;
+        this.registrationQueue = registrationQueue;
     }
 
-    synchronized void addListener(RegistrationKey registrationKey, MailboxListener listener, Runnable runIfEmpty) {
-        if (listeners.get(registrationKey).isEmpty()) {
-            runIfEmpty.run();
-        }
-        listeners.put(registrationKey, listener);
+    Mono<Void> bind(RegistrationKey key) {
+        return sender.bind(bindingSpecification(key))
+            .then();
     }
 
-    synchronized void removeListener(RegistrationKey registrationKey, MailboxListener listener, Runnable runIfEmpty) {
-        boolean wasRemoved = listeners.remove(registrationKey, listener);
-        if (wasRemoved && listeners.get(registrationKey).isEmpty()) {
-            runIfEmpty.run();
-        }
+    Mono<Void> unbind(RegistrationKey key) {
+        return sender.bind(bindingSpecification(key))
+            .then();
     }
 
-    Flux<MailboxListener> getLocalMailboxListeners(RegistrationKey registrationKey) {
-        return Flux.fromIterable(listeners.get(registrationKey));
+    private BindingSpecification bindingSpecification(RegistrationKey key) {
+        String routingKey = RoutingKeyConverter.toRoutingKey(key);
+        return BindingSpecification.binding()
+            .exchange(MAILBOX_EVENT_EXCHANGE_NAME)
+            .queue(registrationQueue.asString())
+            .routingKey(routingKey);
     }
 }

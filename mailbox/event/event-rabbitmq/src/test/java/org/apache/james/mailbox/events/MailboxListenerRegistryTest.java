@@ -22,6 +22,8 @@ package org.apache.james.mailbox.events;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.model.TestId;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +48,7 @@ class MailboxListenerRegistryTest {
     @Test
     void getLocalMailboxListenersShouldReturnPreviouslyAddedListener() {
         MailboxListener listener = mock(MailboxListener.class);
-        testee.addListener(KEY_1, listener);
+        testee.addListener(KEY_1, listener, () -> {});
 
         assertThat(testee.getLocalMailboxListeners(KEY_1).collectList().block())
             .containsOnly(listener);
@@ -56,8 +58,8 @@ class MailboxListenerRegistryTest {
     void getLocalMailboxListenersShouldReturnPreviouslyAddedListeners() {
         MailboxListener listener1 = mock(MailboxListener.class);
         MailboxListener listener2 = mock(MailboxListener.class);
-        testee.addListener(KEY_1, listener1);
-        testee.addListener(KEY_1, listener2);
+        testee.addListener(KEY_1, listener1, () -> {});
+        testee.addListener(KEY_1, listener2, () -> {});
 
         assertThat(testee.getLocalMailboxListeners(KEY_1).collectList().block())
             .containsOnly(listener1, listener2);
@@ -67,12 +69,67 @@ class MailboxListenerRegistryTest {
     void getLocalMailboxListenersShouldNotReturnRemovedListeners() {
         MailboxListener listener1 = mock(MailboxListener.class);
         MailboxListener listener2 = mock(MailboxListener.class);
-        testee.addListener(KEY_1, listener1);
-        testee.addListener(KEY_1, listener2);
+        testee.addListener(KEY_1, listener1, () -> {});
+        testee.addListener(KEY_1, listener2, () -> {});
 
-        testee.removeListener(KEY_1, listener2);
+        testee.removeListener(KEY_1, listener2, () -> {});
 
         assertThat(testee.getLocalMailboxListeners(KEY_1).collectList().block())
             .containsOnly(listener1);
+    }
+
+    @Test
+    void addListenerShouldRunTaskWhenNoPreviouslyRegisteredListeners() {
+        MailboxListener listener = mock(MailboxListener.class);
+
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        testee.addListener(KEY_1, listener, () -> atomicBoolean.set(true));
+
+        assertThat(atomicBoolean).isTrue();
+    }
+
+    @Test
+    void addListenerShouldNotRunTaskWhenPreviouslyRegisteredListeners() {
+        MailboxListener listener = mock(MailboxListener.class);
+
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        testee.addListener(KEY_1, listener, () -> {});
+        testee.addListener(KEY_1, listener, () -> atomicBoolean.set(true));
+
+        assertThat(atomicBoolean).isFalse();
+    }
+
+    @Test
+    void removeListenerShouldNotRunTaskWhenNoListener() {
+        MailboxListener listener = mock(MailboxListener.class);
+
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        testee.removeListener(KEY_1, listener, () -> atomicBoolean.set(true));
+
+        assertThat(atomicBoolean).isFalse();
+    }
+
+    @Test
+    void removeListenerShouldNotRunTaskWhenSeveralListener() {
+        MailboxListener listener = mock(MailboxListener.class);
+        MailboxListener listener2 = mock(MailboxListener.class);
+
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        testee.addListener(KEY_1, listener, () -> {});
+        testee.addListener(KEY_1, listener2, () -> {});
+        testee.removeListener(KEY_1, listener, () -> atomicBoolean.set(true));
+
+        assertThat(atomicBoolean).isFalse();
+    }
+
+    @Test
+    void removeListenerShouldRunTaskWhenOneListener() {
+        MailboxListener listener = mock(MailboxListener.class);
+
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        testee.addListener(KEY_1, listener, () -> {});
+        testee.removeListener(KEY_1, listener, () -> atomicBoolean.set(true));
+
+        assertThat(atomicBoolean).isTrue();
     }
 }
