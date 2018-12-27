@@ -27,9 +27,16 @@ import org.apache.james.backend.rabbitmq.RabbitMQConfiguration;
 import org.apache.james.backend.rabbitmq.RabbitMQManagementAPI;
 import org.apache.james.util.OptionalUtils;
 
+import com.google.common.annotations.VisibleForTesting;
+
 public class RabbitMQMailQueueManagement {
 
     private final RabbitMQManagementAPI api;
+
+    @VisibleForTesting
+    RabbitMQMailQueueManagement(RabbitMQManagementAPI api) {
+        this.api = api;
+    }
 
     @Inject
     RabbitMQMailQueueManagement(RabbitMQConfiguration configuration) {
