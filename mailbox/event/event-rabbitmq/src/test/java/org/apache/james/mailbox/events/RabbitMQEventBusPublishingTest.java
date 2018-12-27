@@ -68,7 +68,7 @@ class RabbitMQEventBusPublishingTest {
 
         eventSerializer = new EventSerializer(new TestId.Factory(), new TestMessageId.Factory());
         eventBus = new RabbitMQEventBus(connectionFactory, eventSerializer);
-        eventBus.start().block();
+        eventBus.start();
 
         createQueue();
     }
