@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox.events;
 
+import static com.jayway.awaitility.Awaitility.await;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
@@ -27,6 +29,7 @@ import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -35,8 +38,10 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.james.core.User;
+import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.model.MailboxConstants;
@@ -48,17 +53,35 @@ import org.junit.jupiter.api.Test;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedMap;
+import com.jayway.awaitility.core.ConditionFactory;
 
 public interface EventBusContract {
+    class MailboxListenerCountingSuccessfulExecution implements MailboxListener {
+        private final AtomicInteger calls = new AtomicInteger(0);
+
+        @Override
+        public ListenerType getType() {
+            return ListenerType.ONCE;
+        }
+
+        @Override
+        public void event(Event event) {
+            calls.incrementAndGet();
+        }
+
+        int numberOfEventCalls() {
+            return calls.get();
+        }
+    }
+
+    class GroupA extends Group {}
+    class GroupB extends Group {}
+
     MailboxListener.MailboxEvent EVENT = new MailboxListener.MailboxAdded(
         MailboxSession.SessionId.of(42),
         User.fromUsername("user"),
         new MailboxPath(MailboxConstants.USER_NAMESPACE, "user", "mailboxName"),
         TestId.of(18));
-
-    class GroupA extends Group {}
-
-    class GroupB extends Group {}
 
     int ONE_SECOND = 1000;
     int FIVE_HUNDRED_MS = 500;
@@ -68,6 +91,8 @@ public interface EventBusContract {
     MailboxIdRegistrationKey KEY_1 = new MailboxIdRegistrationKey(ID_1);
     MailboxIdRegistrationKey KEY_2 = new MailboxIdRegistrationKey(ID_2);
     List<Class<? extends Group>> ALL_GROUPS = ImmutableList.of(GroupA.class, GroupB.class);
+
+    ConditionFactory WAIT_CONDITION = await().timeout(com.jayway.awaitility.Duration.ONE_SECOND);
 
     EventBus eventBus();
 
@@ -124,6 +149,22 @@ public interface EventBusContract {
     }
 
     @Test
+    default void failingGroupListenersShouldNotAbortGroupDelivery() {
+        MailboxListenerCountingSuccessfulExecution listener = spy(new MailboxListenerCountingSuccessfulExecution());
+        eventBus().register(listener, new GroupA());
+
+        doThrow(new RuntimeException())
+            .doCallRealMethod()
+            .when(listener).event(any());
+
+        eventBus().dispatch(EVENT, NO_KEYS).block();
+        eventBus().dispatch(EVENT, NO_KEYS).block();
+
+        WAIT_CONDITION
+            .until(() -> assertThat(listener.numberOfEventCalls()).isEqualTo(1));
+    }
+
+    @Test
     default void dispatchShouldNotThrowWhenARegisteredListenerFails() {
         MailboxListener listener = newListener();
         doThrow(new RuntimeException()).when(listener).event(any());
@@ -132,6 +173,21 @@ public interface EventBusContract {
 
         assertThatCode(() -> eventBus().dispatch(EVENT, NO_KEYS).block())
             .doesNotThrowAnyException();
+    }
+
+    @Test
+    default void failingRegisteredListenersShouldNotAbortRegisteredDelivery() {
+        MailboxListenerCountingSuccessfulExecution listener = spy(new MailboxListenerCountingSuccessfulExecution());
+        doThrow(new RuntimeException())
+            .doCallRealMethod()
+            .when(listener).event(any());
+        eventBus().register(listener, KEY_1);
+
+        eventBus().dispatch(EVENT, KEY_1).block();
+        eventBus().dispatch(EVENT, KEY_1).block();
+
+        WAIT_CONDITION
+            .until(() -> assertThat(listener.numberOfEventCalls()).isEqualTo(1));
     }
 
     @Test
@@ -379,5 +435,37 @@ public interface EventBusContract {
                 eventBus().dispatch(EVENT, NO_KEYS).block();
                 latch.countDown();
             });
+    }
+
+    @Test
+    default void allGroupListenersShouldBeExecutedWhenAGroupListenerFails() {
+        MailboxListener listener = newListener();
+
+        MailboxListener failingListener = mock(MailboxListener.class);
+        when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.SYNCHRONOUS);
+        doThrow(new RuntimeException()).when(failingListener).event(any());
+
+        eventBus().register(failingListener, new GroupA());
+        eventBus().register(listener, new GroupB());
+
+        eventBus().dispatch(EVENT, NO_KEYS).block();
+
+        verify(listener, timeout(ONE_SECOND).times(1)).event(any());
+    }
+
+    @Test
+    default void allRegisteredListenersShouldBeExecutedWhenARegisteredListenerFails() {
+        MailboxListener listener = newListener();
+
+        MailboxListener failingListener = mock(MailboxListener.class);
+        when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.SYNCHRONOUS);
+        doThrow(new RuntimeException()).when(failingListener).event(any());
+
+        eventBus().register(failingListener, KEY_1);
+        eventBus().register(listener, KEY_1);
+
+        eventBus().dispatch(EVENT, ImmutableSet.of(KEY_1)).block();
+
+        verify(listener, timeout(ONE_SECOND).times(1)).event(any());
     }
 }
