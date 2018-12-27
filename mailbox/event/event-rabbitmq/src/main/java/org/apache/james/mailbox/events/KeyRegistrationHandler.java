@@ -29,11 +29,14 @@ import java.nio.charset.StandardCharsets;
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Delivery;
 
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.rabbitmq.QueueSpecification;
@@ -43,6 +46,9 @@ import reactor.rabbitmq.ReceiverOptions;
 import reactor.rabbitmq.Sender;
 
 class KeyRegistrationHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KeyRegistrationHandler.class);
+
     private final MailboxListenerRegistry mailboxListenerRegistry;
     private final EventSerializer eventSerializer;
     private final Sender sender;
@@ -50,6 +56,7 @@ class KeyRegistrationHandler {
     private final Receiver receiver;
     private String registrationQueue;
     private RegistrationBinder registrationBinder;
+    private Disposable receiverSubscriber;
 
     KeyRegistrationHandler(EventSerializer eventSerializer, Sender sender, Mono<Connection> connectionMono, RoutingKeyConverter routingKeyConverter) {
         this.eventSerializer = eventSerializer;
@@ -69,13 +76,16 @@ class KeyRegistrationHandler {
             .block();
         registrationBinder = new RegistrationBinder(sender, registrationQueue);
 
-        receiver.consumeAutoAck(registrationQueue)
+        receiverSubscriber = receiver.consumeAutoAck(registrationQueue)
             .subscribeOn(Schedulers.parallel())
             .flatMap(this::handleDelivery)
             .subscribe();
     }
 
     void stop() {
+        if (!receiverSubscriber.isDisposed()) {
+            receiverSubscriber.dispose();
+        }
         receiver.close();
         sender.delete(QueueSpecification.queue(registrationQueue)).block();
     }
@@ -100,12 +110,23 @@ class KeyRegistrationHandler {
         Event event = toEvent(delivery);
 
         return mailboxListenerRegistry.getLocalMailboxListeners(registrationKey)
-            .flatMap(listener -> Mono.fromRunnable(() -> listener.event(event)))
+            .flatMap(listener -> deliverEvent(listener, event))
             .subscribeOn(Schedulers.elastic())
             .then();
     }
 
     private Event toEvent(Delivery delivery) {
         return eventSerializer.fromJson(new String(delivery.getBody(), StandardCharsets.UTF_8)).get();
+    }
+
+    private Mono<Void> deliverEvent(MailboxListener mailboxListener, Event event) {
+        return Mono.fromRunnable(() -> {
+            try {
+                mailboxListener.event(event);
+            } catch (Exception e) {
+                LOGGER.error("Exception happens when handling event of user {}", event.getUser().asString(), e);
+            }
+        });
+
     }
 }

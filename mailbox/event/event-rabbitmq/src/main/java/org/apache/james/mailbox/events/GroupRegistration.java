@@ -31,13 +31,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 import org.apache.james.event.json.EventSerializer;
+import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Delivery;
 
 import play.api.libs.json.JsResult;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -74,12 +78,15 @@ class GroupRegistration implements Registration {
         }
     }
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(GroupRegistration.class);
+
     private final MailboxListener mailboxListener;
     private final WorkQueueName queueName;
     private final Receiver receiver;
     private final Runnable unregisterGroup;
     private final Sender sender;
     private final EventSerializer eventSerializer;
+    private Disposable receiverSubscriber;
 
     GroupRegistration(Mono<Connection> connectionSupplier, Sender sender, EventSerializer eventSerializer,
                               MailboxListener mailboxListener, Group group, Runnable unregisterGroup) {
@@ -113,7 +120,7 @@ class GroupRegistration implements Registration {
     }
 
     private void subscribeWorkQueue() {
-        receiver.consumeAutoAck(queueName.asString())
+        receiverSubscriber = receiver.consumeAutoAck(queueName.asString())
             .subscribeOn(Schedulers.parallel())
             .map(Delivery::getBody)
             .filter(Objects::nonNull)
@@ -121,11 +128,22 @@ class GroupRegistration implements Registration {
             .map(eventSerializer::fromJson)
             .map(JsResult::get)
             .subscribeOn(Schedulers.elastic())
-            .subscribe(mailboxListener::event);
+            .subscribe(event -> deliverEvent(mailboxListener, event));
+    }
+
+    private void deliverEvent(MailboxListener mailboxListener, Event event) {
+        try {
+            mailboxListener.event(event);
+        } catch (Exception e) {
+            LOGGER.error("Exception happens when handling event of user {}", event.getUser().asString(), e);
+        }
     }
 
     @Override
     public void unregister() {
+        if (!receiverSubscriber.isDisposed()) {
+            receiverSubscriber.dispose();
+        }
         receiver.close();
         unregisterGroup.run();
     }
