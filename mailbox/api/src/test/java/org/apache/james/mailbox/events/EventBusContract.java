@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -72,10 +73,15 @@ public interface EventBusContract {
         int numberOfEventCalls() {
             return calls.get();
         }
+
+        void clear() {
+            calls.set(0);
+        }
     }
 
     class GroupA extends Group {}
     class GroupB extends Group {}
+    class GroupC extends Group {}
 
     MailboxListener.MailboxEvent EVENT = new MailboxListener.MailboxAdded(
         MailboxSession.SessionId.of(42),
@@ -87,10 +93,13 @@ public interface EventBusContract {
     int FIVE_HUNDRED_MS = 500;
     MailboxId ID_1 = TestId.of(18);
     MailboxId ID_2 = TestId.of(24);
+    MailboxId ID_3 = TestId.of(36);
     ImmutableSet<RegistrationKey> NO_KEYS = ImmutableSet.of();
     MailboxIdRegistrationKey KEY_1 = new MailboxIdRegistrationKey(ID_1);
     MailboxIdRegistrationKey KEY_2 = new MailboxIdRegistrationKey(ID_2);
-    List<Class<? extends Group>> ALL_GROUPS = ImmutableList.of(GroupA.class, GroupB.class);
+    MailboxIdRegistrationKey KEY_3 = new MailboxIdRegistrationKey(ID_3);
+    List<Class<? extends Group>> ALL_GROUPS = ImmutableList.of(GroupA.class, GroupB.class, GroupC.class);
+    Set<RegistrationKey> ALL_KEYS = ImmutableSet.of(KEY_1, KEY_2, KEY_3);
 
     ConditionFactory WAIT_CONDITION = await().timeout(com.jayway.awaitility.Duration.ONE_SECOND);
 
