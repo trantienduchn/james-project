@@ -20,6 +20,7 @@
 package org.apache.james.mailbox.events;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.PreDestroy;
 
@@ -43,29 +44,46 @@ class RabbitMQEventBus implements EventBus {
     private static final boolean DURABLE = true;
     private static final String DIRECT_EXCHANGE = "direct";
 
-    private final Sender sender;
-    private final GroupRegistrationHandler groupRegistrationHandler;
-    private final KeyRegistrationHandler keyRegistrationHandler;
-    private final EventDispatcher eventDispatcher;
+    private final Mono<Connection> connectionMono;
+    private final EventSerializer eventSerializer;
+    private final RoutingKeyConverter routingKeyConverter;
+    private final AtomicBoolean isRunning;
+
+    private GroupRegistrationHandler groupRegistrationHandler;
+    private KeyRegistrationHandler keyRegistrationHandler;
+    private EventDispatcher eventDispatcher;
+    private Sender sender;
 
     RabbitMQEventBus(RabbitMQConnectionFactory rabbitMQConnectionFactory, EventSerializer eventSerializer, RoutingKeyConverter routingKeyConverter) {
-        Mono<Connection> connectionMono = Mono.fromSupplier(rabbitMQConnectionFactory::create).cache();
-        this.sender = RabbitFlux.createSender(new SenderOptions().connectionMono(connectionMono));
-        this.groupRegistrationHandler = new GroupRegistrationHandler(eventSerializer, sender, connectionMono);
-        this.eventDispatcher = new EventDispatcher(eventSerializer, sender);
-        this.keyRegistrationHandler = new KeyRegistrationHandler(eventSerializer, sender, connectionMono, routingKeyConverter);
+        this.connectionMono = Mono.fromSupplier(rabbitMQConnectionFactory::create).cache();
+        this.eventSerializer = eventSerializer;
+        this.routingKeyConverter = routingKeyConverter;
+        isRunning = new AtomicBoolean(false);
+
     }
 
     public void start() {
-        eventDispatcher.start();
-        keyRegistrationHandler.start();
+        if (isRunning == null || !isRunning.get()) {
+            sender = RabbitFlux.createSender(new SenderOptions().connectionMono(connectionMono));
+            groupRegistrationHandler = new GroupRegistrationHandler(eventSerializer, sender, connectionMono);
+            eventDispatcher = new EventDispatcher(eventSerializer, sender);
+            keyRegistrationHandler = new KeyRegistrationHandler(eventSerializer, sender, connectionMono, routingKeyConverter);
+
+            eventDispatcher.start();
+            keyRegistrationHandler.start();
+
+            isRunning.set(true);
+        }
     }
 
     @PreDestroy
     public void stop() {
-        groupRegistrationHandler.stop();
-        keyRegistrationHandler.stop();
-        sender.close();
+        if (isRunning.get()) {
+            groupRegistrationHandler.stop();
+            keyRegistrationHandler.stop();
+            sender.close();
+            isRunning.set(false);
+        }
     }
 
     @Override
