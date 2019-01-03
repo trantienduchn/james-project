@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.james.backend.rabbitmq.RabbitMQConnectionFactory;
 import org.apache.james.backend.rabbitmq.RabbitMQExtension;
+import org.apache.james.backend.rabbitmq.RabbitMQManagementAPI;
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.model.TestMessageId;
@@ -42,7 +43,7 @@ import reactor.rabbitmq.RabbitFlux;
 import reactor.rabbitmq.Sender;
 import reactor.rabbitmq.SenderOptions;
 
-class RabbitMQEventBusConcurrentExtension implements BeforeEachCallback, AfterEachCallback {
+class RabbitMQEventBusExtension implements BeforeEachCallback, AfterEachCallback {
 
     static final EventBusContract.MailboxListenerCountingSuccessfulExecution COUNTING_LISTENER_1 =
         new EventBusContract.MailboxListenerCountingSuccessfulExecution();
@@ -54,13 +55,14 @@ class RabbitMQEventBusConcurrentExtension implements BeforeEachCallback, AfterEa
     private static final List<EventBusContract.MailboxListenerCountingSuccessfulExecution> ALL_LISTENERS =
                 ImmutableList.of(COUNTING_LISTENER_1, COUNTING_LISTENER_2, COUNTING_LISTENER_3);
 
-    private EventSerializer eventSerializer;
+    EventSerializer eventSerializer;
     private RabbitMQConnectionFactory connectionFactory;
     private RoutingKeyConverter routingKeyConverter;
-    private Sender sender;
+    RabbitMQManagementAPI rabbitMQManagement;
+    Sender sender;
     private final RabbitMQExtension rabbitMQExtension;
 
-    RabbitMQEventBusConcurrentExtension(RabbitMQExtension rabbitMQExtension) {
+    RabbitMQEventBusExtension(RabbitMQExtension rabbitMQExtension) {
         this.rabbitMQExtension = rabbitMQExtension;
     }
 
@@ -69,6 +71,7 @@ class RabbitMQEventBusConcurrentExtension implements BeforeEachCallback, AfterEa
         ALL_LISTENERS.forEach(listener -> listener.clear());
         rabbitMQExtension.beforeEach(context);
 
+        rabbitMQManagement = rabbitMQExtension.managementAPI();
         connectionFactory = rabbitMQExtension.getConnectionFactory();
 
         TestId.Factory mailboxIdFactory = new TestId.Factory();
@@ -82,7 +85,8 @@ class RabbitMQEventBusConcurrentExtension implements BeforeEachCallback, AfterEa
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
-        rabbitMQExtension.managementAPI().listQueues()
+        rabbitMQManagement.listQueues().stream()
+            .filter(queue -> !queue.isExclusive())
             .forEach(queue -> sender.delete(QueueSpecification.queue(queue.getName())).block());
         sender.delete(ExchangeSpecification.exchange(MAILBOX_EVENT_EXCHANGE_NAME)).block();
         sender.close();

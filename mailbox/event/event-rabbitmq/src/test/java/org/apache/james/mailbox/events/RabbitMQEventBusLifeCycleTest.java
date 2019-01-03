@@ -30,13 +30,8 @@ import static org.mockito.Mockito.mock;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.james.backend.rabbitmq.RabbitMQConnectionFactory;
 import org.apache.james.backend.rabbitmq.RabbitMQExtension;
-import org.apache.james.backend.rabbitmq.RabbitMQManagementAPI;
-import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.MailboxListener;
-import org.apache.james.mailbox.model.TestId;
-import org.apache.james.mailbox.model.TestMessageId;
 import org.apache.james.util.concurrency.ConcurrentTestRunner;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -44,66 +39,15 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import com.rabbitmq.client.Connection;
-
-import reactor.core.publisher.Mono;
-import reactor.rabbitmq.ExchangeSpecification;
-import reactor.rabbitmq.QueueSpecification;
-import reactor.rabbitmq.RabbitFlux;
-import reactor.rabbitmq.Sender;
-import reactor.rabbitmq.SenderOptions;
-
 class RabbitMQEventBusLifeCycleTest {
-
-    static class RabbitMQEventBusDeclarationExtension implements BeforeEachCallback, AfterEachCallback {
-
-        private EventSerializer eventSerializer;
-        private RabbitMQConnectionFactory connectionFactory;
-        private RabbitMQManagementAPI rabbitMQManagement;
-        private RoutingKeyConverter routingKeyConverter;
-        private Sender sender;
-
-        @Override
-        public void beforeEach(ExtensionContext context) throws Exception {
-            rabbitMQExtension.beforeEach(context);
-
-            rabbitMQManagement = rabbitMQExtension.managementAPI();
-            connectionFactory = rabbitMQExtension.getConnectionFactory();
-
-            TestId.Factory mailboxIdFactory = new TestId.Factory();
-            routingKeyConverter = RoutingKeyConverter.forFactories(new MailboxIdRegistrationKey.Factory(mailboxIdFactory));
-            eventSerializer = new EventSerializer(mailboxIdFactory, new TestMessageId.Factory());
-
-            RabbitMQConnectionFactory connectionFactory = rabbitMQExtension.getConnectionFactory();
-            Mono<Connection> connectionMono = Mono.fromSupplier(connectionFactory::create).cache();
-            sender = RabbitFlux.createSender(new SenderOptions().connectionMono(connectionMono));
-        }
-
-        @Override
-        public void afterEach(ExtensionContext context) throws Exception {
-            rabbitMQManagement.listQueues()
-                .forEach(queue -> sender.delete(QueueSpecification.queue(queue.getName())).block());
-            sender.delete(ExchangeSpecification.exchange(MAILBOX_EVENT_EXCHANGE_NAME)).block();
-            sender.close();
-
-            rabbitMQExtension.afterEach(context);
-        }
-
-        private RabbitMQEventBus newEventBus() {
-            return new RabbitMQEventBus(connectionFactory, eventSerializer, routingKeyConverter);
-        }
-    }
 
     private static class GroupA extends Group {}
 
     static RabbitMQExtension rabbitMQExtension = new RabbitMQExtension();
     @RegisterExtension
-    static RabbitMQEventBusDeclarationExtension testExtension = new RabbitMQEventBusDeclarationExtension();
+    static RabbitMQEventBusExtension testExtension = new RabbitMQEventBusExtension(rabbitMQExtension);
 
     @BeforeAll
     static void setUp() {

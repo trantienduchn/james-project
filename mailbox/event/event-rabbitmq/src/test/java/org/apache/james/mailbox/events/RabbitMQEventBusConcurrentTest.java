@@ -25,9 +25,9 @@ import static org.apache.james.mailbox.events.EventBusContract.EVENT;
 import static org.apache.james.mailbox.events.EventBusContract.KEY_1;
 import static org.apache.james.mailbox.events.EventBusContract.KEY_2;
 import static org.apache.james.mailbox.events.EventBusContract.KEY_3;
-import static org.apache.james.mailbox.events.RabbitMQEventBusConcurrentExtension.COUNTING_LISTENER_1;
-import static org.apache.james.mailbox.events.RabbitMQEventBusConcurrentExtension.COUNTING_LISTENER_2;
-import static org.apache.james.mailbox.events.RabbitMQEventBusConcurrentExtension.COUNTING_LISTENER_3;
+import static org.apache.james.mailbox.events.RabbitMQEventBusExtension.COUNTING_LISTENER_1;
+import static org.apache.james.mailbox.events.RabbitMQEventBusExtension.COUNTING_LISTENER_2;
+import static org.apache.james.mailbox.events.RabbitMQEventBusExtension.COUNTING_LISTENER_3;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
@@ -61,7 +61,7 @@ class RabbitMQEventBusConcurrentTest {
     @RegisterExtension
     static RabbitMQExtension rabbitMQExtension = new RabbitMQExtension();
     @RegisterExtension
-    static RabbitMQEventBusConcurrentExtension testExtension = new RabbitMQEventBusConcurrentExtension(rabbitMQExtension);
+    static RabbitMQEventBusExtension testExtension = new RabbitMQEventBusExtension(rabbitMQExtension);
 
     @BeforeAll
     static void beforeAll() {
@@ -107,7 +107,7 @@ class RabbitMQEventBusConcurrentTest {
 
             runConcurrent((threadNumber, operationNumber) -> eventBus1.dispatch(EVENT, NO_KEYS));
 
-            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusConcurrentExtension.totalEventsReceived())
+            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusExtension.totalEventsReceived())
                 .isEqualTo(totalGlobalRegistrations * TOTAL_DISPATCH_OPERATIONS));
         }
 
@@ -121,7 +121,7 @@ class RabbitMQEventBusConcurrentTest {
 
             runConcurrent((threadNumber, operationNumber) -> eventBus1.dispatch(EVENT, ALL_KEYS));
 
-            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusConcurrentExtension.totalEventsReceived())
+            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusExtension.totalEventsReceived())
                 .isEqualTo(totalKeyListenerRegistrations * totalEventBus * TOTAL_DISPATCH_OPERATIONS));
         }
 
@@ -141,7 +141,7 @@ class RabbitMQEventBusConcurrentTest {
 
             runConcurrent((threadNumber, operationNumber) -> eventBus1.dispatch(EVENT, ALL_KEYS));
 
-            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusConcurrentExtension.totalEventsReceived())
+            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusExtension.totalEventsReceived())
                 .isEqualTo(totalEventDeliveredGlobally + totalEventDeliveredByKeys));
         }
     }
@@ -187,7 +187,7 @@ class RabbitMQEventBusConcurrentTest {
 
             runConcurrent((threadNumber, operationNumber) -> eventBus1.dispatch(EVENT, NO_KEYS));
 
-            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusConcurrentExtension.totalEventsReceived())
+            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusExtension.totalEventsReceived())
                 .isEqualTo(totalGlobalRegistrations * TOTAL_DISPATCH_OPERATIONS));
         }
 
@@ -206,7 +206,7 @@ class RabbitMQEventBusConcurrentTest {
 
             runConcurrent((threadNumber, operationNumber) -> eventBus1.dispatch(EVENT, ALL_KEYS));
 
-            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusConcurrentExtension.totalEventsReceived())
+            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusExtension.totalEventsReceived())
                 .isEqualTo(totalKeyListenerRegistrations * totalEventBus * TOTAL_DISPATCH_OPERATIONS));
         }
 
@@ -233,7 +233,7 @@ class RabbitMQEventBusConcurrentTest {
 
             runConcurrent((threadNumber, operationNumber) -> eventBus1.dispatch(EVENT, ALL_KEYS));
 
-            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusConcurrentExtension.totalEventsReceived())
+            AWAIT_CONDITION.until(() -> assertThat(RabbitMQEventBusExtension.totalEventsReceived())
                 .isEqualTo(totalEventDeliveredGlobally + totalEventDeliveredByKeys));
         }
     }

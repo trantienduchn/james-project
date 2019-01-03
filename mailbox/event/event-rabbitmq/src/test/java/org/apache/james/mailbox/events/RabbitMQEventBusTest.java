@@ -19,53 +19,42 @@
 
 package org.apache.james.mailbox.events;
 
-import org.apache.james.backend.rabbitmq.RabbitMQConnectionFactory;
 import org.apache.james.backend.rabbitmq.RabbitMQExtension;
-import org.apache.james.event.json.EventSerializer;
-import org.apache.james.mailbox.model.TestId;
-import org.apache.james.mailbox.model.TestMessageId;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import com.rabbitmq.client.Connection;
-
-import reactor.core.publisher.Mono;
-import reactor.rabbitmq.QueueSpecification;
-import reactor.rabbitmq.RabbitFlux;
-import reactor.rabbitmq.Sender;
-import reactor.rabbitmq.SenderOptions;
-
 class RabbitMQEventBusTest implements EventBusContract {
 
-    @RegisterExtension
     static RabbitMQExtension rabbitMQExtension = new RabbitMQExtension();
+    @RegisterExtension
+    static RabbitMQEventBusExtension testExtension = new RabbitMQEventBusExtension(rabbitMQExtension);
+
+    @BeforeAll
+    static void beforeAll() {
+        rabbitMQExtension.beforeAll(null);
+    }
+
+    @AfterAll
+    static void afterAll() {
+        rabbitMQExtension.afterAll(null);
+    }
 
     private RabbitMQEventBus eventBus;
-    private Sender sender;
 
     @BeforeEach
     void setUp() {
-        RabbitMQConnectionFactory connectionFactory = rabbitMQExtension.getConnectionFactory();
-        Mono<Connection> connectionMono = Mono.fromSupplier(connectionFactory::create).cache();
-
-        TestId.Factory mailboxIdFactory = new TestId.Factory();
-        EventSerializer eventSerializer = new EventSerializer(mailboxIdFactory, new TestMessageId.Factory());
-        RoutingKeyConverter routingKeyConverter = RoutingKeyConverter.forFactories(new MailboxIdRegistrationKey.Factory(mailboxIdFactory));
-
-        eventBus = new RabbitMQEventBus(connectionFactory, eventSerializer, routingKeyConverter);
+        eventBus = testExtension.newEventBus();
         eventBus.start();
-        sender = RabbitFlux.createSender(new SenderOptions().connectionMono(connectionMono));
     }
 
     @AfterEach
     void tearDown() {
         eventBus.stop();
-        ALL_GROUPS.stream()
-            .map(groupClass -> GroupRegistration.WorkQueueName.of(groupClass).asString())
-            .forEach(queueName -> sender.delete(QueueSpecification.queue(queueName)).block());
     }
 
     @Override

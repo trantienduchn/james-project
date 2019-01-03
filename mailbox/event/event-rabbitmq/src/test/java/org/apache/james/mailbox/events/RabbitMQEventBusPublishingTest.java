@@ -33,10 +33,9 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.james.backend.rabbitmq.RabbitMQConnectionFactory;
 import org.apache.james.backend.rabbitmq.RabbitMQExtension;
-import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.Event;
-import org.apache.james.mailbox.model.TestId;
-import org.apache.james.mailbox.model.TestMessageId;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -49,45 +48,42 @@ import reactor.rabbitmq.QueueSpecification;
 import reactor.rabbitmq.RabbitFlux;
 import reactor.rabbitmq.Receiver;
 import reactor.rabbitmq.ReceiverOptions;
-import reactor.rabbitmq.Sender;
-import reactor.rabbitmq.SenderOptions;
 
 class RabbitMQEventBusPublishingTest {
     private static final String MAILBOX_WORK_QUEUE_NAME = MAILBOX_EVENT + "-workQueue";
 
-    @RegisterExtension
     static RabbitMQExtension rabbitMQExtension = new RabbitMQExtension();
+    @RegisterExtension
+    static RabbitMQEventBusExtension testExtension = new RabbitMQEventBusExtension(rabbitMQExtension);
+
+    @BeforeAll
+    static void beforeAll() {
+        rabbitMQExtension.beforeAll(null);
+    }
+
+    @AfterAll
+    static void afterAll() {
+        rabbitMQExtension.afterAll(null);
+    }
 
     private RabbitMQEventBus eventBus;
-    private EventSerializer eventSerializer;
-    private RabbitMQConnectionFactory connectionFactory;
 
     @BeforeEach
     void setUp() {
-        connectionFactory = rabbitMQExtension.getConnectionFactory();
-
-
-        TestId.Factory mailboxIdFactory = new TestId.Factory();
-        RoutingKeyConverter routingKeyConverter = RoutingKeyConverter.forFactories(new MailboxIdRegistrationKey.Factory(mailboxIdFactory));
-        eventSerializer = new EventSerializer(mailboxIdFactory, new TestMessageId.Factory());
-        eventBus = new RabbitMQEventBus(connectionFactory, eventSerializer, routingKeyConverter);
+        eventBus = testExtension.newEventBus();
         eventBus.start();
 
         createQueue();
     }
 
     private void createQueue() {
-        SenderOptions senderOption = new SenderOptions()
-            .connectionMono(Mono.fromSupplier(connectionFactory::create));
-        Sender sender = RabbitFlux.createSender(senderOption);
-
-        sender.declareQueue(QueueSpecification.queue(MAILBOX_WORK_QUEUE_NAME)
+        testExtension.sender.declareQueue(QueueSpecification.queue(MAILBOX_WORK_QUEUE_NAME)
             .durable(DURABLE)
             .exclusive(!EXCLUSIVE)
             .autoDelete(!AUTO_DELETE)
             .arguments(NO_ARGUMENTS))
             .block();
-        sender.bind(BindingSpecification.binding()
+        testExtension.sender.bind(BindingSpecification.binding()
             .exchange(MAILBOX_EVENT_EXCHANGE_NAME)
             .queue(MAILBOX_WORK_QUEUE_NAME)
             .routingKey(EMPTY_ROUTING_KEY))
@@ -117,7 +113,7 @@ class RabbitMQEventBusPublishingTest {
             .blockFirst()
             .getBody();
 
-        return eventSerializer.fromJson(new String(eventInBytes, StandardCharsets.UTF_8))
+        return testExtension.eventSerializer.fromJson(new String(eventInBytes, StandardCharsets.UTF_8))
             .get();
     }
 }
