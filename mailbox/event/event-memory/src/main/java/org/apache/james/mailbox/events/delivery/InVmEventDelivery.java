@@ -40,6 +40,7 @@ import reactor.core.scheduler.Schedulers;
 
 public class InVmEventDelivery implements EventDelivery {
     private static final Logger LOGGER = LoggerFactory.getLogger(InVmEventDelivery.class);
+    private static final int MAX_RETRIES = 3;
 
     private final MetricFactory metricFactory;
 
@@ -72,9 +73,19 @@ public class InVmEventDelivery implements EventDelivery {
 
     private Mono<Void> doDeliver(Collection<MailboxListener> mailboxListeners, Event event) {
         return Flux.fromIterable(mailboxListeners)
-            .flatMap(mailboxListener -> Mono.fromRunnable(() -> doDeliverToListener(mailboxListener, event)))
+            .flatMap(mailboxListener -> deliveryWithRetries(event, mailboxListener))
             .then()
             .subscribeOn(Schedulers.elastic());
+    }
+
+    private Mono<Object> deliveryWithRetries(Event event, MailboxListener mailboxListener) {
+        return Mono.fromRunnable(() -> doDeliverToListener(mailboxListener, event))
+            .retry(MAX_RETRIES)
+            .doOnError(throwable -> LOGGER.error("listener {} exceeded maximum retry({}) to handle event {}",
+                mailboxListener.getClass().getCanonicalName(),
+                MAX_RETRIES,
+                event.getClass().getCanonicalName(),
+                throwable));
     }
 
     private void doDeliverToListener(MailboxListener mailboxListener, Event event) {

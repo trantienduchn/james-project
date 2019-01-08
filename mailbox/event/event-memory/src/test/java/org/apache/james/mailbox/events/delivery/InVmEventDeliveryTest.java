@@ -19,6 +19,7 @@
 
 package org.apache.james.mailbox.events.delivery;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.mockito.Mockito.doAnswer;
@@ -60,26 +61,67 @@ class InVmEventDeliveryTest {
     class ErrorHandling {
 
         @Test
-        void deliverShouldReturnErrorResultWhenSynchronousListenerFails() {
+        void deliverShouldReturnSuccessResultWhenSynchronousListenerFailsLEMaxRetry() {
             when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.SYNCHRONOUS);
-            when(listener2.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
 
-            doThrow(RuntimeException.class).when(listener).event(event);
+            doThrow(RuntimeException.class)
+                .doThrow(RuntimeException.class)
+                .doThrow(RuntimeException.class)
+                .doNothing()
+                .when(listener).event(event);
 
-            assertThatThrownBy(() -> inVmEventDelivery.deliver(ImmutableList.of(listener, listener2), event)
+            assertThatCode(() -> inVmEventDelivery.deliver(ImmutableList.of(listener), event)
+                    .allListenerFuture()
+                    .block())
+                .doesNotThrowAnyException();
+        }
+
+
+        @Test
+        void deliverShouldReturnErrorResultWhenSynchronousListenerFailsGTMaxRetry() {
+            when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.SYNCHRONOUS);
+
+            doThrow(RuntimeException.class)
+                .doThrow(RuntimeException.class)
+                .doThrow(RuntimeException.class)
+                .doThrow(RuntimeException.class)
+                .doNothing()
+                .when(listener).event(event);
+
+            assertThatThrownBy(() -> inVmEventDelivery.deliver(ImmutableList.of(listener), event)
                     .allListenerFuture()
                     .block())
                 .isInstanceOf(RuntimeException.class);
         }
 
         @Test
-        void deliverShouldReturnErrorResultWhenAsynchronousListenerFails() {
-            when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.SYNCHRONOUS);
+        void deliverShouldReturnSuccessResultWhenAsynchronousListenerFailsLEMaxRetry() {
             when(listener2.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
 
-            doThrow(RuntimeException.class).when(listener2).event(event);
+            doThrow(RuntimeException.class)
+                .doThrow(RuntimeException.class)
+                .doThrow(RuntimeException.class)
+                .doNothing()
+                .when(listener2).event(event);
 
-            assertThatThrownBy(() -> inVmEventDelivery.deliver(ImmutableList.of(listener, listener2), event)
+            assertThatCode(() -> inVmEventDelivery.deliver(ImmutableList.of(listener2), event)
+                    .allListenerFuture()
+                    .block())
+                .doesNotThrowAnyException();
+        }
+
+        @Test
+        void deliverShouldReturnErrorResultWhenAsynchronousListenerFailsGTMaxRetry() {
+            when(listener2.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
+
+            doThrow(RuntimeException.class)
+                .doThrow(RuntimeException.class)
+                .doThrow(RuntimeException.class)
+                .doThrow(RuntimeException.class)
+                .doNothing()
+                .when(listener2).event(event);
+
+            assertThatThrownBy(() -> inVmEventDelivery.deliver(ImmutableList.of(listener2), event)
                     .allListenerFuture()
                     .block())
                 .isInstanceOf(RuntimeException.class);
