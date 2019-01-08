@@ -19,8 +19,10 @@
 
 package org.apache.james.mailbox.events.delivery;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -33,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.james.mailbox.MailboxListener;
 import org.apache.james.metrics.api.NoopMetricFactory;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -51,6 +54,36 @@ class InVmEventDeliveryTest {
         listener = mock(MailboxListener.class);
         listener2 = mock(MailboxListener.class);
         inVmEventDelivery = new InVmEventDelivery(new NoopMetricFactory());
+    }
+
+    @Nested
+    class ErrorHandling {
+
+        @Test
+        void deliverShouldNotReturnErrorResultWhenSynchronousListenerFails() {
+            when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.SYNCHRONOUS);
+            when(listener2.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
+
+            doThrow(RuntimeException.class).when(listener).event(event);
+
+            assertThatCode(() -> inVmEventDelivery.deliver(ImmutableList.of(listener, listener2), event)
+                    .allListenerFuture()
+                .block())
+                .doesNotThrowAnyException();
+        }
+
+        @Test
+        void deliverShouldNotReturnErrorResultWhenAsynchronousListenerFails() {
+            when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.SYNCHRONOUS);
+            when(listener2.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
+
+            doThrow(RuntimeException.class).when(listener2).event(event);
+
+            assertThatCode(() -> inVmEventDelivery.deliver(ImmutableList.of(listener, listener2), event)
+                    .allListenerFuture()
+                .block())
+                .doesNotThrowAnyException();
+        }
     }
 
     @Test
