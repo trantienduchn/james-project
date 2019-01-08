@@ -81,10 +81,10 @@ public class InVmEventDelivery implements EventDelivery {
         TimeMetric timer = metricFactory.timer("mailbox-listener-" + mailboxListener.getClass().getSimpleName());
         try {
             mailboxListener.event(event);
-        } catch (Throwable throwable) {
+        } catch (Exception ex) {
             LOGGER.error("Error while processing listener {} for {}",
-                mailboxListener.getClass().getCanonicalName(), event.getClass().getCanonicalName(),
-                throwable);
+                mailboxListener.getClass().getCanonicalName(), event.getClass().getCanonicalName(), ex);
+            throw ex;
         } finally {
             timer.stopAndPublish();
         }

@@ -19,7 +19,7 @@
 
 package org.apache.james.mailbox.events.delivery;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -60,29 +60,29 @@ class InVmEventDeliveryTest {
     class ErrorHandling {
 
         @Test
-        void deliverShouldNotReturnErrorResultWhenSynchronousListenerFails() {
+        void deliverShouldReturnErrorResultWhenSynchronousListenerFails() {
             when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.SYNCHRONOUS);
             when(listener2.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
 
             doThrow(RuntimeException.class).when(listener).event(event);
 
-            assertThatCode(() -> inVmEventDelivery.deliver(ImmutableList.of(listener, listener2), event)
+            assertThatThrownBy(() -> inVmEventDelivery.deliver(ImmutableList.of(listener, listener2), event)
                     .allListenerFuture()
-                .block())
-                .doesNotThrowAnyException();
+                    .block())
+                .isInstanceOf(RuntimeException.class);
         }
 
         @Test
-        void deliverShouldNotReturnErrorResultWhenAsynchronousListenerFails() {
+        void deliverShouldReturnErrorResultWhenAsynchronousListenerFails() {
             when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.SYNCHRONOUS);
             when(listener2.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
 
             doThrow(RuntimeException.class).when(listener2).event(event);
 
-            assertThatCode(() -> inVmEventDelivery.deliver(ImmutableList.of(listener, listener2), event)
+            assertThatThrownBy(() -> inVmEventDelivery.deliver(ImmutableList.of(listener, listener2), event)
                     .allListenerFuture()
-                .block())
-                .doesNotThrowAnyException();
+                    .block())
+                .isInstanceOf(RuntimeException.class);
         }
     }
 
