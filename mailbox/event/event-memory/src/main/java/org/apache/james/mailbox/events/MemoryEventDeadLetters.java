@@ -26,7 +26,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoProcessor;
@@ -73,8 +72,7 @@ public class MemoryEventDeadLetters implements EventDeadLetters {
 
         return Flux.fromIterable(deadLetters.get(registeredGroup))
             .filter(event -> event.getEventId().equals(failDeliveredEventId))
-            .next()
-            .subscribeWith(MonoProcessor.create());
+            .next();
     }
 
     @Override
@@ -82,13 +80,11 @@ public class MemoryEventDeadLetters implements EventDeadLetters {
         Preconditions.checkArgument(registeredGroup != null, REGISTERED_GROUP_CANNOT_BE_NULL);
 
         return Flux.fromIterable(deadLetters.get(registeredGroup))
-            .map(Event::getEventId)
-            .subscribeWith(EmitterProcessor.create());
+            .map(Event::getEventId);
     }
 
     @Override
     public Flux<Group> groupsWithFailedEvents() {
-        return Flux.fromIterable(deadLetters.keySet())
-            .subscribeWith(EmitterProcessor.create());
+        return Flux.fromIterable(deadLetters.keySet());
     }
 }
