@@ -19,8 +19,6 @@
 
 package org.apache.james.mailbox.events;
 
-import java.util.Optional;
-
 import org.apache.james.mailbox.Event;
 
 import com.google.common.base.Preconditions;
@@ -28,8 +26,10 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
+import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.MonoProcessor;
 
 public class MemoryEventDeadLetters implements EventDeadLetters {
 
@@ -48,8 +48,9 @@ public class MemoryEventDeadLetters implements EventDeadLetters {
         Preconditions.checkArgument(registeredGroup != null, REGISTERED_GROUP_CANNOT_BE_NULL);
         Preconditions.checkArgument(failDeliveredEvent != null, FAIL_DELIVERED_EVENT_CANNOT_BE_NULL);
 
-        deadLetters.put(registeredGroup, failDeliveredEvent);
-        return Mono.empty();
+        return Mono.fromRunnable(() -> deadLetters.put(registeredGroup, failDeliveredEvent))
+            .subscribeWith(MonoProcessor.create())
+            .then();
     }
 
     @Override
@@ -57,10 +58,12 @@ public class MemoryEventDeadLetters implements EventDeadLetters {
         Preconditions.checkArgument(registeredGroup != null, REGISTERED_GROUP_CANNOT_BE_NULL);
         Preconditions.checkArgument(failDeliveredEventId != null, FAIL_DELIVERED_ID_EVENT_CANNOT_BE_NULL);
 
-        deadLetters.get(registeredGroup)
-            .removeIf(event -> event.getEventId().equals(failDeliveredEventId));
-
-        return Mono.empty();
+        return Flux.fromIterable(deadLetters.get(registeredGroup))
+            .filter(event -> event.getEventId().equals(failDeliveredEventId))
+            .next()
+            .doOnNext(event -> deadLetters.remove(registeredGroup, event))
+            .subscribeWith(MonoProcessor.create())
+            .then();
     }
 
     @Override
@@ -68,25 +71,24 @@ public class MemoryEventDeadLetters implements EventDeadLetters {
         Preconditions.checkArgument(registeredGroup != null, REGISTERED_GROUP_CANNOT_BE_NULL);
         Preconditions.checkArgument(failDeliveredEventId != null, FAIL_DELIVERED_ID_EVENT_CANNOT_BE_NULL);
 
-        Optional<Event> failedEventMaybe = deadLetters.get(registeredGroup)
-            .stream()
+        return Flux.fromIterable(deadLetters.get(registeredGroup))
             .filter(event -> event.getEventId().equals(failDeliveredEventId))
-            .findFirst();
-
-        return Mono.justOrEmpty(failedEventMaybe);
+            .next()
+            .subscribeWith(MonoProcessor.create());
     }
 
     @Override
     public Flux<Event.EventId> failedEventIds(Group registeredGroup) {
         Preconditions.checkArgument(registeredGroup != null, REGISTERED_GROUP_CANNOT_BE_NULL);
 
-        return Flux.fromStream(deadLetters.get(registeredGroup)
-            .stream()
-            .map(Event::getEventId));
+        return Flux.fromIterable(deadLetters.get(registeredGroup))
+            .map(Event::getEventId)
+            .subscribeWith(EmitterProcessor.create());
     }
 
     @Override
     public Flux<Group> groupsWithFailedEvents() {
-        return Flux.fromIterable(deadLetters.keySet());
+        return Flux.fromIterable(deadLetters.keySet())
+            .subscribeWith(EmitterProcessor.create());
     }
 }

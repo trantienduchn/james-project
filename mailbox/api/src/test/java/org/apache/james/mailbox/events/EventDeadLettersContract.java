@@ -24,8 +24,10 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.james.core.User;
@@ -39,13 +41,11 @@ import org.apache.james.util.concurrency.ConcurrentTestRunner;
 import org.junit.jupiter.api.Test;
 
 import com.github.steveash.guavate.Guavate;
-import com.google.common.base.Functions;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-
-import reactor.core.publisher.Mono;
 
 interface EventDeadLettersContract {
 
@@ -61,19 +61,16 @@ interface EventDeadLettersContract {
     class Group9 extends Group{}
 
     static ImmutableMap<Integer, Group> concurrentGroups() {
-        AtomicInteger index = new AtomicInteger(0);
-        Stream<Group> groups = Stream.of(new Group0(), new Group1(), new Group2(), new Group3(), new Group4(), new Group5(),
-            new Group6(), new Group7(), new Group8(), new Group9());
-
-        return groups.collect(Guavate.toImmutableMap(
-            group -> index.getAndIncrement(),
-            Functions.identity()));
+        return IntStream.range(0, CONCURRENT_GROUPS.size()).boxed()
+            .collect(Guavate.toImmutableMap(Function.identity(), CONCURRENT_GROUPS::get));
     }
 
     static Event event(Event.EventId eventId) {
         return new MailboxListener.MailboxAdded(SESSION_ID, USER, MAILBOX_PATH, MAILBOX_ID, eventId);
     }
 
+    List<Group> CONCURRENT_GROUPS = ImmutableList.of(new Group0(), new Group1(), new Group2(), new Group3(), new Group4(), new Group5(),
+        new Group6(), new Group7(), new Group8(), new Group9());
     Duration RUN_SUCCESSFULLY_IN = Duration.ofSeconds(5);
     int THREAD_COUNT = 10;
     int OPERATION_COUNT = 50;
@@ -252,7 +249,7 @@ interface EventDeadLettersContract {
                     int operationIndex = threadNumber * OPERATION_COUNT + step;
                     Event.EventId eventId = Event.EventId.random();
                     storedEventIds.put(operationIndex, eventId);
-                    eventDeadLetters.store(groups.get(threadNumber), event(eventId));
+                    eventDeadLetters.store(groups.get(threadNumber), event(eventId)).subscribe();
                 })
                 .threadCount(THREAD_COUNT)
                 .operationCount(OPERATION_COUNT)
@@ -305,8 +302,8 @@ interface EventDeadLettersContract {
             eventDeadLetters.store(GROUP_A, EVENT_1).block();
             eventDeadLetters.store(GROUP_A, EVENT_2).block();
 
-            assertThat(eventDeadLetters.failedEvent(GROUP_A, EVENT_ID_3))
-                .isEqualTo(Mono.empty());
+            assertThat(eventDeadLetters.failedEvent(GROUP_A, EVENT_ID_3).block())
+                .isNull();
         }
 
         @Test
