@@ -29,7 +29,7 @@ interface EventDeadLetters {
 
     Mono<Void> remove(Group registeredGroup, Event.EventId failDeliveredEventId);
 
-    Mono<Event.EventId> failedEventId(Group registeredGroup, Event.EventId failDeliveredEventId);
+    Mono<Event> failedEvent(Group registeredGroup, Event.EventId failDeliveredEventId);
 
     Flux<Event.EventId> failedEventIds(Group registeredGroup);
 
