@@ -24,9 +24,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.IntStream;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.apache.james.core.User;
@@ -40,7 +39,9 @@ import org.apache.james.util.concurrency.ConcurrentTestRunner;
 import org.junit.jupiter.api.Test;
 
 import com.github.steveash.guavate.Guavate;
+import com.google.common.base.Functions;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
@@ -59,38 +60,23 @@ interface EventDeadLettersContract {
     class Group8 extends Group{}
     class Group9 extends Group{}
 
-    static ConcurrentHashMap<Integer, Group> concurrentGroups() {
-        ConcurrentHashMap<Integer, Group> concurrentGroups = new ConcurrentHashMap<>();
-        concurrentGroups.put(0, new Group0());
-        concurrentGroups.put(1, new Group1());
-        concurrentGroups.put(2, new Group2());
-        concurrentGroups.put(3, new Group3());
-        concurrentGroups.put(4, new Group4());
-        concurrentGroups.put(5, new Group5());
-        concurrentGroups.put(6, new Group6());
-        concurrentGroups.put(7, new Group7());
-        concurrentGroups.put(8, new Group8());
-        concurrentGroups.put(9, new Group9());
-        return concurrentGroups;
-    }
+    static ImmutableMap<Integer, Group> concurrentGroups() {
+        AtomicInteger index = new AtomicInteger(0);
+        Stream<Group> groups = Stream.of(new Group0(), new Group1(), new Group2(), new Group3(), new Group4(), new Group5(),
+            new Group6(), new Group7(), new Group8(), new Group9());
 
-    static void runConcurrent(ConcurrentTestRunner.ConcurrentOperation concurrentOperation) throws Exception {
-        ConcurrentTestRunner.builder()
-            .operation(concurrentOperation)
-            .threadCount(THREAD_COUNT)
-            .operationCount(OPERATION_COUNT)
-            .runSuccessfullyWithin(Duration.ofSeconds(5));
+        return groups.collect(Guavate.toImmutableMap(
+            group -> index.getAndIncrement(),
+            Functions.identity()));
     }
 
     static Event event(Event.EventId eventId) {
         return new MailboxListener.MailboxAdded(SESSION_ID, USER, MAILBOX_PATH, MAILBOX_ID, eventId);
     }
 
+    Duration RUN_SUCCESSFULLY_IN = Duration.ofSeconds(5);
     int THREAD_COUNT = 10;
     int OPERATION_COUNT = 50;
-    int TOTAL_OPERATIONS = THREAD_COUNT * OPERATION_COUNT;
-    List<Integer> OPERATION_INDEXES = IntStream.range(0, TOTAL_OPERATIONS).boxed()
-        .collect(Guavate.toImmutableList());
 
     MailboxPath MAILBOX_PATH = new MailboxPath(MailboxConstants.USER_NAMESPACE, "user", "mailboxName");
     User USER = User.fromUsername("user");
@@ -150,8 +136,8 @@ interface EventDeadLettersContract {
             EventDeadLetters eventDeadLetters = eventDeadLetters();
 
             eventDeadLetters.store(GROUP_A, EVENT_1).block();
-            assertThat(eventDeadLetters.failedEventId(GROUP_A, EVENT_1.getEventId()).block())
-                .isEqualTo(EVENT_ID_1);
+            assertThat(eventDeadLetters.failedEvent(GROUP_A, EVENT_1.getEventId()).block())
+                .isEqualTo(EVENT_1);
         }
 
         @Test
@@ -170,13 +156,18 @@ interface EventDeadLettersContract {
         default void storeShouldKeepConsistencyWhenConcurrentStore() throws Exception {
             EventDeadLetters eventDeadLetters = eventDeadLetters();
 
-            ConcurrentHashMap<Integer, Group> groups = concurrentGroups();
+            ImmutableMap<Integer, Group> groups = concurrentGroups();
             Multimap<Integer, Event.EventId> storedEventIds = Multimaps.synchronizedSetMultimap(HashMultimap.create());
-            runConcurrent((threadNumber, step) -> {
-                Event.EventId eventId = Event.EventId.random();
-                storedEventIds.put(threadNumber, eventId);
-                eventDeadLetters.store(groups.get(threadNumber), event(eventId));
-            });
+
+            ConcurrentTestRunner.builder()
+                .operation((threadNumber, step) -> {
+                    Event.EventId eventId = Event.EventId.random();
+                    storedEventIds.put(threadNumber, eventId);
+                    eventDeadLetters.store(groups.get(threadNumber), event(eventId));
+                })
+                .threadCount(THREAD_COUNT)
+                .operationCount(OPERATION_COUNT)
+                .runSuccessfullyWithin(RUN_SUCCESSFULLY_IN);
 
             groups.forEach((groupId, group) -> {
                 Group storedGroup = groups.get(groupId);
@@ -221,7 +212,7 @@ interface EventDeadLettersContract {
 
             eventDeadLetters.remove(GROUP_A, EVENT_1.getEventId()).block();
 
-            assertThat(eventDeadLetters.failedEventId(GROUP_A, EVENT_1.getEventId()).block())
+            assertThat(eventDeadLetters.failedEvent(GROUP_A, EVENT_1.getEventId()).block())
                 .isNull();
         }
 
@@ -253,19 +244,28 @@ interface EventDeadLettersContract {
         default void removeShouldKeepConsistencyWhenConcurrentRemove() throws Exception {
             EventDeadLetters eventDeadLetters = eventDeadLetters();
 
-            ConcurrentHashMap<Integer, Group> groups = concurrentGroups();
+            ImmutableMap<Integer, Group> groups = concurrentGroups();
             ConcurrentHashMap<Integer, Event.EventId> storedEventIds = new ConcurrentHashMap<>();
-            OPERATION_INDEXES.forEach(operationIndex -> {
-                int groupNumber = operationIndex / OPERATION_COUNT;
-                Event.EventId eventId = Event.EventId.random();
-                storedEventIds.put(operationIndex, eventId);
-                eventDeadLetters.store(groups.get(groupNumber), event(eventId));
-            });
 
-            runConcurrent((threadNumber, step) -> {
-                int operationIndex = threadNumber * OPERATION_COUNT + step;
-                eventDeadLetters.remove(groups.get(threadNumber), storedEventIds.get(operationIndex));
-            });
+            ConcurrentTestRunner.builder()
+                .operation((threadNumber, step) -> {
+                    int operationIndex = threadNumber * OPERATION_COUNT + step;
+                    Event.EventId eventId = Event.EventId.random();
+                    storedEventIds.put(operationIndex, eventId);
+                    eventDeadLetters.store(groups.get(threadNumber), event(eventId));
+                })
+                .threadCount(THREAD_COUNT)
+                .operationCount(OPERATION_COUNT)
+                .runSuccessfullyWithin(RUN_SUCCESSFULLY_IN);
+
+            ConcurrentTestRunner.builder()
+                .operation((threadNumber, step) -> {
+                    int operationIndex = threadNumber * OPERATION_COUNT + step;
+                    eventDeadLetters.remove(groups.get(threadNumber), storedEventIds.get(operationIndex));
+                })
+                .threadCount(THREAD_COUNT)
+                .operationCount(OPERATION_COUNT)
+                .runSuccessfullyWithin(RUN_SUCCESSFULLY_IN);
 
             assertThat(allEventIds())
                 .isEmpty();
@@ -278,7 +278,7 @@ interface EventDeadLettersContract {
         default void failedEventShouldThrowWhenGroupIsNull() {
             EventDeadLetters eventDeadLetters = eventDeadLetters();
 
-            assertThatThrownBy(() -> eventDeadLetters.failedEventId(NULL_GROUP, EVENT_ID_1))
+            assertThatThrownBy(() -> eventDeadLetters.failedEvent(NULL_GROUP, EVENT_ID_1))
                 .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -286,7 +286,7 @@ interface EventDeadLettersContract {
         default void failedEventShouldThrowWhenEventIdIsNull() {
             EventDeadLetters eventDeadLetters = eventDeadLetters();
 
-            assertThatThrownBy(() -> eventDeadLetters.failedEventId(GROUP_A, NULL_EVENT_ID))
+            assertThatThrownBy(() -> eventDeadLetters.failedEvent(GROUP_A, NULL_EVENT_ID))
                 .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -294,7 +294,7 @@ interface EventDeadLettersContract {
         default void failedEventShouldThrowWhenBothGroupAndEventIdAreNull() {
             EventDeadLetters eventDeadLetters = eventDeadLetters();
 
-            assertThatThrownBy(() -> eventDeadLetters.failedEventId(NULL_GROUP, NULL_EVENT_ID))
+            assertThatThrownBy(() -> eventDeadLetters.failedEvent(NULL_GROUP, NULL_EVENT_ID))
                 .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -305,7 +305,7 @@ interface EventDeadLettersContract {
             eventDeadLetters.store(GROUP_A, EVENT_1).block();
             eventDeadLetters.store(GROUP_A, EVENT_2).block();
 
-            assertThat(eventDeadLetters.failedEventId(GROUP_A, EVENT_ID_3))
+            assertThat(eventDeadLetters.failedEvent(GROUP_A, EVENT_ID_3))
                 .isEqualTo(Mono.empty());
         }
 
@@ -316,8 +316,8 @@ interface EventDeadLettersContract {
             eventDeadLetters.store(GROUP_A, EVENT_1).block();
             eventDeadLetters.store(GROUP_A, EVENT_2).block();
 
-            assertThat(eventDeadLetters.failedEventId(GROUP_A, EVENT_1.getEventId()).block())
-                .isEqualTo(EVENT_ID_1);
+            assertThat(eventDeadLetters.failedEvent(GROUP_A, EVENT_1.getEventId()).block())
+                .isEqualTo(EVENT_1);
         }
 
         @Test
@@ -328,7 +328,7 @@ interface EventDeadLettersContract {
             eventDeadLetters.store(GROUP_A, EVENT_2).block();
             eventDeadLetters.store(GROUP_A, EVENT_3).block();
 
-            eventDeadLetters.failedEventId(GROUP_A, EVENT_1.getEventId()).block();
+            eventDeadLetters.failedEvent(GROUP_A, EVENT_1.getEventId()).block();
 
             assertThat(allEventIds())
                 .containsOnly(EVENT_ID_1, EVENT_ID_2, EVENT_ID_3);

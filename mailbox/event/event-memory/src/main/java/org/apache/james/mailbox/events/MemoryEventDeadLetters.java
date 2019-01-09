@@ -20,7 +20,6 @@
 package org.apache.james.mailbox.events;
 
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import org.apache.james.mailbox.Event;
 
@@ -65,36 +64,29 @@ public class MemoryEventDeadLetters implements EventDeadLetters {
     }
 
     @Override
-    public Mono<Event.EventId> failedEventId(Group registeredGroup, Event.EventId failDeliveredEventId) {
+    public Mono<Event> failedEvent(Group registeredGroup, Event.EventId failDeliveredEventId) {
         Preconditions.checkArgument(registeredGroup != null, REGISTERED_GROUP_CANNOT_BE_NULL);
         Preconditions.checkArgument(failDeliveredEventId != null, FAIL_DELIVERED_ID_EVENT_CANNOT_BE_NULL);
 
-        return findEventId(registeredGroup, failDeliveredEventId);
+        Optional<Event> failedEventMaybe = deadLetters.get(registeredGroup)
+            .stream()
+            .filter(event -> event.getEventId().equals(failDeliveredEventId))
+            .findFirst();
+
+        return Mono.justOrEmpty(failedEventMaybe);
     }
 
     @Override
     public Flux<Event.EventId> failedEventIds(Group registeredGroup) {
         Preconditions.checkArgument(registeredGroup != null, REGISTERED_GROUP_CANNOT_BE_NULL);
 
-        return Flux.fromStream(findEventIds(registeredGroup));
+        return Flux.fromStream(deadLetters.get(registeredGroup)
+            .stream()
+            .map(Event::getEventId));
     }
 
     @Override
     public Flux<Group> groupsWithFailedEvents() {
         return Flux.fromIterable(deadLetters.keySet());
-    }
-
-    private Mono<Event.EventId> findEventId(Group registeredGroup, Event.EventId failDeliveredEventId) {
-        Optional<Event.EventId> failedEventIdMaybe = findEventIds(registeredGroup)
-            .filter(eventId -> eventId.equals(failDeliveredEventId))
-            .findAny();
-
-        return Mono.justOrEmpty(failedEventIdMaybe);
-    }
-
-    private Stream<Event.EventId> findEventIds(Group registeredGroup) {
-        return deadLetters.get(registeredGroup)
-            .stream()
-            .map(Event::getEventId);
     }
 }
