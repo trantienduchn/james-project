@@ -126,11 +126,11 @@ interface ErrorHandlingContract extends EventBusContract {
     }
 
     @Test
-    default void dispatchShouldTakeTimeToDoRetries() {
+    default void retriesBackOffShouldDelayByExponentialGrowth() {
         ThrowingListener throwingListener = throwingListener();
 
         eventBus().register(throwingListener, new EventBusTestFixture.GroupA());
-        long dispatchingInMs = recordTimeRun(() -> eventBus().dispatch(EVENT, NO_KEYS).block());
+        eventBus().dispatch(EVENT, NO_KEYS).block();
 
         SoftAssertions.assertSoftly(softly -> {
             softly.assertThat(throwingListener.timeElapsed).hasSize(4);
@@ -138,8 +138,6 @@ interface ErrorHandlingContract extends EventBusContract {
             long minFirstDelayAfter = 100; // first backOff
             long minSecondDelayAfter = 100; // 200 * jitter factor (200 * 0.5)
             long minThirdDelayAfter = 200; // 400 * jitter factor (400 * 0.5)
-            softly.assertThat(dispatchingInMs)
-                .isGreaterThanOrEqualTo(minFirstDelayAfter + minSecondDelayAfter + minThirdDelayAfter);
 
             softly.assertThat(throwingListener.timeElapsed.get(1))
                 .isAfterOrEqualTo(throwingListener.timeElapsed.get(0).plusMillis(minFirstDelayAfter));
