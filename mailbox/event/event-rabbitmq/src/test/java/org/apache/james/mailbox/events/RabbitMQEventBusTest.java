@@ -205,7 +205,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
     }
 
     @Nested
-    class AvailabilityTest {
+    class AtLeastOnceTest {
 
         @Test
         void inProcessingEventShouldBeReDispatchedToAnotherEventBusWhenOneIsDown() {
