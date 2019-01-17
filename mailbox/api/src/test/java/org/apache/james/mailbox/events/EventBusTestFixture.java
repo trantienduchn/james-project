@@ -24,6 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.james.core.User;
@@ -73,6 +74,41 @@ public interface EventBusTestFixture {
                 throw new RuntimeException("event triggers throwing");
             }
             super.event(event);
+        }
+    }
+
+    class DelayingListener extends MailboxListenerCountingSuccessfulExecution {
+
+        static DelayingListener withDelayCount(int maxDelayCount) {
+            return new DelayingListener(maxDelayCount);
+        }
+
+        static long DELAY_AFTER_TIMEOUT_TWO_SECONDS = 5 + 2;
+        private final AtomicInteger delayCount;
+        private final int maxDelayCount;
+        private final long delayInSeconds;
+
+        DelayingListener(int maxDelayCount) {
+            this.maxDelayCount = maxDelayCount;
+            this.delayCount = new AtomicInteger(0);
+            this.delayInSeconds = DELAY_AFTER_TIMEOUT_TWO_SECONDS;
+        }
+
+        @Override
+        public void event(Event event) {
+            if (delayCount.incrementAndGet() <= maxDelayCount) {
+                delayForever();
+            } else {
+                super.event(event);
+            }
+        }
+
+        private void delayForever() {
+            try {
+                TimeUnit.SECONDS.sleep(delayInSeconds);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 

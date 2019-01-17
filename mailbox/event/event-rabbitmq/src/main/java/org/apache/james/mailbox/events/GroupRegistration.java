@@ -28,6 +28,7 @@ import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXCHANGE_NAME;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -82,6 +83,8 @@ class GroupRegistration implements Registration {
     static String groupName(Class<? extends Group> clazz) {
         return clazz.getName();
     }
+
+    private static final Duration DEFAULT_CONSUMER_TIMEOUT = Duration.ofSeconds(5);
 
     static final String RETRY_COUNT = "retry-count";
     static final int DEFAULT_RETRY_COUNT = 0;
@@ -150,6 +153,7 @@ class GroupRegistration implements Registration {
 
         return delayGenerator.delayIfHaveTo(currentRetryCount)
             .flatMap(any -> Mono.fromRunnable(() -> mailboxListener.event(event)))
+            .timeout(DEFAULT_CONSUMER_TIMEOUT)
             .onErrorResume(throwable -> retryHandler.handleRetry(eventAsBytes, event, currentRetryCount, throwable))
             .then(Mono.fromRunnable(acknowledgableDelivery::ack))
             .subscribeWith(MonoProcessor.create())

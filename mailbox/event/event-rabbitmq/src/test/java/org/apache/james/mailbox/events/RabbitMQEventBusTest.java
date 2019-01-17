@@ -20,7 +20,6 @@
 package org.apache.james.mailbox.events;
 
 import static com.jayway.awaitility.Awaitility.await;
-import static com.jayway.awaitility.Duration.FOREVER;
 import static org.apache.james.backend.rabbitmq.Constants.AUTO_DELETE;
 import static org.apache.james.backend.rabbitmq.Constants.DIRECT_EXCHANGE;
 import static org.apache.james.backend.rabbitmq.Constants.DURABLE;
@@ -28,6 +27,7 @@ import static org.apache.james.backend.rabbitmq.Constants.EMPTY_ROUTING_KEY;
 import static org.apache.james.backend.rabbitmq.Constants.EXCLUSIVE;
 import static org.apache.james.backend.rabbitmq.Constants.NO_ARGUMENTS;
 import static org.apache.james.mailbox.events.EventBusTestFixture.ALL_GROUPS;
+import static org.apache.james.mailbox.events.EventBusTestFixture.DelayingListener.DELAY_AFTER_TIMEOUT_TWO_SECONDS;
 import static org.apache.james.mailbox.events.EventBusTestFixture.EVENT;
 import static org.apache.james.mailbox.events.EventBusTestFixture.GROUP_A;
 import static org.apache.james.mailbox.events.EventBusTestFixture.GroupA;
@@ -203,23 +203,35 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
             .anyMatch(exchange -> exchange.getName().equals(retryExchangeName.asString()));
     }
 
-    @Test
-    @Disabled("RabbitMQ will wait forever if there is no ack, there is no timeout configurable," +
-        "but possible to set timeout to consumer therefore trigger acking")
-    void eventBusShouldWaitTillConsumersAck() {
-        MailboxListenerCountingSuccessfulExecution listener = spy(new MailboxListenerCountingSuccessfulExecution());
-        doAnswer(invocation -> {
-            TimeUnit.MILLISECONDS.sleep(Long.MAX_VALUE);
-            System.out.println("stop sleep");
-            return invocation.callRealMethod();
-        })
-            .when(listener).event(EVENT);
+    @Nested
+    class TimeoutTest {
 
-        eventBus.register(listener, GROUP_A);
-        eventBus.dispatch(EVENT, NO_KEYS).block();
+        @Test
+        void consumerShouldAbortWhenGetOverTimeOut() throws Exception {
+            MailboxListenerCountingSuccessfulExecution listener = spy(new MailboxListenerCountingSuccessfulExecution());
+            doAnswer(invocation -> {
+                TimeUnit.SECONDS.sleep(Long.MAX_VALUE);
+                return invocation.callRealMethod();
+            })
+                .when(listener).event(EVENT);
 
-        await().timeout(FOREVER)
-            .until(() -> assertThat(listener.numberOfEventCalls()).isEqualTo(1));
+            eventBus.register(listener, GROUP_A);
+            eventBus.dispatch(EVENT, NO_KEYS).block();
+
+            TimeUnit.SECONDS.sleep(DELAY_AFTER_TIMEOUT_TWO_SECONDS);
+            assertThat(listener.numberOfEventCalls()).isEqualTo(0);
+        }
+
+        @Test
+        void retryConsumerShouldReceiveEventWhenPreviousConsumerGetOverTimeOut() {
+            EventBusTestFixture.DelayingListener listener = EventBusTestFixture.DelayingListener.withDelayCount(1);
+
+            eventBus.register(listener, GROUP_A);
+            eventBus.dispatch(EVENT, NO_KEYS).block();
+
+            await().timeout(com.jayway.awaitility.Duration.TEN_SECONDS)
+                .until(() -> assertThat(listener.numberOfEventCalls()).isEqualTo(1));
+        }
     }
 
     @Nested
