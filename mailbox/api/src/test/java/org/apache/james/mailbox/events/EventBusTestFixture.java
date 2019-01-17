@@ -83,15 +83,23 @@ public interface EventBusTestFixture {
             return new DelayingListener(maxDelayCount);
         }
 
+        static DelayingListener withInfinityDelay(int maxDelayCount) {
+            return new DelayingListener(maxDelayCount, Long.MAX_VALUE);
+        }
+
         static long DELAY_AFTER_TIMEOUT_TWO_SECONDS = 5 + 2;
         private final AtomicInteger delayCount;
         private final int maxDelayCount;
         private final long delayInSeconds;
 
-        DelayingListener(int maxDelayCount) {
+        DelayingListener(int maxDelayCount, long delayInSeconds) {
             this.maxDelayCount = maxDelayCount;
             this.delayCount = new AtomicInteger(0);
-            this.delayInSeconds = DELAY_AFTER_TIMEOUT_TWO_SECONDS;
+            this.delayInSeconds = delayInSeconds;
+        }
+
+        DelayingListener(int maxDelayCount) {
+            this(maxDelayCount, DELAY_AFTER_TIMEOUT_TWO_SECONDS);
         }
 
         @Override

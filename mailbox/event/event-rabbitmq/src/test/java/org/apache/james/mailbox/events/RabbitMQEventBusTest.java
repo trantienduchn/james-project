@@ -232,6 +232,17 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
             await().timeout(com.jayway.awaitility.Duration.TEN_SECONDS)
                 .until(() -> assertThat(listener.numberOfEventCalls()).isEqualTo(1));
         }
+
+        @Test
+        void infinityDeliveryShouldNotPreventRetryEffort() {
+            EventBusTestFixture.DelayingListener listener = EventBusTestFixture.DelayingListener.withInfinityDelay(1);
+
+            eventBus.register(listener, GROUP_A);
+            eventBus.dispatch(EVENT, NO_KEYS).block();
+
+            await().timeout(com.jayway.awaitility.Duration.TEN_SECONDS)
+                .until(() -> assertThat(listener.numberOfEventCalls()).isEqualTo(1));
+        }
     }
 
     @Nested
