@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox.events;
 
+import static com.jayway.awaitility.Awaitility.await;
+import static com.jayway.awaitility.Duration.FOREVER;
 import static org.apache.james.backend.rabbitmq.Constants.AUTO_DELETE;
 import static org.apache.james.backend.rabbitmq.Constants.DIRECT_EXCHANGE;
 import static org.apache.james.backend.rabbitmq.Constants.DURABLE;
@@ -37,7 +39,9 @@ import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXCHANGE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -197,6 +201,25 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
         GroupConsumerRetry.RetryExchangeName retryExchangeName = GroupConsumerRetry.RetryExchangeName.of(registeredGroup);
         assertThat(testExtension.rabbitMQExtension.managementAPI().listExchanges())
             .anyMatch(exchange -> exchange.getName().equals(retryExchangeName.asString()));
+    }
+
+    @Test
+    @Disabled("RabbitMQ will wait forever if there is no ack, there is no timeout configurable," +
+        "but possible to set timeout to consumer therefore trigger acking")
+    void eventBusShouldWaitTillConsumersAck() {
+        MailboxListenerCountingSuccessfulExecution listener = spy(new MailboxListenerCountingSuccessfulExecution());
+        doAnswer(invocation -> {
+            TimeUnit.MILLISECONDS.sleep(Long.MAX_VALUE);
+            System.out.println("stop sleep");
+            return invocation.callRealMethod();
+        })
+            .when(listener).event(EVENT);
+
+        eventBus.register(listener, GROUP_A);
+        eventBus.dispatch(EVENT, NO_KEYS).block();
+
+        await().timeout(FOREVER)
+            .until(() -> assertThat(listener.numberOfEventCalls()).isEqualTo(1));
     }
 
     @Nested
