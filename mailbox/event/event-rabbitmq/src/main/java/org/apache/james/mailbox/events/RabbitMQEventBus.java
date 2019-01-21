@@ -45,6 +45,7 @@ class RabbitMQEventBus implements EventBus {
     private final AtomicBoolean isRunning;
     private final RoutingKeyConverter routingKeyConverter;
     private final RetryBackoffConfiguration retryBackoff;
+    private final EventDeadLetters eventDeadLetters;
 
     private GroupRegistrationHandler groupRegistrationHandler;
     private KeyRegistrationHandler keyRegistrationHandler;
@@ -53,11 +54,13 @@ class RabbitMQEventBus implements EventBus {
 
     RabbitMQEventBus(RabbitMQConnectionFactory rabbitMQConnectionFactory, EventSerializer eventSerializer,
                      RetryBackoffConfiguration retryBackoff,
-                     RoutingKeyConverter routingKeyConverter) {
+                     RoutingKeyConverter routingKeyConverter,
+                     EventDeadLetters eventDeadLetters) {
         this.connectionMono = Mono.fromSupplier(rabbitMQConnectionFactory::create).cache();
         this.eventSerializer = eventSerializer;
         this.routingKeyConverter = routingKeyConverter;
         this.retryBackoff = retryBackoff;
+        this.eventDeadLetters = eventDeadLetters;
         this.isRunning = new AtomicBoolean(false);
     }
 
@@ -65,7 +68,7 @@ class RabbitMQEventBus implements EventBus {
         if (!isRunning.get()) {
             sender = RabbitFlux.createSender(new SenderOptions().connectionMono(connectionMono));
             keyRegistrationHandler = new KeyRegistrationHandler(eventSerializer, sender, connectionMono, routingKeyConverter);
-            groupRegistrationHandler = new GroupRegistrationHandler(eventSerializer, sender, connectionMono, retryBackoff);
+            groupRegistrationHandler = new GroupRegistrationHandler(eventSerializer, sender, connectionMono, retryBackoff, eventDeadLetters);
             eventDispatcher = new EventDispatcher(eventSerializer, sender);
 
             eventDispatcher.start();

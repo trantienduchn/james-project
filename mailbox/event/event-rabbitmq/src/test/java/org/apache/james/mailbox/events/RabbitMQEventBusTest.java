@@ -128,9 +128,11 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
     private RabbitMQConnectionFactory connectionFactory;
     private EventSerializer eventSerializer;
     private RoutingKeyConverter routingKeyConverter;
+    private MemoryEventDeadLetters memoryEventDeadLetters;
 
     @BeforeEach
     void setUp() {
+        memoryEventDeadLetters = new MemoryEventDeadLetters();
         connectionFactory = RabbitMQEventExtension.rabbitMQExtension.getConnectionFactory();
         Mono<Connection> connectionMono = Mono.fromSupplier(connectionFactory::create).cache();
 
@@ -161,7 +163,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
     }
 
     private RabbitMQEventBus newEventBus() {
-        return new RabbitMQEventBus(connectionFactory, eventSerializer, RetryBackoffConfiguration.DEFAULT, routingKeyConverter);
+        return new RabbitMQEventBus(connectionFactory, eventSerializer, RetryBackoffConfiguration.DEFAULT, routingKeyConverter, memoryEventDeadLetters);
     }
 
     @Override
@@ -177,6 +179,11 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
     @Override
     public EventBus eventBus3() {
         return eventBus3;
+    }
+
+    @Override
+    public EventDeadLetters deadLetter() {
+        return memoryEventDeadLetters;
     }
 
     @Override
