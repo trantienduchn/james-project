@@ -25,11 +25,19 @@ import static org.apache.james.mailbox.events.RabbitMQEventBus.EVENT_BUS_ID;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXCHANGE_NAME;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
+import org.apache.james.util.StreamUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +60,9 @@ public class EventDispatcher {
     private final Sender sender;
     private final MailboxListenerRegistry mailboxListenerRegistry;
     private final AMQP.BasicProperties basicProperties;
+    private final BlockingQueue<OutboundMessage> deliveryQueue;
+    private final Flux<OutboundMessage> hotFlux;
+    private final AtomicBoolean isRunning;
 
     EventDispatcher(EventBusId eventBusId, EventSerializer eventSerializer, Sender sender, MailboxListenerRegistry mailboxListenerRegistry) {
         this.eventSerializer = eventSerializer;
@@ -60,6 +71,23 @@ public class EventDispatcher {
         this.basicProperties = new AMQP.BasicProperties.Builder()
             .headers(ImmutableMap.of(EVENT_BUS_ID, eventBusId.asString()))
             .build();
+        this.isRunning = new AtomicBoolean(true);
+        this.deliveryQueue = new LinkedBlockingQueue<>();
+        this.hotFlux = Flux.create(sink -> {
+                while (isRunning.get()) {
+                    takeElementFromQueue().ifPresent(sink::next);
+                }
+            });
+    }
+
+    private Optional<OutboundMessage> takeElementFromQueue() {
+        try {
+            return Optional.of(deliveryQueue.take());
+        } catch (InterruptedException e) {
+            LOGGER.error("Error while dequeueing element from deliveryQueue", e);
+        }
+
+        return Optional.empty();
     }
 
     void start() {
@@ -67,6 +95,10 @@ public class EventDispatcher {
             .durable(DURABLE)
             .type(DIRECT_EXCHANGE))
             .block();
+
+        sender.send(hotFlux)
+            .subscribeOn(Schedulers.elastic())
+            .subscribe();
     }
 
     Mono<Void> dispatch(Event event, Set<RegistrationKey> keys) {
@@ -91,16 +123,16 @@ public class EventDispatcher {
     }
 
     private Mono<Void> doDispatch(Mono<byte[]> serializedEvent, Set<RegistrationKey> keys) {
-        Flux<RoutingKeyConverter.RoutingKey> routingKeys = Flux.concat(
-            Mono.just(RoutingKeyConverter.RoutingKey.empty()),
-            Flux.fromIterable(keys)
-                .map(RoutingKeyConverter.RoutingKey::of));
+        return Flux.just(RoutingKeyConverter.RoutingKey.empty())
+            .concatWith(Flux.fromIterable(keys).map(RoutingKeyConverter.RoutingKey::of))
+            .flatMap(routingKey -> createOutBoundMessage(serializedEvent, routingKey))
+            .flatMap(message -> Mono.fromRunnable(() -> deliveryQueue.add(message)))
+            .then();
+    }
 
-        Flux<OutboundMessage> outboundMessages = routingKeys
-            .flatMap(routingKey -> serializedEvent
-                .map(payload -> new OutboundMessage(MAILBOX_EVENT_EXCHANGE_NAME, routingKey.asString(), basicProperties, payload)));
-
-        return sender.send(outboundMessages);
+    private Mono<OutboundMessage> createOutBoundMessage(Mono<byte[]> serializedEvent, RoutingKeyConverter.RoutingKey routingKey) {
+        return serializedEvent.map(payload ->
+            new OutboundMessage(MAILBOX_EVENT_EXCHANGE_NAME, routingKey.asString(), basicProperties, payload));
     }
 
     private byte[] serializeEvent(Event event) {
