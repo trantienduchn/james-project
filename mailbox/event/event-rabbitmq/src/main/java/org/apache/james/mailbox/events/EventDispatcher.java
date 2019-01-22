@@ -25,19 +25,11 @@ import static org.apache.james.mailbox.events.RabbitMQEventBus.EVENT_BUS_ID;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXCHANGE_NAME;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.Event;
 import org.apache.james.mailbox.MailboxListener;
-import org.apache.james.util.StreamUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +38,7 @@ import com.google.common.collect.ImmutableMap;
 import com.rabbitmq.client.AMQP;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoProcessor;
 import reactor.core.scheduler.Schedulers;
@@ -60,9 +53,8 @@ public class EventDispatcher {
     private final Sender sender;
     private final MailboxListenerRegistry mailboxListenerRegistry;
     private final AMQP.BasicProperties basicProperties;
-    private final BlockingQueue<OutboundMessage> deliveryQueue;
     private final Flux<OutboundMessage> hotFlux;
-    private final AtomicBoolean isRunning;
+    private FluxSink<OutboundMessage> fluxSink;
 
     EventDispatcher(EventBusId eventBusId, EventSerializer eventSerializer, Sender sender, MailboxListenerRegistry mailboxListenerRegistry) {
         this.eventSerializer = eventSerializer;
@@ -71,24 +63,9 @@ public class EventDispatcher {
         this.basicProperties = new AMQP.BasicProperties.Builder()
             .headers(ImmutableMap.of(EVENT_BUS_ID, eventBusId.asString()))
             .build();
-        this.isRunning = new AtomicBoolean(true);
-        this.deliveryQueue = new LinkedBlockingQueue<>();
-        this.hotFlux = Flux.create(sink -> {
-                while (isRunning.get()) {
-                    takeElementFromQueue().ifPresent(sink::next);
-                }
-            });
+        this.hotFlux = Flux.create(sink -> this.fluxSink = sink);
     }
 
-    private Optional<OutboundMessage> takeElementFromQueue() {
-        try {
-            return Optional.of(deliveryQueue.take());
-        } catch (InterruptedException e) {
-            LOGGER.error("Error while dequeueing element from deliveryQueue", e);
-        }
-
-        return Optional.empty();
-    }
 
     void start() {
         sender.declareExchange(ExchangeSpecification.exchange(MAILBOX_EVENT_EXCHANGE_NAME)
@@ -96,6 +73,7 @@ public class EventDispatcher {
             .type(DIRECT_EXCHANGE))
             .block();
 
+        // call fluxSink.complete() when stopping consumer
         sender.send(hotFlux)
             .subscribeOn(Schedulers.elastic())
             .subscribe();
@@ -126,7 +104,7 @@ public class EventDispatcher {
         return Flux.just(RoutingKeyConverter.RoutingKey.empty())
             .concatWith(Flux.fromIterable(keys).map(RoutingKeyConverter.RoutingKey::of))
             .flatMap(routingKey -> createOutBoundMessage(serializedEvent, routingKey))
-            .flatMap(message -> Mono.fromRunnable(() -> deliveryQueue.add(message)))
+            .flatMap(message -> Mono.fromRunnable(() -> fluxSink.next(message)))
             .then();
     }
 
