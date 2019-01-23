@@ -38,6 +38,7 @@ import com.google.common.collect.ImmutableMap;
 import com.rabbitmq.client.AMQP;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoProcessor;
 import reactor.core.scheduler.Schedulers;
@@ -52,6 +53,8 @@ public class EventDispatcher {
     private final Sender sender;
     private final MailboxListenerRegistry mailboxListenerRegistry;
     private final AMQP.BasicProperties basicProperties;
+    private final Flux<OutboundMessage> flux;
+    private FluxSink<OutboundMessage> fluxSink;
 
     EventDispatcher(EventBusId eventBusId, EventSerializer eventSerializer, Sender sender, MailboxListenerRegistry mailboxListenerRegistry) {
         this.eventSerializer = eventSerializer;
@@ -60,6 +63,8 @@ public class EventDispatcher {
         this.basicProperties = new AMQP.BasicProperties.Builder()
             .headers(ImmutableMap.of(EVENT_BUS_ID, eventBusId.asString()))
             .build();
+
+        this.flux = Flux.create(sink -> this.fluxSink = sink);
     }
 
     void start() {
@@ -67,6 +72,10 @@ public class EventDispatcher {
             .durable(DURABLE)
             .type(DIRECT_EXCHANGE))
             .block();
+
+        sender.send(flux)
+            .subscribeOn(Schedulers.elastic())
+            .subscribe();
     }
 
     Mono<Void> dispatch(Event event, Set<RegistrationKey> keys) {
@@ -96,11 +105,9 @@ public class EventDispatcher {
             Flux.fromIterable(keys)
                 .map(RoutingKeyConverter.RoutingKey::of));
 
-        Flux<OutboundMessage> outboundMessages = routingKeys
-            .flatMap(routingKey -> serializedEvent
-                .map(payload -> new OutboundMessage(MAILBOX_EVENT_EXCHANGE_NAME, routingKey.asString(), basicProperties, payload)));
-
-        return sender.send(outboundMessages);
+        return routingKeys
+            .flatMap(routingKey -> serializedEvent.map(payload -> fluxSink.next(new OutboundMessage(MAILBOX_EVENT_EXCHANGE_NAME, routingKey.asString(), basicProperties, payload))))
+            .then();
     }
 
     private byte[] serializeEvent(Event event) {
