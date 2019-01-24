@@ -71,6 +71,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.stubbing.Answer;
 
 import com.rabbitmq.client.Connection;
+
 import reactor.core.publisher.Mono;
 import reactor.rabbitmq.BindingSpecification;
 import reactor.rabbitmq.ExchangeSpecification;
@@ -165,6 +166,25 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
         GroupConsumerRetry.RetryExchangeName retryExchangeName = GroupConsumerRetry.RetryExchangeName.of(registeredGroup);
         assertThat(rabbitMQExtension.managementAPI().listExchanges())
             .anyMatch(exchange -> exchange.getName().equals(retryExchangeName.asString()));
+    }
+
+    @Test
+    void channelIsNotClosedAfterEventDispatched() {
+        eventBus.dispatch(EVENT, KEY_1).block();
+
+        assertThat(eventBus.getSendOptions().getChannelMono().block())
+            .satisfies(channel -> {
+                assertThat(channel.isOpen()).isTrue();
+                assertThat(channel.getConnection().isOpen()).isTrue();
+            });
+    }
+
+    @Test
+    void channelIsClosedAfterStop() {
+        eventBus.stop();
+
+        assertThat(eventBus.getSendOptions().getChannelMono().block())
+            .satisfies(channel -> assertThat(channel.isOpen()).isFalse());
     }
 
     @Nested
@@ -430,7 +450,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 eventBus.stop();
 
                 assertThat(rabbitManagementAPI.listExchanges())
-                    .anySatisfy(exchange -> exchange.getName().equals(MAILBOX_EVENT_EXCHANGE_NAME));
+                    .anySatisfy(exchange -> assertThat(exchange.getName()).contains(MAILBOX_EVENT_EXCHANGE_NAME));
             }
 
             @Test
@@ -440,7 +460,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 eventBus.stop();
 
                 assertThat(rabbitManagementAPI.listQueues())
-                    .anySatisfy(queue -> queue.getName().contains(GroupA.class.getName()));
+                    .anySatisfy(queue -> assertThat(queue.getName()).contains(GroupA.class.getName()));
             }
 
             @Test
@@ -522,7 +542,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 eventBus3.stop();
 
                 assertThat(rabbitManagementAPI.listExchanges())
-                    .anySatisfy(exchange -> exchange.getName().equals(MAILBOX_EVENT_EXCHANGE_NAME));
+                    .anySatisfy(exchange -> assertThat(exchange.getName()).isEqualTo(MAILBOX_EVENT_EXCHANGE_NAME));
             }
 
             @Test
@@ -534,7 +554,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 eventBus3.stop();
 
                 assertThat(rabbitManagementAPI.listQueues())
-                    .anySatisfy(queue -> queue.getName().contains(GroupA.class.getName()));
+                    .anySatisfy(queue -> assertThat(queue.getName())
+                        .isEqualTo(GroupRegistration.WorkQueueName.of(GROUP_A).asString()));
             }
 
             @Test

@@ -49,6 +49,7 @@ import reactor.rabbitmq.QueueSpecification;
 import reactor.rabbitmq.RabbitFlux;
 import reactor.rabbitmq.Receiver;
 import reactor.rabbitmq.ReceiverOptions;
+import reactor.rabbitmq.SendOptions;
 import reactor.rabbitmq.Sender;
 
 class GroupRegistration implements Registration {
@@ -86,8 +87,9 @@ class GroupRegistration implements Registration {
     private final MailboxListenerExecutor mailboxListenerExecutor;
     private Optional<Disposable> receiverSubscriber;
 
-    GroupRegistration(Mono<Connection> connectionSupplier, Sender sender, EventSerializer eventSerializer,
-                      MailboxListener mailboxListener, Group group, RetryBackoffConfiguration retryBackoff,
+    GroupRegistration(Mono<Connection> connectionSupplier, Sender sender, SendOptions sendOptions,
+                      EventSerializer eventSerializer, MailboxListener mailboxListener,
+                      Group group, RetryBackoffConfiguration retryBackoff,
                       EventDeadLetters eventDeadLetters,
                       Runnable unregisterGroup, MailboxListenerExecutor mailboxListenerExecutor) {
         this.eventSerializer = eventSerializer;
@@ -98,7 +100,7 @@ class GroupRegistration implements Registration {
         this.mailboxListenerExecutor = mailboxListenerExecutor;
         this.receiverSubscriber = Optional.empty();
         this.unregisterGroup = unregisterGroup;
-        this.retryHandler = new GroupConsumerRetry(sender, group, retryBackoff, eventDeadLetters);
+        this.retryHandler = new GroupConsumerRetry(sender, sendOptions, group, retryBackoff, eventDeadLetters);
         this.delayGenerator = WaitDelayGenerator.of(retryBackoff);
         this.group = group;
     }

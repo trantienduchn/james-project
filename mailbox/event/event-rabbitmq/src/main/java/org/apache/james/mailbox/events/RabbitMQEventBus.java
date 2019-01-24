@@ -19,6 +19,7 @@
 
 package org.apache.james.mailbox.events;
 
+import java.util.Optional;
 import java.util.Set;
 
 import javax.annotation.PreDestroy;
@@ -27,16 +28,24 @@ import javax.inject.Inject;
 import org.apache.james.backend.rabbitmq.RabbitMQConnectionFactory;
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.metrics.api.MetricFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.fge.lambdas.Throwing;
+import com.google.common.annotations.VisibleForTesting;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.rabbitmq.RabbitFlux;
+import reactor.rabbitmq.SendOptions;
 import reactor.rabbitmq.Sender;
 import reactor.rabbitmq.SenderOptions;
 
 public class RabbitMQEventBus implements EventBus {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQEventBus.class);
+
     static final String MAILBOX_EVENT = "mailboxEvent";
     static final String MAILBOX_EVENT_EXCHANGE_NAME = MAILBOX_EVENT + "-exchange";
     static final String EVENT_BUS_ID = "eventBusId";
@@ -48,6 +57,7 @@ public class RabbitMQEventBus implements EventBus {
     private final EventBusId eventBusId;
     private final EventDeadLetters eventDeadLetters;
     private final MailboxListenerExecutor mailboxListenerExecutor;
+    private final SendOptions sendOptions;
 
     private volatile boolean isRunning;
     private volatile boolean isStopping;
@@ -70,6 +80,9 @@ public class RabbitMQEventBus implements EventBus {
         this.eventDeadLetters = eventDeadLetters;
         this.isRunning = false;
         this.isStopping = false;
+        this.sendOptions = new SendOptions()
+            .channelMono(connectionMono.map(Throwing.function(connection -> connection.createChannel())).cache())
+            .channelCloseHandler(((signalType, channel) -> LOGGER.info("Do not close channel {} by signal {}", channel, signalType)));
     }
 
     public void start() {
@@ -78,8 +91,8 @@ public class RabbitMQEventBus implements EventBus {
                 .resourceManagementChannelMono(connectionMono.map(Throwing.function(Connection::createChannel))));
             LocalListenerRegistry localListenerRegistry = new LocalListenerRegistry();
             keyRegistrationHandler = new KeyRegistrationHandler(eventBusId, eventSerializer, sender, connectionMono, routingKeyConverter, localListenerRegistry, mailboxListenerExecutor);
-            groupRegistrationHandler = new GroupRegistrationHandler(eventSerializer, sender, connectionMono, retryBackoff, eventDeadLetters, mailboxListenerExecutor);
-            eventDispatcher = new EventDispatcher(eventBusId, eventSerializer, sender, localListenerRegistry, mailboxListenerExecutor);
+            groupRegistrationHandler = new GroupRegistrationHandler(eventSerializer, sender, sendOptions, connectionMono, retryBackoff, eventDeadLetters, mailboxListenerExecutor);
+            eventDispatcher = new EventDispatcher(eventBusId, eventSerializer, sender, sendOptions, localListenerRegistry, mailboxListenerExecutor);
 
             eventDispatcher.start();
             keyRegistrationHandler.start();
@@ -94,6 +107,11 @@ public class RabbitMQEventBus implements EventBus {
             isRunning = false;
             groupRegistrationHandler.stop();
             keyRegistrationHandler.stop();
+            sendOptions.getChannelMono()
+                .filter(this::channelOpen)
+                .flatMap(this::closeChannel)
+                .subscribeOn(Schedulers.parallel())
+                .block();
             sender.close();
         }
     }
@@ -123,5 +141,22 @@ public class RabbitMQEventBus implements EventBus {
             return Mono.empty();
         }
         throw new IllegalStateException("Event Bus is not running");
+    }
+
+    @VisibleForTesting
+    SendOptions getSendOptions() {
+        return sendOptions;
+    }
+
+    private boolean channelOpen(Channel channel) {
+        return Optional.of(channel)
+            .map(c -> c.isOpen() && c.getConnection().isOpen())
+            .orElse(false);
+    }
+
+    private Mono<Void> closeChannel(Channel channel) {
+        return Mono.fromRunnable(Throwing.runnable(() -> channel.close()))
+            .doOnError(throwable -> LOGGER.warn("Channel didn't close normally: {}", throwable.getMessage()))
+            .then();
     }
 }
