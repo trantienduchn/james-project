@@ -66,12 +66,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.stubbing.Answer;
 
 import com.rabbitmq.client.Connection;
+
 import reactor.core.publisher.Mono;
 import reactor.rabbitmq.BindingSpecification;
 import reactor.rabbitmq.ExchangeSpecification;
@@ -458,6 +458,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 }).doesNotThrowAnyException();
             }
 
+            @Disabled("JAMES-2659 unstable test")
             @Test
             void registrationsShouldNotHandleEventsAfterStop() throws Exception {
                 eventBus.start();
@@ -549,6 +550,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                     .isEmpty();
             }
 
+            @Disabled("JAMES-2659 unstable test")
             @Test
             void registrationsShouldNotHandleEventsAfterStop() throws Exception {
                 eventBus.start();
