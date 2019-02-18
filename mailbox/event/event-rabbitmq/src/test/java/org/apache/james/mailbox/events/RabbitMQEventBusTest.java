@@ -184,8 +184,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
     void channelIsClosedAfterStop() {
         eventBus.stop();
 
-        assertThat(eventBus.getSendOptions().getChannelMono().block())
-            .satisfies(channel -> assertThat(channel.isOpen()).isFalse());
+        assertThat(eventBus.getChannels())
+            .allSatisfy(channel -> assertThat(channel.isOpen()).isFalse());
     }
 
     @Nested

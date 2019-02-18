@@ -19,8 +19,11 @@
 
 package org.apache.james.mailbox.events;
 
+import java.io.IOException;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
@@ -37,7 +40,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
+import reactor.core.publisher.SignalType;
 import reactor.rabbitmq.RabbitFlux;
 import reactor.rabbitmq.SendOptions;
 import reactor.rabbitmq.Sender;
@@ -58,6 +61,9 @@ public class RabbitMQEventBus implements EventBus {
     private final EventDeadLetters eventDeadLetters;
     private final MailboxListenerExecutor mailboxListenerExecutor;
     private final SendOptions sendOptions;
+    private final Mono<Channel> channelMono;
+    private final BiConsumer<SignalType, Channel> channelCloseHandler;
+    private final Set<Channel> channels = new HashSet<>();
 
     private volatile boolean isRunning;
     private volatile boolean isStopping;
@@ -80,15 +86,22 @@ public class RabbitMQEventBus implements EventBus {
         this.eventDeadLetters = eventDeadLetters;
         this.isRunning = false;
         this.isStopping = false;
+        this.channelMono = connectionMono.map(Throwing.function(this::createChannel));
+        this.channelCloseHandler = (signalType, channel) -> LOGGER.info("Do not close channel {} by signal {}", channel, signalType);
         this.sendOptions = new SendOptions()
-            .channelMono(connectionMono.map(Throwing.function(Connection::createChannel)))
-            .channelCloseHandler(((signalType, channel) -> LOGGER.info("Do not close channel {} by signal {}", channel, signalType)));
+            .channelMono(channelMono)
+            .channelCloseHandler(channelCloseHandler);
+    }
+
+    private Channel createChannel(Connection connection) throws IOException {
+        Channel channel = connection.createChannel();
+        channels.add(channel);
+        return channel;
     }
 
     public void start() {
         if (!isRunning && !isStopping) {
-            sender = RabbitFlux.createSender(new SenderOptions().connectionMono(connectionMono)
-                .resourceManagementChannelMono(connectionMono.map(Throwing.function(Connection::createChannel))));
+            sender = RabbitFlux.createSender(new SenderOptions().resourceManagementChannelMono(channelMono).channelCloseHandler(channelCloseHandler));
             LocalListenerRegistry localListenerRegistry = new LocalListenerRegistry();
             keyRegistrationHandler = new KeyRegistrationHandler(eventBusId, eventSerializer, sender, connectionMono, routingKeyConverter, localListenerRegistry, mailboxListenerExecutor);
             groupRegistrationHandler = new GroupRegistrationHandler(eventSerializer, sender, sendOptions, connectionMono, retryBackoff, eventDeadLetters, mailboxListenerExecutor);
@@ -107,11 +120,7 @@ public class RabbitMQEventBus implements EventBus {
             isRunning = false;
             groupRegistrationHandler.stop();
             keyRegistrationHandler.stop();
-            sendOptions.getChannelMono()
-                .filter(this::channelOpen)
-                .flatMap(this::closeChannel)
-                .subscribeOn(Schedulers.elastic())
-                .block();
+            channels.forEach(this::closeChannel);
             sender.close();
         }
     }
@@ -148,15 +157,14 @@ public class RabbitMQEventBus implements EventBus {
         return sendOptions;
     }
 
-    private boolean channelOpen(Channel channel) {
-        return Optional.of(channel)
-            .map(c -> c.isOpen() && c.getConnection().isOpen())
-            .orElse(false);
+    @VisibleForTesting
+    Set<Channel> getChannels() {
+        return channels;
     }
 
-    private Mono<Void> closeChannel(Channel channel) {
-        return Mono.fromRunnable(Throwing.runnable(() -> channel.close()))
-            .doOnError(throwable -> LOGGER.warn("Channel didn't close normally: {}", throwable.getMessage()))
-            .then();
+    private void closeChannel(Channel channel) {
+        Optional.ofNullable(channel)
+            .filter(Channel::isOpen)
+            .ifPresent(Throwing.consumer(Channel::close));
     }
 }
