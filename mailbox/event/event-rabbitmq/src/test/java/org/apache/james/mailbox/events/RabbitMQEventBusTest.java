@@ -50,6 +50,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
@@ -70,6 +71,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.stubbing.Answer;
 
+import com.github.fge.lambdas.ThrownByLambdaException;
 import com.rabbitmq.client.Connection;
 
 import reactor.core.publisher.Mono;
@@ -77,7 +79,6 @@ import reactor.rabbitmq.BindingSpecification;
 import reactor.rabbitmq.ExchangeSpecification;
 import reactor.rabbitmq.QueueSpecification;
 import reactor.rabbitmq.RabbitFlux;
-import reactor.rabbitmq.RabbitFluxException;
 import reactor.rabbitmq.Receiver;
 import reactor.rabbitmq.ReceiverOptions;
 import reactor.rabbitmq.Sender;
@@ -333,7 +334,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 rabbitMQExtension.getRabbitMQ().pause();
 
                 assertThatThrownBy(() -> eventBus.dispatch(EVENT, NO_KEYS).block())
-                    .isInstanceOf(RabbitFluxException.class);
+                    .isInstanceOf(ThrownByLambdaException.class)
+                    .hasCauseInstanceOf(IOException.class);
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 
@@ -399,7 +401,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 rabbitMQExtension.getRabbitMQ().pause();
 
                 assertThatThrownBy(() -> eventBus.dispatch(EVENT, NO_KEYS).block())
-                    .isInstanceOf(RabbitFluxException.class);
+                    .isInstanceOf(ThrownByLambdaException.class)
+                    .hasCauseInstanceOf(IOException.class);
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 
@@ -418,7 +421,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 rabbitMQExtension.getRabbitMQ().pause();
 
                 assertThatThrownBy(() -> eventBus.dispatch(EVENT, NO_KEYS).block())
-                    .isInstanceOf(RabbitFluxException.class);
+                    .isInstanceOf(ThrownByLambdaException.class)
+                    .hasCauseInstanceOf(IOException.class);
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 
@@ -435,7 +439,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 rabbitMQExtension.getRabbitMQ().pause();
 
                 assertThatThrownBy(() -> eventBus.dispatch(EVENT, NO_KEYS).block())
-                    .isInstanceOf(RabbitFluxException.class);
+                    .isInstanceOf(ThrownByLambdaException.class)
+                    .hasCauseInstanceOf(IOException.class);
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 

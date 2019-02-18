@@ -81,7 +81,7 @@ public class RabbitMQEventBus implements EventBus {
         this.isRunning = false;
         this.isStopping = false;
         this.sendOptions = new SendOptions()
-            .channelMono(connectionMono.map(Throwing.function(connection -> connection.createChannel())).cache())
+            .channelMono(connectionMono.map(Throwing.function(Connection::createChannel)))
             .channelCloseHandler(((signalType, channel) -> LOGGER.info("Do not close channel {} by signal {}", channel, signalType)));
     }
 
@@ -110,7 +110,7 @@ public class RabbitMQEventBus implements EventBus {
             sendOptions.getChannelMono()
                 .filter(this::channelOpen)
                 .flatMap(this::closeChannel)
-                .subscribeOn(Schedulers.parallel())
+                .subscribeOn(Schedulers.elastic())
                 .block();
             sender.close();
         }
