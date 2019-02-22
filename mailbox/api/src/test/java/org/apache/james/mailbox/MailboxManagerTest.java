@@ -1412,7 +1412,7 @@ public abstract class MailboxManagerTest<T extends MailboxManager> {
                 ComposedMessageId composeId1 = inboxManager.appendMessage(AppendCommand.builder()
                     .withFlags(new Flags(Flags.Flag.DELETED))
                     .build(message), session);
-                ComposedMessageId composeId2 = inboxManager.appendMessage(AppendCommand.builder()
+                inboxManager.appendMessage(AppendCommand.builder()
                     .build(message), session);
 
                 inboxManager.expunge(MessageRange.all(), session);
