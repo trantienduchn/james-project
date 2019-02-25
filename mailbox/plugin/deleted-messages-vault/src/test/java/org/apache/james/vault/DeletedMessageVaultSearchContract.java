@@ -17,18 +17,33 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.vault.scanning;
+package org.apache.james.vault;
 
-import java.util.List;
+import static org.apache.james.vault.DeletedMessageFixture.DELETED_MESSAGE_2;
+import static org.apache.james.vault.DeletedMessageFixture.DELETED_MESSAGE_WITH_SUBJECT;
+import static org.apache.james.vault.DeletedMessageFixture.USER;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import org.apache.james.mailbox.model.MailboxId;
-import org.apache.james.vault.DeletedMessage;
+import org.apache.james.vault.search.CriterionFactory;
+import org.apache.james.vault.search.Query;
+import org.apache.james.vault.search.ValueMatcher;
+import org.junit.jupiter.api.Test;
 
-public interface ValueExtractor<T> {
-    T extract(DeletedMessage deletedMessage);
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-    ValueExtractor<String> SUBJECT_EXTRACOR = deletedMessage -> deletedMessage.getSubject().orElse("");
-    ValueExtractor<List<MailboxId>> ORIGIN_MAILBOXES_EXTRACTOR = DeletedMessage::getOriginMailboxes;
-    // TODO complete me
+public interface DeletedMessageVaultSearchContract {
+    DeletedMessageVault getVault();
 
+    @Test
+    default void test() {
+        Mono.from(getVault().append(USER, DELETED_MESSAGE_WITH_SUBJECT)).block();
+        Mono.from(getVault().append(USER, DELETED_MESSAGE_2)).block();
+
+        Query query = Query.of(CriterionFactory.subject(new ValueMatcher.StringContains("kangourou")));
+
+
+        assertThat(Flux.from(getVault().search(USER, query)).collectList().block())
+            .containsOnly(DELETED_MESSAGE_WITH_SUBJECT);
+    }
 }

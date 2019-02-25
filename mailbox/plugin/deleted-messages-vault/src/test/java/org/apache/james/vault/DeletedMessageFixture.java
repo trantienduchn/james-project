@@ -44,7 +44,7 @@ public interface DeletedMessageFixture {
     ZonedDateTime DELIVERY_DATE = ZonedDateTime.parse("2014-10-30T14:12:00Z");
     ZonedDateTime DELETION_DATE = ZonedDateTime.parse("2015-10-30T14:12:00Z");
     byte[] CONTENT = "header: value\r\n\r\ncontent".getBytes(StandardCharsets.UTF_8);
-    String SUBJECT = "subject";
+    String SUBJECT = "Did you spot the kangourou in the desert?";
 
     Function<Long, DeletedMessage> DELETED_MESSAGE_GENERATOR = i -> DeletedMessage.builder()
         .messageId(InMemoryMessageId.of(i))
