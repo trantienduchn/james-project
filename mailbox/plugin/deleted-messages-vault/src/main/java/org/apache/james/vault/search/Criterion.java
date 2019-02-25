@@ -24,18 +24,20 @@ import java.util.function.Predicate;
 import org.apache.james.vault.DeletedMessage;
 
 public class Criterion<T> {
-    private final FieldName<T> fieldName;
+
+    private static final boolean DEFAULT_TO_NON_MATCHED_IF_NON_EXIST = false;
+
+    private final DeletedMessageField<T> field;
     private final ValueMatcher<T> valueMatcher;
 
-    Criterion(FieldName<T> fieldName, ValueMatcher<T> valueMatcher) {
-        this.fieldName = fieldName;
+    Criterion(DeletedMessageField<T> field, ValueMatcher<T> valueMatcher) {
+        this.field = field;
         this.valueMatcher = valueMatcher;
     }
 
     public Predicate<DeletedMessage> toPredicate() {
-        return deletedMessage -> {
-            T valueToMatch = fieldName.valueExtractor().extract(deletedMessage);
-            return valueMatcher.matches(valueToMatch);
-        };
+        return deletedMessage -> field.valueExtractor().extract(deletedMessage)
+            .map(valueMatcher::matches)
+            .orElse(DEFAULT_TO_NON_MATCHED_IF_NON_EXIST);
     }
 }

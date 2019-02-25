@@ -19,18 +19,96 @@
 
 package org.apache.james.vault.search;
 
+import static org.apache.james.vault.search.DeletedMessageField.DELETION_DATE;
+import static org.apache.james.vault.search.DeletedMessageField.DELIVERY_DATE;
+import static org.apache.james.vault.search.DeletedMessageField.HAS_ATTACHMENTS;
+import static org.apache.james.vault.search.DeletedMessageField.ORIGIN_MAILBOXES;
+import static org.apache.james.vault.search.DeletedMessageField.RECIPIENTS;
+import static org.apache.james.vault.search.DeletedMessageField.SENDER;
+import static org.apache.james.vault.search.DeletedMessageField.SUBJECT;
+
+import java.time.ZonedDateTime;
 import java.util.List;
 
+import org.apache.james.core.MailAddress;
 import org.apache.james.mailbox.model.MailboxId;
 
-public class CriterionFactory {
-    public static Criterion<String> subject(ValueMatcher<String> valueMatcher) {
-        return new Criterion<>(FieldName.SUBJECT, valueMatcher);
+public interface CriterionFactory<T> {
+
+    DeletedMessageField<T> deletedMessageField();
+
+    interface EqualsMatcherFactory<T> extends CriterionFactory<T> {
+
+        default Criterion<T> equalsMatcher(T testedValue) {
+            ValueMatcher.Equals<T> matcher = () -> testedValue;
+            return new Criterion<>(deletedMessageField(), matcher);
+        }
     }
 
-    public static Criterion<List<MailboxId>> originMailboxes(ValueMatcher<List<MailboxId>> valueMatcher) {
-        return new Criterion<>(FieldName.ORIGIN_MAILBOXES, valueMatcher);
+    interface StringMatcherFactory extends CriterionFactory<String> {
+
+        default Criterion<String> contains(String subString) {
+            ValueMatcher.StringContains matcher = () -> subString;
+            return new Criterion<>(deletedMessageField(), matcher);
+        }
+
+        default Criterion<String> containsIgnoreCase(String subString) {
+            ValueMatcher.StringContainsIgnoreCase matcher = () -> subString;
+            return new Criterion<>(deletedMessageField(), matcher);
+        }
+
+        default Criterion<String> equals(String testedString) {
+            ValueMatcher.Equals<String> matcher = () -> testedString;
+            return new Criterion<>(deletedMessageField(), matcher);
+        }
     }
 
-    // TODO
+    interface ZonedDateTimeMatcherFactory extends CriterionFactory<ZonedDateTime> {
+
+        default Criterion<ZonedDateTime> beforeOrEquals(ZonedDateTime testedInstant) {
+            ValueMatcher.ZonedDateTimeBeforeOrEquals matcher = () -> testedInstant;
+            return new Criterion<>(deletedMessageField(), matcher);
+        }
+
+        default Criterion<ZonedDateTime> afterOrEquals(ZonedDateTime testedInstant) {
+            ValueMatcher.ZonedDateTimeAfterOrEquals matcher = () -> testedInstant;
+            return new Criterion<>(deletedMessageField(), matcher);
+        }
+    }
+
+    interface ListMatcherFactory<T> extends CriterionFactory<List<T>> {
+
+        default Criterion<List<T>> contains(T testedValue) {
+            ValueMatcher.ListContains<T> matcher = () -> testedValue;
+            return new Criterion<>(deletedMessageField(), matcher);
+        }
+    }
+
+    static ZonedDateTimeMatcherFactory deletionDate() {
+        return () -> DELETION_DATE;
+    }
+
+    static ZonedDateTimeMatcherFactory deliveryDate() {
+        return () -> DELIVERY_DATE;
+    }
+
+    static ListMatcherFactory<MailAddress> recipients() {
+        return () -> RECIPIENTS;
+    }
+
+    static EqualsMatcherFactory<MailAddress> sender() {
+        return () -> SENDER;
+    }
+
+    static EqualsMatcherFactory<Boolean> hasAttachments() {
+        return () -> HAS_ATTACHMENTS;
+    }
+
+    static StringMatcherFactory subject() {
+        return () -> SUBJECT;
+    }
+
+    static ListMatcherFactory<MailboxId> originMailboxes() {
+        return () -> ORIGIN_MAILBOXES;
+    }
 }

@@ -42,7 +42,6 @@ public class Query {
     public Predicate<DeletedMessage> toPredicate() {
         return criteria.stream()
             .map(Criterion::toPredicate)
-            .reduce(Predicate::and)
-            .orElse(t -> true);
+            .reduce(any -> true, Predicate::and);
     }
 }

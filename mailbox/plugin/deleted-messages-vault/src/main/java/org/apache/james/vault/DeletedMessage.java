@@ -141,7 +141,7 @@ public class DeletedMessage {
             }
 
             public FinalStage subject(String subject) {
-                this.subject = Optional.of(subject);
+                this.subject = Optional.ofNullable(subject);
                 return this;
             }
 

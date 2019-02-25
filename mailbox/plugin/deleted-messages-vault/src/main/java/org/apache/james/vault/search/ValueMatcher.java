@@ -19,61 +19,61 @@
 
 package org.apache.james.vault.search;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Locale;
 
 public interface ValueMatcher<T> {
-    boolean matches(T value);
 
-    class Equals<T> implements ValueMatcher<T> {
-        private final T referenceValue;
+    boolean matches(T referenceValue);
 
-        public Equals(T referenceValue) {
-            this.referenceValue = referenceValue;
-        }
+    interface SingleValueMatcher<T> extends ValueMatcher<T> {
+        T testedValue();
+    }
 
+    interface ListMatcher<T> extends ValueMatcher<List<T>> {
+        T testedValue();
+    }
+
+    interface Equals<T> extends SingleValueMatcher<T> {
         @Override
-        public boolean matches(T value) {
-            return referenceValue.equals(value);
+        default boolean matches(T referenceValue) {
+            return referenceValue.equals(testedValue());
         }
     }
 
-    class StringContains implements ValueMatcher<String> {
-        private final String referenceValue;
-
-        public StringContains(String referenceValue) {
-            this.referenceValue = referenceValue;
-        }
-
+    interface StringContains extends SingleValueMatcher<String> {
         @Override
-        public boolean matches(String value) {
-            return value.contains(referenceValue);
+        default boolean matches(String referenceValue) {
+            return referenceValue.contains(testedValue());
         }
     }
 
-    class StringContainsIgnoreCase implements ValueMatcher<String> {
-        private final String referenceValue;
-
-        public StringContainsIgnoreCase(String referenceValue) {
-            this.referenceValue = referenceValue;
-        }
-
+    interface StringContainsIgnoreCase extends SingleValueMatcher<String> {
         @Override
-        public boolean matches(String value) {
-            return value.toLowerCase(Locale.US).contains(referenceValue.toLowerCase(Locale.US));
+        default boolean matches(String referenceValue) {
+            return referenceValue.toLowerCase(Locale.US).contains(testedValue().toLowerCase(Locale.US));
         }
     }
 
-    class ListContains<T> implements ValueMatcher<List<T>> {
-        private final T referenceValue;
-
-        public ListContains(T referenceValue) {
-            this.referenceValue = referenceValue;
-        }
-
+    interface ListContains<T> extends ListMatcher<T> {
         @Override
-        public boolean matches(List<T> value) {
-            return value.contains(referenceValue);
+        default boolean matches(List<T> referenceValue) {
+            return referenceValue.contains(testedValue());
+        }
+    }
+
+    interface ZonedDateTimeBeforeOrEquals extends SingleValueMatcher<ZonedDateTime> {
+        @Override
+        default boolean matches(ZonedDateTime referenceValue) {
+            return referenceValue.isBefore(testedValue()) || referenceValue.isEqual(testedValue());
+        }
+    }
+
+    interface ZonedDateTimeAfterOrEquals extends SingleValueMatcher<ZonedDateTime> {
+        @Override
+        default boolean matches(ZonedDateTime referenceValue) {
+            return referenceValue.isAfter(testedValue()) || referenceValue.isEqual(testedValue());
         }
     }
 }
