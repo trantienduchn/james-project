@@ -21,24 +21,18 @@ package org.apache.james.vault;
 
 public class Criterion<T> {
     private final FieldName fieldName;
-    private final Operator<T> operator;
-    private final T value;
+    private final ValueMatcher<T> valueMatcher;
 
-    public Criterion(FieldName fieldName, Operator<T> operator, T value) {
+    Criterion(FieldName fieldName, ValueMatcher<T> valueMatcher) {
         this.fieldName = fieldName;
-        this.operator = operator;
-        this.value = value;
+        this.valueMatcher = valueMatcher;
     }
 
     public FieldName getFieldName() {
         return fieldName;
     }
 
-    public Operator<T> getOperator() {
-        return operator;
-    }
-
-    public T getValue() {
-        return value;
+    public ValueMatcher<T> getValueMatcher() {
+        return valueMatcher;
     }
 }
