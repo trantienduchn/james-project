@@ -153,7 +153,7 @@ public class DeletedMessage {
     }
 
     public static RequireMetadata<RequirePayload<FinalStage>> builder() {
-        return messageId -> originMailboxes -> user -> deliveryDate -> deletionDate -> sender -> recipients ->content -> hasAttachment ->
+        return messageId -> originMailboxes -> user -> deliveryDate -> deletionDate -> sender -> recipients -> content -> hasAttachment ->
             new Builder.FinalStage(messageId, originMailboxes, user, deliveryDate, deletionDate, sender,
                 recipients, hasAttachment, content);
 
