@@ -24,6 +24,7 @@ import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.vault.DeletedMessage;
 import org.apache.james.vault.DeletedMessageVault;
 import org.apache.james.vault.Query;
+import org.apache.james.vault.scanning.PredicateGenerator;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashBasedTable;
@@ -61,8 +62,12 @@ public class MemoryDeletedMessagesVault implements DeletedMessageVault {
     public synchronized Flux<DeletedMessage> search(User user, Query query) {
         Preconditions.checkNotNull(user);
         Preconditions.checkNotNull(query);
-        Preconditions.checkArgument(query.getCriteria().isEmpty(), "Search is not supported yet...");
 
+        return listAll(user)
+            .filter(PredicateGenerator.from(query));
+    }
+
+    private Flux<DeletedMessage> listAll(User user) {
         return Flux.fromIterable(table.row(user).values());
     }
 }
