@@ -17,20 +17,32 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.vault;
+package org.apache.james.vault.search;
 
 import java.util.List;
+import java.util.function.Predicate;
 
-import org.apache.james.mailbox.model.MailboxId;
+import org.apache.james.vault.DeletedMessage;
 
-public class CriterionFactory {
-    Criterion<String> subject(ValueMatcher<String> valueMatcher) {
-        return new Criterion<>(FieldName.SUBJECT, valueMatcher);
+import com.google.common.collect.ImmutableList;
+
+public class Query {
+    public static final Query ALL = new Query(ImmutableList.of());
+
+    public static Query of(Criterion... criteria) {
+        return new Query(ImmutableList.copyOf(criteria));
     }
 
-    Criterion<List<MailboxId>> originMailboxes(ValueMatcher<List<MailboxId>> valueMatcher) {
-        return new Criterion<>(FieldName.ORIGIN_MAILBOXES, valueMatcher);
+    private final List<Criterion> criteria;
+
+    private Query(List<Criterion> criteria) {
+        this.criteria = criteria;
     }
 
-    // TODO
+    public Predicate<DeletedMessage> toPredicate() {
+        return criteria.stream()
+            .map(Criterion::toPredicate)
+            .reduce(Predicate::and)
+            .orElse(t -> true);
+    }
 }

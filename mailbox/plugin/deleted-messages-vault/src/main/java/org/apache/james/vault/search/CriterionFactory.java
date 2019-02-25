@@ -17,27 +17,20 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.vault.scanning;
+package org.apache.james.vault.search;
 
-import java.util.function.Predicate;
+import java.util.List;
 
-import org.apache.james.vault.Criterion;
-import org.apache.james.vault.DeletedMessage;
-import org.apache.james.vault.Query;
+import org.apache.james.mailbox.model.MailboxId;
 
-public class PredicateGenerator {
-    public static Predicate<DeletedMessage> from(Query query) {
-        return query.getCriteria()
-            .stream()
-            .map(PredicateGenerator::from)
-            .reduce(Predicate::and)
-            .orElse(t -> true);
+public class CriterionFactory {
+    static Criterion<String> subject(ValueMatcher<String> valueMatcher) {
+        return new Criterion<>(FieldName.SUBJECT, valueMatcher);
     }
 
-    public static <T> Predicate<DeletedMessage> from(Criterion<T> criterion) {
-        return deletedMessage -> {
-            T valueToMatch = criterion.getFieldName().valueExtractor().extract(deletedMessage);
-            return criterion.getValueMatcher().matches(valueToMatch);
-        };
+    static Criterion<List<MailboxId>> originMailboxes(ValueMatcher<List<MailboxId>> valueMatcher) {
+        return new Criterion<>(FieldName.ORIGIN_MAILBOXES, valueMatcher);
     }
+
+    // TODO
 }

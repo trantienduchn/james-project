@@ -17,17 +17,18 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.vault;
+package org.apache.james.vault.search;
 
 import java.util.List;
 
 import org.apache.james.mailbox.model.MailboxId;
-import org.apache.james.vault.scanning.ValueExtractor;
+import org.apache.james.vault.DeletedMessage;
 
-public interface FieldName<T> {
-    FieldName<String> SUBJECT = () -> ValueExtractor.SUBJECT_EXTRACOR;
-    FieldName<List<MailboxId>> ORIGIN_MAILBOXES = () -> ValueExtractor.ORIGIN_MAILBOXES_EXTRACTOR;
-    // TODO ETC
+public interface ValueExtractor<T> {
+    T extract(DeletedMessage deletedMessage);
 
-    ValueExtractor<T> valueExtractor();
+    ValueExtractor<String> SUBJECT_EXTRACOR = deletedMessage -> deletedMessage.getSubject().orElse("");
+    ValueExtractor<List<MailboxId>> ORIGIN_MAILBOXES_EXTRACTOR = DeletedMessage::getOriginMailboxes;
+    // TODO complete me
+
 }

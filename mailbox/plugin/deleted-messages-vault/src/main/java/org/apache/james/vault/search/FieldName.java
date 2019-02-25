@@ -17,22 +17,16 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.vault;
+package org.apache.james.vault.search;
 
 import java.util.List;
 
-import com.google.common.collect.ImmutableList;
+import org.apache.james.mailbox.model.MailboxId;
 
-public class Query {
-    public static final Query ALL = new Query(ImmutableList.of());
+public interface FieldName<T> {
+    FieldName<String> SUBJECT = () -> ValueExtractor.SUBJECT_EXTRACOR;
+    FieldName<List<MailboxId>> ORIGIN_MAILBOXES = () -> ValueExtractor.ORIGIN_MAILBOXES_EXTRACTOR;
+    // TODO ETC
 
-    private final List<Criterion> criteria;
-
-    private Query(List<Criterion> criteria) {
-        this.criteria = criteria;
-    }
-
-    public List<Criterion> getCriteria() {
-        return criteria;
-    }
+    ValueExtractor<T> valueExtractor();
 }

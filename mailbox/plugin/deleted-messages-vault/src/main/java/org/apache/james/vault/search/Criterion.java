@@ -17,7 +17,11 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.vault;
+package org.apache.james.vault.search;
+
+import java.util.function.Predicate;
+
+import org.apache.james.vault.DeletedMessage;
 
 public class Criterion<T> {
     private final FieldName<T> fieldName;
@@ -28,11 +32,10 @@ public class Criterion<T> {
         this.valueMatcher = valueMatcher;
     }
 
-    public FieldName<T> getFieldName() {
-        return fieldName;
-    }
-
-    public ValueMatcher<T> getValueMatcher() {
-        return valueMatcher;
+    public Predicate<DeletedMessage> toPredicate() {
+        return deletedMessage -> {
+            T valueToMatch = fieldName.valueExtractor().extract(deletedMessage);
+            return valueMatcher.matches(valueToMatch);
+        };
     }
 }
