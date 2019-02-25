@@ -23,8 +23,7 @@ import org.apache.james.core.User;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.vault.DeletedMessage;
 import org.apache.james.vault.DeletedMessageVault;
-import org.apache.james.vault.Query;
-import org.apache.james.vault.scanning.PredicateGenerator;
+import org.apache.james.vault.search.Query;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashBasedTable;
@@ -64,7 +63,7 @@ public class MemoryDeletedMessagesVault implements DeletedMessageVault {
         Preconditions.checkNotNull(query);
 
         return listAll(user)
-            .filter(PredicateGenerator.from(query));
+            .filter(query.toPredicate());
     }
 
     private Flux<DeletedMessage> listAll(User user) {
