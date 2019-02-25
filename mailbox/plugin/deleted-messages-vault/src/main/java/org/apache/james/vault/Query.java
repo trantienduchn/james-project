@@ -26,10 +26,6 @@ import com.google.common.collect.ImmutableList;
 public class Query {
     public static final Query ALL = new Query(ImmutableList.of());
 
-    interface Criterion {
-
-    }
-
     private final List<Criterion> criteria;
 
     private Query(List<Criterion> criteria) {

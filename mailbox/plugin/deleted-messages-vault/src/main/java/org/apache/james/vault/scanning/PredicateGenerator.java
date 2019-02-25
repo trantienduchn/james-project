@@ -17,17 +17,27 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.vault;
+package org.apache.james.vault.scanning;
 
-import java.util.List;
+import java.util.function.Predicate;
 
-import org.apache.james.mailbox.model.MailboxId;
-import org.apache.james.vault.scanning.ValueExtractor;
+import org.apache.james.vault.Criterion;
+import org.apache.james.vault.DeletedMessage;
+import org.apache.james.vault.Query;
 
-public interface FieldName<T> {
-    FieldName<String> SUBJECT = () -> ValueExtractor.SUBJECT_EXTRACOR;
-    FieldName<List<MailboxId>> ORIGIN_MAILBOXES = () -> ValueExtractor.ORIGIN_MAILBOXES_EXTRACTOR;
-    // TODO ETC
+public class PredicateGenerator {
+    public static Predicate<DeletedMessage> from(Query query) {
+        return query.getCriteria()
+            .stream()
+            .map(PredicateGenerator::from)
+            .reduce(Predicate::and)
+            .orElse(t -> true);
+    }
 
-    ValueExtractor<T> valueExtractor();
+    public static <T> Predicate<DeletedMessage> from(Criterion<T> criterion) {
+        return deletedMessage -> {
+            T valueToMatch = criterion.getFieldName().valueExtractor().extract(deletedMessage);
+            return criterion.getValueMatcher().matches(valueToMatch);
+        };
+    }
 }

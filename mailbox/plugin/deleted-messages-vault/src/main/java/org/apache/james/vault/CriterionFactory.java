@@ -25,11 +25,11 @@ import org.apache.james.mailbox.model.MailboxId;
 
 public class CriterionFactory {
     Criterion<String> subject(ValueMatcher<String> valueMatcher) {
-        return new Criterion<>(FieldName.Subject, valueMatcher);
+        return new Criterion<>(FieldName.SUBJECT, valueMatcher);
     }
 
     Criterion<List<MailboxId>> originMailboxes(ValueMatcher<List<MailboxId>> valueMatcher) {
-        return new Criterion<>(FieldName.OriginMailboxes, valueMatcher);
+        return new Criterion<>(FieldName.ORIGIN_MAILBOXES, valueMatcher);
     }
 
     // TODO

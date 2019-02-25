@@ -20,15 +20,15 @@
 package org.apache.james.vault;
 
 public class Criterion<T> {
-    private final FieldName fieldName;
+    private final FieldName<T> fieldName;
     private final ValueMatcher<T> valueMatcher;
 
-    Criterion(FieldName fieldName, ValueMatcher<T> valueMatcher) {
+    Criterion(FieldName<T> fieldName, ValueMatcher<T> valueMatcher) {
         this.fieldName = fieldName;
         this.valueMatcher = valueMatcher;
     }
 
-    public FieldName getFieldName() {
+    public FieldName<T> getFieldName() {
         return fieldName;
     }
 
