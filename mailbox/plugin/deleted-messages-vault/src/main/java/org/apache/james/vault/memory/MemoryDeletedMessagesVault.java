@@ -35,7 +35,7 @@ import reactor.core.publisher.Mono;
 public class MemoryDeletedMessagesVault implements DeletedMessageVault {
     private final Table<User, MessageId, DeletedMessage> table;
 
-    MemoryDeletedMessagesVault() {
+    public MemoryDeletedMessagesVault() {
         table = HashBasedTable.create();
     }
 

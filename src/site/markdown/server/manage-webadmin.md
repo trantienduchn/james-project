@@ -44,6 +44,7 @@ as exposed above). To avoid information duplication, this is ommited on endpoint
  - [Administrating Sieve quotas](#Administrating_Sieve_quotas)
  - [ReIndexing](#ReIndexing)
  - [Event Dead Letter](#Event_Dead_Letter)
+ - [Deleted Messages Vault](#Deleted_Messages_Vault)
  - [Task management](#Task_management)
  - [Cassandra extra operations](#Cassandra_extra_operations)
 
@@ -2495,6 +2496,43 @@ Response codes:
 ### Rescheduling group execution
 
 Not implemented yet.
+
+## Deleted Messages Vault
+
+Deleted messages from an user will be stored in a restriction place where only delegated administrator can access.
+This place is called the Vault. Messages in the Vault will be deleted permanently by a configured retention policy.
+
+ - [Restore Deleted Messages](#Restore_deleted_messages)
+
+### Restore Deleted Messages
+
+An user can request to the administrator to restore his messages had been deleted and now at the Vault.
+To restore them, the administrator perform a http request:
+
+```
+curl -XPOST http://ip:port/deletedMessages/user/userToRestore@domain.ext
+```
+
+**All** messages from the user passed in the path param will be moved from the Vault to his new mailbox.
+Response code:
+
+ - 201: Task for restoring deleted has been created
+ - 400: Bad request, user parameter is invalid
+
+The scheduled task will have the following type `deletedMessages/restore` and the following `additionalInformation`:
+
+```
+{
+  "successfulRestoreCount": 47,
+  "errorRestoreCount": 0
+  "failRemovingCount": 19
+}
+```
+
+while:
+- successfulRestoreCount: number of messages has been appended to user restore mailbox
+- errorRestoreCount: number of messages has **not** been appended to user restore mailbox
+- failRemovingCount: number of messages failed to delete in the Vault after storing corresponding message to user mailbox
 
 ## Task management
 
