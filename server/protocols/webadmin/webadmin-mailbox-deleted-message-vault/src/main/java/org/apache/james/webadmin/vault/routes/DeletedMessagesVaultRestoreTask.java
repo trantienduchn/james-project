@@ -107,6 +107,7 @@ class DeletedMessagesVaultRestoreTask implements Task {
                 break;
             case RESTORE_SUCCEED:
                 additionalInformation.incrementSuccessfulRestoreCount();
+                break;
         }
     }
 
