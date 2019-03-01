@@ -2499,21 +2499,26 @@ Not implemented yet.
 
 ## Deleted Messages Vault
 
-Deleted messages from an user will be stored in a restricted place where only administrators can access.
-This place is called the Deleted Messages Vault.
+The 'Deleted Message Vault plugin' allows you to keep users deleted messages during a given retention time. This set of routes allow you to *restore* users deleted messages or export them in an archive (not implemented yet).
+
+To move deleted messages in the vault, you need to specifically configure the DeletedMessageVault PreDeletionHook.
+
+Here are the following actions available on the 'Deleted Messages Vault'
 
  - [Restore Deleted Messages](#Restore_deleted_messages)
 
+ Note that the 'Deleted Messages Vault' feature is only supported on top of Cassandra-Guice.
+
 ### Restore Deleted Messages
 
-An user can request an administrator to restore his deleted messages that are kept into the Deleted Message Vault.
-To restore them, the administrator performs a http request:
+Deleted messages of a specific user can be restored by calling the following endpoint:
 
 ```
 curl -XPOST http://ip:port/deletedMessages/user/userToRestore@domain.ext
 ```
 
-**All** messages in the Deleted Messages Vault of an specified user will be appended to his new mailbox.
+**All** messages in the Deleted Messages Vault of an specified user will be appended to his 'Restored-Messages' mailbox, which will be created if needed.
+
 **Note**: Restoring matched messages by queries is not supported yet 
 
 Response code:
