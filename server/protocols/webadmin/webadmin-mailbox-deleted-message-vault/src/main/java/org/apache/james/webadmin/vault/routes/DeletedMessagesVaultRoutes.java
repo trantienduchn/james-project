@@ -91,7 +91,7 @@ public class DeletedMessagesVaultRoutes implements Routes {
         }
     }
 
-    static final String ROOT_PATH = "deletedMessages/user";
+    public static final String ROOT_PATH = "deletedMessages/user";
     private static final String USER_PATH_PARAM = "user";
     private static final String RESTORE_PATH = ROOT_PATH + SEPARATOR + ":" + USER_PATH_PARAM;
     private static final String ACTION_QUERY_PARAM = "action";
