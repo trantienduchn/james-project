@@ -180,7 +180,7 @@ public class DeletedMessagesVaultRoutes implements Routes {
         try {
             return queryTranslator.translate(queryDTO);
         } catch (QueryTranslator.QueryTranslatorException e) {
-            throw badRequest("Json query passing to the route is invalid", e);
+            throw badRequest("Invalid payload passing to the route", e);
         }
     }
 

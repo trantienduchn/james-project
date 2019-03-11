@@ -152,7 +152,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"subject\"," +
@@ -191,7 +190,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"subject\"," +
@@ -228,7 +226,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"subject\"," +
@@ -267,7 +264,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"subject\"," +
@@ -304,7 +300,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"subject\"," +
@@ -343,7 +338,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"subject\"," +
@@ -380,7 +374,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"subject\"," +
@@ -419,7 +412,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"subject\"," +
@@ -458,7 +450,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"deletionDate\"," +
@@ -495,7 +486,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"deletionDate\"," +
@@ -530,7 +520,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"deletionDate\"," +
@@ -567,7 +556,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"deletionDate\"," +
@@ -606,7 +594,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"deliveryDate\"," +
@@ -643,7 +630,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"deliveryDate\"," +
@@ -678,7 +664,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"deliveryDate\"," +
@@ -715,7 +700,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"deliveryDate\"," +
@@ -754,7 +738,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"recipients\"," +
@@ -791,7 +774,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"recipients\"," +
@@ -829,7 +811,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"sender\"," +
@@ -866,7 +847,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"sender\"," +
@@ -908,7 +888,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"hasAttachment\"," +
@@ -948,7 +927,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"hasAttachment\"," +
@@ -988,7 +966,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"hasAttachment\"," +
@@ -1027,7 +1004,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"originMailboxes\"," +
@@ -1064,7 +1040,6 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"combinator\": \"and\"," +
                     "  \"criteria\": [" +
                     "    {" +
                     "      \"fieldName\": \"originMailboxes\"," +
@@ -1293,7 +1268,6 @@ class DeletedMessagesVaultRoutesTest {
 
             String query =
                 "{" +
-                "  \"combinator\": \"and\"," +
                 "  \"criteria\": [" +
                 "    {" +
                 "      \"fieldName\": \"unsupported\"," +
@@ -1321,7 +1295,6 @@ class DeletedMessagesVaultRoutesTest {
 
             String query =
                 "{" +
-                "  \"combinator\": \"and\"," +
                 "  \"criteria\": [" +
                 "    {" +
                 "      \"fieldName\": \"subject\"," +
@@ -1349,7 +1322,6 @@ class DeletedMessagesVaultRoutesTest {
 
             String query =
                 "{" +
-                "  \"combinator\": \"and\"," +
                 "  \"criteria\": [" +
                 "    {" +
                 "      \"fieldName\": \"sender\"," +
@@ -1377,7 +1349,6 @@ class DeletedMessagesVaultRoutesTest {
 
             String query =
                 "{" +
-                "  \"combinator\": \"and\"," +
                 "  \"criteria\": [" +
                 "    {" +
                 "      \"fieldName\": \"sender\"," +

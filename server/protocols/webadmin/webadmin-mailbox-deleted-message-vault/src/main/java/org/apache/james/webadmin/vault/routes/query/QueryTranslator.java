@@ -38,6 +38,7 @@ import static org.apache.james.webadmin.vault.routes.query.QueryTranslator.Opera
 import static org.apache.james.webadmin.vault.routes.query.QueryTranslator.Operator.EQUALS_IGNORE_CASE;
 
 import java.time.ZonedDateTime;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -206,17 +207,18 @@ public class QueryTranslator {
     }
 
     public Query translate(QueryDTO queryDTO) throws QueryTranslatorException {
-        Preconditions.checkArgument(isAndCombinator(queryDTO.getCombinator()), "combinator '" + queryDTO.getCombinator() + "' is not yet handled");
+        Preconditions.checkArgument(combinatorIsValid(queryDTO.getCombinator()), "combinator '" + queryDTO.getCombinator() + "' is not yet handled");
         Preconditions.checkArgument(queryDTO.getCriteria().stream().allMatch(this::isCriterion), "nested query structure is not yet handled");
 
-        return Query.of(queryDTO.getCriteria().stream()
+        return Query.and(queryDTO.getCriteria().stream()
             .map(queryElement -> (CriterionDTO) queryElement)
             .map(Throwing.function(this::translate))
             .collect(Guavate.toImmutableList()));
     }
 
-    private boolean isAndCombinator(String combinator) {
-        return Combinator.AND.getValue().equals(combinator);
+    private boolean combinatorIsValid(String combinator) {
+        return Combinator.AND.getValue().equals(combinator)
+            || Objects.isNull(combinator);
     }
 
     private boolean isCriterion(QueryElement queryElement) {
