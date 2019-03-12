@@ -2657,6 +2657,14 @@ Messages in the Deleted Messages Vault of an specified user that are matched wit
 }
 ```
 But at the current version, this structure is not allowed to be handled. You should go with the flatten structure
+ - If you only want to restore by only one criterion, the json body could be simplified to a single criterion:
+```
+{
+  "fieldName": "subject", 
+  "operator": "containsIgnoreCase", 
+  "value": "Apache James"
+}
+```
  - For restoring all deleted messages, passing a query json with empty criterion list to represent `matching all deleted messages`: 
 ```
 {

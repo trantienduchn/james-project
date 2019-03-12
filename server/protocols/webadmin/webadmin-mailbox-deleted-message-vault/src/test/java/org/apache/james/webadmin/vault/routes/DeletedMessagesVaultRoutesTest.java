@@ -152,13 +152,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"subject\"," +
-                    "      \"operator\": \"contains\"," +
-                    "      \"value\": \"subject contains\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"subject\"," +
+                    "  \"operator\": \"contains\"," +
+                    "  \"value\": \"subject contains\"" +
                     "}";
 
                 String taskId =
@@ -190,13 +186,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"subject\"," +
-                    "      \"operator\": \"contains\"," +
-                    "      \"value\": \"james\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"subject\"," +
+                    "  \"operator\": \"contains\"," +
+                    "  \"value\": \"james\"" +
                     "}";
 
                 String taskId =
@@ -226,13 +218,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"subject\"," +
-                    "      \"operator\": \"containsIgnoreCase\"," +
-                    "      \"value\": \"subject contains\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"subject\"," +
+                    "  \"operator\": \"containsIgnoreCase\"," +
+                    "  \"value\": \"subject contains\"" +
                     "}";
 
                 String taskId =
@@ -264,13 +252,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"subject\"," +
-                    "      \"operator\": \"containsIgnoreCase\"," +
-                    "      \"value\": \"JAMES\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"subject\"," +
+                    "  \"operator\": \"containsIgnoreCase\"," +
+                    "  \"value\": \"JAMES\"" +
                     "}";
 
                 String taskId =
@@ -300,13 +284,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"subject\"," +
-                    "      \"operator\": \"equals\"," +
-                    "      \"value\": \"subject should match\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"subject\"," +
+                    "  \"operator\": \"equals\"," +
+                    "  \"value\": \"subject should match\"" +
                     "}";
 
                 String taskId =
@@ -338,13 +318,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"subject\"," +
-                    "      \"operator\": \"equals\"," +
-                    "      \"value\": \"SUBJECT\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"subject\"," +
+                    "  \"operator\": \"equals\"," +
+                    "  \"value\": \"SUBJECT\"" +
                     "}";
 
                 String taskId =
@@ -374,13 +350,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"subject\"," +
-                    "      \"operator\": \"equalsIgnoreCase\"," +
-                    "      \"value\": \"subject should match\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"subject\"," +
+                    "  \"operator\": \"equalsIgnoreCase\"," +
+                    "  \"value\": \"subject should match\"" +
                     "}";
 
                 String taskId =
@@ -412,13 +384,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"subject\"," +
-                    "      \"operator\": \"equalsIgnoreCase\"," +
-                    "      \"value\": \"SUBJECT Of the mail\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"subject\"," +
+                    "  \"operator\": \"equalsIgnoreCase\"," +
+                    "  \"value\": \"SUBJECT Of the mail\"" +
                     "}";
 
                 String taskId =
@@ -450,13 +418,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"deletionDate\"," +
-                    "      \"operator\": \"beforeOrEquals\"," +
-                    "      \"value\": \"" + DELETION_DATE.plusHours(1).toString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"deletionDate\"," +
+                    "  \"operator\": \"beforeOrEquals\"," +
+                    "  \"value\": \"" + DELETION_DATE.plusHours(1).toString() + "\"" +
                     "}";
 
                 String taskId =
@@ -486,13 +450,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"deletionDate\"," +
-                    "      \"operator\": \"beforeOrEquals\"," +
-                    "      \"value\": \"" + DELETION_DATE.minusHours(1).toString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"deletionDate\"," +
+                    "  \"operator\": \"beforeOrEquals\"," +
+                    "  \"value\": \"" + DELETION_DATE.minusHours(1).toString() + "\"" +
                     "}";
 
                 String taskId =
@@ -520,13 +480,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"deletionDate\"," +
-                    "      \"operator\": \"afterOrEquals\"," +
-                    "      \"value\": \"" + DELETION_DATE.minusHours(1).toString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"deletionDate\"," +
+                    "  \"operator\": \"afterOrEquals\"," +
+                    "  \"value\": \"" + DELETION_DATE.minusHours(1).toString() + "\"" +
                     "}";
 
                 String taskId =
@@ -556,13 +512,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"deletionDate\"," +
-                    "      \"operator\": \"afterOrEquals\"," +
-                    "      \"value\": \"" + DELETION_DATE.plusHours(1).toString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"deletionDate\"," +
+                    "  \"operator\": \"afterOrEquals\"," +
+                    "  \"value\": \"" + DELETION_DATE.plusHours(1).toString() + "\"" +
                     "}";
 
                 String taskId =
@@ -594,13 +546,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"deliveryDate\"," +
-                    "      \"operator\": \"beforeOrEquals\"," +
-                    "      \"value\": \"" + DELIVERY_DATE.plusHours(1).toString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"deliveryDate\"," +
+                    "  \"operator\": \"beforeOrEquals\"," +
+                    "  \"value\": \"" + DELIVERY_DATE.plusHours(1).toString() + "\"" +
                     "}";
 
                 String taskId =
@@ -630,13 +578,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"deliveryDate\"," +
-                    "      \"operator\": \"beforeOrEquals\"," +
-                    "      \"value\": \"" + DELIVERY_DATE.minusHours(1).toString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"deliveryDate\"," +
+                    "  \"operator\": \"beforeOrEquals\"," +
+                    "  \"value\": \"" + DELIVERY_DATE.minusHours(1).toString() + "\"" +
                     "}";
 
                 String taskId =
@@ -664,13 +608,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"deliveryDate\"," +
-                    "      \"operator\": \"afterOrEquals\"," +
-                    "      \"value\": \"" + DELIVERY_DATE.minusHours(1).toString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"deliveryDate\"," +
+                    "  \"operator\": \"afterOrEquals\"," +
+                    "  \"value\": \"" + DELIVERY_DATE.minusHours(1).toString() + "\"" +
                     "}";
 
                 String taskId =
@@ -700,13 +640,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"deliveryDate\"," +
-                    "      \"operator\": \"afterOrEquals\"," +
-                    "      \"value\": \"" + DELIVERY_DATE.plusHours(1).toString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"deliveryDate\"," +
+                    "  \"operator\": \"afterOrEquals\"," +
+                    "  \"value\": \"" + DELIVERY_DATE.plusHours(1).toString() + "\"" +
                     "}";
 
                 String taskId =
@@ -738,13 +674,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"recipients\"," +
-                    "      \"operator\": \"contains\"," +
-                    "      \"value\": \"" + RECIPIENT1.asString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"recipients\"," +
+                    "  \"operator\": \"contains\"," +
+                    "  \"value\": \"" + RECIPIENT1.asString() + "\"" +
                     "}";
 
                 String taskId =
@@ -774,13 +706,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"recipients\"," +
-                    "      \"operator\": \"contains\"," +
-                    "      \"value\": \"" + RECIPIENT3.asString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"recipients\"," +
+                    "  \"operator\": \"contains\"," +
+                    "  \"value\": \"" + RECIPIENT3.asString() + "\"" +
                     "}";
 
                 String taskId =
@@ -811,13 +739,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"sender\"," +
-                    "      \"operator\": \"equals\"," +
-                    "      \"value\": \"" + SENDER.asString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"sender\"," +
+                    "  \"operator\": \"equals\"," +
+                    "  \"value\": \"" + SENDER.asString() + "\"" +
                     "}";
 
                 String taskId =
@@ -847,13 +771,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"sender\"," +
-                    "      \"operator\": \"equals\"," +
-                    "      \"value\": \"" + SENDER2.asString() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"sender\"," +
+                    "  \"operator\": \"equals\"," +
+                    "  \"value\": \"" + SENDER2.asString() + "\"" +
                     "}";
 
                 String taskId =
@@ -888,13 +808,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"hasAttachment\"," +
-                    "      \"operator\": \"equals\"," +
-                    "      \"value\": \"false\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"hasAttachment\"," +
+                    "  \"operator\": \"equals\"," +
+                    "  \"value\": \"false\"" +
                     "}";
 
                 String taskId =
@@ -926,14 +842,10 @@ class DeletedMessagesVaultRoutesTest {
                 storeDeletedMessage(deletedMessage);
 
                 String query =
-                    "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"hasAttachment\"," +
-                    "      \"operator\": \"equals\"," +
-                    "      \"value\": \"true\"" +
-                    "    }" +
-                    "  ]" +
+                    " {" +
+                    "  \"fieldName\": \"hasAttachment\"," +
+                    "  \"operator\": \"equals\"," +
+                    "  \"value\": \"true\"" +
                     "}";
 
                 String taskId =
@@ -966,13 +878,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"hasAttachment\"," +
-                    "      \"operator\": \"equals\"," +
-                    "      \"value\": \"true\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"hasAttachment\"," +
+                    "  \"operator\": \"equals\"," +
+                    "  \"value\": \"true\"" +
                     "}";
 
                 String taskId =
@@ -1004,13 +912,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"originMailboxes\"," +
-                    "      \"operator\": \"contains\"," +
-                    "      \"value\": \"" + MAILBOX_ID_1.serialize() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"originMailboxes\"," +
+                    "  \"operator\": \"contains\"," +
+                    "  \"value\": \"" + MAILBOX_ID_1.serialize() + "\"" +
                     "}";
 
                 String taskId =
@@ -1040,13 +944,9 @@ class DeletedMessagesVaultRoutesTest {
 
                 String query =
                     "{" +
-                    "  \"criteria\": [" +
-                    "    {" +
-                    "      \"fieldName\": \"originMailboxes\"," +
-                    "      \"operator\": \"contains\"," +
-                    "      \"value\": \"" + MAILBOX_ID_3.serialize() + "\"" +
-                    "    }" +
-                    "  ]" +
+                    "  \"fieldName\": \"originMailboxes\"," +
+                    "  \"operator\": \"contains\"," +
+                    "  \"value\": \"" + MAILBOX_ID_3.serialize() + "\"" +
                     "}";
 
                 String taskId =

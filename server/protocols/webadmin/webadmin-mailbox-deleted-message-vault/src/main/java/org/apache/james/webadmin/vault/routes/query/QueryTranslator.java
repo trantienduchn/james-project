@@ -206,7 +206,16 @@ public class QueryTranslator {
             Operator.getOperator(dto.getOperator()));
     }
 
-    public Query translate(QueryDTO queryDTO) throws QueryTranslatorException {
+    public Query translate(QueryElement queryElement) throws QueryTranslatorException {
+        if (queryElement instanceof QueryDTO) {
+            return translate((QueryDTO) queryElement);
+        } else if (queryElement instanceof CriterionDTO) {
+            return Query.of(translate((CriterionDTO) queryElement));
+        }
+        throw new IllegalArgumentException("cannot resolve query type: " + queryElement.getClass().getName());
+    }
+
+    Query translate(QueryDTO queryDTO) throws QueryTranslatorException {
         Preconditions.checkArgument(combinatorIsValid(queryDTO.getCombinator()), "combinator '" + queryDTO.getCombinator() + "' is not yet handled");
         Preconditions.checkArgument(queryDTO.getCriteria().stream().allMatch(this::isCriterion), "nested query structure is not yet handled");
 

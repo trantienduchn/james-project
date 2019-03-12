@@ -44,7 +44,7 @@ import org.apache.james.webadmin.utils.ErrorResponder;
 import org.apache.james.webadmin.utils.JsonExtractException;
 import org.apache.james.webadmin.utils.JsonExtractor;
 import org.apache.james.webadmin.utils.JsonTransformer;
-import org.apache.james.webadmin.vault.routes.query.QueryDTO;
+import org.apache.james.webadmin.vault.routes.query.QueryElement;
 import org.apache.james.webadmin.vault.routes.query.QueryTranslator;
 import org.eclipse.jetty.http.HttpStatus;
 
@@ -106,7 +106,7 @@ public class DeletedMessagesVaultRoutes implements Routes {
     private final RestoreService vaultRestore;
     private final JsonTransformer jsonTransformer;
     private final TaskManager taskManager;
-    private final JsonExtractor<QueryDTO> jsonExtractor;
+    private final JsonExtractor<QueryElement> jsonExtractor;
     private final QueryTranslator queryTranslator;
 
     @Inject
@@ -117,7 +117,7 @@ public class DeletedMessagesVaultRoutes implements Routes {
         this.jsonTransformer = jsonTransformer;
         this.taskManager = taskManager;
         this.queryTranslator = queryTranslator;
-        this.jsonExtractor = new JsonExtractor<>(QueryDTO.class);
+        this.jsonExtractor = new JsonExtractor<>(QueryElement.class);
     }
 
     @Override
@@ -176,9 +176,9 @@ public class DeletedMessagesVaultRoutes implements Routes {
         }
     }
 
-    private Query translate(QueryDTO queryDTO) {
+    private Query translate(QueryElement queryElement) {
         try {
-            return queryTranslator.translate(queryDTO);
+            return queryTranslator.translate(queryElement);
         } catch (QueryTranslator.QueryTranslatorException e) {
             throw badRequest("Invalid payload passing to the route", e);
         }
