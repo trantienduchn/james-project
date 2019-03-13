@@ -2640,23 +2640,6 @@ Messages in the Deleted Messages Vault of an specified user that are matched wit
  - Query parameter `action` is case sensitive
  - fieldName & operator for passing to the routes are case sensitive
  - Currently, we only support query combinator `and` value, otherwise, requests will be rejected 
- - Query could have a nested structure where criteria contains queries:
-```
-{
-  "combinator": "and",
-  "criteria": [
-    {
-      "combinator": "and",
-      "criteria": [
-        {"fieldName": "subject", "operator": "containsIgnoreCase", "value": "Apache James"},
-        {"fieldName": "subject", "operator": "containsIgnoreCase", "value": "Apache James"}
-      ]
-    },
-    {"fieldName": "subject", "operator": "containsIgnoreCase", "value": "Apache James"}
-  ]
-}
-```
-But at the current version, this structure is not allowed to be handled. You should go with the flatten structure
  - If you only want to restore by only one criterion, the json body could be simplified to a single criterion:
 ```
 {
