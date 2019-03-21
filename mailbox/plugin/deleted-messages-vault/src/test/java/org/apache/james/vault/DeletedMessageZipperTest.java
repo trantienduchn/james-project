@@ -26,6 +26,8 @@ import static org.apache.james.vault.DeletedMessageFixture.DELETED_MESSAGE;
 import static org.apache.james.vault.DeletedMessageFixture.DELETED_MESSAGE_2;
 import static org.apache.james.vault.DeletedMessageFixture.MESSAGE_ID;
 import static org.apache.james.vault.DeletedMessageFixture.MESSAGE_ID_2;
+import static org.apache.james.vault.DeletedMessageZipper.DeletedMessageContentLoader;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +41,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -50,6 +55,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+
+import com.github.fge.lambdas.Throwing;
+
+import reactor.core.publisher.Mono;
 
 class DeletedMessageZipperTest {
 
@@ -65,6 +74,24 @@ class DeletedMessageZipperTest {
         }
     }
 
+    private class LoadedResourcesStreamCaptor implements Answer<Optional<DeletedMessageWithContent>> {
+
+        List<DeletedMessageWithContent> captured = new ArrayList<>();
+
+        @Override
+        public Optional<DeletedMessageWithContent> answer(InvocationOnMock invocation) throws Throwable {
+            Optional<DeletedMessageWithContent> messageWithContent = (Optional<DeletedMessageWithContent>) invocation.callRealMethod();
+            return messageWithContent.map(this::returnSpied);
+        }
+
+        private DeletedMessageWithContent returnSpied(DeletedMessageWithContent message) {
+            DeletedMessageWithContent spied = spy(message);
+            captured.add(spied);
+            return spied;
+        }
+    }
+
+    private static final DeletedMessageContentLoader CONTENT_LOADER = message -> Mono.just(new ByteArrayInputStream(CONTENT));
     private static final String MESSAGE_CONTENT = new String(CONTENT, StandardCharsets.UTF_8);
     private DeletedMessageZipper zipper;
 
@@ -105,6 +132,21 @@ class DeletedMessageZipperTest {
     }
 
     @Test
+    void zipShouldCloseAllResourcesStreamWhenFinishZipping() throws Exception {
+        LoadedResourcesStreamCaptor captor = new LoadedResourcesStreamCaptor();
+        doAnswer(captor)
+            .when(zipper).messageWithContent(any(), any());
+
+        zip(Stream.of(DELETED_MESSAGE, DELETED_MESSAGE_2));
+
+        List<DeletedMessageWithContent> loadedResources = captor.captured;
+        assertThat(loadedResources)
+            .hasSize(2);
+        loadedResources.stream()
+            .forEach(Throwing.consumer(spiedMessage -> verify(spiedMessage, times(1)).close()));
+    }
+
+    @Test
     void zipShouldTerminateZipArchiveStreamWhenFinishZipping() throws Exception {
         ZipArchiveStreamCaptor captor = new ZipArchiveStreamCaptor();
         doAnswer(captor)
@@ -136,19 +178,22 @@ class DeletedMessageZipperTest {
     }
 
     @Test
-    void zipShouldCloseAllDeletedMessagesStreamWhenGettingException() throws Exception {
+    void zipShouldStopLoadingResourcesWhenGettingException() throws Exception {
         doThrow(new IOException("mocked exception"))
-            .when(zipper).putMessageToEntry(any(), any());
+            .when(zipper).createEntry(any(), any());
 
-        DeletedMessageWithContent spyMessage1 = spy(new DeletedMessageWithContent(DELETED_MESSAGE, new ByteArrayInputStream(CONTENT)));
-        DeletedMessageWithContent spyMessage2 = spy(new DeletedMessageWithContent(DELETED_MESSAGE_2, new ByteArrayInputStream(CONTENT)));
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        LoadedResourcesStreamCaptor captor = new LoadedResourcesStreamCaptor();
+        doAnswer(captor)
+            .when(zipper).messageWithContent(any(), any());
 
-        assertThatThrownBy(() -> zipper.zip(Stream.of(spyMessage1, spyMessage2), outputStream))
+        assertThatThrownBy(() -> zip(Stream.of(DELETED_MESSAGE, DELETED_MESSAGE_2)))
             .isInstanceOf(IOException.class);
 
-        verify(spyMessage1, times(1)).close();
-        verify(spyMessage2, times(1)).close();
+        List<DeletedMessageWithContent> loadedResources = captor.captured;
+        assertThat(loadedResources)
+            .hasSize(1);
+        loadedResources.stream()
+            .forEach(Throwing.consumer(spiedMessage -> verify(spiedMessage, times(1)).close()));
     }
 
     @Test
@@ -157,9 +202,7 @@ class DeletedMessageZipperTest {
             .when(zipper).putMessageToEntry(any(), any());
 
         ByteArrayOutputStream outputStream = spy(new ByteArrayOutputStream());
-        assertThatThrownBy(() -> zipper.zip(
-                Stream.of(new DeletedMessageWithContent(DELETED_MESSAGE, new ByteArrayInputStream(CONTENT))),
-                outputStream))
+        assertThatThrownBy(() -> zipper.zip(CONTENT_LOADER, Stream.of(DELETED_MESSAGE), outputStream))
             .isInstanceOf(IOException.class);
 
         verify(outputStream, times(1)).close();
@@ -183,11 +226,8 @@ class DeletedMessageZipperTest {
     }
 
     private ByteArrayOutputStream zip(Stream<DeletedMessage> deletedMessages, DeletedMessageZipper zipper) throws IOException {
-        Stream<DeletedMessageWithContent> fullMessages = deletedMessages
-            .map(deletedMessage -> new DeletedMessageWithContent(deletedMessage, new ByteArrayInputStream(CONTENT)));
-
         ByteArrayOutputStream zipOutputStream = new ByteArrayOutputStream();
-        zipper.zip(fullMessages, zipOutputStream);
+        zipper.zip(CONTENT_LOADER, deletedMessages, zipOutputStream);
         return zipOutputStream;
     }
 

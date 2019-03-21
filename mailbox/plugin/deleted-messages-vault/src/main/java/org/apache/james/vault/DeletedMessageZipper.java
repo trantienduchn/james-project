@@ -21,8 +21,9 @@ package org.apache.james.vault;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.apache.commons.compress.archivers.zip.ExtraFieldUtils;
@@ -32,27 +33,43 @@ import org.apache.commons.io.IOUtils;
 import org.apache.james.mailbox.backup.MessageIdExtraField;
 import org.apache.james.mailbox.backup.SizeExtraField;
 import org.apache.james.mailbox.model.MessageId;
+import org.apache.james.util.OptionalUtils;
+import org.reactivestreams.Publisher;
 
+import com.github.fge.lambdas.Throwing;
 import com.google.common.annotations.VisibleForTesting;
 
-class DeletedMessageZipper {
+import reactor.core.publisher.Mono;
+
+public class DeletedMessageZipper {
+
+    interface DeletedMessageContentLoader {
+        Publisher<InputStream> load(DeletedMessage deletedMessage);
+    }
 
     DeletedMessageZipper() {
         ExtraFieldUtils.register(MessageIdExtraField.class);
         ExtraFieldUtils.register(SizeExtraField.class);
     }
 
-    void zip(Stream<DeletedMessageWithContent> deletedMessages, OutputStream outputStream) throws IOException {
+    public void zip(DeletedMessageContentLoader contentLoader, Stream<DeletedMessage> deletedMessages,
+                    OutputStream outputStream) throws IOException {
         try (ZipArchiveOutputStream zipOutputStream = newZipArchiveOutputStream(outputStream)) {
+            deletedMessages
+                .map(message -> messageWithContent(message, contentLoader))
+                .flatMap(OptionalUtils::toStream)
+                .forEach(Throwing.<DeletedMessageWithContent>consumer(
+                    messageWithContent -> putMessageToEntry(zipOutputStream, messageWithContent)).sneakyThrow());
 
-            AtomicReference<IOException> failureEncountered = new AtomicReference<>();
-            deletedMessages.forEach(message -> putMessageToEntry(failureEncountered, zipOutputStream, message));
             zipOutputStream.finish();
-
-            if (failureEncountered.get() != null) {
-                throw failureEncountered.get();
-            }
         }
+    }
+
+    @VisibleForTesting
+    Optional<DeletedMessageWithContent> messageWithContent(DeletedMessage message, DeletedMessageContentLoader loader) {
+        return Mono.from(loader.load(message))
+            .map(messageContent -> new DeletedMessageWithContent(message, messageContent))
+            .blockOptional();
     }
 
     @VisibleForTesting
@@ -60,24 +77,16 @@ class DeletedMessageZipper {
         return new ZipArchiveOutputStream(outputStream);
     }
 
-    private void putMessageToEntry(AtomicReference<IOException> failureEncountered, ZipArchiveOutputStream zipOutputStream, DeletedMessageWithContent message) {
-        try (DeletedMessageWithContent closableMessage = message) {
-            if (failureEncountered.get() == null) {
-                putMessageToEntry(zipOutputStream, closableMessage);
-            }
-        } catch (IOException e) {
-            failureEncountered.set(e);
-        }
-    }
-
     @VisibleForTesting
     void putMessageToEntry(ZipArchiveOutputStream zipOutputStream, DeletedMessageWithContent message) throws IOException {
-        ZipArchiveEntry archiveEntry = createEntry(zipOutputStream, message);
-        zipOutputStream.putArchiveEntry(archiveEntry);
+        try (DeletedMessageWithContent closableMessage = message) {
+            ZipArchiveEntry archiveEntry = createEntry(zipOutputStream, message);
+            zipOutputStream.putArchiveEntry(archiveEntry);
 
-        IOUtils.copy(message.getContent(), zipOutputStream);
+            IOUtils.copy(message.getContent(), zipOutputStream);
 
-        zipOutputStream.closeArchiveEntry();
+            zipOutputStream.closeArchiveEntry();
+        }
     }
 
     @VisibleForTesting
