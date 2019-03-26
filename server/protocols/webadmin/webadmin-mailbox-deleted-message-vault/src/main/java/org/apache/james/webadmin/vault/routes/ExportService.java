@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -112,9 +113,9 @@ class ExportService {
         return tempFile;
     }
 
-    private InputStream loadMessageContent(User user, DeletedMessage message) {
+    private Optional<InputStream> loadMessageContent(User user, DeletedMessage message) {
         return Mono.from(vault.loadMimeMessage(user, message.getMessageId()))
-            .block();
+            .blockOptional();
     }
 
     private Mono<Void> exportTo(User user, MailAddress exportToAddress, BlobId blobId) {
