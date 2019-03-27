@@ -36,6 +36,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipExtraField;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
+import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.error.BasicErrorMessageFactory;
 import org.assertj.core.error.ErrorMessageFactory;
@@ -89,6 +90,14 @@ public class ZipAssert extends AbstractAssert<ZipAssert, ZipFile> implements Aut
 
     public static ZipAssert assertThatZip(ByteArrayOutputStream outputStream) throws IOException {
         return assertThatZip(new ZipFile(new SeekableInMemoryByteChannel(outputStream.toByteArray())));
+    }
+
+    public static ZipAssert assertThatZip(InputStream inputStream) throws IOException {
+        return assertThatZip(zipFileFromInputStream(inputStream));
+    }
+
+    private static ZipFile zipFileFromInputStream(InputStream inputStream) throws IOException {
+        return new ZipFile(new SeekableInMemoryByteChannel(IOUtils.toByteArray(inputStream)));
     }
 
     private static BasicErrorMessageFactory shouldHaveSize(ZipFile zipFile, int expected, int actual) {
@@ -158,6 +167,10 @@ public class ZipAssert extends AbstractAssert<ZipAssert, ZipFile> implements Aut
     @Override
     public void close() throws Exception {
         zipFile.close();
+    }
+
+    public ZipAssert hasSameContentWith(InputStream inputStream) throws IOException {
+        return hasSameContentWith(zipFileFromInputStream(inputStream));
     }
 
     public ZipAssert hasSameContentWith(ZipFile anotherZipFile) throws IOException {
