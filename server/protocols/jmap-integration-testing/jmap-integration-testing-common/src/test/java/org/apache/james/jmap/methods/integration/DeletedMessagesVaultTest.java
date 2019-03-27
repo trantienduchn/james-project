@@ -39,10 +39,8 @@ import static org.hamcrest.Matchers.is;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.jmap.api.access.AccessToken;
@@ -68,6 +66,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
@@ -134,6 +133,8 @@ public abstract class DeletedMessagesVaultTest {
 
     @Rule
     public IMAPMessageReader imapMessageReader = new IMAPMessageReader();
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     private AccessToken homerAccessToken;
     private AccessToken bartAccessToken;
@@ -143,7 +144,7 @@ public abstract class DeletedMessagesVaultTest {
 
     @Before
     public void setup() throws Throwable {
-        fileSystem = new FileSystemImpl(new JamesServerResourceLoader("../DeletedMessagesVaultIntegrationTests/" + UUID.randomUUID()));
+        fileSystem = new FileSystemImpl(new JamesServerResourceLoader(tempFolder.getRoot().getPath()));
         jmapServer = createJmapServer(fileSystem);
         jmapServer.start();
         MailboxProbe mailboxProbe = jmapServer.getProbe(MailboxProbeImpl.class);
@@ -168,9 +169,6 @@ public abstract class DeletedMessagesVaultTest {
     @After
     public void tearDown() throws Exception {
         jmapServer.stop();
-        if (fileSystem.getBasedir().exists()) {
-            FileUtils.forceDelete(fileSystem.getBasedir());
-        }
     }
 
     @Category(BasicFeature.class)
@@ -458,7 +456,7 @@ public abstract class DeletedMessagesVaultTest {
 
     @Category(BasicFeature.class)
     @Test
-    public void vaultExportShouldSendMailsToShareeWhenJmapDeleteMessage() throws Exception {
+    public void vaultExportShouldExportZipContainsVaultMessagesToShareeWhenJmapDeleteMessage() throws Exception {
         bartSendMessageToHomer();
         WAIT_TWO_MINUTES.until(() -> listMessageIdsForAccount(homerAccessToken).size() == 1);
         String messageIdOfHomer = listMessageIdsForAccount(homerAccessToken).get(0);
@@ -475,7 +473,7 @@ public abstract class DeletedMessagesVaultTest {
 
     @Category(BasicFeature.class)
     @Test
-    public void vaultExportShouldSendMailsToShareeWhenImapDeleteMessage() throws Exception {
+    public void vaultExportShouldExportZipContainsVaultMessagesToShareeWhenImapDeleteMessage() throws Exception {
         bartSendMessageToHomer();
         WAIT_TWO_MINUTES.until(() -> listMessageIdsForAccount(homerAccessToken).size() == 1);
         String messageIdOfHomer = listMessageIdsForAccount(homerAccessToken).get(0);
@@ -497,7 +495,7 @@ public abstract class DeletedMessagesVaultTest {
 
     @Category(BasicFeature.class)
     @Test
-    public void vaultExportShouldSendMailToShareeWhenImapDeletedMailbox() throws Exception {
+    public void vaultExportShouldExportZipContainsVaultMessagesToShareeWhenImapDeletedMailbox() throws Exception {
         bartSendMessageToHomer();
         WAIT_TWO_MINUTES.until(() -> listMessageIdsForAccount(homerAccessToken).size() == 1);
         String messageIdOfHomer = listMessageIdsForAccount(homerAccessToken).get(0);
@@ -520,7 +518,7 @@ public abstract class DeletedMessagesVaultTest {
     }
 
     @Test
-    public void vaultExportShouldSendEmailsWithZipContainsOnlyMatchedMessages() throws Exception {
+    public void vaultExportShouldExportZipContainsOnlyMatchedMessages() throws Exception {
         bartSendMessageToHomerWithSubject(FIRST_SUBJECT);
         WAIT_TWO_MINUTES.until(() -> listMessageIdsForAccount(homerAccessToken).size() == 1);
         String firstMessageIdOfHomer = listMessageIdsForAccount(homerAccessToken).get(0);
@@ -548,7 +546,7 @@ public abstract class DeletedMessagesVaultTest {
     }
 
     @Test
-    public void vaultExportShouldSendEmailsWithEmptyZipWhenQueryDoesntMatch() throws Exception {
+    public void vaultExportShouldExportEmptyZipWhenQueryDoesntMatch() throws Exception {
         bartSendMessageToHomerWithSubject(FIRST_SUBJECT);
         bartSendMessageToHomerWithSubject(SECOND_SUBJECT);
         WAIT_TWO_MINUTES.until(() -> listMessageIdsForAccount(homerAccessToken).size() == 2);
@@ -572,7 +570,7 @@ public abstract class DeletedMessagesVaultTest {
     }
 
     @Test
-    public void vaultExportShouldSendEmailsWithEmptyZipWhenVaultIsEmpty() throws Exception {
+    public void vaultExportShouldExportEmptyZipWhenVaultIsEmpty() throws Exception {
         String fileLocation = exportAndGetFileLocationFromLastMail(EXPORT_ALL_HOMER_MESSAGES_TO_BART, bartAccessToken);
 
         try (ZipAssert zipAssert = assertThatZip(fileSystem.getResource(fileLocation))) {

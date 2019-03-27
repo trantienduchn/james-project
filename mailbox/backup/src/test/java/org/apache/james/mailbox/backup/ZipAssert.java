@@ -113,12 +113,12 @@ public class ZipAssert extends AbstractAssert<ZipAssert, ZipFile> implements Aut
     }
 
     private static BasicErrorMessageFactory shouldHaveSameEntriesSize(List<ZipArchiveEntry> entries, List<ZipArchiveEntry> expectedEntries) {
-        return new BasicErrorMessageFactory("%nExpecting zipFile entries has size (%s) but actually (%s)", expectedEntries.size(), entries.size());
+        return new BasicErrorMessageFactory("%nExpecting zipFile to contains %s entries (%s) but actually contains (%s)",
+            expectedEntries.size(), expectedEntries, entries);
     }
 
-    private static ErrorMessageFactory entriesShouldHaveSameContentAt(int entryIndex, String entryContentAssertionError) {
-        return new BasicErrorMessageFactory("%nExpecting zipFile entry at index %s have same content. Details: \n%s",
-            entryIndex, entryContentAssertionError);
+    private static ErrorMessageFactory entriesShouldHaveSameContentAt(int entryIndex) {
+        return new BasicErrorMessageFactory("%nExpecting zipFile entry at index %s has same content", entryIndex);
     }
 
     private static ErrorMessageFactory entriesShouldHaveSameName(ZipArchiveEntry entry, ZipArchiveEntry expectedEntry, int entryIndex) {
@@ -217,7 +217,7 @@ public class ZipAssert extends AbstractAssert<ZipAssert, ZipFile> implements Aut
             assertThat(entryContent)
                 .hasSameContentAs(expectingEntryContent);
         } catch (AssertionError assertionError) {
-            throwAssertionError(entriesShouldHaveSameContentAt(entryIndex, assertionError.getMessage()));
+            throwAssertionError(entriesShouldHaveSameContentAt(entryIndex));
         }
     }
 
