@@ -19,7 +19,7 @@
 
 package org.apache.james;
 
-import org.apache.james.modules.LocalFileBlobExportMechanismModule;
+import org.apache.james.modules.BlobExportMechanismModule;
 import org.apache.james.modules.MailboxModule;
 import org.apache.james.modules.activemq.ActiveMQQueueModule;
 import org.apache.james.modules.data.CassandraDLPConfigurationStoreModule;
@@ -105,7 +105,6 @@ public class CassandraJamesServerMain {
         new CassandraEventStoreModule(),
         new CassandraMailRepositoryModule(),
         new CassandraMetricsModule(),
-        new BlobStoreAPIModule(),
         new CassandraObjectStoreModule(),
         new CassandraRecipientRewriteTableModule(),
         new CassandraSessionModule(),
@@ -121,12 +120,16 @@ public class CassandraJamesServerMain {
         new TikaMailboxModule(),
         new SpamAssassinListenerModule());
 
+    public static final Module BLOB_MODULE = Modules.combine(
+        new BlobStoreAPIModule(),
+        new BlobExportMechanismModule());
+
     public static Module ALL_BUT_JMX_CASSANDRA_MODULE = Modules.combine(
         CASSANDRA_SERVER_CORE_MODULE,
         CASSANDRA_MAILBOX_MODULE,
+        BLOB_MODULE,
         PROTOCOLS,
-        PLUGINS,
-        new LocalFileBlobExportMechanismModule());
+        PLUGINS);
 
     public static void main(String[] args) throws Exception {
         Configuration configuration = Configuration.builder()
