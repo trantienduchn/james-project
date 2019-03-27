@@ -33,7 +33,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.james.mailbox.backup.MessageIdExtraField;
 import org.apache.james.mailbox.backup.SizeExtraField;
 import org.apache.james.mailbox.model.MessageId;
-import org.apache.james.util.OptionalUtils;
 
 import com.github.fge.lambdas.Throwing;
 import com.github.fge.lambdas.consumers.ThrowingConsumer;
@@ -44,22 +43,6 @@ public class DeletedMessageZipper {
         Optional<InputStream> load(DeletedMessage deletedMessage);
     }
 
-    private static class DeletedMessageWithContent {
-
-        private static Optional<DeletedMessageWithContent> of(Optional<InputStream> content, DeletedMessage deletedMessage) {
-            return content
-                .map(inputStream -> new DeletedMessageWithContent(inputStream, deletedMessage));
-        }
-
-        private final InputStream inputStream;
-        private final DeletedMessage deletedMessage;
-
-        private DeletedMessageWithContent(InputStream inputStream, DeletedMessage deletedMessage) {
-            this.inputStream = inputStream;
-            this.deletedMessage = deletedMessage;
-        }
-    }
-
     public DeletedMessageZipper() {
         ExtraFieldUtils.register(MessageIdExtraField.class);
         ExtraFieldUtils.register(SizeExtraField.class);
@@ -67,12 +50,10 @@ public class DeletedMessageZipper {
 
     public void zip(DeletedMessageContentLoader contentLoader, Stream<DeletedMessage> deletedMessages, OutputStream outputStream) throws IOException {
         try (ZipArchiveOutputStream zipOutputStream = newZipArchiveOutputStream(outputStream)) {
-            ThrowingConsumer<DeletedMessageWithContent> putInZip =
-                messageWithContent -> putMessageToEntry(zipOutputStream, messageWithContent.deletedMessage, messageWithContent.inputStream);
+            ThrowingConsumer<DeletedMessage> putInZip =
+                message -> putMessageToEntry(zipOutputStream, message, contentLoader.load(message));
 
-            deletedMessages.map(message -> DeletedMessageWithContent.of(contentLoader.load(message), message))
-                .flatMap(OptionalUtils::toStream)
-                .forEach(Throwing.consumer(putInZip).sneakyThrow());
+            deletedMessages.forEach(Throwing.consumer(putInZip).sneakyThrow());
 
             zipOutputStream.finish();
         }
@@ -84,13 +65,13 @@ public class DeletedMessageZipper {
     }
 
     @VisibleForTesting
-    void putMessageToEntry(ZipArchiveOutputStream zipOutputStream, DeletedMessage message, InputStream messageContent) throws IOException {
-        try (InputStream closableMessageContent = messageContent) {
-            zipOutputStream.putArchiveEntry(createEntry(zipOutputStream, message));
-
-            IOUtils.copy(closableMessageContent, zipOutputStream);
-
-            zipOutputStream.closeArchiveEntry();
+    void putMessageToEntry(ZipArchiveOutputStream zipOutputStream, DeletedMessage message, Optional<InputStream> maybeContent) throws IOException {
+        if (maybeContent.isPresent()) {
+            try (InputStream closableMessageContent = maybeContent.get()) {
+                zipOutputStream.putArchiveEntry(createEntry(zipOutputStream, message));
+                IOUtils.copy(closableMessageContent, zipOutputStream);
+                zipOutputStream.closeArchiveEntry();
+            }
         }
     }
 

@@ -19,11 +19,7 @@
 
 package org.apache.james.webadmin.vault.routes;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 
 import javax.inject.Inject;
 
@@ -39,18 +35,13 @@ import org.apache.james.vault.DeletedMessageZipper;
 import org.apache.james.vault.search.Query;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.io.ByteSource;
+import com.google.common.io.FileBackedOutputStream;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 class ExportService {
-    private static File temporaryFile() throws IOException {
-        return Files.createTempFile(TEMPORARY_FILE_NAME_PREFIX, TEMPORARY_FILE_EXTENSION).toFile();
-    }
-
-    private static final String TEMPORARY_FILE_EXTENSION = ".temp";
-    private static final String TEMPORARY_FILE_NAME_PREFIX = "james-vault-export-";
-
     private final BlobExportMechanism blobExport;
     private final BlobStore blobStore;
     private final DeletedMessageZipper zipper;
@@ -68,31 +59,20 @@ class ExportService {
     void export(User user, Query exportQuery, MailAddress exportToAddress, Runnable messageToExportCallback) throws IOException {
         Flux<DeletedMessage> matchedMessages = Flux.from(vault.search(user, exportQuery))
             .doOnNext(any -> messageToExportCallback.run());
-        File file = zipToFile(user, matchedMessages);
 
-        try {
-            BlobId blobId = copyIntoBlobStore(file);
-            blobExport.blobId(blobId)
-                .with(exportToAddress)
-                .explanation(exportMessage(user))
-                .export();
-        } finally {
-            FileUtils.forceDelete(file);
-        }
+        BlobId blobId = zipToBlob(user, matchedMessages);
+
+        blobExport.blobId(blobId)
+            .with(exportToAddress)
+            .explanation(exportMessage(user))
+            .export();
     }
 
-    private File zipToFile(User user, Flux<DeletedMessage> messages) throws IOException {
-        File tempFile = temporaryFile();
-
-        try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile)) {
+    private BlobId zipToBlob(User user, Flux<DeletedMessage> messages) throws IOException {
+        try (FileBackedOutputStream fileOutputStream = new FileBackedOutputStream(FileUtils.ONE_MB_BI.intValue())) {
             zipper.zip(contentLoader(user), messages.toStream(), fileOutputStream);
-            return tempFile;
-        }
-    }
-
-    private BlobId copyIntoBlobStore(File file) throws IOException {
-        try (FileInputStream fileInputStream = new FileInputStream(file)) {
-            return blobStore.save(fileInputStream, file.length()).block();
+            ByteSource byteSource = fileOutputStream.asByteSource();
+            return blobStore.save(byteSource.openStream(), byteSource.size()).block();
         }
     }
 
