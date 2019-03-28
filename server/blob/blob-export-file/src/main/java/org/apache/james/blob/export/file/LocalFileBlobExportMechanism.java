@@ -46,7 +46,7 @@ public class LocalFileBlobExportMechanism implements BlobExportMechanism {
 
     public static class Configuration {
 
-        private static final String DEFAULT_DIRECTORY_LOCATION = "file://var/blobExporting";
+        private static final String DEFAULT_DIRECTORY_LOCATION = "file://127.0.0.1/var/blobExporting";
         public static final Configuration DEFAULT_CONFIGURATION = new Configuration(DEFAULT_DIRECTORY_LOCATION);
 
         private final String exportDirectory;
