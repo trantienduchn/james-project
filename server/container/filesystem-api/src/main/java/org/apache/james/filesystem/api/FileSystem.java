@@ -70,6 +70,10 @@ public interface FileSystem {
      */
     InputStream getResource(String url) throws IOException;
 
+    default InputStream getResource(FileUrl url) throws IOException {
+        return getResource(url.getValue());
+    }
+
     /**
      * Used to retrieve a specific file in the application context
      * 
@@ -80,6 +84,10 @@ public interface FileSystem {
      *             if the file cannot be found/read
      */
     File getFile(String fileURL) throws FileNotFoundException;
+
+    default File getFile(FileUrl fileURL) throws FileNotFoundException {
+        return getFile(fileURL.getValue());
+    }
 
     /**
      * Return the base folder used by the application

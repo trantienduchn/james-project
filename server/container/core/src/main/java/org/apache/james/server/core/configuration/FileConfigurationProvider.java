@@ -29,6 +29,7 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.filesystem.api.FileUrl;
 import org.apache.james.util.LoggingLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,11 +82,11 @@ public class FileConfigurationProvider implements ConfigurationProvider {
         return selectHierarchicalConfigPart(config, Iterables.skip(configPathParts, 1));
     }
 
-    private Optional<InputStream> retrieveConfigInputStream(String configurationFileWithoutExtension, LoggingLevel loggingLevelOnError) throws ConfigurationException {
+    private Optional<InputStream> retrieveConfigInputStream(String configurationFileWithoutExtension, LoggingLevel loggingLevelOnError) {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(configurationFileWithoutExtension), "The configuration file name should not be empty or null");
         try {
             return Optional.of(
-                fileSystem.getResource(configurationPrefix + configurationFileWithoutExtension + CONFIGURATION_FILE_SUFFIX));
+                fileSystem.getResource(FileUrl.of(configurationPrefix + configurationFileWithoutExtension + CONFIGURATION_FILE_SUFFIX)));
         } catch (IOException e) {
             loggingLevelOnError.format(LOGGER, "Unable to locate configuration file {}" + CONFIGURATION_FILE_SUFFIX + ", assuming empty configuration", configurationFileWithoutExtension);
             return Optional.empty();

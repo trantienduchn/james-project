@@ -35,6 +35,7 @@ import org.apache.james.core.MailAddress;
 import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.filesystem.api.FileUrl;
 import org.apache.james.server.core.MailImpl;
 import org.apache.mailet.MailetContext;
 
@@ -50,24 +51,24 @@ public class LocalFileBlobExportMechanism implements BlobExportMechanism {
 
     public static class Configuration {
         private static final String DIRECTORY_LOCATION_PROPERTY = "blob.export.localFile.storingDirectory";
-        private static final String DEFAULT_DIRECTORY_LOCATION = "file://var/blobExporting";
+        private static final FileUrl DEFAULT_DIRECTORY_LOCATION = FileUrl.of(FileUrl.Protocol.FILE, "var/blobExporting");
         public static final Configuration DEFAULT_CONFIGURATION = new Configuration(DEFAULT_DIRECTORY_LOCATION);
 
         public static Configuration from(org.apache.commons.configuration.Configuration propertiesConfiguration) {
             String exportDirectory = propertiesConfiguration.getString(DIRECTORY_LOCATION_PROPERTY);
-            return new Configuration(exportDirectory);
+            return new Configuration(FileUrl.of(exportDirectory));
         }
 
-        private final String exportDirectory;
+        private final FileUrl exportDirectory;
 
         @VisibleForTesting
-        Configuration(String exportDirectory) {
+        Configuration(FileUrl exportDirectory) {
             Preconditions.checkNotNull(exportDirectory);
 
             this.exportDirectory = exportDirectory;
         }
 
-        public String getExportDirectory() {
+        public FileUrl getExportDirectory() {
             return exportDirectory;
         }
 
@@ -114,7 +115,6 @@ public class LocalFileBlobExportMechanism implements BlobExportMechanism {
         try {
             File exportingDirectory = fileSystem.getFile(configuration.exportDirectory);
             FileUtils.forceMkdir(exportingDirectory);
-
 
             String fileName = RandomStringUtils.random(STRING_LENGTH, WITH_LETTERS, !WITH_NUMBERS);
             String fileURL = configuration.exportDirectory + "/" + fileName;

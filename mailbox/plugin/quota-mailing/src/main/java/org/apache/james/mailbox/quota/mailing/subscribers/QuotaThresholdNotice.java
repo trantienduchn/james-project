@@ -37,6 +37,7 @@ import org.apache.james.core.builder.MimeMessageBuilder;
 import org.apache.james.core.quota.QuotaCount;
 import org.apache.james.core.quota.QuotaSize;
 import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.filesystem.api.FileUrl;
 import org.apache.james.mailbox.model.Quota;
 import org.apache.james.mailbox.quota.mailing.QuotaMailingListenerConfiguration;
 import org.apache.james.mailbox.quota.model.HistoryEvolution;
@@ -159,7 +160,7 @@ public class QuotaThresholdNotice {
             .get();
     }
 
-    private String renderTemplate(FileSystem fileSystem, String template) throws IOException {
+    private String renderTemplate(FileSystem fileSystem, FileUrl template) throws IOException {
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
              Writer writer = new OutputStreamWriter(byteArrayOutputStream)) {
 
@@ -171,7 +172,7 @@ public class QuotaThresholdNotice {
         }
     }
 
-    private StringReader getPatternReader(FileSystem fileSystem, String path) throws IOException {
+    private StringReader getPatternReader(FileSystem fileSystem, FileUrl path) throws IOException {
         try (InputStream patternStream = fileSystem.getResource(path);
              ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
 

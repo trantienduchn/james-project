@@ -54,6 +54,7 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.james.core.MailAddress;
 import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.filesystem.api.FileUrl;
 import org.apache.james.mailrepository.api.MailKey;
 import org.apache.james.mailrepository.lib.AbstractMailRepository;
 import org.apache.james.repository.file.FilePersistentStreamRepository;
@@ -114,7 +115,7 @@ public class JDBCMailRepository extends AbstractMailRepository {
      * The name of the SQL configuration file to be used to configure this
      * repository.
      */
-    private String sqlFileName;
+    private FileUrl sqlFileName;
 
     /**
      * The stream repository used in dbfile mode
@@ -219,7 +220,7 @@ public class JDBCMailRepository extends AbstractMailRepository {
         inMemorySizeLimit = configuration.getInt("inMemorySizeLimit", 409600000);
 
         filestore = configuration.getString("filestore", null);
-        sqlFileName = configuration.getString("sqlFile");
+        sqlFileName = FileUrl.of(configuration.getString("sqlFile"));
 
     }
 

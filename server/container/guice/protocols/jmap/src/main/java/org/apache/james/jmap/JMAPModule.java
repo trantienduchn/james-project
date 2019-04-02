@@ -29,6 +29,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.filesystem.api.FileUrl;
 import org.apache.james.jmap.event.PropagateLookupRightListener;
 import org.apache.james.jmap.mailet.VacationMailet;
 import org.apache.james.jmap.mailet.filter.JMAPFiltering;
@@ -112,7 +113,7 @@ public class JMAPModule extends AbstractModule {
             Configuration configuration = propertiesProvider.getConfiguration("jmap");
             return JMAPConfiguration.builder()
                 .enabled(configuration.getBoolean("enabled", true))
-                .keystore(configuration.getString("tls.keystoreURL"))
+                .keystore(FileUrl.of(configuration.getString("tls.keystoreURL")))
                 .secret(configuration.getString("tls.secret"))
                 .jwtPublicKeyPem(loadPublicKey(fileSystem, Optional.ofNullable(configuration.getString("jwt.publickeypem.url"))))
                 .port(configuration.getInt("jmap.port", DEFAULT_JMAP_PORT))

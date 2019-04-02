@@ -20,6 +20,8 @@ package org.apache.james.jmap;
 
 import java.util.Optional;
 
+import org.apache.james.filesystem.api.FileUrl;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -31,7 +33,7 @@ public class JMAPConfiguration {
     }
 
     public static class Builder {
-        private String keystore;
+        private FileUrl keystore;
         private String secret;
         private Optional<Boolean> enabled = Optional.empty();
         private Optional<String> jwtPublicKeyPem = Optional.empty();
@@ -39,7 +41,7 @@ public class JMAPConfiguration {
 
         private Builder() {}
 
-        public Builder keystore(String keystore) {
+        public Builder keystore(FileUrl keystore) {
             this.keystore = keystore;
             return this;
         }
@@ -80,7 +82,7 @@ public class JMAPConfiguration {
 
         public JMAPConfiguration build() {
             Preconditions.checkState(enabled.isPresent(), "You should specify if JMAP server should be started");
-            Preconditions.checkState(!enabled.get() || !Strings.isNullOrEmpty(keystore), "'keystore' is mandatory");
+            Preconditions.checkState(!enabled.get() || keystore != null, "'keystore' is mandatory");
             Preconditions.checkState(!enabled.get() || !Strings.isNullOrEmpty(secret), "'secret' is mandatory");
             Preconditions.checkState(!enabled.get() || jwtPublicKeyPem.isPresent(), "'publicKey' is mandatory");
             return new JMAPConfiguration(enabled.get(), keystore, secret, jwtPublicKeyPem, port);
@@ -89,12 +91,12 @@ public class JMAPConfiguration {
     }
 
     private final boolean enabled;
-    private final String keystore;
+    private final FileUrl keystore;
     private final String secret;
     private final Optional<String> jwtPublicKeyPem;
     private final Optional<Integer> port;
 
-    @VisibleForTesting JMAPConfiguration(boolean enabled, String keystore, String secret, Optional<String> jwtPublicKeyPem, Optional<Integer> port) {
+    @VisibleForTesting JMAPConfiguration(boolean enabled, FileUrl keystore, String secret, Optional<String> jwtPublicKeyPem, Optional<Integer> port) {
         this.enabled = enabled;
         this.keystore = keystore;
         this.secret = secret;
@@ -106,7 +108,7 @@ public class JMAPConfiguration {
         return enabled;
     }
 
-    public String getKeystore() {
+    public FileUrl getKeystore() {
         return keystore;
     }
 

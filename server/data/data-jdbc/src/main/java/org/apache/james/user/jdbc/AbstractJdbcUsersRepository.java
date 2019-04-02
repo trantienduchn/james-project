@@ -40,6 +40,7 @@ import javax.sql.DataSource;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.filesystem.api.FileUrl;
 import org.apache.james.user.api.UsersRepositoryException;
 import org.apache.james.user.api.model.User;
 import org.apache.james.user.lib.AbstractJamesUsersRepository;
@@ -98,7 +99,7 @@ public abstract class AbstractJdbcUsersRepository extends AbstractJamesUsersRepo
 
     protected Map<String, String> sqlParameters;
 
-    private String sqlFileName;
+    private FileUrl sqlFileName;
 
     private DataSource datasource;
 
@@ -399,7 +400,7 @@ public abstract class AbstractJdbcUsersRepository extends AbstractJamesUsersRepo
         LOGGER.debug("Parsed URL: table = '{}', key = '{}'", sqlParameters.get("table"), sqlParameters.get("key"));
 
         // Get the SQL file location
-        sqlFileName = configuration.getString("sqlFile", null);
+        sqlFileName = FileUrl.of(configuration.getString("sqlFile", null));
 
         // Get other sql parameters from the configuration object,
         // if any.

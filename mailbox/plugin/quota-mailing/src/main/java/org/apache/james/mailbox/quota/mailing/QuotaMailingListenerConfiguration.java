@@ -28,7 +28,7 @@ import java.util.Optional;
 
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.james.filesystem.api.FileSystem;
+import org.apache.james.filesystem.api.FileUrl;
 import org.apache.james.mailbox.quota.model.QuotaThreshold;
 import org.apache.james.mailbox.quota.model.QuotaThresholds;
 import org.apache.james.util.DurationParser;
@@ -66,12 +66,12 @@ public class QuotaMailingListenerConfiguration {
         return Optional.ofNullable(config.getString(XmlKeys.NAME, null));
     }
 
-    private static Optional<String> readSubjectTemplate(HierarchicalConfiguration config) {
-        return Optional.ofNullable(config.getString(XmlKeys.SUBJECT_TEMPLATE, null));
+    private static Optional<FileUrl> readSubjectTemplate(HierarchicalConfiguration config) {
+        return Optional.ofNullable(config.getString(XmlKeys.SUBJECT_TEMPLATE, null)).map(FileUrl::of);
     }
 
-    private static Optional<String> readBodyTemplate(HierarchicalConfiguration config) {
-        return Optional.ofNullable(config.getString(XmlKeys.BODY_TEMPLATE, null));
+    private static Optional<FileUrl> readBodyTemplate(HierarchicalConfiguration config) {
+        return Optional.ofNullable(config.getString(XmlKeys.BODY_TEMPLATE, null)).map(FileUrl::of);
     }
 
     private static Optional<Duration> readGracePeriod(HierarchicalConfiguration config) {
@@ -85,39 +85,39 @@ public class QuotaMailingListenerConfiguration {
             .map(node -> Pair.of(
                 node.getDouble(XmlKeys.THRESHOLD_VALUE),
                 RenderingInformation.from(
-                    Optional.ofNullable(node.getString(XmlKeys.BODY_TEMPLATE)),
-                    Optional.ofNullable(node.getString(XmlKeys.SUBJECT_TEMPLATE)))))
+                    Optional.ofNullable(node.getString(XmlKeys.BODY_TEMPLATE)).map(FileUrl::of),
+                    Optional.ofNullable(node.getString(XmlKeys.SUBJECT_TEMPLATE)).map(FileUrl::of))))
             .collect(Guavate.toImmutableMap(
                 pair -> new QuotaThreshold(pair.getLeft()),
                 Pair::getRight));
     }
 
     public static class RenderingInformation {
-        private final Optional<String> bodyTemplate;
-        private final Optional<String> subjectTemplate;
+        private final Optional<FileUrl> bodyTemplate;
+        private final Optional<FileUrl> subjectTemplate;
 
-        public static RenderingInformation from(Optional<String> bodyTemplate, Optional<String> subjectTemplate) {
+        public static RenderingInformation from(Optional<FileUrl> bodyTemplate, Optional<FileUrl> subjectTemplate) {
             return new RenderingInformation(
                 bodyTemplate,
                 subjectTemplate);
         }
 
-        public static RenderingInformation from(String bodyTemplate, String subjectTemplate) {
+        public static RenderingInformation from(FileUrl bodyTemplate, FileUrl subjectTemplate) {
             return from(Optional.of(bodyTemplate), Optional.of(subjectTemplate));
         }
 
-        private RenderingInformation(Optional<String> bodyTemplate, Optional<String> subjectTemplate) {
+        private RenderingInformation(Optional<FileUrl> bodyTemplate, Optional<FileUrl> subjectTemplate) {
             Preconditions.checkArgument(!bodyTemplate.equals(Optional.of("")), "Pass a non empty bodyTemplate");
             Preconditions.checkArgument(!subjectTemplate.equals(Optional.of("")), "Pass a non empty subjectTemplate");
             this.bodyTemplate = bodyTemplate;
             this.subjectTemplate = subjectTemplate;
         }
 
-        public Optional<String> getBodyTemplate() {
+        public Optional<FileUrl> getBodyTemplate() {
             return bodyTemplate;
         }
 
-        public Optional<String> getSubjectTemplate() {
+        public Optional<FileUrl> getSubjectTemplate() {
             return subjectTemplate;
         }
 
@@ -150,8 +150,8 @@ public class QuotaMailingListenerConfiguration {
         private ImmutableList.Builder<QuotaThreshold> thresholds;
         private ImmutableMap.Builder<QuotaThreshold, RenderingInformation> toRenderingInformation;
         private Optional<Duration> gradePeriod;
-        private Optional<String> bodyTemplate;
-        private Optional<String> subjectTemplate;
+        private Optional<FileUrl> bodyTemplate;
+        private Optional<FileUrl> subjectTemplate;
         private Optional<String> name;
 
         private Builder() {
@@ -195,24 +195,22 @@ public class QuotaMailingListenerConfiguration {
             return this;
         }
         
-        public Builder bodyTemplate(String bodyTemplate) {
-            Preconditions.checkArgument(!Strings.isNullOrEmpty(bodyTemplate), "Pass a non null/empty bodyTemplate");
+        public Builder bodyTemplate(FileUrl bodyTemplate) {
             this.bodyTemplate = Optional.of(bodyTemplate);
             return this;
         }
 
-        public Builder subjectTemplate(String subjectTemplate) {
-            Preconditions.checkArgument(!Strings.isNullOrEmpty(subjectTemplate), "Pass a non null/empty subjectTemplate");
+        public Builder subjectTemplate(FileUrl subjectTemplate) {
             this.subjectTemplate = Optional.of(subjectTemplate);
             return this;
         }
 
-        public Builder bodyTemplate(Optional<String> bodyTemplate) {
+        public Builder bodyTemplate(Optional<FileUrl> bodyTemplate) {
             bodyTemplate.ifPresent(this::bodyTemplate);
             return this;
         }
 
-        public Builder subjectTemplate(Optional<String> subjectTemplate) {
+        public Builder subjectTemplate(Optional<FileUrl> subjectTemplate) {
             subjectTemplate.ifPresent(this::subjectTemplate);
             return this;
         }
@@ -244,8 +242,8 @@ public class QuotaMailingListenerConfiguration {
         }
     }
 
-    public static final String DEFAULT_BODY_TEMPLATE = FileSystem.CLASSPATH_PROTOCOL + "//templates/QuotaThresholdMailBody.mustache";
-    public static final String DEFAULT_SUBJECT_TEMPLATE = FileSystem.CLASSPATH_PROTOCOL + "//templates/QuotaThresholdMailSubject.mustache";
+    public static final FileUrl DEFAULT_BODY_TEMPLATE = FileUrl.of(FileUrl.Protocol.CLASSPATH, "templates/QuotaThresholdMailBody.mustache");
+    public static final FileUrl DEFAULT_SUBJECT_TEMPLATE = FileUrl.of(FileUrl.Protocol.CLASSPATH, "//templates/QuotaThresholdMailSubject.mustache");
     public static final RenderingInformation DEFAULT_RENDERING_INFORMATION = RenderingInformation.from(Optional.empty(), Optional.empty());
     public static final Duration DEFAULT_GRACE_PERIOD = Duration.ofDays(1);
     private static final String DEFAULT_NAME = "default";
@@ -262,12 +260,12 @@ public class QuotaMailingListenerConfiguration {
     private final ImmutableMap<QuotaThreshold, RenderingInformation> toRenderingInformation;
     private final QuotaThresholds thresholds;
     private final Duration gracePeriod;
-    private final Optional<String> bodyTemplate;
-    private final Optional<String> subjectTemplate;
+    private final Optional<FileUrl> bodyTemplate;
+    private final Optional<FileUrl> subjectTemplate;
     private final String name;
 
     private QuotaMailingListenerConfiguration(ImmutableMap<QuotaThreshold, RenderingInformation> toRenderingInformation,
-                                              QuotaThresholds thresholds, Duration gracePeriod, Optional<String> bodyTemplate, Optional<String> subjectTemplate, String name) {
+                                              QuotaThresholds thresholds, Duration gracePeriod, Optional<FileUrl> bodyTemplate, Optional<FileUrl> subjectTemplate, String name) {
         this.toRenderingInformation = toRenderingInformation;
         this.thresholds = thresholds;
         this.gracePeriod = gracePeriod;
@@ -284,7 +282,7 @@ public class QuotaMailingListenerConfiguration {
         return gracePeriod;
     }
 
-    public String getBodyTemplate(QuotaThreshold quotaThreshold) {
+    public FileUrl getBodyTemplate(QuotaThreshold quotaThreshold) {
         return OptionalUtils.or(
             Optional.ofNullable(
                 toRenderingInformation.get(quotaThreshold))
@@ -293,7 +291,7 @@ public class QuotaMailingListenerConfiguration {
             .orElse(DEFAULT_BODY_TEMPLATE);
     }
 
-    public String getSubjectTemplate(QuotaThreshold quotaThreshold) {
+    public FileUrl getSubjectTemplate(QuotaThreshold quotaThreshold) {
         return OptionalUtils.or(
             Optional.ofNullable(
                 toRenderingInformation.get(quotaThreshold))
