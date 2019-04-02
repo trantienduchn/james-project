@@ -49,24 +49,19 @@ public class LocalFileBlobExportMechanism implements BlobExportMechanism {
     static final String CORRESPONDING_FILE_HEADER = "corresponding-file";
 
     public static class Configuration {
-
-        public static Configuration from(org.apache.commons.configuration.Configuration propertiesConfiguration) {
-            String exportDirectory = propertiesConfiguration.getString(DIRECTORY_LOCATION_PROPERTY);
-            return of(exportDirectory);
-        }
-
-        @VisibleForTesting
-        static Configuration of(String exportDirectory) {
-            return new Configuration(exportDirectory);
-        }
-
         private static final String DIRECTORY_LOCATION_PROPERTY = "blob.export.localFile.storingDirectory";
         private static final String DEFAULT_DIRECTORY_LOCATION = "file://var/blobExporting";
         public static final Configuration DEFAULT_CONFIGURATION = new Configuration(DEFAULT_DIRECTORY_LOCATION);
 
+        public static Configuration from(org.apache.commons.configuration.Configuration propertiesConfiguration) {
+            String exportDirectory = propertiesConfiguration.getString(DIRECTORY_LOCATION_PROPERTY);
+            return new Configuration(exportDirectory);
+        }
+
         private final String exportDirectory;
 
-        public Configuration(String exportDirectory) {
+        @VisibleForTesting
+        Configuration(String exportDirectory) {
             Preconditions.checkNotNull(exportDirectory);
 
             this.exportDirectory = exportDirectory;

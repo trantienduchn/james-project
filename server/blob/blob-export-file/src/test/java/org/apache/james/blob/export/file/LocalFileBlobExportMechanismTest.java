@@ -162,7 +162,7 @@ class LocalFileBlobExportMechanismTest {
             configuration.addProperty("blob.export.localFile.storingDirectory", exportDirectory);
 
             assertThat(Configuration.from(configuration))
-                .isEqualTo(Configuration.of(exportDirectory));
+                .isEqualTo(new Configuration(exportDirectory));
         }
     }
 }
