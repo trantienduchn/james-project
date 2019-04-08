@@ -190,7 +190,7 @@ class LocalFileBlobExportMechanismTest {
             });
     }
 
-        @Nested
+    @Nested
     class ConfigurationTest {
         @Test
         void shouldMatchBeanContract() {
@@ -220,7 +220,7 @@ class LocalFileBlobExportMechanismTest {
             configuration.addProperty("blob.export.localFile.directory", exportDirectory);
 
             assertThat(Configuration.from(configuration))
-                .isEqualTo(new Configuration(exportDirectory));
+                .contains(new Configuration(exportDirectory));
         }
     }
 }
