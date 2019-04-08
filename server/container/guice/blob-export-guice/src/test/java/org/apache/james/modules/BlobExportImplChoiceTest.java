@@ -58,7 +58,7 @@ class BlobExportImplChoiceTest {
         configuration.addProperty("blob.export.implementation", "localFile");
 
         assertThat(BlobExportImplChoice.from(configuration))
-            .contains(BlobExportImplChoice.localFile());
+            .contains(BlobExportImplChoice.LOCAL_FILE);
     }
 
     @Test
@@ -76,6 +76,6 @@ class BlobExportImplChoiceTest {
         configuration.addProperty("blob.export.implementation", "  localFile   ");
 
         assertThat(BlobExportImplChoice.from(configuration))
-            .contains(BlobExportImplChoice.localFile());
+            .contains(BlobExportImplChoice.LOCAL_FILE);
     }
 }
