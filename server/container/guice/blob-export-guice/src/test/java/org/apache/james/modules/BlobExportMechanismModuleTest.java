@@ -79,7 +79,7 @@ class BlobExportMechanismModuleTest {
     }
 
     @Test
-    void provideChoiceShouldThrowWhenConfigurationIsMissing() throws Exception {
+    void provideChoiceShouldReturnDefaultWhenConfigurationIsMissing() throws Exception {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
         FakePropertiesProvider noConfigurationFile = FakePropertiesProvider.builder()
             .register(NAME, configuration)
