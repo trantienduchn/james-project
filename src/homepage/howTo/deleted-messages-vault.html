@@ -208,31 +208,16 @@ layout: default
                     </code></pre>
 
                     <p>Finally, starting a James Server by docker compose</p>
+                    <p>Getting James docker-compose.yml</p>
                     <pre><code>
-    version: '2'
+    $ wget https://raw.githubusercontent.com/apache/james-project/master/dockerfiles/run/docker-compose.yml
+                    </code></pre>
 
-    services:
-      james:
-        image: linagora/james-cassandra-guice:latest
-        ports:
-          - "80:80"
-          - "25:25"
-          - "110:110"
-          - "143:143"
-          - "465:465"
-          - "587:587"
-          - "993:993"
-          - "8000:8000"
-        volumes:
-          - $PWD/conf:/root/conf/
-          - $PWD/var:/root/var/
-
-      james_elastic:
-        image: elasticsearch:2.4.6
-      cassandra:
-        image: cassandra:3.11.3
-      tika:
-        image: logicalspark/docker-tikaserver:1.20
+                    <p>Adds the following volumes for james service:</p>
+                    <pre><code>
+    volumes:
+      - $PWD/conf:/root/conf/
+      - $PWD/var:/root/var/
                     </code></pre>
 
                     <header class="major">
