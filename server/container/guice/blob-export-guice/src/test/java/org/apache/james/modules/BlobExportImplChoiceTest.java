@@ -62,7 +62,7 @@ class BlobExportImplChoiceTest {
     }
 
     @Test
-    void fromShouldThrowWhenCaseInSensitive() {
+    void fromShouldThrowWhenCaseInsensitive() {
         PropertiesConfiguration configuration = new PropertiesConfiguration();
         configuration.addProperty("blob.export.implementation", "localFILE");
 
