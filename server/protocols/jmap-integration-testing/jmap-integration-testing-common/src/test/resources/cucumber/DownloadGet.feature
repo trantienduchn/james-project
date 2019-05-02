@@ -54,7 +54,7 @@ Feature: Download GET
     Given "alice@domain.tld" mailbox "INBOX" contains a message "1" with an attachment "2"
     When "alice@domain.tld" downloads "2" with "myFileName.txt" name
     Then she can read that blob
-    And there is no Content-Type
+    And the Content-Type is "application/octet-stream"
 
   @BasicFeature
   Scenario: Getting a message blob previously stored
