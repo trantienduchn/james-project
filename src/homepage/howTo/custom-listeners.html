@@ -58,12 +58,16 @@ layout: howTo
                 </p>
                 <ul>
                     <li>
-                        <b>Group Registration</b>: If a Listener is registered as the Group Registration, it will receive all of events fired by James Mailbox System.
+                        <b>Group Registration</b>: a Group Registration will listen all events fired and delivery each event only once per group within a distributed topology.
+                        That means if there are three listeners register to the same group, each time an event is fired, only one in three listeners can receive that event.
                         You can write your own custom Listener and configure James to register it as a Group Registration.
                     </li>
                     <li>
-                        <b>Key Registration</b>: If a Listener is registered as the Key Registration, it will receive only events it is interested in.
-                        At the moment, James doesn't support custom listeners Key Registration
+                        <b>Key Registration</b>: a Key Registration will listen only events it is interested in, and with each event fired to a Key Registration, it will be
+                        delivered to all registered listeners. That means if there are three listeners register to the same key, each time an event is fired, all of three listeners will receive that event.
+                        At the moment, James doesn't support to configure custom Listener for Key Registration.
+                        This feature is used internally to implement things like IMAP IDLE aka notifications.
+                        Therefore, it's not exposed through configurations as it makes little sense
                     </li>
                 </ul>
 
@@ -98,12 +102,12 @@ layout: howTo
                     So we can use it directly without that extra step.
                 </p>
 
-                <p>We will take James cassandra product for the example</p>
+                <p>We will take the simplest James product(JPA Guice) for the example</p>
 
-                <p>First, get template cassandra product configuration:</p>
+                <p>First, get template JPA product configuration:</p>
                 <pre><code>
 $ git clone https://github.com/apache/james-project
-$ cp -rf james-project/dockerfiles/run/guice/cassandra/destination/conf conf
+$ cp -rf james-project/dockerfiles/run/guice/jpa/destination/conf conf
                 </code></pre>
 
                 <p>Then create the keystore file in the conf/ directory with the default password <code>james72laBalle</code>
@@ -118,7 +122,7 @@ $ keytool -genkey -alias james -keyalg RSA -keystore conf/keystore
                 <pre><code>
 &lt;listeners&gt;
     &lt;listener&gt;
-        &lt;class&gt;org.apache.james.examples.custom.listeners.BigMessageListener&lt;/class&gt;
+        &lt;class&gt;org.apache.james.examples.custom.listeners.PositionCustomFlagOnBigMessages&lt;/class&gt;
     &lt;/listener&gt;
 &lt;/listeners&gt;
                 </code></pre>
@@ -127,6 +131,13 @@ $ keytool -genkey -alias james -keyalg RSA -keystore conf/keystore
                 <p>Getting James docker-compose.yml</p>
                 <pre><code>
 $ wget https://raw.githubusercontent.com/apache/james-project/master/dockerfiles/run/docker-compose.yml
+                </code></pre>
+                <p>Using James Guice JPA instead of the default product</p>
+                <pre><code>
+services:
+  james:
+    ...
+    image: linagora/james-jpa-guice:latest
                 </code></pre>
                 <p>Add the following volumes for james service:</p>
                 <pre><code>
@@ -149,9 +160,9 @@ volumes:
                 <pre><code>
 $ mkdir extensions-jars
 $ cd james-project
-$ mvn clean install -DskipTests -T 1C
+$ mvn clean install -DskipTests -f examples/custom-listeners/pom.xml
 $ cd ../
-$ cp james-project/examples/custom-listeners/target/custom-listeners-****.jar extension-jars/custom-listeners.jar
+$ cp james-project/examples/custom-listeners/target/custom-listeners-****.jar extensions-jars/custom-listeners.jar
                 </code></pre>
                 <p>
                     Check out the docker-compose.yml to get the host name of james service, currently it's <b>james.local</b>.

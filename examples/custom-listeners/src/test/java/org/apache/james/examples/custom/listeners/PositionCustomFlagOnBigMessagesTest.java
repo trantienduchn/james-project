@@ -19,8 +19,8 @@
 
 package org.apache.james.examples.custom.listeners;
 
-import static org.apache.james.examples.custom.listeners.BigMessageListener.BIG_MESSAGE;
-import static org.apache.james.examples.custom.listeners.BigMessageListener.ONE_MB;
+import static org.apache.james.examples.custom.listeners.PositionCustomFlagOnBigMessages.BIG_MESSAGE;
+import static org.apache.james.examples.custom.listeners.PositionCustomFlagOnBigMessages.ONE_MB;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.charset.StandardCharsets;
@@ -31,8 +31,8 @@ import javax.mail.Flags;
 import org.apache.james.mailbox.DefaultMailboxes;
 import org.apache.james.mailbox.MailboxSession;
 import org.apache.james.mailbox.MailboxSessionUtil;
-import org.apache.james.mailbox.MessageIdManager;
 import org.apache.james.mailbox.MessageManager;
+import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.events.Event;
 import org.apache.james.mailbox.inmemory.InMemoryMailboxManager;
 import org.apache.james.mailbox.inmemory.manager.InMemoryIntegrationResources;
@@ -40,8 +40,8 @@ import org.apache.james.mailbox.model.ComposedMessageId;
 import org.apache.james.mailbox.model.FetchGroupImpl;
 import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
-import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.MessageMetaData;
+import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mailbox.store.event.EventFactory;
 import org.apache.james.mime4j.dom.Message;
@@ -49,17 +49,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Streams;
 
-class BigMessageListenerTest {
+class PositionCustomFlagOnBigMessagesTest {
 
     private static final String USER = "user";
     private static final Event.EventId RANDOM_EVENT_ID = Event.EventId.random();
     private static final MailboxPath INBOX_PATH = MailboxPath.forUser(USER, DefaultMailboxes.INBOX);
 
-    private BigMessageListener testee;
+    private PositionCustomFlagOnBigMessages testee;
     private MessageManager inboxMessageManager;
-    private MessageIdManager messageIdManager;
     private MailboxId inboxId;
     private MailboxSession mailboxSession;
     private InMemoryMailboxManager mailboxManager;
@@ -68,12 +67,11 @@ class BigMessageListenerTest {
     void beforeEach() throws Exception {
         InMemoryIntegrationResources resources = InMemoryIntegrationResources.defaultResources();
         mailboxManager = resources.getMailboxManager();
-        messageIdManager = resources.getMessageIdManager();
         mailboxSession = MailboxSessionUtil.create(USER);
         inboxId = mailboxManager.createMailbox(INBOX_PATH, mailboxSession).get();
         inboxMessageManager = mailboxManager.getMailbox(inboxId, mailboxSession);
 
-        testee = new BigMessageListener(mailboxManager, messageIdManager);
+        testee = new PositionCustomFlagOnBigMessages(mailboxManager);
 
         resources.getEventBus().register(testee);
     }
@@ -85,7 +83,7 @@ class BigMessageListenerTest {
                 .build(smallMessage()),
             mailboxSession);
 
-        assertThat(getMessageFlags(composedId.getMessageId()))
+        assertThat(getMessageFlags(composedId.getUid()))
             .allSatisfy(flags -> assertThat(flags.contains(BIG_MESSAGE)).isFalse());
     }
 
@@ -101,7 +99,7 @@ class BigMessageListenerTest {
                 .build(smallMessage()),
             mailboxSession);
 
-        assertThat(getMessageFlags(composedId.getMessageId()))
+        assertThat(getMessageFlags(composedId.getUid()))
             .allSatisfy(flags -> {
                 assertThat(flags.contains(Flags.Flag.SEEN)).isTrue();
                 assertThat(flags.contains(Flags.Flag.DRAFT)).isTrue();
@@ -115,7 +113,7 @@ class BigMessageListenerTest {
                 .build(bigMessage()),
             mailboxSession);
 
-        assertThat(getMessageFlags(composedId.getMessageId()))
+        assertThat(getMessageFlags(composedId.getUid()))
             .allSatisfy(flags -> assertThat(flags.contains(BIG_MESSAGE)).isTrue());
     }
 
@@ -126,9 +124,9 @@ class BigMessageListenerTest {
                 .build(smallMessage()),
             mailboxSession);
 
-        MessageResult addedMessage = messageIdManager
-            .getMessages(ImmutableList.of(composedIdOfSmallMessage.getMessageId()), FetchGroupImpl.MINIMAL, mailboxSession)
-            .get(0);
+        MessageResult addedMessage = inboxMessageManager
+            .getMessages(MessageRange.one(composedIdOfSmallMessage.getUid()), FetchGroupImpl.MINIMAL, mailboxSession)
+            .next();
         MessageMetaData oneMBMetaData = new MessageMetaData(addedMessage.getUid(), addedMessage.getModSeq(),
             addedMessage.getFlags(), ONE_MB, addedMessage.getInternalDate(), addedMessage.getMessageId());
 
@@ -142,7 +140,7 @@ class BigMessageListenerTest {
 
         testee.event(eventWithAFakeMessageSize);
 
-        assertThat(getMessageFlags(composedIdOfSmallMessage.getMessageId()))
+        assertThat(getMessageFlags(composedIdOfSmallMessage.getUid()))
             .allSatisfy(flags -> assertThat(flags.contains(BIG_MESSAGE)).isTrue());
     }
 
@@ -158,7 +156,7 @@ class BigMessageListenerTest {
                 .build(bigMessage()),
             mailboxSession);
 
-        assertThat(getMessageFlags(composedId.getMessageId()))
+        assertThat(getMessageFlags(composedId.getUid()))
             .allSatisfy(flags -> {
                 assertThat(flags.contains(Flags.Flag.SEEN)).isTrue();
                 assertThat(flags.contains(Flags.Flag.DRAFT)).isTrue();
@@ -177,13 +175,13 @@ class BigMessageListenerTest {
                 .build(bigMessage()),
             mailboxSession);
 
-        assertThat(getMessageFlags(composedId.getMessageId()))
+        assertThat(getMessageFlags(composedId.getUid()))
             .allSatisfy(flags -> assertThat(flags.contains(BIG_MESSAGE)).isTrue());
     }
 
-    private Stream<Flags> getMessageFlags(MessageId messageId) throws Exception {
-        return messageIdManager.getMessages(ImmutableList.of(messageId), FetchGroupImpl.MINIMAL, mailboxSession)
-            .stream()
+    private Stream<Flags> getMessageFlags(MessageUid messageUid) throws Exception {
+        return Streams.stream(inboxMessageManager
+            .getMessages(MessageRange.one(messageUid), FetchGroupImpl.MINIMAL, mailboxSession))
             .map(MessageResult::getFlags);
     }
 
