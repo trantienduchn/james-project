@@ -58,13 +58,13 @@ layout: howTo
                 </p>
                 <ul>
                     <li>
-                        <b>Group Registration</b>: a Group Registration will listen all events fired and delivery each event only once per group within a distributed topology.
-                        That means if there are three listeners register to the same group, each time an event is fired, only one in three listeners can receive that event.
+                        <b>Group Registration</b>: a Group Registration will listen for all events fired and will delivery each event only once per group within a distributed topology.
+                        That means if there are three listeners registered to the same group, each time an event is fired, only one of these three listeners can receive that event.
                         You can write your own custom Listener and configure James to register it as a Group Registration.
                     </li>
                     <li>
-                        <b>Key Registration</b>: a Key Registration will listen only events it is interested in, and with each event fired to a Key Registration, it will be
-                        delivered to all registered listeners. That means if there are three listeners register to the same key, each time an event is fired, all of three listeners will receive that event.
+                        <b>Key Registration</b>: a Key Registration will listen only for events it is interested in, and with each event fired to a Key Registration, it will be
+                        delivered to all registered listeners. That means if there are three listeners registered to the same key, each time an event is fired, all of three listeners will receive that event.
                         At the moment, James doesn't support to configure custom Listener for Key Registration.
                         This feature is used internally to implement things like IMAP IDLE aka notifications.
                         Therefore, it's not exposed through configurations as it makes little sense
