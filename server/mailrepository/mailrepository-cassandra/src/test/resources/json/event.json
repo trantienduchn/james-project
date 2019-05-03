@@ -1,0 +1,6 @@
+{
+  "type": "mail-repository-properties-update",
+  "eventId": 1,
+  "aggregateId": "MailRepositoryProperties/cassandra://var/mail/properties",
+  "browsable": false
+}

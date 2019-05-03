@@ -28,7 +28,7 @@ import com.google.common.base.Preconditions;
 
 public class PropertiesAggregateId implements AggregateId {
 
-    private static final String PREFIX = "/MailRepositoryProperties";
+    private static final String PREFIX = "MailRepositoryProperties/";
 
     public static PropertiesAggregateId parse(String aggregateIdAsString) {
         Preconditions.checkNotNull(aggregateIdAsString);

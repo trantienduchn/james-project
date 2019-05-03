@@ -48,21 +48,21 @@ class PropertiesAggregateIdTest {
     }
 
     @Test
-    void parseShouldThrowWhenAggregateKeyStringDoesntStartWithASlash() {
-        assertThatThrownBy(() -> PropertiesAggregateId.parse("MailRepositoryProperties/protocol://var/mail"))
+    void parseShouldThrowWhenAggregateKeyStringStartsWithASlash() {
+        assertThatThrownBy(() -> PropertiesAggregateId.parse("/MailRepositoryProperties/protocol://var/mail"))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("aggregate key string should start with '/MailRepositoryProperties'");
+            .hasMessage("aggregate key string should start with 'MailRepositoryProperties/'");
     }
 
     @Test
-    void parseShouldThrowWhenAggregateKeyStringDoesntContainsTheRightAggregatePrefixAfterTheSlash() {
-        assertThatThrownBy(() -> PropertiesAggregateId.parse("/AnotherAggregateKey/protocol://var/mail"))
+    void parseShouldThrowWhenAggregateKeyStringDoesntContainsTheRightAggregateKey() {
+        assertThatThrownBy(() -> PropertiesAggregateId.parse("AnotherAggregateKey/protocol://var/mail"))
             .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("aggregate key string should start with '/MailRepositoryProperties'");
+            .hasMessage("aggregate key string should start with 'MailRepositoryProperties/'");
     }
 
     @Test
-    void parseShouldThrowWhenAggregateKeyStringDoesntContainsTheRightMailRepositoryUrlFormat() {
+    void parseShouldThrowWhenMailRepositoryUrlStringIsInvalid() {
         assertThatThrownBy(() -> PropertiesAggregateId.parse("/MailRepositoryProperties/protocol:var/mail"))
             .isInstanceOf(IllegalArgumentException.class);
     }
@@ -71,7 +71,7 @@ class PropertiesAggregateIdTest {
     void parseShouldReturnTheCorrespondingAggregateId() {
         String mailRepositoryUrlString = "protocol://var/mail";
 
-        assertThat(PropertiesAggregateId.parse("/MailRepositoryProperties" + mailRepositoryUrlString))
+        assertThat(PropertiesAggregateId.parse("MailRepositoryProperties/" + mailRepositoryUrlString))
             .isEqualTo(new PropertiesAggregateId(MailRepositoryUrl.from(mailRepositoryUrlString)));
     }
 }

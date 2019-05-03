@@ -31,6 +31,7 @@ import org.apache.james.mailrepository.api.properties.eventsourcing.UpdateProper
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 
 public class UpdatePropertiesEventDTO implements EventDTO {
 
@@ -103,5 +104,15 @@ public class UpdatePropertiesEventDTO implements EventDTO {
             MailRepositoryProperties.builder()
                 .browsable(browsable)
                 .build());
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+            .add("type", type)
+            .add("eventId", eventId)
+            .add("aggregateId", aggregateId)
+            .add("browsable", browsable)
+            .toString();
     }
 }
