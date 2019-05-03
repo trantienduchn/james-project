@@ -17,17 +17,14 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.api;
+package org.apache.james.mailrepository.api.properties;
 
-import org.junit.jupiter.api.Test;
+import org.apache.james.mailrepository.api.MailRepositoryUrl;
+import org.reactivestreams.Publisher;
 
-import nl.jqno.equalsverifier.EqualsVerifier;
+public interface MailRepositoryPropertiesStore {
 
-class MailRepositoryPropertiesTest {
+    Publisher<Void> store(MailRepositoryUrl url, MailRepositoryProperties properties);
 
-    @Test
-    void shouldMatchBeanContract() {
-        EqualsVerifier.forClass(MailRepositoryProperties.class)
-            .verify();
-    }
+    Publisher<MailRepositoryProperties> retrieve(MailRepositoryUrl url);
 }

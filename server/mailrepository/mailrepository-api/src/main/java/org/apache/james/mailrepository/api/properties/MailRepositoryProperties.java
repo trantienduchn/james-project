@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.api;
+package org.apache.james.mailrepository.api.properties;
 
 import java.util.Objects;
 

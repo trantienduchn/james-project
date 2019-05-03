@@ -17,23 +17,35 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.memory;
+package org.apache.james.mailrepository.memory.properties;
 
-import org.apache.james.mailrepository.api.MailRepositoryPropertiesStore;
-import org.apache.james.mailrepository.api.MailRepositoryPropertiesStoreContract;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.concurrent.ConcurrentHashMap;
 
-class MemoryMailRepositoryPropertiesStoreTest implements MailRepositoryPropertiesStoreContract {
+import org.apache.james.mailrepository.api.MailRepositoryUrl;
+import org.apache.james.mailrepository.api.properties.MailRepositoryProperties;
+import org.apache.james.mailrepository.api.properties.MailRepositoryPropertiesStore;
+import org.reactivestreams.Publisher;
 
-    private MemoryMailRepositoryPropertiesStore testee;
+import com.google.common.annotations.VisibleForTesting;
 
-    @BeforeEach
-    void beforeEach() {
-        testee = new MemoryMailRepositoryPropertiesStore();
+import reactor.core.publisher.Mono;
+
+public class MemoryMailRepositoryPropertiesStore implements MailRepositoryPropertiesStore {
+
+    private final ConcurrentHashMap<MailRepositoryUrl, MailRepositoryProperties> propertiesMap;
+
+    @VisibleForTesting
+    MemoryMailRepositoryPropertiesStore() {
+        this.propertiesMap = new ConcurrentHashMap<>();
     }
 
     @Override
-    public MailRepositoryPropertiesStore testee() {
-        return testee;
+    public Publisher<Void> store(MailRepositoryUrl url, MailRepositoryProperties properties) {
+        return Mono.fromRunnable(() -> propertiesMap.put(url, properties));
+    }
+
+    @Override
+    public Publisher<MailRepositoryProperties> retrieve(MailRepositoryUrl url) {
+        return Mono.fromSupplier(() -> propertiesMap.get(url));
     }
 }

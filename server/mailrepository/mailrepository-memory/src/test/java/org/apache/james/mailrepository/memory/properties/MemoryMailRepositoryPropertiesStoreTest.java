@@ -17,13 +17,23 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.api;
+package org.apache.james.mailrepository.memory.properties;
 
-import org.reactivestreams.Publisher;
+import org.apache.james.mailrepository.api.properties.MailRepositoryPropertiesStore;
+import org.apache.james.mailrepository.api.properties.MailRepositoryPropertiesStoreContract;
+import org.junit.jupiter.api.BeforeEach;
 
-public interface MailRepositoryPropertiesStore {
+class MemoryMailRepositoryPropertiesStoreTest implements MailRepositoryPropertiesStoreContract {
 
-    Publisher<Void> store(MailRepositoryUrl url, MailRepositoryProperties properties);
+    private MemoryMailRepositoryPropertiesStore testee;
 
-    Publisher<MailRepositoryProperties> retrieve(MailRepositoryUrl url);
+    @BeforeEach
+    void beforeEach() {
+        testee = new MemoryMailRepositoryPropertiesStore();
+    }
+
+    @Override
+    public MailRepositoryPropertiesStore testee() {
+        return testee;
+    }
 }

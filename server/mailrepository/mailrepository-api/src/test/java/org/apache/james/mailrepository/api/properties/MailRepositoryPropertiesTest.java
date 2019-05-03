@@ -17,35 +17,17 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.memory;
+package org.apache.james.mailrepository.api.properties;
 
-import java.util.concurrent.ConcurrentHashMap;
+import org.junit.jupiter.api.Test;
 
-import org.apache.james.mailrepository.api.MailRepositoryProperties;
-import org.apache.james.mailrepository.api.MailRepositoryPropertiesStore;
-import org.apache.james.mailrepository.api.MailRepositoryUrl;
-import org.reactivestreams.Publisher;
+import nl.jqno.equalsverifier.EqualsVerifier;
 
-import com.google.common.annotations.VisibleForTesting;
+class MailRepositoryPropertiesTest {
 
-import reactor.core.publisher.Mono;
-
-public class MemoryMailRepositoryPropertiesStore implements MailRepositoryPropertiesStore {
-
-    private final ConcurrentHashMap<MailRepositoryUrl, MailRepositoryProperties> propertiesMap;
-
-    @VisibleForTesting
-    MemoryMailRepositoryPropertiesStore() {
-        this.propertiesMap = new ConcurrentHashMap<>();
-    }
-
-    @Override
-    public Publisher<Void> store(MailRepositoryUrl url, MailRepositoryProperties properties) {
-        return Mono.fromRunnable(() -> propertiesMap.put(url, properties));
-    }
-
-    @Override
-    public Publisher<MailRepositoryProperties> retrieve(MailRepositoryUrl url) {
-        return Mono.fromSupplier(() -> propertiesMap.get(url));
+    @Test
+    void shouldMatchBeanContract() {
+        EqualsVerifier.forClass(MailRepositoryProperties.class)
+            .verify();
     }
 }

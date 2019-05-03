@@ -17,12 +17,13 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.api;
+package org.apache.james.mailrepository.api.properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import org.apache.james.mailrepository.api.MailRepositoryUrl;
 import org.junit.jupiter.api.Test;
 
 import reactor.core.publisher.Mono;
