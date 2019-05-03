@@ -25,10 +25,10 @@ import com.google.common.base.MoreObjects;
 
 public class MailRepositoryProperties {
 
-    static class Builder {
+    public static class Builder {
 
         @FunctionalInterface
-        interface RequireBrowsable {
+        public interface RequireBrowsable {
             ReadyToBuild browsable(boolean browsable);
 
             default ReadyToBuild canBrowse() {
@@ -40,7 +40,7 @@ public class MailRepositoryProperties {
             }
         }
 
-        static class ReadyToBuild {
+        public static class ReadyToBuild {
 
             private final boolean browsable;
 
@@ -48,13 +48,13 @@ public class MailRepositoryProperties {
                 this.browsable = browsable;
             }
 
-            MailRepositoryProperties build() {
+            public MailRepositoryProperties build() {
                 return new MailRepositoryProperties(browsable);
             }
         }
     }
 
-    static Builder.RequireBrowsable builder() {
+    public static Builder.RequireBrowsable builder() {
         return Builder.ReadyToBuild::new;
     }
 
