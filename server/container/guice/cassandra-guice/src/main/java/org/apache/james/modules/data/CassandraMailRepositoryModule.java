@@ -21,9 +21,12 @@ package org.apache.james.modules.data;
 
 import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.james.backends.cassandra.components.CassandraModule;
+import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTOModule;
 import org.apache.james.mailrepository.api.MailRepositoryProvider;
 import org.apache.james.mailrepository.api.MailRepositoryUrlStore;
 import org.apache.james.mailrepository.api.Protocol;
+import org.apache.james.mailrepository.api.properties.MailRepositoryPropertiesStore;
+import org.apache.james.mailrepository.api.properties.eventsourcing.EventSourcingMailRepositoryPropertiesStore;
 import org.apache.james.mailrepository.cassandra.CassandraMailRepository;
 import org.apache.james.mailrepository.cassandra.CassandraMailRepositoryCountDAO;
 import org.apache.james.mailrepository.cassandra.CassandraMailRepositoryKeysDAO;
@@ -35,6 +38,7 @@ import org.apache.james.mailrepository.cassandra.CassandraMailRepositoryUrlModul
 import org.apache.james.mailrepository.cassandra.CassandraMailRepositoryUrlStore;
 import org.apache.james.mailrepository.cassandra.MergingCassandraMailRepositoryMailDao;
 import org.apache.james.mailrepository.memory.MailRepositoryStoreConfiguration;
+import org.apache.james.mailrepository.properties.eventsourcing.cassandra.EventSourcingMailRepositoryPropertiesStoreModules;
 import org.apache.james.modules.server.MailStoreRepositoryModule;
 
 import com.google.common.collect.ImmutableList;
@@ -68,5 +72,10 @@ public class CassandraMailRepositoryModule extends AbstractModule {
         Multibinder<CassandraModule> cassandraModuleBinder = Multibinder.newSetBinder(binder(), CassandraModule.class);
         cassandraModuleBinder.addBinding().toInstance(org.apache.james.mailrepository.cassandra.CassandraMailRepositoryModule.MODULE);
         cassandraModuleBinder.addBinding().toInstance(CassandraMailRepositoryUrlModule.MODULE);
+
+        bind(EventSourcingMailRepositoryPropertiesStore.class).in(Scopes.SINGLETON);
+        bind(MailRepositoryPropertiesStore.class).to(EventSourcingMailRepositoryPropertiesStore.class);
+        Multibinder<EventDTOModule> eventDTOModuleBinder = Multibinder.newSetBinder(binder(), EventDTOModule.class);
+        eventDTOModuleBinder.addBinding().toInstance(EventSourcingMailRepositoryPropertiesStoreModules.MAIL_REPOSITORY_PROPERTIES_UPDATE);
     }
 }
