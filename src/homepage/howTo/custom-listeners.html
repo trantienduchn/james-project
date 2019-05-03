@@ -47,8 +47,8 @@ layout: howTo
 
                 <p>
                     Mailbox Listener is a component in James Mailbox System.
-                    Each time an action is applied on a mailbox(adding, deleting), or on an email(adding, deleting, updating flags...).
-                    Then an event representing that action is generated and delivered to all the Listeners that had been registered before.
+                    Each time an action is applied on a mailbox(adding, deleting), or on an email(adding, deleting, updating flags...),
+                    then an event representing that action is generated and delivered to all the Listeners that had been registered before.
                     After receiving events, listeners retrieve information from the events then execute their business
                     (Indexing emails in ElasticSearch, updating quota of users, detecting spam emails...)
                 </p>
@@ -95,12 +95,6 @@ layout: howTo
                 <header class="major">
                     <h3><b>Starting James with BigMessageListener</b></h3>
                 </header>
-
-                <p>
-                    When you write a custom Listener, you have to compile it and place the compiled jar package inside "extensions-jars" directory
-                    to make James load your Listener when it starts up. But BigMessageListener is already available in James products.
-                    So we can use it directly without that extra step.
-                </p>
 
                 <p>We will take the simplest James product(JPA Guice) for the example</p>
 
@@ -154,7 +148,12 @@ volumes:
   - $PWD/extensions-jars:/root/extensions-jars/
                 </code></pre>
                 <p>
-                    In this case, you should compile James project and put its jar of module <b>examples/custom-listeners</b> to "extensions-jars".
+                    Putting compiled jars into extensions-jars directory
+                </p>
+                <p>
+                    When you write a custom Listener, you have to compile it and place the compiled jar package inside "extensions-jars" directory
+                    to make James load your Listener when it starts up.
+                    In this case, you should compile the James's module <b>examples/custom-listeners</b> and put it to "extensions-jars".
                     The jar name can be sightly different by the time because its name carries James version, but you can recognize it easily.
                 </p>
                 <pre><code>
