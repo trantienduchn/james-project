@@ -76,6 +76,10 @@ public class CassandraEventStoreExtension implements BeforeAllCallback, AfterAll
 
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+        return getEventStore();
+    }
+
+    public CassandraEventStore getEventStore() {
         return new CassandraEventStore(eventStoreDao);
     }
 }
