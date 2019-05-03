@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.properties.eventsourcing.cassandra;
+package org.apache.james.mailrepository.properties.impl.eventsourcing.cassandra;
 
 import java.util.Objects;
 
@@ -25,8 +25,8 @@ import org.apache.james.eventsourcing.Event;
 import org.apache.james.eventsourcing.EventId;
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTO;
 import org.apache.james.mailrepository.api.properties.MailRepositoryProperties;
-import org.apache.james.mailrepository.api.properties.eventsourcing.PropertiesAggregateId;
-import org.apache.james.mailrepository.api.properties.eventsourcing.UpdatePropertiesEvent;
+import org.apache.james.mailrepository.api.properties.impl.eventsourcing.PropertiesAggregateId;
+import org.apache.james.mailrepository.api.properties.impl.eventsourcing.UpdatePropertiesEvent;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;

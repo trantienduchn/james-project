@@ -17,62 +17,51 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.api.properties.eventsourcing;
+package org.apache.james.mailrepository.api.properties.impl.eventsourcing;
 
 import java.util.Objects;
 
 import org.apache.james.eventsourcing.AggregateId;
-import org.apache.james.eventsourcing.Event;
-import org.apache.james.eventsourcing.EventId;
-import org.apache.james.mailrepository.api.properties.MailRepositoryProperties;
+import org.apache.james.mailrepository.api.MailRepositoryUrl;
 
 import com.google.common.base.Preconditions;
 
-public class UpdatePropertiesEvent implements Event {
+public class PropertiesAggregateId implements AggregateId {
 
-    private final EventId eventId;
-    private final PropertiesAggregateId aggregateId;
-    private final MailRepositoryProperties properties;
+    private static final String PREFIX = "MailRepositoryProperties/";
 
-    public UpdatePropertiesEvent(EventId eventId, PropertiesAggregateId aggregateId, MailRepositoryProperties properties) {
-        Preconditions.checkNotNull(eventId);
-        Preconditions.checkNotNull(aggregateId);
-        Preconditions.checkNotNull(properties);
+    public static PropertiesAggregateId parse(String aggregateIdAsString) {
+        Preconditions.checkNotNull(aggregateIdAsString);
+        Preconditions.checkArgument(aggregateIdAsString.startsWith(PREFIX), "aggregate key string should start with '" + PREFIX + "'");
+        MailRepositoryUrl url = MailRepositoryUrl.from(aggregateIdAsString.substring(PREFIX.length()));
+        return new PropertiesAggregateId(url);
+    }
 
-        this.eventId = eventId;
-        this.aggregateId = aggregateId;
-        this.properties = properties;
+    private final MailRepositoryUrl url;
+
+    public PropertiesAggregateId(MailRepositoryUrl url) {
+        Preconditions.checkNotNull(url);
+
+        this.url = url;
     }
 
     @Override
-    public EventId eventId() {
-        return eventId;
-    }
-
-    @Override
-    public AggregateId getAggregateId() {
-        return aggregateId;
-    }
-
-    public MailRepositoryProperties getProperties() {
-        return properties;
+    public String asAggregateKey() {
+        return PREFIX + url.asString();
     }
 
     @Override
     public final boolean equals(Object o) {
+        if (o instanceof PropertiesAggregateId) {
+            PropertiesAggregateId that = (PropertiesAggregateId) o;
 
-        if (o instanceof UpdatePropertiesEvent) {
-            UpdatePropertiesEvent that = (UpdatePropertiesEvent) o;
-
-            return Objects.equals(this.eventId, that.eventId)
-                && Objects.equals(this.aggregateId, that.aggregateId)
-                && Objects.equals(this.properties, that.properties);
+            return Objects.equals(this.url, that.url);
         }
         return false;
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(eventId, aggregateId, properties);
+        return Objects.hash(url);
     }
 }

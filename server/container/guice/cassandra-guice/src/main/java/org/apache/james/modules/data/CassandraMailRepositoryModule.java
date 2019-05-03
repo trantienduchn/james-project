@@ -26,7 +26,7 @@ import org.apache.james.mailrepository.api.MailRepositoryProvider;
 import org.apache.james.mailrepository.api.MailRepositoryUrlStore;
 import org.apache.james.mailrepository.api.Protocol;
 import org.apache.james.mailrepository.api.properties.MailRepositoryPropertiesStore;
-import org.apache.james.mailrepository.api.properties.eventsourcing.EventSourcingMailRepositoryPropertiesStore;
+import org.apache.james.mailrepository.api.properties.impl.eventsourcing.EventSourcingMailRepositoryPropertiesStore;
 import org.apache.james.mailrepository.cassandra.CassandraMailRepository;
 import org.apache.james.mailrepository.cassandra.CassandraMailRepositoryCountDAO;
 import org.apache.james.mailrepository.cassandra.CassandraMailRepositoryKeysDAO;
@@ -38,7 +38,7 @@ import org.apache.james.mailrepository.cassandra.CassandraMailRepositoryUrlModul
 import org.apache.james.mailrepository.cassandra.CassandraMailRepositoryUrlStore;
 import org.apache.james.mailrepository.cassandra.MergingCassandraMailRepositoryMailDao;
 import org.apache.james.mailrepository.memory.MailRepositoryStoreConfiguration;
-import org.apache.james.mailrepository.properties.eventsourcing.cassandra.EventSourcingMailRepositoryPropertiesStoreModules;
+import org.apache.james.mailrepository.properties.impl.eventsourcing.cassandra.EventSourcingMailRepositoryPropertiesStoreModules;
 import org.apache.james.modules.server.MailStoreRepositoryModule;
 
 import com.google.common.collect.ImmutableList;

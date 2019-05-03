@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.properties.eventsourcing.cassandra;
+package org.apache.james.mailrepository.properties.impl.eventsourcing.cassandra;
 
 import org.junit.jupiter.api.Test;
 

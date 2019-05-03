@@ -17,10 +17,10 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.properties.eventsourcing.cassandra;
+package org.apache.james.mailrepository.properties.impl.eventsourcing.cassandra;
 
 import org.apache.james.eventsourcing.eventstore.cassandra.dto.EventDTOModule;
-import org.apache.james.mailrepository.api.properties.eventsourcing.UpdatePropertiesEvent;
+import org.apache.james.mailrepository.api.properties.impl.eventsourcing.UpdatePropertiesEvent;
 
 public interface EventSourcingMailRepositoryPropertiesStoreModules {
 

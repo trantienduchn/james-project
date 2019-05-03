@@ -17,12 +17,12 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.properties.eventsourcing.cassandra;
+package org.apache.james.mailrepository.properties.impl.eventsourcing.cassandra;
 
 import org.apache.james.eventsourcing.eventstore.cassandra.CassandraEventStoreExtension;
 import org.apache.james.mailrepository.api.properties.MailRepositoryPropertiesStore;
 import org.apache.james.mailrepository.api.properties.MailRepositoryPropertiesStoreContract;
-import org.apache.james.mailrepository.api.properties.eventsourcing.EventSourcingMailRepositoryPropertiesStore;
+import org.apache.james.mailrepository.api.properties.impl.eventsourcing.EventSourcingMailRepositoryPropertiesStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 

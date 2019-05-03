@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.properties.eventsourcing.cassandra;
+package org.apache.james.mailrepository.properties.impl.eventsourcing.cassandra;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,8 +25,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.apache.james.eventsourcing.EventId;
 import org.apache.james.mailrepository.api.MailRepositoryUrl;
 import org.apache.james.mailrepository.api.properties.MailRepositoryProperties;
-import org.apache.james.mailrepository.api.properties.eventsourcing.PropertiesAggregateId;
-import org.apache.james.mailrepository.api.properties.eventsourcing.UpdatePropertiesEvent;
+import org.apache.james.mailrepository.api.properties.impl.eventsourcing.PropertiesAggregateId;
+import org.apache.james.mailrepository.api.properties.impl.eventsourcing.UpdatePropertiesEvent;
 import org.apache.james.util.ClassLoaderUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

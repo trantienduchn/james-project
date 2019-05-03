@@ -17,7 +17,7 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.mailrepository.api.properties.eventsourcing;
+package org.apache.james.mailrepository.api.properties.impl.eventsourcing;
 
 import org.junit.jupiter.api.Test;
 
