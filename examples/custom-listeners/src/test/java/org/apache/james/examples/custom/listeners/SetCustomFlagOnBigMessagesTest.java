@@ -19,8 +19,8 @@
 
 package org.apache.james.examples.custom.listeners;
 
-import static org.apache.james.examples.custom.listeners.PositionCustomFlagOnBigMessages.BIG_MESSAGE;
-import static org.apache.james.examples.custom.listeners.PositionCustomFlagOnBigMessages.ONE_MB;
+import static org.apache.james.examples.custom.listeners.SetCustomFlagOnBigMessages.BIG_MESSAGE;
+import static org.apache.james.examples.custom.listeners.SetCustomFlagOnBigMessages.ONE_MB;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.charset.StandardCharsets;
@@ -51,13 +51,13 @@ import org.junit.jupiter.api.Test;
 import com.google.common.base.Strings;
 import com.google.common.collect.Streams;
 
-class PositionCustomFlagOnBigMessagesTest {
+class SetCustomFlagOnBigMessagesTest {
 
     private static final String USER = "user";
     private static final Event.EventId RANDOM_EVENT_ID = Event.EventId.random();
     private static final MailboxPath INBOX_PATH = MailboxPath.forUser(USER, DefaultMailboxes.INBOX);
 
-    private PositionCustomFlagOnBigMessages testee;
+    private SetCustomFlagOnBigMessages testee;
     private MessageManager inboxMessageManager;
     private MailboxId inboxId;
     private MailboxSession mailboxSession;
@@ -71,13 +71,13 @@ class PositionCustomFlagOnBigMessagesTest {
         inboxId = mailboxManager.createMailbox(INBOX_PATH, mailboxSession).get();
         inboxMessageManager = mailboxManager.getMailbox(inboxId, mailboxSession);
 
-        testee = new PositionCustomFlagOnBigMessages(mailboxManager);
+        testee = new SetCustomFlagOnBigMessages(mailboxManager);
 
         resources.getEventBus().register(testee);
     }
 
     @Test
-    void listeningEventShouldNotAddFlagWhenSmallMessages() throws Exception {
+    void shouldNotAddFlagWhenSmallMessages() throws Exception {
         ComposedMessageId composedId = inboxMessageManager.appendMessage(
             MessageManager.AppendCommand.builder()
                 .build(smallMessage()),
@@ -88,7 +88,7 @@ class PositionCustomFlagOnBigMessagesTest {
     }
 
     @Test
-    void listeningEventShouldNotRemoveOtherFlagsWhenSmallMessages() throws Exception {
+    void shouldNotRemoveOtherFlagsWhenSmallMessages() throws Exception {
         Flags appendMessageFlag = new Flags();
         appendMessageFlag.add(Flags.Flag.SEEN);
         appendMessageFlag.add(Flags.Flag.DRAFT);
@@ -107,7 +107,7 @@ class PositionCustomFlagOnBigMessagesTest {
     }
 
     @Test
-    void listeningEventShouldAddFlagWhenBigMessages() throws Exception {
+    void shouldAddFlagWhenBigMessages() throws Exception {
         ComposedMessageId composedId = inboxMessageManager.appendMessage(
             MessageManager.AppendCommand.builder()
                 .build(bigMessage()),
@@ -118,7 +118,7 @@ class PositionCustomFlagOnBigMessagesTest {
     }
 
     @Test
-    void eventShouldAddFlagWhenMessageSizeIsEqualToBigMessageSize() throws Exception {
+    void shouldAddFlagWhenMessageSizeIsEqualToBigMessageSize() throws Exception {
         ComposedMessageId composedIdOfSmallMessage = inboxMessageManager.appendMessage(
             MessageManager.AppendCommand.builder()
                 .build(smallMessage()),
@@ -145,7 +145,7 @@ class PositionCustomFlagOnBigMessagesTest {
     }
 
     @Test
-    void listeningEventShouldNotRemoveOtherFlagsWhenBigMessages() throws Exception {
+    void shouldNotRemoveOtherFlagsWhenBigMessages() throws Exception {
         Flags appendMessageFlag = new Flags();
         appendMessageFlag.add(Flags.Flag.SEEN);
         appendMessageFlag.add(Flags.Flag.DRAFT);
@@ -165,7 +165,7 @@ class PositionCustomFlagOnBigMessagesTest {
     }
 
     @Test
-    void listeningEventShouldKeepBigMessageFlagWhenAlreadySet() throws Exception {
+    void shouldKeepBigMessageFlagWhenAlreadySet() throws Exception {
         Flags appendMessageFlag = new Flags();
         appendMessageFlag.add(BIG_MESSAGE);
 

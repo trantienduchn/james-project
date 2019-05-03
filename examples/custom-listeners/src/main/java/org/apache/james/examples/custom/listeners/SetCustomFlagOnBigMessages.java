@@ -42,13 +42,13 @@ import org.slf4j.LoggerFactory;
  * Then it will be considered as a big message and added BIG_MESSAGE {@value BIG_MESSAGE} flag
  *
  */
-class PositionCustomFlagOnBigMessages implements MailboxListener.GroupMailboxListener {
+class SetCustomFlagOnBigMessages implements MailboxListener.GroupMailboxListener {
 
     public static class PositionCustomFlagOnBigMessagesGroup extends Group {
     }
 
     private static final PositionCustomFlagOnBigMessagesGroup GROUP = new PositionCustomFlagOnBigMessagesGroup();
-    private static final Logger LOGGER = LoggerFactory.getLogger(PositionCustomFlagOnBigMessages.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SetCustomFlagOnBigMessages.class);
 
     static final long ONE_MB = 1000L * 1000L;
 
@@ -57,7 +57,7 @@ class PositionCustomFlagOnBigMessages implements MailboxListener.GroupMailboxLis
     private final MailboxManager mailboxManager;
 
     @Inject
-    PositionCustomFlagOnBigMessages(MailboxManager mailboxManager) {
+    SetCustomFlagOnBigMessages(MailboxManager mailboxManager) {
         this.mailboxManager = mailboxManager;
     }
 
