@@ -17,45 +17,33 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james;
+package org.apache.james.modules;
 
-import org.apache.james.backends.es.EmbeddedElasticSearch;
-import org.apache.james.modules.TestElasticSearchModule;
-import org.elasticsearch.node.Node;
-import org.junit.rules.RuleChain;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import javax.inject.Singleton;
 
-import com.google.inject.Module;
+import org.apache.james.metrics.es.ESReporterConfiguration;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 
-public class EmbeddedElasticSearchRule implements GuiceModuleTestRule {
+public class TestEmbeddedESMetricReporterModule extends AbstractModule {
 
-    private final TemporaryFolder temporaryFolder = new TemporaryFolder();
-    private final EmbeddedElasticSearch embeddedElasticSearch = new EmbeddedElasticSearch(temporaryFolder);
-
-    private final RuleChain chain = RuleChain
-        .outerRule(temporaryFolder)
-        .around(embeddedElasticSearch);
+    private static final String LOCALHOST = "localhost";
+    private static final int DEFAULT_ES_HTTP_PORT = 9200;
+    public static final String METRICS_INDEX = "metrics";
 
     @Override
-    public Statement apply(Statement base, Description description) {
-        return chain.apply(base, description);
+    protected void configure() {
     }
 
-    @Override
-    public void await() {
-        embeddedElasticSearch.awaitForElasticSearch();
-    }
-
-
-    @Override
-    public Module getModule() {
-        return new TestElasticSearchModule(embeddedElasticSearch);
-    }
-
-    public Node getNode() {
-        return embeddedElasticSearch.getNode();
+    @Provides
+    @Singleton
+    public ESReporterConfiguration provideConfiguration() {
+        return ESReporterConfiguration.builder()
+            .enabled()
+            .onHost(LOCALHOST, DEFAULT_ES_HTTP_PORT)
+            .onIndex(METRICS_INDEX)
+            .periodInSecond(1L)
+            .build();
     }
 }

@@ -22,15 +22,20 @@ package org.apache.james.modules;
 import javax.inject.Singleton;
 
 import org.apache.james.metrics.es.ESReporterConfiguration;
+import org.apache.james.util.Host;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 
-public class TestESMetricReporterModule extends AbstractModule {
+public class TestDockerESMetricReporterModule extends AbstractModule {
 
-    private static final String LOCALHOST = "localhost";
-    private static final int DEFAULT_ES_HTTP_PORT = 9200;
     public static final String METRICS_INDEX = "metrics";
+
+    private final Host esHttpHost;
+
+    public TestDockerESMetricReporterModule(Host esHttpHost) {
+        this.esHttpHost = esHttpHost;
+    }
 
     @Override
     protected void configure() {
@@ -41,7 +46,7 @@ public class TestESMetricReporterModule extends AbstractModule {
     public ESReporterConfiguration provideConfiguration() {
         return ESReporterConfiguration.builder()
             .enabled()
-            .onHost(LOCALHOST, DEFAULT_ES_HTTP_PORT)
+            .onHost(esHttpHost.getHostName(), esHttpHost.getPort())
             .onIndex(METRICS_INDEX)
             .periodInSecond(1L)
             .build();

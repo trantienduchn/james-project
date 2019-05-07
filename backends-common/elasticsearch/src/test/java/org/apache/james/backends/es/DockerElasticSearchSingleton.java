@@ -17,39 +17,12 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james;
+package org.apache.james.backends.es;
 
-import org.apache.james.backends.es.DockerElasticSearch;
-import org.apache.james.backends.es.DockerElasticSearchSingleton;
-import org.apache.james.backends.es.ElasticSearchConfiguration;
-import org.junit.jupiter.api.extension.ExtensionContext;
+public class DockerElasticSearchSingleton {
+    public static DockerElasticSearch INSTANCE = new DockerElasticSearch();
 
-import com.google.inject.Module;
-
-public class DockerElasticSearchExtension implements GuiceModuleTestExtension {
-
-    @Override
-    public void beforeEach(ExtensionContext extensionContext) {
-        getDockerES().start();
-    }
-
-    @Override
-    public void afterEach(ExtensionContext extensionContext) {
-    }
-
-    @Override
-    public Module getModule() {
-        return binder -> binder.bind(ElasticSearchConfiguration.class)
-            .toInstance(getElasticSearchConfigurationForDocker());
-    }
-
-    private ElasticSearchConfiguration getElasticSearchConfigurationForDocker() {
-        return ElasticSearchConfiguration.builder()
-            .addHost(getDockerES().getTcpHost())
-            .build();
-    }
-
-    public DockerElasticSearch getDockerES() {
-        return DockerElasticSearchSingleton.INSTANCE;
+    static {
+        INSTANCE.start();
     }
 }
