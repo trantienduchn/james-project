@@ -19,7 +19,7 @@
 
 package org.apache.james.backends.es;
 
-import static io.restassured.RestAssured.given;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 
@@ -32,11 +32,29 @@ import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
 import com.google.common.collect.ImmutableList;
 
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
+import feign.Feign;
+import feign.Logger;
+import feign.RequestLine;
+import feign.Response;
+import feign.slf4j.Slf4jLogger;
 
 public class DockerElasticSearch {
+
+    interface ElasticSearchAPI {
+
+        static ElasticSearchAPI from(Host esHttpHost) {
+            return Feign.builder()
+                .logger(new Slf4jLogger(ElasticSearchAPI.class))
+                .logLevel(Logger.Level.FULL)
+                .target(ElasticSearchAPI.class, "http://" + esHttpHost.getHostName() + ":" + esHttpHost.getPort());
+        }
+
+        @RequestLine("DELETE /_all")
+        Response deleteAllIndexes();
+
+        @RequestLine("POST /_flush?force&wait_if_ongoing=true")
+        Response flush();
+    }
 
     private static final int ES_HTTP_PORT = 9200;
     private static final int ES_TCP_PORT = 9300;
@@ -88,17 +106,13 @@ public class DockerElasticSearch {
     }
 
     public void cleanUpData() {
-        given(esAPI()).when()
-            .delete("_all")
-        .then()
-            .statusCode(HttpStatus.SC_OK);
+        assertThat(esAPI().deleteAllIndexes().status())
+            .isEqualTo(HttpStatus.SC_OK);
     }
 
     public void awaitForElasticSearch() {
-        given(esAPI()).when()
-            .post("_flush")
-        .then()
-            .statusCode(HttpStatus.SC_OK);
+        assertThat(esAPI().flush().status())
+            .isEqualTo(HttpStatus.SC_OK);
     }
 
     public ClientProvider clientProvider() {
@@ -106,12 +120,7 @@ public class DockerElasticSearch {
         return ClientProviderImpl.fromHosts(ImmutableList.of(getTcpHost()), noClusterName);
     }
 
-    private RequestSpecification esAPI() {
-        return new RequestSpecBuilder()
-            .setContentType(ContentType.JSON)
-            .setAccept(ContentType.JSON)
-            .setBasePath("/")
-            .setPort(getHttpPort())
-            .build();
+    private ElasticSearchAPI esAPI() {
+        return ElasticSearchAPI.from(getHttpHost());
     }
 }
