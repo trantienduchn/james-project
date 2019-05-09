@@ -22,12 +22,16 @@ package org.apache.james.backends.es;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import org.apache.http.HttpStatus;
 import org.apache.james.util.Host;
 import org.apache.james.util.docker.DockerGenericContainer;
 import org.apache.james.util.docker.Images;
 import org.apache.james.util.docker.RateLimiters;
+import org.elasticsearch.client.Client;
+import org.elasticsearch.common.lease.Releasable;
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
 import com.google.common.collect.ImmutableList;
@@ -59,9 +63,14 @@ public class DockerElasticSearch {
     private static final int ES_HTTP_PORT = 9200;
     private static final int ES_TCP_PORT = 9300;
 
+    private static final int MAX_TESTS_PLAYED = 50;
+
     private final DockerGenericContainer eSContainer;
+    private ClientProviderImpl clientProvider;
+    private AtomicInteger testPlayedCounter;
 
     public DockerElasticSearch() {
+        this.testPlayedCounter = new AtomicInteger();
         this.eSContainer = new DockerGenericContainer(Images.ELASTICSEARCH_2)
             .withExposedPorts(ES_HTTP_PORT, ES_TCP_PORT)
             .waitingFor(new HostPortWaitStrategy().withRateLimiter(RateLimiters.TWENTIES_PER_SECOND));
@@ -70,6 +79,7 @@ public class DockerElasticSearch {
     public void start() {
         if (!eSContainer.isRunning()) {
             eSContainer.start();
+            clientProvider = createClientProvider();
         }
     }
 
@@ -108,6 +118,17 @@ public class DockerElasticSearch {
     public void cleanUpData() {
         assertThat(esAPI().deleteAllIndexes().status())
             .isEqualTo(HttpStatus.SC_OK);
+
+        Stream.of(clientProvider.getClients().toArray(new Client[]{}))
+            .forEach(Releasable::close);
+        clientProvider.clearClients();
+
+        // just assuming this is called after every tests. Actually I'm sure about it.
+        if (testPlayedCounter.incrementAndGet() >= MAX_TESTS_PLAYED) {
+            stop();
+            start();
+            testPlayedCounter.set(0);
+        }
     }
 
     public void awaitForElasticSearch() {
@@ -116,8 +137,11 @@ public class DockerElasticSearch {
     }
 
     public ClientProvider clientProvider() {
-        Optional<String> noClusterName = Optional.empty();
-        return ClientProviderImpl.fromHosts(ImmutableList.of(getTcpHost()), noClusterName);
+        return clientProvider;
+    }
+
+    private ClientProviderImpl createClientProvider() {
+        return ClientProviderImpl.fromHosts(ImmutableList.of(getTcpHost()), Optional.empty());
     }
 
     private ElasticSearchAPI esAPI() {

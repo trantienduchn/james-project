@@ -20,6 +20,7 @@ package org.apache.james.backends.es;
 
 import java.net.InetAddress;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.james.util.Host;
 import org.elasticsearch.client.Client;
@@ -53,11 +54,13 @@ public class ClientProviderImpl implements ClientProvider {
 
     private final ImmutableList<Host> hosts;
     private final Optional<String> clusterName;
+    private final ConcurrentLinkedQueue<Client> clients;
 
     private ClientProviderImpl(ImmutableList<Host> hosts, Optional<String> clusterName) {
         Preconditions.checkArgument(!hosts.isEmpty(), "You should provide at least one host");
         this.hosts = hosts;
         this.clusterName = clusterName;
+        this.clients = new ConcurrentLinkedQueue<>();
     }
 
 
@@ -72,6 +75,7 @@ public class ClientProviderImpl implements ClientProvider {
                     InetAddress.getByName(host.getHostName()),
                     host.getPort())));
         hosts.forEach(consumer.sneakyThrow());
+        clients.add(transportClient);
         return transportClient;
     }
 
@@ -82,5 +86,13 @@ public class ClientProviderImpl implements ClientProvider {
                     .build();
         }
         return Settings.EMPTY;
+    }
+
+    public ConcurrentLinkedQueue<Client> getClients() {
+        return clients;
+    }
+
+    public void clearClients() {
+        clients.clear();
     }
 }
