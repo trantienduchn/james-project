@@ -34,7 +34,7 @@ class InputStreamUtilsTest {
     private static final byte[] EMPTY = "".getBytes(StandardCharsets.UTF_8);
 
     @Test
-    void concatShouldNoopWhenSingleAgument() {
+    void concatShouldNoopWhenSingleArgument() {
         assertThat(InputStreamUtils.concat(new ByteArrayInputStream(CONTENT_1)))
             .hasSameContentAs(new ByteArrayInputStream(CONTENT_1));
     }
