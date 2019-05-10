@@ -83,20 +83,6 @@ public class ElasticSearchQuotaMailboxListenerTest {
     }
 
     @Test
-    public void eventShouldDoNothingWhenNoQuotaEvent() throws Exception {
-        quotaMailboxListener.event(DUMB_EVENT);
-
-        elasticSearch.awaitForElasticSearch();
-
-        SearchResponse searchResponse = client.prepareSearch(QuotaRatioElasticSearchConstants.DEFAULT_QUOTA_RATIO_READ_ALIAS.getValue())
-            .setTypes(QuotaRatioElasticSearchConstants.QUOTA_RATIO_TYPE.getValue())
-            .setQuery(matchAllQuery())
-            .execute()
-            .get();
-        assertThat(searchResponse.getHits().totalHits()).isEqualTo(0);
-    }
-
-    @Test
     public void eventShouldIndexEventWhenQuotaEvent() throws Exception {
         quotaMailboxListener.event(EventFactory.quotaUpdated()
             .eventId(EVENT_ID)
