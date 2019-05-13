@@ -24,6 +24,7 @@ import java.util.List;
 
 import javax.mail.MessagingException;
 
+import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,7 @@ import com.google.common.collect.Iterables;
 public class DelaysAndMaxRetry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DelaysAndMaxRetry.class);
+    private static final String HOUR_MINUTE_SECOND_DURATION_FORMAT = "HH:mm:ss";
 
     public static DelaysAndMaxRetry defaults() {
         return new DelaysAndMaxRetry(RemoteDeliveryConfiguration.DEFAULT_MAX_RETRY, Repeat.repeat(new Delay(), RemoteDeliveryConfiguration.DEFAULT_MAX_RETRY));
@@ -64,12 +66,15 @@ public class DelaysAndMaxRetry {
     private static DelaysAndMaxRetry addExtraAttemptToLastDelay(int intendedMaxRetries, int extra, List<Delay> delayTimesList) throws MessagingException {
         if (delayTimesList.size() != 0) {
             Delay lastDelay = delayTimesList.get(delayTimesList.size() - 1);
-            LOGGER.warn("Delay of {} msecs is now attempted: {} times", lastDelay.getDelayTime(), lastDelay.getAttempts());
+            Duration lastDelayTime = lastDelay.getDelayTime();
+            LOGGER.warn("Delay of {} is now attempted: {} times",
+                DurationFormatUtils.formatDuration(lastDelayTime.toMillis(), HOUR_MINUTE_SECOND_DURATION_FORMAT),
+                lastDelay.getAttempts());
             return new DelaysAndMaxRetry(intendedMaxRetries,
                 ImmutableList.copyOf(
                     Iterables.concat(
                         Iterables.limit(delayTimesList, delayTimesList.size() - 1),
-                        ImmutableList.of(new Delay(lastDelay.getAttempts() + extra, lastDelay.getDelayTime())))));
+                        ImmutableList.of(new Delay(lastDelay.getAttempts() + extra, lastDelayTime)))));
         } else {
             throw new MessagingException("No delaytimes, cannot continue");
         }
