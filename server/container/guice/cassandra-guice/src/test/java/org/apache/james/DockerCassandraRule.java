@@ -34,6 +34,10 @@ public class DockerCassandraRule implements GuiceModuleTestRule {
 
     private org.apache.james.backends.cassandra.DockerCassandraRule cassandraContainer = new org.apache.james.backends.cassandra.DockerCassandraRule();
 
+    public DockerCassandraRule() {
+        cassandraContainer.allowRestart();
+    }
+
     @Override
     public Statement apply(Statement base, Description description) {
         return cassandraContainer.apply(base, description);
