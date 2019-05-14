@@ -37,23 +37,41 @@ public class ElasticSearchStartUpCheck implements StartUpChecksPerformer.StartUp
     private static final Logger LOGGER = LoggerFactory.getLogger(ElasticSearchStartUpCheck.class);
     private static final String CHECK_NAME = "ElasticSearchStartUpCheck";
     private static final String CAN_NOT_FIND_VERSION_MESSAGE = "cannot find ElasticSearch version";
+    private static final String SUGGESTION_VERSION_IS_NOT_MATCHED_MESSAGE = "suggested ElasticSearch version (%s) is not match " +
+        "with current version (%s)";
+
+    private static final String ES_VERSION_SUGGESTION ="2.4.6";
 
     private final Host esHttpHost;
+    private final String esVersionSuggestion;
 
     @Inject
     public ElasticSearchStartUpCheck(ESReporterConfiguration esConfiguration) {
-        this.esHttpHost =  Host.parseConfString(esConfiguration.getHostWithPort());
+        this(Host.parseConfString(esConfiguration.getHostWithPort()), ES_VERSION_SUGGESTION);
     }
 
     @VisibleForTesting
-    ElasticSearchStartUpCheck(Host esHttpHost) {
+    ElasticSearchStartUpCheck(Host esHttpHost, String esVersionSuggestion) {
         this.esHttpHost = esHttpHost;
+        this.esVersionSuggestion = esVersionSuggestion;
     }
+
 
     @Override
     public CheckResult check() {
         try {
             About.Version version = getVersion();
+            if (!version.getNumber().equals(ES_VERSION_SUGGESTION)) {
+                String warnMessage = String.format(SUGGESTION_VERSION_IS_NOT_MATCHED_MESSAGE,
+                    esVersionSuggestion,
+                    version.getNumber());
+                LOGGER.warn(warnMessage);
+                return CheckResult.builder()
+                    .checkName(CHECK_NAME)
+                    .resultType(ResultType.BAD)
+                    .description(warnMessage)
+                    .build();
+            }
         } catch (RetryableException e) {
             String errorMessage = CAN_NOT_FIND_VERSION_MESSAGE + ": " + e.getMessage();
             LOGGER.error(errorMessage);

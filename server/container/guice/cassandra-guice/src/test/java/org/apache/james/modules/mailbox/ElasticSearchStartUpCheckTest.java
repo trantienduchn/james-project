@@ -20,22 +20,32 @@
 package org.apache.james.modules.mailbox;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
+import org.apache.james.StartUpChecksPerformer.StartUpCheck;
+import org.apache.james.backends.es.DockerElasticSearch;
 import org.apache.james.backends.es.DockerElasticSearchExtension;
+import org.apache.james.util.docker.Images;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class ElasticSearchStartUpCheckTest {
 
+    private static final String ES_VERSION_2_4_6 = "2.4.6";
+
     @RegisterExtension
     static DockerElasticSearchExtension testExtension = DockerElasticSearchExtension.withSingletonES();
+    @RegisterExtension
+    static DockerElasticSearchExtension es6TestExtension = new DockerElasticSearchExtension(
+        new DockerElasticSearch(Images.ELASTICSEARCH_6)
+            .withEnv("discovery.type", "single-node"));
 
     private ElasticSearchStartUpCheck testee;
 
     @BeforeEach
     void beforeEach() {
-        testee = new ElasticSearchStartUpCheck(testExtension.getDockerES().getHttpHost());
+        testee = new ElasticSearchStartUpCheck(testExtension.getDockerES().getHttpHost(), ES_VERSION_2_4_6);
     }
 
     @Test
@@ -50,5 +60,17 @@ class ElasticSearchStartUpCheckTest {
 
         assertThat(testee.check().isBad())
             .isTrue();
+    }
+
+    @Test
+    void checkShouldReturnBadWhenESVersionIsNotMatchedWithTheSuggestion() {
+        testee = new ElasticSearchStartUpCheck(es6TestExtension.getDockerES().getHttpHost(), ES_VERSION_2_4_6);
+        StartUpCheck.CheckResult checkResult = testee.check();
+
+        assertSoftly(softly -> {
+            softly.assertThat(checkResult.isBad()).isTrue();
+            softly.assertThat(checkResult.getDescription())
+                .contains("suggested ElasticSearch version (2.4.6) is not match with current version (6.5.1)");
+        });
     }
 }
