@@ -14,7 +14,7 @@ FROM openjdk:8u181-jre
 # 993  IMAP with socketTLS enabled
 # 8000 Web Admin interface (unsecured: expose at your own risks)
 
-EXPOSE 25 110 143 465 587 993 8000
+EXPOSE 25 110 143 465 587 993 4000 8000
 
 WORKDIR /root
 
@@ -24,9 +24,17 @@ ADD destination/james-server-cassandra-rabbitmq-ldap-guice.lib /root/james-serve
 ADD destination/james-server-cli.jar /root/james-cli.jar
 ADD destination/james-server-cli.lib /root/james-server-cli.lib
 ADD destination/conf /root/conf
+ADD destination/glowroot/plugins /root/glowroot/plugins
+ADD destination/glowroot/glowroot.jar /root/glowroot/glowroot.jar
+COPY destination/glowroot/lib/glowroot-embedded-collector.jar /root/glowroot/lib/glowroot-embedded-collector.jar
+COPY destination/glowroot/lib/glowroot-logging-logstash.jar /root/glowroot/lib/glowroot-logging-logstash.jar
+COPY destination/glowroot/admin.json /root/glowroot/admin.json
+COPY destination/run_james.sh /root/run_james.sh
 
 VOLUME /logs
 VOLUME /root/conf
+VOLUME /root/glowroot/plugins
 
+ENV PATH "$PATH:/root/glowroot/lib"
 ENV JVM_OPTIONS=""
-ENTRYPOINT java -Dlogback.configurationFile=/root/conf/logback.xml -Dworking.directory=/root/ $JVM_OPTIONS -jar james-server.jar
+ENTRYPOINT ./run_james.sh
