@@ -150,6 +150,10 @@ public class DockerGenericContainer implements TestRule {
         return container.getContainerInfo();
     }
 
+    public String getDockerImageName() {
+        return container.getDockerImageName();
+    }
+
     public boolean tryConnect(int port) {
         try {
             Socket socket = SocketFactory.getDefault().createSocket(getContainerIp(), port);

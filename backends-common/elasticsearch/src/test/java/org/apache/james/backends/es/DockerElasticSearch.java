@@ -120,6 +120,10 @@ public class DockerElasticSearch {
         return ClientProviderImpl.fromHosts(ImmutableList.of(getTcpHost()), noClusterName);
     }
 
+    public String getDockerImageName() {
+        return eSContainer.getDockerImageName();
+    }
+
     private ElasticSearchAPI esAPI() {
         return ElasticSearchAPI.from(getHttpHost());
     }
