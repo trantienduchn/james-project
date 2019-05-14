@@ -37,7 +37,6 @@ import com.google.common.collect.Iterables;
 public class DelaysAndMaxRetry {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DelaysAndMaxRetry.class);
-    private static final String HOUR_MINUTE_SECOND_DURATION_FORMAT = "HH:mm:ss";
 
     public static DelaysAndMaxRetry defaults() {
         return new DelaysAndMaxRetry(RemoteDeliveryConfiguration.DEFAULT_MAX_RETRY, Repeat.repeat(new Delay(), RemoteDeliveryConfiguration.DEFAULT_MAX_RETRY));
@@ -68,7 +67,7 @@ public class DelaysAndMaxRetry {
             Delay lastDelay = delayTimesList.get(delayTimesList.size() - 1);
             Duration lastDelayTime = lastDelay.getDelayTime();
             LOGGER.warn("Delay of {} is now attempted: {} times",
-                DurationFormatUtils.formatDuration(lastDelayTime.toMillis(), HOUR_MINUTE_SECOND_DURATION_FORMAT),
+                DurationFormatUtils.formatDurationWords(lastDelayTime.toMillis(), true, true),
                 lastDelay.getAttempts());
             return new DelaysAndMaxRetry(intendedMaxRetries,
                 ImmutableList.copyOf(
