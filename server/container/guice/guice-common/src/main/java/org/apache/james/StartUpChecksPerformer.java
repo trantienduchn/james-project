@@ -78,16 +78,16 @@ public class StartUpChecksPerformer {
             static class Builder {
 
                 @FunctionalInterface
-                interface RequireCheckName {
+                public interface RequireCheckName {
                     RequireResultType checkName(String name);
                 }
 
                 @FunctionalInterface
-                interface RequireResultType {
+                public interface RequireResultType {
                     ReadyToBuild resultType(ResultType resultType);
                 }
 
-                static class ReadyToBuild {
+                public static class ReadyToBuild {
                     private final String name;
                     private final ResultType resultType;
                     private Optional<String> description;

@@ -17,38 +17,38 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.backends.es;
+package org.apache.james.modules.mailbox;
 
-import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class DockerElasticSearchExtension implements BeforeEachCallback, AfterEachCallback {
+import org.apache.james.backends.es.DockerElasticSearchExtension;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
-    public static DockerElasticSearchExtension withSingletonES() {
-        return new DockerElasticSearchExtension(DockerElasticSearchSingleton.INSTANCE);
+class ElasticSearchStartUpCheckTest {
+
+    @RegisterExtension
+    static DockerElasticSearchExtension testExtension = DockerElasticSearchExtension.withSingletonES();
+
+    private ElasticSearchStartUpCheck testee;
+
+    @BeforeEach
+    void beforeEach() {
+        testee = new ElasticSearchStartUpCheck(testExtension.getDockerES().getHttpHost());
     }
 
-    private final DockerElasticSearch elasticSearch;
-
-    public DockerElasticSearchExtension(DockerElasticSearch elasticSearch) {
-        this.elasticSearch = elasticSearch;
+    @Test
+    void checkShouldReturnGoodWhenAbleToFindESVersion() {
+        assertThat(testee.check().isGood())
+            .isTrue();
     }
 
-    @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
-        elasticSearch.start();
-        elasticSearch.awaitForElasticSearch();
-    }
+    @Test
+    void checkShouldReturnBadWhenUnAbleToConnectToElasticSearch() {
+        testExtension.getDockerES().stop();
 
-    @Override
-    public void afterEach(ExtensionContext context) throws Exception {
-        if (elasticSearch.isRunning()) {
-            elasticSearch.cleanUpData();
-        }
-    }
-
-    public DockerElasticSearch getDockerES() {
-        return elasticSearch;
+        assertThat(testee.check().isBad())
+            .isTrue();
     }
 }

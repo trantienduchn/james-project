@@ -68,9 +68,13 @@ public class DockerElasticSearch {
     }
 
     public void start() {
-        if (!eSContainer.isRunning()) {
+        if (!isRunning()) {
             eSContainer.start();
         }
+    }
+
+    public boolean isRunning() {
+        return eSContainer.isRunning();
     }
 
     public void stop() {
