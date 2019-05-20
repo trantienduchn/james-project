@@ -22,6 +22,7 @@ package org.apache.james;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.james.modules.LinshareGuiceExtension;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -34,6 +35,11 @@ class LinshareBlobExportMechanismProvidingTest {
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE))
         .build();
+
+    @AfterAll
+    static void afterAll() {
+        linshareGuiceExtension.stopDockerLinshare();
+    }
 
     @Test
     void memoryJamesServerShouldStartWithLinShareBlobExportMechanism(GuiceJamesServer server) {

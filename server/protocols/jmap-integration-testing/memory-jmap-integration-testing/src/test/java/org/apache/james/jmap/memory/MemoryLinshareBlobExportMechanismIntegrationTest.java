@@ -32,13 +32,14 @@ import org.apache.james.modules.mailbox.PreDeletionHooksConfiguration;
 import org.apache.james.vault.DeletedMessageVaultHook;
 import org.apache.james.vault.MailRepositoryDeletedMessageVault;
 import org.apache.james.webadmin.WebAdminConfiguration;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class MemoryLinshareBlobExportMechanismIntegrationTest extends LinshareBlobExportMechanismIntegrationTest {
 
     private static final int LIMIT_TO_10_MESSAGES = 10;
 
-    private final LinshareGuiceExtension linshareGuiceExtension = new LinshareGuiceExtension();
+    private static final LinshareGuiceExtension linshareGuiceExtension = new LinshareGuiceExtension();
 
     @RegisterExtension
     JamesServerExtension jamesServerExtension = new JamesServerBuilder()
@@ -56,4 +57,9 @@ class MemoryLinshareBlobExportMechanismIntegrationTest extends LinshareBlobExpor
                     .toInstance(new MailRepositoryDeletedMessageVault.Configuration(MailRepositoryUrl.from("memory://var/deletedMessages/user")));
             }))
         .build();
+
+    @AfterAll
+    static void afterAll() {
+        linshareGuiceExtension.stopDockerLinshare();
+    }
 }

@@ -55,4 +55,9 @@ public class LinshareGuiceExtension implements GuiceModuleTestExtension {
             }
         );
     }
+
+    public void stopDockerLinshare() {
+        linshareExtension.getLinshare()
+            .stop();
+    }
 }
