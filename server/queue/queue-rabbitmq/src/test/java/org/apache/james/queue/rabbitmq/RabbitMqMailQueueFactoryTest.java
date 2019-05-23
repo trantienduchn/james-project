@@ -48,7 +48,9 @@ class RabbitMqMailQueueFactoryTest implements MailQueueFactoryContract<RabbitMQM
     private static final HashBlobId.Factory BLOB_ID_FACTORY = new HashBlobId.Factory();
 
     @RegisterExtension
-    static final RabbitMQExtension rabbitMQExtension = new RabbitMQExtension();
+    static RabbitMQExtension rabbitMQExtension = RabbitMQExtension.builder()
+        .singletonRabbitMQ()
+        .build();
 
     private RabbitMQMailQueueFactory mailQueueFactory;
     private RabbitMQMailQueueManagement mqManagementApi;

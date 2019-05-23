@@ -85,7 +85,9 @@ class RabbitMQMailQueueConfigurationChangeTest {
         CassandraEventStoreModule.MODULE));
 
     @RegisterExtension
-    static RabbitMQExtension rabbitMQExtension = new RabbitMQExtension();
+    static RabbitMQExtension rabbitMQExtension = RabbitMQExtension.builder()
+        .singletonRabbitMQ()
+        .build();
 
     private UpdatableTickingClock clock;
     private RabbitMQMailQueueManagement mqManagementApi;

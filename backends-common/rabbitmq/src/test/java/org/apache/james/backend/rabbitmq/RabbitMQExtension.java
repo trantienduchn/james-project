@@ -18,9 +18,11 @@
  ****************************************************************/
 package org.apache.james.backend.rabbitmq;
 
+import static org.apache.james.backend.rabbitmq.RabbitMQExtension.DockerRestartPolicy.NEVER;
 import static org.apache.james.backend.rabbitmq.RabbitMQFixture.DEFAULT_MANAGEMENT_CREDENTIAL;
 
 import java.net.URISyntaxException;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -32,19 +34,108 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
 public class RabbitMQExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, AfterEachCallback, ParameterResolver {
-    private DockerRabbitMQ rabbitMQ;
+
+    private static final Consumer<DockerRabbitMQ> DO_NOT_THING = dockerRabbitMQ -> {};
+
+    public enum DockerRestartPolicy {
+        PER_TEST(DockerRabbitMQ::start, DockerRabbitMQ::start, DockerRabbitMQ::stop, DockerRabbitMQ::stop),
+        PER_CLASS(DockerRabbitMQ::start, DO_NOT_THING, DO_NOT_THING, DockerRabbitMQ::stop),
+        NEVER(DockerRabbitMQ::start, DO_NOT_THING, DO_NOT_THING, DO_NOT_THING);
+
+        private final Consumer<DockerRabbitMQ> beforeAllCallback;
+        private final Consumer<DockerRabbitMQ> beforeEachCallback;
+        private final Consumer<DockerRabbitMQ> afterEachCallback;
+        private final Consumer<DockerRabbitMQ> afterAllCallback;
+
+        DockerRestartPolicy(Consumer<DockerRabbitMQ> beforeAllCallback,
+                            Consumer<DockerRabbitMQ> beforeEachCallback,
+                            Consumer<DockerRabbitMQ> afterEachCallback,
+                            Consumer<DockerRabbitMQ> afterAllCallback) {
+            this.beforeAllCallback = beforeAllCallback;
+            this.beforeEachCallback = beforeEachCallback;
+            this.afterEachCallback = afterEachCallback;
+            this.afterAllCallback = afterAllCallback;
+        }
+
+        public void beforeAll(DockerRabbitMQ dockerRabbitMQ) {
+            beforeAllCallback.accept(dockerRabbitMQ);
+        }
+
+        public void afterAll(DockerRabbitMQ dockerRabbitMQ) {
+            afterAllCallback.accept(dockerRabbitMQ);
+        }
+
+        public void afterEach(DockerRabbitMQ dockerRabbitMQ) {
+            afterEachCallback.accept(dockerRabbitMQ);
+        }
+
+        public void beforeEach(DockerRabbitMQ dockerRabbitMQ) {
+            beforeEachCallback.accept(dockerRabbitMQ);
+        }
+    }
+
+    public static class Builder {
+
+        @FunctionalInterface
+        public interface RequireDockerRabbitMQ {
+            RequireRestartPolicy dockerRabbitMQ(DockerRabbitMQ dockerRabbitMQ);
+
+            default RequireRestartPolicy defaultRabbitMQ() {
+                return dockerRabbitMQ(DockerRabbitMQ.withoutCookie());
+            }
+
+            default ReadyToBuild singletonRabbitMQ() {
+                return new ReadyToBuild(DockerRabbitMQSingleton.SINGLETON, NEVER);
+            }
+        }
+
+        @FunctionalInterface
+        public interface RequireRestartPolicy {
+            ReadyToBuild restartPolicy(DockerRestartPolicy dockerRestartPolicy);
+        }
+
+        public static class ReadyToBuild {
+
+            private final DockerRabbitMQ rabbitMQ;
+            private final DockerRestartPolicy dockerRestartPolicy;
+
+            private ReadyToBuild(DockerRabbitMQ rabbitMQ, DockerRestartPolicy dockerRestartPolicy) {
+                this.rabbitMQ = rabbitMQ;
+                this.dockerRestartPolicy = dockerRestartPolicy;
+            }
+
+            public RabbitMQExtension build() {
+                return new RabbitMQExtension(rabbitMQ, dockerRestartPolicy);
+            }
+        }
+    }
+
+    public static Builder.RequireDockerRabbitMQ builder() {
+        return dockerRabbitMQ -> afterAllStage -> new Builder.ReadyToBuild(dockerRabbitMQ, afterAllStage);
+    }
+
+    private final DockerRabbitMQ rabbitMQ;
+    private final DockerRestartPolicy dockerRestartPolicy;
+
     private SimpleChannelPool simpleChannelPool;
     private RabbitMQConnectionFactory connectionFactory;
     private SimpleConnectionPool connectionPool;
 
+    public RabbitMQExtension(DockerRabbitMQ rabbitMQ,
+                             DockerRestartPolicy dockerRestartPolicy) {
+        this.rabbitMQ = rabbitMQ;
+        this.dockerRestartPolicy = dockerRestartPolicy;
+    }
+
     @Override
     public void beforeAll(ExtensionContext context) {
-        rabbitMQ = DockerRabbitMQ.withoutCookie();
-        rabbitMQ.start();
+        dockerRestartPolicy.beforeAll(rabbitMQ);
     }
 
     @Override
     public void beforeEach(ExtensionContext extensionContext) throws Exception {
+        dockerRestartPolicy.beforeEach(rabbitMQ);
+
         connectionFactory = createRabbitConnectionFactory();
         connectionPool = new SimpleConnectionPool(connectionFactory);
         this.simpleChannelPool = new SimpleChannelPool(connectionPool);
@@ -54,11 +145,13 @@ public class RabbitMQExtension implements BeforeAllCallback, BeforeEachCallback,
     public void afterEach(ExtensionContext context) {
         simpleChannelPool.close();
         connectionPool.close();
+
+        dockerRestartPolicy.afterEach(rabbitMQ);
     }
 
     @Override
     public void afterAll(ExtensionContext extensionContext) {
-        rabbitMQ.stop();
+        dockerRestartPolicy.afterAll(rabbitMQ);
     }
 
     @Override
