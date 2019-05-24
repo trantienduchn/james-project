@@ -157,7 +157,7 @@ class ESReporterTest {
         try (RestHighLevelClient client = elasticSearchExtension.getDockerES().clientProvider().get()) {
             SearchRequest searchRequest = new SearchRequest()
                 .source(new SearchSourceBuilder()
-                .query(QueryBuilders.matchAllQuery()));
+                    .query(QueryBuilders.matchAllQuery()));
             return !Arrays.stream(client
                     .search(searchRequest, RequestOptions.DEFAULT)
                     .getHits()
