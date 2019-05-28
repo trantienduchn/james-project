@@ -36,6 +36,7 @@ import org.apache.james.blob.objectstorage.swift.SwiftKeystone3ObjectStorage;
 import org.apache.james.blob.objectstorage.swift.SwiftTempAuthObjectStorage;
 import org.jclouds.blobstore.domain.Blob;
 import org.jclouds.blobstore.options.CopyOptions;
+import org.jclouds.blobstore.options.ListContainerOptions;
 import org.jclouds.domain.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,9 @@ import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public class ObjectStorageBlobsDAO implements BlobStore {
     private static final Location DEFAULT_LOCATION = null;
@@ -139,6 +142,16 @@ public class ObjectStorageBlobsDAO implements BlobStore {
             .build();
 
         return Mono.fromRunnable(() -> putBlobFunction.putBlob(blob));
+    }
+
+    public Flux<BlobId> list(String pathPrefix) {
+        return Flux.fromStream(() -> blobStore.list(containerName.value(),
+                ListContainerOptions.Builder
+                    .delimiter("/")
+                    .prefix(pathPrefix))
+                .stream())
+            .publishOn(Schedulers.elastic())
+            .map(blobMetaData -> blobIdFactory.from(blobMetaData.getName()));
     }
 
     @Override

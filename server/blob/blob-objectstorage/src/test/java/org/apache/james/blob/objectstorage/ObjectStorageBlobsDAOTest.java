@@ -203,7 +203,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
 
     @Test
     void saveByPathShouldSaveBlob() {
-        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "/root/blob/file1")
+        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "root/blob/file1")
             .block();
 
         assertThat(objectStorageBlobsDAO.read(file1Id))
@@ -214,7 +214,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     // we may need another BlobId Factory to generate BlobIds which have value are file paths
     @Test
     void saveByPathShouldReturnFilePatternBlobId() {
-        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "/root/blob/file1")
+        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "root/blob/file1")
             .block();
 
         assertThat(file1Id.asString())
@@ -223,15 +223,44 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
 
     @Test
     void saveByPathShouldSaveManyBlobsHavingSamePrefix() {
-        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "/root/blob/file1")
+        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "root/blob/file1")
             .block();
-        BlobId file2Id = objectStorageBlobsDAO.save("file 2 content", "/root/blob/file2")
+        BlobId file2Id = objectStorageBlobsDAO.save("file 2 content", "root/blob/file2")
             .block();
 
         assertThat(objectStorageBlobsDAO.read(file1Id))
             .hasSameContentAs(new ByteArrayInputStream("file 1 content".getBytes(StandardCharsets.UTF_8)));
         assertThat(objectStorageBlobsDAO.read(file2Id))
             .hasSameContentAs(new ByteArrayInputStream("file 2 content".getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @Test
+    void listShouldListOnlyBlobsHavingSamePrefix() {
+        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "root/blob/file1")
+            .block();
+        BlobId file2Id = objectStorageBlobsDAO.save("file 2 content", "root/blob/file2")
+            .block();
+        BlobId file3Id = objectStorageBlobsDAO.save("file 3 content", "root/anotherFolder/file3")
+            .block();
+
+        assertThat(objectStorageBlobsDAO.list("root/blob/").toStream())
+            .containsOnly(file1Id, file2Id);
+    }
+
+    @Test
+    void listShouldSkipBlobsAtNestedLevels() {
+        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "root/blob/file1")
+            .block();
+        BlobId file2Id = objectStorageBlobsDAO.save("file 2 content", "root/blob/file2")
+            .block();
+        BlobId file3Id = objectStorageBlobsDAO.save("file 3 content", "root/blob/nested/file3")
+            .block();
+        BlobId file4Id = objectStorageBlobsDAO.save("file 4 content", "root/blob/nested/more-nested/file4")
+            .block();
+        BlobId topNestedFolder = blobIdFactory().from("root/blob/nested/");
+
+        assertThat(objectStorageBlobsDAO.list("root/blob/").toStream())
+            .containsOnly(file1Id, file2Id, topNestedFolder);
     }
 }
 
