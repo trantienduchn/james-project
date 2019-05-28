@@ -262,5 +262,36 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
         assertThat(objectStorageBlobsDAO.list("root/blob/").toStream())
             .containsOnly(file1Id, file2Id, topNestedFolder);
     }
+
+    @Test
+    void jcouldBlobStoreDeleteDirectoryDoesntWork() {
+        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "root/blob/file1")
+            .block();
+        BlobId file2Id = objectStorageBlobsDAO.save("file 2 content", "root/blob/file2")
+            .block();
+
+        // deleteDirectory() doesn't work
+        blobStore.deleteDirectory(containerName.value(), "root/blob/");
+        assertThat(objectStorageBlobsDAO.list("root/blob/").toStream())
+            .containsOnly(file1Id, file2Id);
+
+        // removeBlob() doesn't work
+        blobStore.removeBlob(containerName.value(), "root/blob/");
+        assertThat(objectStorageBlobsDAO.list("root/blob/").toStream())
+            .containsOnly(file1Id, file2Id);
+    }
+
+    @Test
+    void jcouldBlobStoreDeleteBlobStillWorks() {
+        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "root/blob/file1")
+            .block();
+        BlobId file2Id = objectStorageBlobsDAO.save("file 2 content", "root/blob/file2")
+            .block();
+
+        blobStore.removeBlob(containerName.value(), "root/blob/file1");
+        blobStore.removeBlob(containerName.value(), "root/blob/file2");
+        assertThat(objectStorageBlobsDAO.list("root/blob/").toStream())
+            .isEmpty();
+    }
 }
 
