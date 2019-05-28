@@ -22,6 +22,7 @@ package org.apache.james.blob.objectstorage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import org.apache.commons.io.IOUtils;
@@ -91,6 +92,12 @@ public class ObjectStorageBlobsDAO implements BlobStore {
             .thenReturn(name);
     }
 
+    public Mono<BlobId> save(String data, String blobKey) {
+        BlobId filePatternBlobId = blobIdFactory.from(blobKey);
+        return saveWithoutReSetBlobId(new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8)), filePatternBlobId)
+            .then(Mono.just(filePatternBlobId));
+    }
+
     @Override
     public Mono<BlobId> save(byte[] data) {
         return save(new ByteArrayInputStream(data));
@@ -123,6 +130,15 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
         return Mono.fromRunnable(() -> putBlobFunction.putBlob(blob))
             .then(Mono.fromCallable(() -> blobIdFactory.from(hashingInputStream.hash().toString())));
+    }
+
+    private Mono<Void> saveWithoutReSetBlobId(InputStream data, BlobId id) {
+        Payload payload = payloadCodec.write(data);
+        Blob blob = blobStore.blobBuilder(id.asString())
+            .payload(payload.getPayload())
+            .build();
+
+        return Mono.fromRunnable(() -> putBlobFunction.putBlob(blob));
     }
 
     @Override

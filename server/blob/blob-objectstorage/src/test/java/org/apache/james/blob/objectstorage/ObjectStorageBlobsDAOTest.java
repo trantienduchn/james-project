@@ -200,5 +200,38 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
         Mono<byte[]> resultFuture = testee.readBytes(blobId).subscribeOn(Schedulers.elastic());
         assertThat(resultFuture.toFuture()).isNotCompleted();
     }
+
+    @Test
+    void saveByPathShouldSaveBlob() {
+        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "/root/blob/file1")
+            .block();
+
+        assertThat(objectStorageBlobsDAO.read(file1Id))
+            .hasSameContentAs(new ByteArrayInputStream("file 1 content".getBytes(StandardCharsets.UTF_8)));
+    }
+
+    // Currently there is only HashBlobId.Factory
+    // we may need another BlobId Factory to generate BlobIds which have value are file paths
+    @Test
+    void saveByPathShouldReturnFilePatternBlobId() {
+        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "/root/blob/file1")
+            .block();
+
+        assertThat(file1Id.asString())
+            .isEqualTo("/root/blob/file1");
+    }
+
+    @Test
+    void saveByPathShouldSaveManyBlobsHavingSamePrefix() {
+        BlobId file1Id = objectStorageBlobsDAO.save("file 1 content", "/root/blob/file1")
+            .block();
+        BlobId file2Id = objectStorageBlobsDAO.save("file 2 content", "/root/blob/file2")
+            .block();
+
+        assertThat(objectStorageBlobsDAO.read(file1Id))
+            .hasSameContentAs(new ByteArrayInputStream("file 1 content".getBytes(StandardCharsets.UTF_8)));
+        assertThat(objectStorageBlobsDAO.read(file2Id))
+            .hasSameContentAs(new ByteArrayInputStream("file 2 content".getBytes(StandardCharsets.UTF_8)));
+    }
 }
 
