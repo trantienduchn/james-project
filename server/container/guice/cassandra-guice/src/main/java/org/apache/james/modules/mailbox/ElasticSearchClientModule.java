@@ -49,12 +49,10 @@ public class ElasticSearchClientModule extends AbstractModule {
     @Provides
     @Singleton
     protected RestHighLevelClient provideClient(ElasticSearchConfiguration configuration) {
-
         Duration waitDelay = Duration.ofMillis(configuration.getMinDelay());
         return Mono.fromCallable(() -> connectToCluster(configuration))
             .doOnError(e -> LOGGER.warn("Error establishing ElasticSearch connection. Next retry scheduled in {}",
-                DurationFormatUtils.formatDurationWords(waitDelay.toMillis(), true, true),
-                e))
+                DurationFormatUtils.formatDurationWords(waitDelay.toMillis(), true, true), e))
             .retryBackoff(configuration.getMaxRetries(), waitDelay, waitDelay)
             .publishOn(Schedulers.elastic())
             .block();
