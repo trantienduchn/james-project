@@ -80,7 +80,7 @@ public class AwsS3ObjectStorage {
 
     @Inject
     @VisibleForTesting
-    AwsS3ObjectStorage() {
+    public AwsS3ObjectStorage() {
         executorService = Executors.newFixedThreadPool(MAX_THREADS, NamedThreadFactory.withClassName(AwsS3ObjectStorage.class));
     }
 
