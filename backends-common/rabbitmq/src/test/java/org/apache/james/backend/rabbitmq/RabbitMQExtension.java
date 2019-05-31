@@ -111,7 +111,7 @@ public class RabbitMQExtension implements BeforeAllCallback, BeforeEachCallback,
     }
 
     public static Builder.RequireDockerRabbitMQ builder() {
-        return dockerRabbitMQ -> afterAllStage -> new Builder.ReadyToBuild(dockerRabbitMQ, afterAllStage);
+        return dockerRabbitMQ -> dockerRestartPolicy -> new Builder.ReadyToBuild(dockerRabbitMQ, dockerRestartPolicy);
     }
 
     private final DockerRabbitMQ rabbitMQ;
