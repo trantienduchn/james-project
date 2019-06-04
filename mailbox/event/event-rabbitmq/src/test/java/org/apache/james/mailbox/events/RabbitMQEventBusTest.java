@@ -88,9 +88,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
     ErrorHandlingContract {
 
     @RegisterExtension
-    static RabbitMQExtension rabbitMQExtension = RabbitMQExtension.builder()
-        .singletonRabbitMQ()
-        .build();
+    static RabbitMQExtension rabbitMQExtension = RabbitMQExtension.singletonRabbitMQ();
 
     private RabbitMQEventBus eventBus;
     private RabbitMQEventBus eventBus2;
@@ -308,10 +306,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
             class DispatchingWhenNetWorkIssue {
 
                 @RegisterExtension
-                RabbitMQExtension rabbitMQNetWorkIssueExtension = RabbitMQExtension.builder()
-                    .defaultRabbitMQ()
-                    .restartPolicy(DockerRestartPolicy.PER_TEST)
-                    .build();
+                RabbitMQExtension rabbitMQNetWorkIssueExtension = RabbitMQExtension.defaultRabbitMQ()
+                    .restartPolicy(DockerRestartPolicy.PER_TEST);
 
                 private RabbitMQEventBus rabbitMQEventBusWithNetWorkIssue;
 

@@ -55,9 +55,7 @@ import com.rabbitmq.client.ConnectionFactory;
 class RabbitMQTest {
 
     @RegisterExtension
-    static RabbitMQExtension rabbitMQExtension = RabbitMQExtension.builder()
-        .singletonRabbitMQ()
-        .build();
+    static RabbitMQExtension rabbitMQExtension = RabbitMQExtension.singletonRabbitMQ();
 
     @Nested
     class SingleConsumerTest {

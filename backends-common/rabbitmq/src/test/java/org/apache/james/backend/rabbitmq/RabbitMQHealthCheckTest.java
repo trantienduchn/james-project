@@ -30,9 +30,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class RabbitMQHealthCheckTest {
 
     @RegisterExtension
-    static RabbitMQExtension rabbitMQExtension = RabbitMQExtension.builder()
-        .singletonRabbitMQ()
-        .build();
+    static RabbitMQExtension rabbitMQExtension = RabbitMQExtension.singletonRabbitMQ();
 
     private RabbitMQHealthCheck healthCheck;
 
