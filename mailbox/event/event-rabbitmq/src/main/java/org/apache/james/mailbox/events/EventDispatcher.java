@@ -26,6 +26,7 @@ import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXC
 
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -40,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.rabbitmq.client.AMQP;
-
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoProcessor;
@@ -59,6 +59,7 @@ class EventDispatcher {
     private final AMQP.BasicProperties basicProperties;
     private final MailboxListenerExecutor mailboxListenerExecutor;
     final AtomicInteger dispatchCount = new AtomicInteger();
+    private final SynchronousQueue<OutboundMessage> eventSender;
 
     EventDispatcher(EventBusId eventBusId, EventSerializer eventSerializer, Sender sender, LocalListenerRegistry localListenerRegistry, MailboxListenerExecutor mailboxListenerExecutor) {
         this.eventSerializer = eventSerializer;
@@ -68,6 +69,7 @@ class EventDispatcher {
             .headers(ImmutableMap.of(EVENT_BUS_ID, eventBusId.asString()))
             .build();
         this.mailboxListenerExecutor = mailboxListenerExecutor;
+        eventSender = new SynchronousQueue<>();
     }
 
     void start() {
@@ -75,6 +77,10 @@ class EventDispatcher {
             .durable(DURABLE)
             .type(DIRECT_EXCHANGE))
             .block();
+
+        sender.send(Mono.fromCallable(eventSender::take).repeat().subscribeOn(Schedulers.elastic()))
+            .doOnError(Throwable::printStackTrace)
+            .subscribe();
     }
 
     Mono<Void> dispatch(Event event, Set<RegistrationKey> keys) {
@@ -89,7 +95,6 @@ class EventDispatcher {
 
     private Mono<Void> dispatchToLocalListeners(Event event, Set<RegistrationKey> keys) {
         return Flux.fromIterable(keys)
-            .subscribeOn(Schedulers.elastic())
             .flatMap(key -> localListenerRegistry.getLocalMailboxListeners(key)
                 .map(listener -> Tuples.of(key, listener)))
             .filter(pair -> pair.getT2().getExecutionMode().equals(MailboxListener.ExecutionMode.SYNCHRONOUS))
@@ -127,9 +132,14 @@ class EventDispatcher {
         Stream<OutboundMessage> outboundMessages = routingKeys
             .map(routingKey -> new OutboundMessage(MAILBOX_EVENT_EXCHANGE_NAME, routingKey.asString(), basicProperties, serializedEvent));
 
-        return sender.send(Flux.fromStream(outboundMessages))
-            .publishOn(Schedulers.elastic())
-            .doOnError(th -> th.printStackTrace());
+        outboundMessages.forEachOrdered(e -> {
+            try {
+                eventSender.put(e);
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+        return Mono.empty();
     }
 
     private byte[] serializeEvent(Event event) {
