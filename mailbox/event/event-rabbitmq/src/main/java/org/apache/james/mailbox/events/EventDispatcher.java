@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.rabbitmq.client.AMQP;
+import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoProcessor;
@@ -72,13 +73,13 @@ class EventDispatcher {
         eventSender = new SynchronousQueue<>();
     }
 
-    void start() {
+    Disposable start() {
         sender.declareExchange(ExchangeSpecification.exchange(MAILBOX_EVENT_EXCHANGE_NAME)
             .durable(DURABLE)
             .type(DIRECT_EXCHANGE))
             .block();
 
-        sender.send(Mono.fromCallable(eventSender::take).repeat().subscribeOn(Schedulers.elastic()))
+        return sender.send(Mono.fromCallable(eventSender::take).repeat().subscribeOn(Schedulers.elastic()))
             .doOnError(Throwable::printStackTrace)
             .subscribe();
     }

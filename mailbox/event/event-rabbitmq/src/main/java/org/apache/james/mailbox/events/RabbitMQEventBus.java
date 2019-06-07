@@ -32,6 +32,7 @@ import org.apache.james.metrics.api.MetricFactory;
 import com.github.fge.lambdas.Throwing;
 import com.google.common.base.Preconditions;
 import com.rabbitmq.client.Connection;
+import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.rabbitmq.RabbitFlux;
 import reactor.rabbitmq.Sender;
@@ -57,6 +58,7 @@ public class RabbitMQEventBus implements EventBus, Startable {
     private KeyRegistrationHandler keyRegistrationHandler;
     EventDispatcher eventDispatcher;
     private Sender sender;
+    private Disposable dispatcherDisposable;
 
     @Inject
     public RabbitMQEventBus(SimpleConnectionPool simpleConnectionPool, EventSerializer eventSerializer,
@@ -83,7 +85,7 @@ public class RabbitMQEventBus implements EventBus, Startable {
             groupRegistrationHandler = new GroupRegistrationHandler(eventSerializer, sender, connectionMono, retryBackoff, eventDeadLetters, mailboxListenerExecutor);
             eventDispatcher = new EventDispatcher(eventBusId, eventSerializer, sender, localListenerRegistry, mailboxListenerExecutor);
 
-            eventDispatcher.start();
+            dispatcherDisposable = eventDispatcher.start();
             keyRegistrationHandler.start();
             isRunning = true;
         }
@@ -94,6 +96,7 @@ public class RabbitMQEventBus implements EventBus, Startable {
         if (isRunning && !isStopping) {
             isStopping = true;
             isRunning = false;
+            dispatcherDisposable.dispose();
             groupRegistrationHandler.stop();
             keyRegistrationHandler.stop();
             sender.close();
