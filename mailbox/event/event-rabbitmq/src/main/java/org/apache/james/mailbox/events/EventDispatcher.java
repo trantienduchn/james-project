@@ -27,7 +27,7 @@ import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXC
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.apache.james.event.json.EventSerializer;
@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.rabbitmq.client.AMQP;
+
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -53,13 +54,13 @@ import reactor.util.function.Tuples;
 
 class EventDispatcher {
     private static final Logger LOGGER = LoggerFactory.getLogger(EventDispatcher.class);
+    private static final int EVENT_QUEUE_PUT_TIMEOUT_IN_SECONDS = 10;
 
     private final EventSerializer eventSerializer;
     private final Sender sender;
     private final LocalListenerRegistry localListenerRegistry;
     private final AMQP.BasicProperties basicProperties;
     private final MailboxListenerExecutor mailboxListenerExecutor;
-    final AtomicInteger dispatchCount = new AtomicInteger();
     private final SynchronousQueue<OutboundMessage> eventSender;
 
     EventDispatcher(EventBusId eventBusId, EventSerializer eventSerializer, Sender sender, LocalListenerRegistry localListenerRegistry, MailboxListenerExecutor mailboxListenerExecutor) {
@@ -80,7 +81,7 @@ class EventDispatcher {
             .block();
 
         return sender.send(Mono.fromCallable(eventSender::take).repeat().subscribeOn(Schedulers.elastic()))
-            .doOnError(Throwable::printStackTrace)
+            .doOnError(throwable -> LOGGER.error("Cannot send event to rabbitMQ", throwable))
             .subscribe();
     }
 
@@ -90,7 +91,6 @@ class EventDispatcher {
                 dispatchToLocalListeners(event, keys),
                 dispatchToRemoteListeners(serializeEvent(event), keys))
             .then()
-            .doOnSuccess(any -> dispatchCount.incrementAndGet())
             .subscribeWith(MonoProcessor.create());
     }
 
@@ -133,9 +133,12 @@ class EventDispatcher {
         Stream<OutboundMessage> outboundMessages = routingKeys
             .map(routingKey -> new OutboundMessage(MAILBOX_EVENT_EXCHANGE_NAME, routingKey.asString(), basicProperties, serializedEvent));
 
-        outboundMessages.forEachOrdered(e -> {
+        outboundMessages.forEachOrdered(message -> {
             try {
-                eventSender.put(e);
+                if (!eventSender.offer(message, EVENT_QUEUE_PUT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("putting message of exchange: '" + message.getExchange() + "' "
+                        + "and routing key: '" + message.getRoutingKey() + "' into event queue got timeout");
+                }
             } catch (InterruptedException ex) {
                 throw new RuntimeException(ex);
             }

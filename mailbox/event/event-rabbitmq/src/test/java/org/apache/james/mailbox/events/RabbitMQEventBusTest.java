@@ -40,8 +40,8 @@ import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXCHANGE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -82,7 +82,6 @@ import reactor.rabbitmq.BindingSpecification;
 import reactor.rabbitmq.ExchangeSpecification;
 import reactor.rabbitmq.QueueSpecification;
 import reactor.rabbitmq.RabbitFlux;
-import reactor.rabbitmq.RabbitFluxException;
 import reactor.rabbitmq.Receiver;
 import reactor.rabbitmq.ReceiverOptions;
 import reactor.rabbitmq.Sender;
@@ -187,29 +186,30 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
         EventBusConcurrentTestContract.SingleEventBusConcurrentContract {
 
         @Test
-        void rabbitMQEventBusCannotHandleHugeDispatchingOperations() throws Exception {
+        void dispatchShouldHandleLoadBulksGracefully() throws Exception {
             EventBusTestFixture.MailboxListenerCountingSuccessfulExecution countingListener1 = newCountingListener();
+            EventBusTestFixture.MailboxListenerCountingSuccessfulExecution countingListener2 = newCountingListener();
+            EventBusTestFixture.MailboxListenerCountingSuccessfulExecution countingListener3 = newCountingListener();
 
             eventBus().register(countingListener1, new EventBusTestFixture.GroupA());
-            int totalGlobalRegistrations = 1; // GroupA + GroupB + GroupC
+            eventBus().register(countingListener2, new EventBusTestFixture.GroupB());
+            eventBus().register(countingListener3, new EventBusTestFixture.GroupC());
+            int totalGlobalRegistrations = 3; // GroupA + GroupB + GroupC
 
             int threadCount = 10;
             int operationCount = 10000;
             int totalDispatchOperations = threadCount * operationCount;
-            eventBus = (RabbitMQEventBus) eventBus();
             ConcurrentTestRunner.builder()
-                .operation((threadNumber, operationNumber) -> eventBus.dispatch(EVENT, NO_KEYS))
+                .operation((threadNumber, operationNumber) -> eventBus().dispatch(EVENT, NO_KEYS))
                 .threadCount(threadCount)
                 .operationCount(operationCount)
                 .runSuccessfullyWithin(Duration.ofMinutes(10));
 
-            // there is a moment when RabbitMQ EventBus consumed amount of messages, then it will stop to consume more
             await()
                 .pollInterval(com.jayway.awaitility.Duration.FIVE_SECONDS)
                 .timeout(com.jayway.awaitility.Duration.TEN_MINUTES).until(() -> {
-                    int totalEventsReceived = totalEventsReceived(ImmutableList.of(countingListener1));
-                    System.out.println("event received: " + totalEventsReceived);
-                    System.out.println("dispatching count: " + eventBus.eventDispatcher.dispatchCount.get());
+                    int totalEventsReceived = totalEventsReceived(
+                        ImmutableList.of(countingListener1, countingListener2, countingListener3));
                     assertThat(totalEventsReceived)
                         .isEqualTo(totalGlobalRegistrations * totalDispatchOperations);
                 });
@@ -363,13 +363,18 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
 
                     rabbitMQNetWorkIssueExtension.getRabbitMQ().pause();
 
-                    assertThatThrownBy(() -> rabbitMQEventBusWithNetWorkIssue.dispatch(EVENT, NO_KEYS).block())
-                        .isInstanceOf(RabbitFluxException.class);
+                    try {
+                        rabbitMQEventBusWithNetWorkIssue.dispatch(EVENT, NO_KEYS).block();
+                    } catch (RuntimeException e) {
+                        //expected to timeout
+                    }
+
 
                     rabbitMQNetWorkIssueExtension.getRabbitMQ().unpause();
 
                     rabbitMQEventBusWithNetWorkIssue.dispatch(EVENT, NO_KEYS).block();
-                    assertThatListenerReceiveOneEvent(listener);
+                    RabbitMQFixture.awaitAtMostThirtySeconds
+                        .untilAsserted(() -> verify(listener, atLeastOnce()).event(EVENT));
                 }
             }
 
@@ -468,8 +473,11 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
 
                 rabbitMQExtension.getRabbitMQ().pause();
 
-                assertThatThrownBy(() -> eventBus.dispatch(EVENT, NO_KEYS).block())
-                    .isInstanceOf(RabbitFluxException.class);
+                try {
+                    eventBus.dispatch(EVENT, NO_KEYS).block();
+                } catch (RuntimeException e) {
+                    //expected to timeout
+                }
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 
@@ -485,8 +493,12 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
 
                 rabbitMQExtension.getRabbitMQ().pause();
 
-                assertThatThrownBy(() -> eventBus.reDeliver(GROUP_A, EVENT).block())
-                    .isInstanceOf(GroupRegistrationNotFound.class);
+                try {
+                    eventBus.reDeliver(GROUP_A, EVENT).block();
+                } catch (GroupRegistrationNotFound e) {
+                    //expected error
+                }
+
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 
@@ -504,8 +516,12 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
 
                 rabbitMQExtension.getRabbitMQ().pause();
 
-                assertThatThrownBy(() -> eventBus.dispatch(EVENT, NO_KEYS).block())
-                    .isInstanceOf(RabbitFluxException.class);
+                try {
+                    eventBus.dispatch(EVENT, NO_KEYS).block();
+                } catch (RuntimeException e) {
+                    //expected to timeout
+                }
+
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 
@@ -521,8 +537,11 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
 
                 rabbitMQExtension.getRabbitMQ().pause();
 
-                assertThatThrownBy(() -> eventBus.dispatch(EVENT, NO_KEYS).block())
-                    .isInstanceOf(RabbitFluxException.class);
+                try {
+                    eventBus.dispatch(EVENT, NO_KEYS).block();
+                } catch (RuntimeException e) {
+                    //expected to timeout
+                }
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 

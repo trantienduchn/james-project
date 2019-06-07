@@ -31,10 +31,13 @@ import javax.inject.Inject;
 import com.github.fge.lambdas.Throwing;
 import com.google.common.annotations.VisibleForTesting;
 import com.rabbitmq.client.Connection;
+
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 public class SimpleConnectionPool implements AutoCloseable {
+    private static final int CLOSE_TIMEOUT_MS = Long.valueOf(TimeUnit.SECONDS.toMillis(10)).intValue();
+
     private final AtomicReference<Connection> connectionReference;
     private final RabbitMQConnectionFactory connectionFactory;
 
@@ -50,7 +53,7 @@ public class SimpleConnectionPool implements AutoCloseable {
     public void close() {
         Optional.ofNullable(connectionReference.get())
             .filter(Connection::isOpen)
-            .ifPresent(Throwing.<Connection>consumer(connection -> connection.close(Long.valueOf(TimeUnit.SECONDS.toMillis(10)).intValue())).orDoNothing());
+            .ifPresent(Throwing.<Connection>consumer(connection -> connection.close(CLOSE_TIMEOUT_MS)).orDoNothing());
     }
 
     public Mono<Connection> getResilientConnection() {

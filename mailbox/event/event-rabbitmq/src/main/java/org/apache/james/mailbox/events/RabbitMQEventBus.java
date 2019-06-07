@@ -56,7 +56,7 @@ public class RabbitMQEventBus implements EventBus, Startable {
     private volatile boolean isStopping;
     private GroupRegistrationHandler groupRegistrationHandler;
     private KeyRegistrationHandler keyRegistrationHandler;
-    EventDispatcher eventDispatcher;
+    private EventDispatcher eventDispatcher;
     private Sender sender;
     private Disposable dispatcherDisposable;
 
