@@ -22,6 +22,7 @@ package org.apache.james.backend.rabbitmq;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.PreDestroy;
@@ -49,7 +50,7 @@ public class SimpleConnectionPool implements AutoCloseable {
     public void close() {
         Optional.ofNullable(connectionReference.get())
             .filter(Connection::isOpen)
-            .ifPresent(Throwing.<Connection>consumer(Connection::close).orDoNothing());
+            .ifPresent(Throwing.<Connection>consumer(connection -> connection.close(Long.valueOf(TimeUnit.SECONDS.toMillis(10)).intValue())).orDoNothing());
     }
 
     public Mono<Connection> getResilientConnection() {
