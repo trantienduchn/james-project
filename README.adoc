@@ -275,6 +275,8 @@ By default, the Glowroot UI is accessible from every machines in the network as 
 Which you could configure before building the image, if you want to restrict its accessibility to localhost for example.
 See the https://github.com/glowroot/glowroot/wiki/Agent-Installation-(with-Embedded-Collector)#user-content-optional-post-installation-steps[Glowroot post installation steps]  for more details.
 
+Or by mapping the 4000 port to the IP of the desired network interface, for example `-p 127.0.0.1:4000:4000`.
+
 
 ==== Handling attachment indexing
 
