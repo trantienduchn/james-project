@@ -33,6 +33,8 @@ VOLUME /logs
 VOLUME /root/conf
 VOLUME /root/glowroot/plugins
 
-ENV PATH "$PATH:/root/glowroot/lib"
-ENV JVM_OPTIONS=""
+ENV PATH "$PATH:/root/glowroot/lib" \
+    JVM_OPTIONS="" \
+    GLOWROOT_ACTIVATED="false"
+
 ENTRYPOINT ./run_james.sh

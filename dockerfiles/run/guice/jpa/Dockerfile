@@ -35,6 +35,8 @@ VOLUME /logs
 VOLUME /root/conf
 VOLUME /root/glowroot/plugins
 
-ENV PATH "$PATH:/root/glowroot/lib"
-ENV JVM_OPTIONS=""
+ENV PATH "$PATH:/root/glowroot/lib" \
+    JVM_OPTIONS="" \
+    GLOWROOT_ACTIVATED="false"
+
 ENTRYPOINT java -classpath '/root/james-server.jar:/root/james-server-jpa-guice.lib/*' -javaagent:/root/james-server-jpa-guice.lib/openjpa-3.0.0.jar -javaagent:/root/glowroot.jar -Dlogback.configurationFile=/root/conf/logback.xml -Dworking.directory=/root/ $JVM_OPTIONS org.apache.james.JPAJamesServerMain
