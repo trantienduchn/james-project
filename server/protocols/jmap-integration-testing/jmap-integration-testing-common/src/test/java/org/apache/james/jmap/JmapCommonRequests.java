@@ -131,6 +131,46 @@ public class JmapCommonRequests {
                 .path(ARGUMENTS + ".messageIds[0]");
     }
 
+    public static String getLatestMessageId(AccessToken accessToken, Role mailbox) {
+        String inboxId = getMailboxId(accessToken, mailbox);
+        return with()
+                .header("Authorization", accessToken.serialize())
+                .body("[[\"getMessageList\", {\"filter\":{\"inMailboxes\":[\"" + inboxId + "\"]}}, \"#0\"]]")
+                .post("/jmap")
+            .then()
+                .extract()
+                .path(ARGUMENTS + ".messageIds[0]");
+    }
+
+    public static String bodyOfMessage(AccessToken accessToken, String messageId) {
+        return with()
+                .header("Authorization", accessToken.serialize())
+                .body("[[\"getMessages\", {\"ids\": [\"" + messageId + "\"]}, \"#0\"]]")
+            .when()
+                .post("/jmap")
+            .then()
+                .statusCode(200)
+                .body(NAME, equalTo("messages"))
+                .body(ARGUMENTS + ".list", hasSize(1))
+            .extract()
+                .path(ARGUMENTS + ".list[0].textBody");
+    }
+
+    public static List<String> receiversOfMessage(AccessToken accessToken, String messageId) {
+        return with()
+                .header("Authorization", accessToken.serialize())
+                .body("[[\"getMessages\", {\"ids\": [\"" + messageId + "\"]}, \"#0\"]]")
+            .when()
+                .post("/jmap")
+            .then()
+                .statusCode(200)
+                .body(NAME, equalTo("messages"))
+                .body(ARGUMENTS + ".list", hasSize(1))
+            .extract()
+                .jsonPath()
+                .getList(ARGUMENTS + ".list[0].to.email");
+    }
+
     public static List<String> listMessageIdsInMailbox(AccessToken accessToken, String mailboxId) {
         return with()
                 .header("Authorization", accessToken.serialize())

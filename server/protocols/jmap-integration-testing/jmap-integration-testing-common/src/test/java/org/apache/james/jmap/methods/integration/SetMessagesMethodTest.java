@@ -23,11 +23,15 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.with;
 import static io.restassured.config.EncoderConfig.encoderConfig;
 import static io.restassured.config.RestAssuredConfig.newConfig;
+import static org.apache.james.jmap.HttpJmapAuthentication.authenticateJamesUser;
+import static org.apache.james.jmap.JmapCommonRequests.bodyOfMessage;
 import static org.apache.james.jmap.JmapCommonRequests.getDraftId;
 import static org.apache.james.jmap.JmapCommonRequests.getInboxId;
+import static org.apache.james.jmap.JmapCommonRequests.getLatestMessageId;
 import static org.apache.james.jmap.JmapCommonRequests.getMailboxId;
 import static org.apache.james.jmap.JmapCommonRequests.getOutboxId;
 import static org.apache.james.jmap.JmapCommonRequests.getSetMessagesUpdateOKResponseAssertions;
+import static org.apache.james.jmap.JmapCommonRequests.receiversOfMessage;
 import static org.apache.james.jmap.JmapURIBuilder.baseUri;
 import static org.apache.james.jmap.TestingConstants.ALICE;
 import static org.apache.james.jmap.TestingConstants.ALICE_PASSWORD;
@@ -141,7 +145,15 @@ public abstract class SetMessagesMethodTest {
     private static final String NOT_UPDATED = ARGUMENTS + ".notUpdated";
     private static final int BIG_MESSAGE_SIZE = 20 * 1024 * 1024;
 
+    private static final String DESTINATION_DOMAIN = "domain1.com";
+    private static final String ALIAS_DOMAIN = "domain2.com";
+    private static final String RECEIVER_AT_DESTINATION_DOMAIN = "user@domain1.com";
+    private static final String RECEIVER_AT_ALIAS_DOMAIN = "user@domain2.com";
+    private static final String SENDER_AT_DESTINATION_DOMAIN = "sender@domain1.com";
+
     private AccessToken bobAccessToken;
+    private AccessToken receiverAtDestinationDomainToken;
+    private AccessToken senderAtDestinationDomainToken;
 
     protected abstract GuiceJamesServer createJmapServer() throws IOException;
 
@@ -180,6 +192,13 @@ public abstract class SetMessagesMethodTest {
         mailboxProbe.createMailbox("#private", USERNAME, DefaultMailboxes.INBOX);
         accessToken = HttpJmapAuthentication.authenticateJamesUser(baseUri(jmapServer), USERNAME, PASSWORD);
         bobAccessToken = HttpJmapAuthentication.authenticateJamesUser(baseUri(jmapServer), BOB, BOB_PASSWORD);
+
+        dataProbe.addDomain(DESTINATION_DOMAIN);
+        dataProbe.addDomain(ALIAS_DOMAIN);
+        dataProbe.addUser(RECEIVER_AT_DESTINATION_DOMAIN, PASSWORD);
+        dataProbe.addUser(SENDER_AT_DESTINATION_DOMAIN, PASSWORD);
+        receiverAtDestinationDomainToken = authenticateJamesUser(baseUri(jmapServer), RECEIVER_AT_DESTINATION_DOMAIN, PASSWORD);
+        senderAtDestinationDomainToken = authenticateJamesUser(baseUri(jmapServer), SENDER_AT_DESTINATION_DOMAIN, PASSWORD);
     }
 
     @After
@@ -5869,4 +5888,137 @@ public abstract class SetMessagesMethodTest {
         assertThat(receivedMimeMessageId).isEqualTo(creationMimeMessageId);
     }
 
+    @Test // MAILET-136
+    public void sendShouldReRouteMailToDestinationAddressWhenDomainAliasMapping() throws Exception {
+        dataProbe.addDomainAliasMapping(ALIAS_DOMAIN, DESTINATION_DOMAIN);
+
+        String messageContent = "content content";
+        String sendMessageBody =
+            "[" +
+            "  [" +
+            "    \"setMessages\"," +
+            "    {" +
+            "      \"create\": { \"creationId1337\" : {" +
+            "        \"from\": { \"name\": \"Sender\", \"email\": \"" + SENDER_AT_DESTINATION_DOMAIN + "\"}," +
+            "        \"to\": [{ \"name\": \"User\", \"email\": \"" + RECEIVER_AT_ALIAS_DOMAIN + "\"}]," +
+            "        \"subject\": \"Thank you for joining example.com!\"," +
+            "        \"textBody\": \"" + messageContent + "\"," +
+            "        \"mailboxIds\": [\"" + getOutboxId(senderAtDestinationDomainToken) + "\"]" +
+            "      }}" +
+            "    }," +
+            "    \"#0\"" +
+            "  ]" +
+            "]";
+        given()
+            .header("Authorization", senderAtDestinationDomainToken.serialize())
+            .body(sendMessageBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("messagesSet"))
+            .body(ARGUMENTS + ".notCreated", aMapWithSize(0))
+            .body(ARGUMENTS + ".created", aMapWithSize(1));
+
+        calmlyAwait
+            .pollDelay(Duration.FIVE_HUNDRED_MILLISECONDS)
+            .atMost(30, TimeUnit.SECONDS)
+            .untilAsserted(() ->
+                assertThat(getLatestMessageId(receiverAtDestinationDomainToken, Role.INBOX))
+                    .isNotNull());
+
+        String inboxMessageId = getLatestMessageId(receiverAtDestinationDomainToken, Role.INBOX);
+        assertThat(bodyOfMessage(receiverAtDestinationDomainToken, inboxMessageId))
+            .isEqualTo(messageContent);
+    }
+
+    @Test // MAILET-136
+    public void sendShouldNotCreateNewUserOrMailboxOfAliasAddressWhenDomainAliasMapping() throws Exception {
+        dataProbe.addDomainAliasMapping(ALIAS_DOMAIN, DESTINATION_DOMAIN);
+
+        String messageContent = "content content";
+        String sendMessageBody =
+            "[" +
+            "  [" +
+            "    \"setMessages\"," +
+            "    {" +
+            "      \"create\": { \"creationId1337\" : {" +
+            "        \"from\": { \"name\": \"Sender\", \"email\": \"" + SENDER_AT_DESTINATION_DOMAIN + "\"}," +
+            "        \"to\": [{ \"name\": \"User\", \"email\": \"" + RECEIVER_AT_ALIAS_DOMAIN + "\"}]," +
+            "        \"subject\": \"Thank you for joining example.com!\"," +
+            "        \"textBody\": \"" + messageContent + "\"," +
+            "        \"mailboxIds\": [\"" + getOutboxId(senderAtDestinationDomainToken) + "\"]" +
+            "      }}" +
+            "    }," +
+            "    \"#0\"" +
+            "  ]" +
+            "]";
+        given()
+            .header("Authorization", senderAtDestinationDomainToken.serialize())
+            .body(sendMessageBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("messagesSet"))
+            .body(ARGUMENTS + ".notCreated", aMapWithSize(0))
+            .body(ARGUMENTS + ".created", aMapWithSize(1));
+
+        calmlyAwait
+            .pollDelay(Duration.FIVE_HUNDRED_MILLISECONDS)
+            .atMost(30, TimeUnit.SECONDS)
+            .untilAsserted(() ->
+                assertThat(getLatestMessageId(receiverAtDestinationDomainToken, Role.INBOX))
+                    .isNotNull());
+
+        assertThat(dataProbe.listUsers())
+            .doesNotContain("user@domain2.com");
+        assertThat(mailboxProbe.listUserMailboxes("user@domain2.com"))
+            .isEmpty();
+    }
+
+
+    @Test // MAILET-136
+    public void sendShouldSaveToAsTheAliasAddressWhenDomainAliasMapping() throws Exception {
+        dataProbe.addDomainAliasMapping(ALIAS_DOMAIN, DESTINATION_DOMAIN);
+
+        String messageContent = "content content";
+        String sendMessageBody =
+            "[" +
+            "  [" +
+            "    \"setMessages\"," +
+            "    {" +
+            "      \"create\": { \"creationId1337\" : {" +
+            "        \"from\": { \"name\": \"Sender\", \"email\": \"" + SENDER_AT_DESTINATION_DOMAIN + "\"}," +
+            "        \"to\": [{ \"name\": \"User\", \"email\": \"" + RECEIVER_AT_ALIAS_DOMAIN + "\"}]," +
+            "        \"subject\": \"Thank you for joining example.com!\"," +
+            "        \"textBody\": \"" + messageContent + "\"," +
+            "        \"mailboxIds\": [\"" + getOutboxId(senderAtDestinationDomainToken) + "\"]" +
+            "      }}" +
+            "    }," +
+            "    \"#0\"" +
+            "  ]" +
+            "]";
+        given()
+            .header("Authorization", senderAtDestinationDomainToken.serialize())
+            .body(sendMessageBody)
+        .when()
+            .post("/jmap")
+        .then()
+            .statusCode(200)
+            .body(NAME, equalTo("messagesSet"))
+            .body(ARGUMENTS + ".notCreated", aMapWithSize(0))
+            .body(ARGUMENTS + ".created", aMapWithSize(1));
+
+        calmlyAwait
+            .pollDelay(Duration.FIVE_HUNDRED_MILLISECONDS)
+            .atMost(30, TimeUnit.SECONDS)
+            .untilAsserted(() ->
+                assertThat(getLatestMessageId(senderAtDestinationDomainToken, Role.SENT))
+                    .isNotNull());
+
+        String sentMessageId = getLatestMessageId(senderAtDestinationDomainToken, Role.SENT);
+        assertThat(receiversOfMessage(senderAtDestinationDomainToken, sentMessageId))
+            .containsOnly(RECEIVER_AT_ALIAS_DOMAIN);
+    }
 }
