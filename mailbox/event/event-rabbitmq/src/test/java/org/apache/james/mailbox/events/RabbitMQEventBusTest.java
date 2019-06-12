@@ -40,6 +40,7 @@ import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT;
 import static org.apache.james.mailbox.events.RabbitMQEventBus.MAILBOX_EVENT_EXCHANGE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
@@ -362,14 +363,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                     rabbitMQEventBusWithNetWorkIssue.register(listener, GROUP_A);
 
                     rabbitMQNetWorkIssueExtension.getRabbitMQ().pause();
-
-                    try {
-                        rabbitMQEventBusWithNetWorkIssue.dispatch(EVENT, NO_KEYS).block();
-                    } catch (RuntimeException e) {
-                        //expected to timeout
-                    }
-
-
+                    rabbitMQEventBusWithNetWorkIssue.dispatch(EVENT, NO_KEYS).block();
                     rabbitMQNetWorkIssueExtension.getRabbitMQ().unpause();
 
                     rabbitMQEventBusWithNetWorkIssue.dispatch(EVENT, NO_KEYS).block();
@@ -472,13 +466,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 MailboxListener listener = newListener();
 
                 rabbitMQExtension.getRabbitMQ().pause();
-
-                try {
-                    eventBus.dispatch(EVENT, NO_KEYS).block();
-                } catch (RuntimeException e) {
-                    //expected to timeout
-                }
-
+                eventBus.dispatch(EVENT, NO_KEYS).block();
                 rabbitMQExtension.getRabbitMQ().unpause();
 
                 eventBus.register(listener, GROUP_A);
@@ -493,12 +481,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
 
                 rabbitMQExtension.getRabbitMQ().pause();
 
-                try {
-                    eventBus.reDeliver(GROUP_A, EVENT).block();
-                } catch (GroupRegistrationNotFound e) {
-                    //expected error
-                }
-
+                assertThatThrownBy(() -> eventBus.reDeliver(GROUP_A, EVENT).block())
+                    .isInstanceOf(GroupRegistrationNotFound.class);
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 
@@ -516,12 +500,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
 
                 rabbitMQExtension.getRabbitMQ().pause();
 
-                try {
-                    eventBus.dispatch(EVENT, NO_KEYS).block();
-                } catch (RuntimeException e) {
-                    //expected to timeout
-                }
-
+                eventBus.dispatch(EVENT, NO_KEYS).block();
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 
@@ -536,13 +515,7 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 when(listener.getExecutionMode()).thenReturn(MailboxListener.ExecutionMode.ASYNCHRONOUS);
 
                 rabbitMQExtension.getRabbitMQ().pause();
-
-                try {
-                    eventBus.dispatch(EVENT, NO_KEYS).block();
-                } catch (RuntimeException e) {
-                    //expected to timeout
-                }
-
+                eventBus.dispatch(EVENT, NO_KEYS).block();
                 rabbitMQExtension.getRabbitMQ().unpause();
 
                 eventBus.register(listener, KEY_1);
