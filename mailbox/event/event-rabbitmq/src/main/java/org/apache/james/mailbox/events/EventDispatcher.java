@@ -127,7 +127,7 @@ class EventDispatcher {
             .addField(EventBus.StructuredLoggingFields.REGISTRATION_KEYS, keys);
     }
 
-    private Mono<Void> dispatchToRemoteListeners(byte[] serializedEvent, Set<RegistrationKey> keys) {
+    private Mono<Void> dispatchToRemoteListeners(byte[] serializedEvent, Set<RegistrationKey> keys) throws EventDispatchingException {
         Stream<RoutingKey> routingKeys = Stream.concat(Stream.of(RoutingKey.empty()), keys.stream().map(RoutingKey::of));
 
         Stream<OutboundMessage> outboundMessages = routingKeys
@@ -136,14 +136,18 @@ class EventDispatcher {
         outboundMessages.forEachOrdered(message -> {
             try {
                 if (!eventSender.offer(message, EVENT_QUEUE_PUT_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)) {
-                    throw new RuntimeException("putting message of exchange: '" + message.getExchange() + "' "
-                        + "and routing key: '" + message.getRoutingKey() + "' into event queue got timeout");
+                    throw new EventDispatchingException(offerErrorMessage(message, " timed out"));
                 }
             } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
+                throw new EventDispatchingException(offerErrorMessage(message, " was interrupted"), ex);
             }
         });
         return Mono.empty();
+    }
+
+    private String offerErrorMessage(OutboundMessage message, String cause) {
+        return "putting message of exchange: '" + message.getExchange() + "' "
+            + "and routing key: '" + message.getRoutingKey() + "' into event queue " + cause;
     }
 
     private byte[] serializeEvent(Event event) {
