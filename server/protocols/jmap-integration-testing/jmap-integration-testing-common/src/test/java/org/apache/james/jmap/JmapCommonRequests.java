@@ -135,7 +135,7 @@ public class JmapCommonRequests {
         String inboxId = getMailboxId(accessToken, mailbox);
         return with()
                 .header("Authorization", accessToken.serialize())
-                .body("[[\"getMessageList\", {\"filter\":{\"inMailboxes\":[\"" + inboxId + "\"]}}, \"#0\"]]")
+                .body("[[\"getMessageList\", {\"filter\":{\"inMailboxes\":[\"" + inboxId + "\"]}, \"sort\":[\"date desc\"]}, \"#0\"]]")
                 .post("/jmap")
             .then()
                 .extract()
