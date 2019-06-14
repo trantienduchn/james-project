@@ -19,12 +19,15 @@
 
 package org.apache.james.mailbox.events;
 
+import static com.jayway.awaitility.Awaitility.await;
 import static org.apache.james.backend.rabbitmq.Constants.AUTO_DELETE;
 import static org.apache.james.backend.rabbitmq.Constants.DIRECT_EXCHANGE;
 import static org.apache.james.backend.rabbitmq.Constants.DURABLE;
 import static org.apache.james.backend.rabbitmq.Constants.EMPTY_ROUTING_KEY;
 import static org.apache.james.backend.rabbitmq.Constants.EXCLUSIVE;
 import static org.apache.james.backend.rabbitmq.Constants.NO_ARGUMENTS;
+import static org.apache.james.mailbox.events.EventBusConcurrentTestContract.newCountingListener;
+import static org.apache.james.mailbox.events.EventBusConcurrentTestContract.totalEventsReceived;
 import static org.apache.james.mailbox.events.EventBusTestFixture.ALL_GROUPS;
 import static org.apache.james.mailbox.events.EventBusTestFixture.EVENT;
 import static org.apache.james.mailbox.events.EventBusTestFixture.GROUP_A;
@@ -47,6 +50,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.james.backend.rabbitmq.RabbitMQExtension;
@@ -70,6 +74,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.stubbing.Answer;
 
+import com.google.common.collect.ImmutableList;
 import com.rabbitmq.client.Connection;
 
 import reactor.core.publisher.Mono;
@@ -195,6 +200,37 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
         public EventBus eventBus() {
             return eventBus;
         }
+
+        @Test
+        void dispatchShouldHandleLoadBulksGracefully() throws Exception {
+            EventBusTestFixture.MailboxListenerCountingSuccessfulExecution countingListener1 = newCountingListener();
+            EventBusTestFixture.MailboxListenerCountingSuccessfulExecution countingListener2 = newCountingListener();
+            EventBusTestFixture.MailboxListenerCountingSuccessfulExecution countingListener3 = newCountingListener();
+
+            eventBus().register(countingListener1, new EventBusTestFixture.GroupA());
+            eventBus().register(countingListener2, new EventBusTestFixture.GroupB());
+            eventBus().register(countingListener3, new EventBusTestFixture.GroupC());
+            int totalGlobalRegistrations = 3; // GroupA + GroupB + GroupC
+
+            int threadCount = 10;
+            int operationCount = 10000;
+            int totalDispatchOperations = threadCount * operationCount;
+            ConcurrentTestRunner.builder()
+                .operation((threadNumber, operationNumber) -> eventBus().dispatch(EVENT, NO_KEYS).block())
+                .threadCount(threadCount)
+                .operationCount(operationCount)
+                .runSuccessfullyWithin(Duration.ofMinutes(3));
+
+            await()
+                .pollInterval(com.jayway.awaitility.Duration.FIVE_SECONDS)
+                .timeout(com.jayway.awaitility.Duration.TEN_MINUTES).until(() -> {
+                    int totalEventsReceived = totalEventsReceived(
+                        ImmutableList.of(countingListener1, countingListener2, countingListener3));
+                    assertThat(totalEventsReceived)
+                        .isEqualTo(totalGlobalRegistrations * totalDispatchOperations);
+                });
+        }
+
     }
 
     @Nested
