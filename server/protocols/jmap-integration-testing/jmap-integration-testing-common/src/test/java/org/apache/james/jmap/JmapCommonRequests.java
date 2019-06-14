@@ -36,6 +36,7 @@ import org.apache.james.mailbox.Role;
 import org.apache.james.mailbox.model.MailboxId;
 
 import io.restassured.builder.ResponseSpecBuilder;
+import io.restassured.path.json.JsonPath;
 import io.restassured.specification.ResponseSpecification;
 
 public class JmapCommonRequests {
@@ -143,20 +144,16 @@ public class JmapCommonRequests {
     }
 
     public static String bodyOfMessage(AccessToken accessToken, String messageId) {
-        return with()
-                .header("Authorization", accessToken.serialize())
-                .body("[[\"getMessages\", {\"ids\": [\"" + messageId + "\"]}, \"#0\"]]")
-            .when()
-                .post("/jmap")
-            .then()
-                .statusCode(200)
-                .body(NAME, equalTo("messages"))
-                .body(ARGUMENTS + ".list", hasSize(1))
-            .extract()
-                .path(ARGUMENTS + ".list[0].textBody");
+        return getMessageContent(accessToken, messageId)
+                .get(ARGUMENTS + ".list[0].textBody");
     }
 
     public static List<String> receiversOfMessage(AccessToken accessToken, String messageId) {
+        return getMessageContent(accessToken, messageId)
+                .getList(ARGUMENTS + ".list[0].to.email");
+    }
+
+    private static JsonPath getMessageContent(AccessToken accessToken, String messageId) {
         return with()
                 .header("Authorization", accessToken.serialize())
                 .body("[[\"getMessages\", {\"ids\": [\"" + messageId + "\"]}, \"#0\"]]")
@@ -167,8 +164,7 @@ public class JmapCommonRequests {
                 .body(NAME, equalTo("messages"))
                 .body(ARGUMENTS + ".list", hasSize(1))
             .extract()
-                .jsonPath()
-                .getList(ARGUMENTS + ".list[0].to.email");
+                .jsonPath();
     }
 
     public static List<String> listMessageIdsInMailbox(AccessToken accessToken, String mailboxId) {
