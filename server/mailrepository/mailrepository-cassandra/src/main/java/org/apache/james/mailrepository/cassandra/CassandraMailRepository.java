@@ -124,7 +124,12 @@ public class CassandraMailRepository implements MailRepository {
     private Mono<Void> removeAsync(MailKey key) {
         return keysDAO.remove(url, key)
             .flatMap(this::decreaseSizeIfDeleted)
+            .doOnError(throwable -> rollbackRemovingKey(key))
             .then(mailDAO.remove(url, key));
+    }
+
+    private void rollbackRemovingKey(MailKey key) {
+        keysDAO.store(url, key).block();
     }
 
     private Mono<Void> decreaseSizeIfDeleted(Boolean isDeleted) {

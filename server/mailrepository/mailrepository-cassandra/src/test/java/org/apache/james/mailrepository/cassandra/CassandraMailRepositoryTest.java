@@ -117,7 +117,7 @@ class CassandraMailRepositoryTest implements MailRepositoryContract {
     }
 
     @Test
-    void removeFailsBecauseOfDecrementingCountLeadToInconsistentSize() throws Exception {
+    void removeFailsBecauseOfDecrementingCountShouldNotLeadToInconsistentSize() throws Exception {
         doThrow(new RuntimeException("mocked exception"))
             .when(countDAO).decrement(any());
 
@@ -127,12 +127,12 @@ class CassandraMailRepositoryTest implements MailRepositoryContract {
         try {
             cassandraMailRepository.remove(mail);
         } catch (RuntimeException e) {
-            // mocked exception
+            // mocked exception, cannot remove mail from mail repository
         }
 
         SoftAssertions.assertSoftly(softly -> {
             softly.assertThat(cassandraMailRepository.list())
-                .isEmpty();
+                .containsExactly(MAIL_1);
             softly.assertThat(cassandraMailRepository.size())
                 .isEqualTo(1);
         });
