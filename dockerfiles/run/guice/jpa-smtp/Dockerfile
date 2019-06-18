@@ -32,6 +32,7 @@ COPY destination/run_james.sh /root/run_james.sh
 VOLUME /logs
 VOLUME /root/conf
 VOLUME /root/glowroot/plugins
+VOLUME /root/glowroot/data
 
 ENV PATH "$PATH:/root/glowroot/lib" \
     JVM_OPTIONS="" \
