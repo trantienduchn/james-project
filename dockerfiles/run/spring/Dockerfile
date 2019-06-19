@@ -22,9 +22,9 @@ ADD destination/james-server-app-3.4.0-SNAPSHOT-app.zip /root/james-server-app-3
 ADD destination/conf /root/conf
 ADD destination/glowroot/plugins /root/glowroot/plugins
 ADD destination/glowroot/glowroot.jar /root/glowroot/glowroot.jar
-COPY destination/glowroot/lib/glowroot-embedded-collector.jar /root/glowroot/lib/glowroot-embedded-collector.jar
-COPY destination/glowroot/lib/glowroot-logging-logstash.jar /root/glowroot/lib/glowroot-logging-logstash.jar
-COPY destination/glowroot/admin.json /root/glowroot/admin.json
+ADD destination/glowroot/lib/glowroot-embedded-collector.jar /root/glowroot/lib/glowroot-embedded-collector.jar
+ADD destination/glowroot/lib/glowroot-logging-logstash.jar /root/glowroot/lib/glowroot-logging-logstash.jar
+ADD destination/glowroot/admin.json /root/glowroot/admin.json
 
 VOLUME /logs
 VOLUME /root/conf

@@ -24,10 +24,10 @@ ADD destination/james-server-cli.lib /root/james-server-cli.lib
 ADD destination/conf /root/conf
 ADD destination/glowroot/plugins /root/glowroot/plugins
 ADD destination/glowroot/glowroot.jar /root/glowroot/glowroot.jar
-COPY destination/glowroot/lib/glowroot-embedded-collector.jar /root/glowroot/lib/glowroot-embedded-collector.jar
-COPY destination/glowroot/lib/glowroot-logging-logstash.jar /root/glowroot/lib/glowroot-logging-logstash.jar
-COPY destination/glowroot/admin.json /root/glowroot/admin.json
-COPY destination/run_james.sh /root/run_james.sh
+ADD destination/glowroot/lib/glowroot-embedded-collector.jar /root/glowroot/lib/glowroot-embedded-collector.jar
+ADD destination/glowroot/lib/glowroot-logging-logstash.jar /root/glowroot/lib/glowroot-logging-logstash.jar
+ADD destination/glowroot/admin.json /root/glowroot/admin.json
+ADD destination/run_james.sh /root/run_james.sh
 
 VOLUME /logs
 VOLUME /root/conf
