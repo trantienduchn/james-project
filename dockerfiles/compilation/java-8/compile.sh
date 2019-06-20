@@ -1,6 +1,8 @@
 #!/bin/sh -e
 #
 
+set -x
+
 printUsage() {
    echo "Usage : "
    echo "./compile.sh [-s | --skipTests] SHA1"
