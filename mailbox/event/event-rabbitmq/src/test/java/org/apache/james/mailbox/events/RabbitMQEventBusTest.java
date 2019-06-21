@@ -81,7 +81,6 @@ import reactor.rabbitmq.BindingSpecification;
 import reactor.rabbitmq.ExchangeSpecification;
 import reactor.rabbitmq.QueueSpecification;
 import reactor.rabbitmq.RabbitFlux;
-import reactor.rabbitmq.RabbitFluxException;
 import reactor.rabbitmq.Receiver;
 import reactor.rabbitmq.ReceiverOptions;
 import reactor.rabbitmq.Sender;
@@ -357,7 +356,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                     rabbitMQNetWorkIssueExtension.getRabbitMQ().pause();
 
                     assertThatThrownBy(() -> rabbitMQEventBusWithNetWorkIssue.dispatch(EVENT, NO_KEYS).block())
-                        .isInstanceOf(RabbitFluxException.class);
+                        .isInstanceOf(IllegalStateException.class)
+                        .hasMessageContaining("Retries exhausted");
 
                     rabbitMQNetWorkIssueExtension.getRabbitMQ().unpause();
 
@@ -462,7 +462,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 rabbitMQExtension.getRabbitMQ().pause();
 
                 assertThatThrownBy(() -> eventBus.dispatch(EVENT, NO_KEYS).block())
-                    .isInstanceOf(RabbitFluxException.class);
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Retries exhausted");
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 
@@ -498,7 +499,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 rabbitMQExtension.getRabbitMQ().pause();
 
                 assertThatThrownBy(() -> eventBus.dispatch(EVENT, NO_KEYS).block())
-                    .isInstanceOf(RabbitFluxException.class);
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Retries exhausted");
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 
@@ -515,7 +517,8 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
                 rabbitMQExtension.getRabbitMQ().pause();
 
                 assertThatThrownBy(() -> eventBus.dispatch(EVENT, NO_KEYS).block())
-                    .isInstanceOf(RabbitFluxException.class);
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("Retries exhausted");
 
                 rabbitMQExtension.getRabbitMQ().unpause();
 
