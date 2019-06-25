@@ -45,6 +45,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
 
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public class ObjectStorageBlobsDAO implements BlobStore {
     private static final Location DEFAULT_LOCATION = null;
@@ -53,40 +54,40 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
     private final BlobId.Factory blobIdFactory;
 
-    private final ContainerName containerName;
+    private final BucketName defaultBucketName;
     private final org.jclouds.blobstore.BlobStore blobStore;
     private final PutBlobFunction putBlobFunction;
     private final PayloadCodec payloadCodec;
 
-    ObjectStorageBlobsDAO(ContainerName containerName, BlobId.Factory blobIdFactory,
+    ObjectStorageBlobsDAO(BucketName defaultBucketName, BlobId.Factory blobIdFactory,
                           org.jclouds.blobstore.BlobStore blobStore,
                           PutBlobFunction putBlobFunction,
                           PayloadCodec payloadCodec) {
         this.blobIdFactory = blobIdFactory;
-        this.containerName = containerName;
+        this.defaultBucketName = defaultBucketName;
         this.blobStore = blobStore;
         this.putBlobFunction = putBlobFunction;
         this.payloadCodec = payloadCodec;
     }
 
-    public static ObjectStorageBlobsDAOBuilder.RequireContainerName builder(SwiftTempAuthObjectStorage.Configuration testConfig) {
+    public static ObjectStorageBlobsDAOBuilder.RequireDefaultBucketName builder(SwiftTempAuthObjectStorage.Configuration testConfig) {
         return SwiftTempAuthObjectStorage.daoBuilder(testConfig);
     }
 
-    public static ObjectStorageBlobsDAOBuilder.RequireContainerName builder(SwiftKeystone2ObjectStorage.Configuration testConfig) {
+    public static ObjectStorageBlobsDAOBuilder.RequireDefaultBucketName builder(SwiftKeystone2ObjectStorage.Configuration testConfig) {
         return SwiftKeystone2ObjectStorage.daoBuilder(testConfig);
     }
 
-    public static ObjectStorageBlobsDAOBuilder.RequireContainerName builder(SwiftKeystone3ObjectStorage.Configuration testConfig) {
+    public static ObjectStorageBlobsDAOBuilder.RequireDefaultBucketName builder(SwiftKeystone3ObjectStorage.Configuration testConfig) {
         return SwiftKeystone3ObjectStorage.daoBuilder(testConfig);
     }
 
-    public static ObjectStorageBlobsDAOBuilder.RequireContainerName builder(AwsS3AuthConfiguration testConfig) {
+    public static ObjectStorageBlobsDAOBuilder.RequireDefaultBucketName builder(AwsS3AuthConfiguration testConfig) {
         return AwsS3ObjectStorage.daoBuilder(testConfig);
     }
 
-    public Mono<ContainerName> createContainer(ContainerName name) {
-        return Mono.fromCallable(() -> blobStore.createContainerInLocation(DEFAULT_LOCATION, name.value()))
+    public Mono<BucketName> createBucket(BucketName name) {
+        return Mono.fromCallable(() -> blobStore.createContainerInLocation(DEFAULT_LOCATION, name.asString()))
             .filter(created -> created == false)
             .doOnNext(ignored -> LOGGER.debug("{} already existed", name))
             .thenReturn(name);
@@ -102,26 +103,26 @@ public class ObjectStorageBlobsDAO implements BlobStore {
         Preconditions.checkNotNull(data);
 
         BlobId tmpId = blobIdFactory.randomId();
-        return save(data, tmpId)
-            .flatMap(id -> updateBlobId(tmpId, id));
+        return save(bucketName, data, tmpId)
+            .flatMap(id -> updateBlobId(bucketName, tmpId, id));
     }
 
-    private Mono<BlobId> updateBlobId(BlobId from, BlobId to) {
-        String containerName = this.containerName.value();
+    private Mono<BlobId> updateBlobId(BucketName bucketName, BlobId from, BlobId to) {
+        String bucketNameAsString = bucketName.asString();
         return Mono
-            .fromCallable(() -> blobStore.copyBlob(containerName, from.asString(), containerName, to.asString(), CopyOptions.NONE))
-            .then(Mono.fromRunnable(() -> blobStore.removeBlob(containerName, from.asString())))
+            .fromCallable(() -> blobStore.copyBlob(bucketNameAsString, from.asString(), bucketNameAsString, to.asString(), CopyOptions.NONE))
+            .then(Mono.fromRunnable(() -> blobStore.removeBlob(bucketNameAsString, from.asString())))
             .thenReturn(to);
     }
 
-    private Mono<BlobId> save(InputStream data, BlobId id) {
+    private Mono<BlobId> save(BucketName bucketName, InputStream data, BlobId id) {
         HashingInputStream hashingInputStream = new HashingInputStream(Hashing.sha256(), data);
         Payload payload = payloadCodec.write(hashingInputStream);
         Blob blob = blobStore.blobBuilder(id.asString())
                             .payload(payload.getPayload())
                             .build();
 
-        return Mono.fromRunnable(() -> putBlobFunction.putBlob(blob))
+        return Mono.fromRunnable(() -> putBlobFunction.putBlob(bucketName, blob))
             .then(Mono.fromCallable(() -> blobIdFactory.from(hashingInputStream.hash().toString())));
     }
 
@@ -132,7 +133,7 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
     @Override
     public InputStream read(BucketName bucketName, BlobId blobId) throws ObjectStoreException {
-        Blob blob = blobStore.getBlob(containerName.value(), blobId.asString());
+        Blob blob = blobStore.getBlob(this.defaultBucketName.asString(), blobId.asString());
 
         try {
             if (blob != null) {
@@ -148,8 +149,14 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
     }
 
-    public void deleteContainer() {
-        blobStore.deleteContainer(containerName.value());
+    @Override
+    public BucketName getDefaultBucketName() {
+        return defaultBucketName;
+    }
+
+    public Mono<Void> deleteBucket(BucketName bucketName) {
+        return Mono.<Void>fromRunnable(() -> blobStore.deleteContainer(bucketName.asString()))
+            .subscribeOn(Schedulers.elastic());
     }
 
     public PayloadCodec getPayloadCodec() {

@@ -26,7 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.james.CleanupTasksPerformer;
 import org.apache.james.GuiceModuleTestRule;
-import org.apache.james.blob.objectstorage.ContainerName;
+import org.apache.james.blob.api.BucketName;
 import org.apache.james.blob.objectstorage.DockerSwiftRule;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobsDAO;
 import org.apache.james.blob.objectstorage.PayloadCodec;
@@ -71,7 +71,7 @@ public class DockerSwiftTestRule implements GuiceModuleTestRule {
 
         @Override
         public Result run() {
-            blobsDAO.deleteContainer();
+            blobsDAO.deleteBucket(blobsDAO.getDefaultBucketName()).block();
 
             return Result.COMPLETED;
         }
@@ -106,17 +106,17 @@ public class DockerSwiftTestRule implements GuiceModuleTestRule {
             .endpoint(swiftContainer.dockerSwift().keystoneV2Endpoint())
             .build();
 
-        ContainerName containerName = ContainerName.of(UUID.randomUUID().toString());
+        BucketName defaultBucketName = BucketName.of(UUID.randomUUID().toString());
         ObjectStorageBlobConfiguration configuration = ObjectStorageBlobConfiguration.builder()
             .codec(payloadCodecFactory)
             .provider(ObjectStorageProvider.SWIFT)
-            .container(containerName)
             .authConfiguration(new SwiftAuthConfiguration(SwiftKeystone2ObjectStorage.AUTH_API_NAME,
                 Optional.empty(),
                 Optional.of(authConfiguration),
                 Optional.empty()))
             .aesSalt("c603a7327ee3dcbc031d8d34b1096c605feca5e1")
             .aesPassword("dockerSwiftEncryption".toCharArray())
+            .defaultBucketName(Optional.of(defaultBucketName))
             .build();
 
         return binder -> {

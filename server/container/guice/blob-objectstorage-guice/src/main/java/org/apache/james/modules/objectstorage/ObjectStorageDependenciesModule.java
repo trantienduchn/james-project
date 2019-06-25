@@ -67,16 +67,16 @@ public class ObjectStorageDependenciesModule extends AbstractModule {
     @Singleton
     private ObjectStorageBlobsDAO buildObjectStore(ObjectStorageBlobConfiguration configuration, BlobId.Factory blobIdFactory, Provider<AwsS3ObjectStorage> awsS3ObjectStorageProvider) throws InterruptedException, ExecutionException, TimeoutException {
         ObjectStorageBlobsDAO dao = selectDaoBuilder(configuration)
-            .container(configuration.getNamespace())
+            .defaultBucketName(configuration.getNamespace())
             .blobIdFactory(blobIdFactory)
             .payloadCodec(configuration.getPayloadCodec())
             .putBlob(putBlob(blobIdFactory, configuration, awsS3ObjectStorageProvider))
             .build();
-        dao.createContainer(configuration.getNamespace()).block(Duration.ofMinutes(1));
+        dao.createBucket(dao.getDefaultBucketName()).block(Duration.ofMinutes(1));
         return dao;
     }
 
-    private ObjectStorageBlobsDAOBuilder.RequireContainerName selectDaoBuilder(ObjectStorageBlobConfiguration configuration) {
+    private ObjectStorageBlobsDAOBuilder.RequireDefaultBucketName selectDaoBuilder(ObjectStorageBlobConfiguration configuration) {
         switch (configuration.getProvider()) {
             case SWIFT:
                 return SwiftObjectStorage.builder(configuration);
@@ -93,7 +93,7 @@ public class ObjectStorageDependenciesModule extends AbstractModule {
             case AWSS3:
                 return awsS3ObjectStorageProvider
                     .get()
-                    .putBlob(configuration.getNamespace(), (AwsS3AuthConfiguration) configuration.getSpecificAuthConfiguration());
+                    .putBlob((AwsS3AuthConfiguration) configuration.getSpecificAuthConfiguration());
         }
         throw new IllegalArgumentException("unknown provider " + configuration.getProvider());
 

@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.BucketName;
 import org.apache.james.blob.api.MetricableBlobStore;
-import org.apache.james.blob.objectstorage.ContainerName;
 import org.apache.james.blob.objectstorage.DockerSwift;
 import org.apache.james.blob.objectstorage.DockerSwiftExtension;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobsDAO;
@@ -80,7 +79,6 @@ class ObjectStorageBlobStoreModuleTest {
             ObjectStorageBlobConfiguration tmpAuth = ObjectStorageBlobConfiguration.builder()
                 .codec(PayloadCodecFactory.DEFAULT)
                 .provider(ObjectStorageProvider.SWIFT)
-                .container(generateContainerName())
                 .authConfiguration(new SwiftAuthConfiguration(SwiftTempAuthObjectStorage.AUTH_API_NAME,
                     Optional.of(SwiftTempAuthObjectStorage.configBuilder()
                         .endpoint(dockerSwift.swiftEndpoint())
@@ -92,11 +90,11 @@ class ObjectStorageBlobStoreModuleTest {
                         .build()),
                     Optional.empty(),
                     Optional.empty()))
+                .defaultBucketName(Optional.of(generateBucketName()))
                 .build();
             ObjectStorageBlobConfiguration keystone2 = ObjectStorageBlobConfiguration.builder()
                 .codec(PayloadCodecFactory.DEFAULT)
                 .provider(ObjectStorageProvider.SWIFT)
-                .container(generateContainerName())
                 .authConfiguration(new SwiftAuthConfiguration(SwiftKeystone2ObjectStorage.AUTH_API_NAME,
                     Optional.empty(),
                     Optional.of(SwiftKeystone2ObjectStorage.configBuilder()
@@ -106,11 +104,11 @@ class ObjectStorageBlobStoreModuleTest {
                         .tenantName(TenantName.of("test"))
                         .build()),
                     Optional.empty()))
+                .defaultBucketName(Optional.of(generateBucketName()))
                 .build();
             ObjectStorageBlobConfiguration keystone3 = ObjectStorageBlobConfiguration.builder()
                 .codec(PayloadCodecFactory.DEFAULT)
                 .provider(ObjectStorageProvider.SWIFT)
-                .container(generateContainerName())
                 .authConfiguration(new SwiftAuthConfiguration(SwiftKeystone3ObjectStorage.AUTH_API_NAME,
                     Optional.empty(),
                     Optional.empty(),
@@ -120,13 +118,14 @@ class ObjectStorageBlobStoreModuleTest {
                         .project(Project.of(ProjectName.of("test")))
                         .identity(IdentityV3.of(DomainName.of("Default"), UserName.of("demo")))
                         .build())))
+                .defaultBucketName(Optional.of(generateBucketName()))
                 .build();
             return Stream.of(tmpAuth, keystone2, keystone3).map(Arguments::of);
         }
     }
 
-    private static ContainerName generateContainerName() {
-        return ContainerName.of(UUID.randomUUID().toString());
+    private static BucketName generateBucketName() {
+        return BucketName.of(UUID.randomUUID().toString());
     }
 
     @ParameterizedTest
@@ -138,11 +137,11 @@ class ObjectStorageBlobStoreModuleTest {
                 .with(binder -> binder.bind(ObjectStorageBlobConfiguration.class).toInstance(configuration)));
 
         ObjectStorageBlobsDAO dao = injector.getInstance(ObjectStorageBlobsDAO.class);
-        dao.createContainer(configuration.getNamespace()).block();
+        dao.createBucket(dao.getDefaultBucketName()).block();
 
         BlobStore blobStore = injector.getInstance(Key.get(BlobStore.class, Names.named(MetricableBlobStore.BLOB_STORE_IMPLEMENTATION)));
 
-        assertThatCode(() -> blobStore.save(BucketName.DEFAULT, new byte[] {0x00})).doesNotThrowAnyException();
+        assertThatCode(() -> blobStore.save(blobStore.getDefaultBucketName(), new byte[] {0x00})).doesNotThrowAnyException();
     }
 
 }

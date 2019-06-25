@@ -25,7 +25,7 @@ import java.util.Optional;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.james.blob.objectstorage.ContainerName;
+import org.apache.james.blob.api.BucketName;
 import org.apache.james.blob.objectstorage.PayloadCodec;
 import org.apache.james.blob.objectstorage.SpecificAuthConfiguration;
 import org.apache.james.modules.objectstorage.aws.s3.AwsS3ConfigurationReader;
@@ -39,24 +39,25 @@ public class ObjectStorageBlobConfiguration {
 
     public static final String OBJECTSTORAGE_CONFIGURATION_NAME = "blobstore";
     private static final String OBJECTSTORAGE_NAMESPACE = "objectstorage.namespace";
+    private static final String OBJECTSTORAGE_BUCKET_PREFIX = "objectstorage.bucketPrefix";
     private static final String OBJECTSTORAGE_PROVIDER = "objectstorage.provider";
     private static final String OBJECTSTORAGE_PAYLOAD_CODEC = "objectstorage.payload.codec";
     public static final String OBJECTSTORAGE_AES256_HEXSALT = "objectstorage.aes256.hexsalt";
     public static final String OBJECTSTORAGE_AES256_PASSWORD = "objectstorage.aes256.password";
 
+    static final String DEFAULT_BUCKET_PREFIX = "";
+
     public static ObjectStorageBlobConfiguration from(Configuration configuration) throws ConfigurationException {
         String provider = configuration.getString(OBJECTSTORAGE_PROVIDER, null);
-        String namespace = configuration.getString(OBJECTSTORAGE_NAMESPACE, null);
         String codecName = configuration.getString(OBJECTSTORAGE_PAYLOAD_CODEC, null);
+        Optional<String> namespace = Optional.ofNullable(configuration.getString(OBJECTSTORAGE_NAMESPACE, null));
+        Optional<String> bucketPrefix = Optional.ofNullable(configuration.getString(OBJECTSTORAGE_BUCKET_PREFIX, null));
         Optional<String> aesSalt = Optional.ofNullable(configuration.getString(OBJECTSTORAGE_AES256_HEXSALT, null));
         Optional<char[]> aesPassword = Optional.ofNullable(configuration.getString(OBJECTSTORAGE_AES256_PASSWORD, null))
             .map(String::toCharArray);
 
         if (Strings.isNullOrEmpty(provider)) {
             throw new ConfigurationException("Mandatory configuration value " + OBJECTSTORAGE_PROVIDER + " is missing from " + OBJECTSTORAGE_CONFIGURATION_NAME + " configuration");
-        }
-        if (Strings.isNullOrEmpty(namespace)) {
-            throw new ConfigurationException("Mandatory configuration value " + OBJECTSTORAGE_NAMESPACE + " is missing from " + OBJECTSTORAGE_CONFIGURATION_NAME + " configuration");
         }
         if (Strings.isNullOrEmpty(codecName)) {
             throw new ConfigurationException("Mandatory configuration value " + OBJECTSTORAGE_PAYLOAD_CODEC  + " is missing from " + OBJECTSTORAGE_CONFIGURATION_NAME + " configuration");
@@ -70,10 +71,11 @@ public class ObjectStorageBlobConfiguration {
         return builder()
             .codec(payloadCodecFactory)
             .provider(ObjectStorageProvider.from(provider))
-            .container(ContainerName.of(namespace))
             .authConfiguration(authConfiguration(provider, configuration))
             .aesSalt(aesSalt)
             .aesPassword(aesPassword)
+            .defaultBucketName(namespace.map(BucketName::of))
+            .bucketPrefix(bucketPrefix)
             .build();
     }
 
@@ -88,7 +90,7 @@ public class ObjectStorageBlobConfiguration {
     }
 
     public static Builder.RequirePayloadCodec builder() {
-        return payloadCodec -> provider -> container -> authConfiguration -> new Builder.ReadyToBuild(payloadCodec, provider, container, authConfiguration);
+        return payloadCodec -> provider -> authConfiguration -> new Builder.ReadyToBuild(payloadCodec, provider, authConfiguration);
     }
 
     public interface Builder {
@@ -99,12 +101,7 @@ public class ObjectStorageBlobConfiguration {
 
         @FunctionalInterface
         interface RequireProvider {
-            RequireContainerName provider(ObjectStorageProvider provider);
-        }
-
-        @FunctionalInterface
-        interface RequireContainerName {
-            RequireAuthConfiguration container(ContainerName container);
+            RequireAuthConfiguration provider(ObjectStorageProvider provider);
         }
 
         @FunctionalInterface
@@ -116,22 +113,23 @@ public class ObjectStorageBlobConfiguration {
 
             private final PayloadCodecFactory payloadCodecFactory;
             private final ObjectStorageProvider provider;
-            private final ContainerName container;
             private final SpecificAuthConfiguration specificAuthConfiguration;
 
             private Optional<String> aesSalt;
             private Optional<char[]> aesPassword;
+            private Optional<BucketName> defaultBucketName;
+            private Optional<String> bucketPrefix;
 
             public ReadyToBuild(PayloadCodecFactory payloadCodecFactory,
                                 ObjectStorageProvider provider,
-                                ContainerName container,
                                 SpecificAuthConfiguration specificAuthConfiguration) {
                 this.aesSalt = Optional.empty();
                 this.aesPassword = Optional.empty();
                 this.payloadCodecFactory = payloadCodecFactory;
                 this.provider = provider;
-                this.container = container;
                 this.specificAuthConfiguration = specificAuthConfiguration;
+                this.defaultBucketName = Optional.empty();
+                this.bucketPrefix = Optional.empty();
             }
 
             public ReadyToBuild aesSalt(String aesSalt) {
@@ -152,6 +150,16 @@ public class ObjectStorageBlobConfiguration {
                 return this;
             }
 
+            public ReadyToBuild defaultBucketName(Optional<BucketName> defaultBucketName) {
+                this.defaultBucketName = defaultBucketName;
+                return this;
+            }
+
+            public ReadyToBuild bucketPrefix(Optional<String> bucketPrefix) {
+                this.bucketPrefix = bucketPrefix;
+                return this;
+            }
+
             public ObjectStorageBlobConfiguration build() {
                 if (payloadCodecFactory == PayloadCodecFactory.AES256) {
                     aesSalt.filter(s -> !s.isEmpty())
@@ -160,7 +168,10 @@ public class ObjectStorageBlobConfiguration {
                         .orElseThrow(() -> new IllegalStateException("AES code requires an non-empty password parameter"));
                 }
 
-                return new ObjectStorageBlobConfiguration(payloadCodecFactory, provider, container, specificAuthConfiguration, aesSalt, aesPassword);
+                BucketName defaultBucketName = this.defaultBucketName.orElse(BucketName.DEFAULT);
+                String bucketPrefix = this.bucketPrefix.orElse(DEFAULT_BUCKET_PREFIX);
+
+                return new ObjectStorageBlobConfiguration(payloadCodecFactory, bucketPrefix, provider, defaultBucketName, specificAuthConfiguration, aesSalt, aesPassword);
             }
 
         }
@@ -168,19 +179,22 @@ public class ObjectStorageBlobConfiguration {
     }
 
     private final PayloadCodecFactory payloadCodec;
-    private final ContainerName namespace;
+    private final BucketName namespace;
+    private final String bucketPrefix;
     private final ObjectStorageProvider provider;
     private final SpecificAuthConfiguration specificAuthConfiguration;
     private Optional<String> aesSalt;
     private Optional<char[]> aesPassword;
 
     @VisibleForTesting
-    ObjectStorageBlobConfiguration(PayloadCodecFactory payloadCodec, ObjectStorageProvider provider,
-                                   ContainerName namespace,
+    ObjectStorageBlobConfiguration(PayloadCodecFactory payloadCodec, String bucketPrefix,
+                                   ObjectStorageProvider provider,
+                                   BucketName namespace,
                                    SpecificAuthConfiguration specificAuthConfiguration,
                                    Optional<String> aesSalt,
                                    Optional<char[]> aesPassword) {
         this.payloadCodec = payloadCodec;
+        this.bucketPrefix = bucketPrefix;
         this.provider = provider;
         this.namespace = namespace;
         this.specificAuthConfiguration = specificAuthConfiguration;
@@ -188,7 +202,7 @@ public class ObjectStorageBlobConfiguration {
         this.aesPassword = aesPassword;
     }
 
-    public ContainerName getNamespace() {
+    public BucketName getNamespace() {
         return namespace;
     }
 
@@ -216,26 +230,29 @@ public class ObjectStorageBlobConfiguration {
         return aesPassword;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ObjectStorageBlobConfiguration that = (ObjectStorageBlobConfiguration) o;
-        return Objects.equals(payloadCodec, that.payloadCodec) &&
-            Objects.equals(namespace, that.namespace) &&
-            Objects.equals(provider, that.provider) &&
-            Objects.equals(specificAuthConfiguration, that.specificAuthConfiguration) &&
-            Objects.equals(aesSalt, that.aesSalt) &&
-            Objects.equals(aesPassword, that.aesPassword);
+    public String getBucketPrefix() {
+        return bucketPrefix;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(payloadCodec, namespace, provider, specificAuthConfiguration, aesSalt, aesPassword);
+    public final boolean equals(Object o) {
+        if (o instanceof ObjectStorageBlobConfiguration) {
+            ObjectStorageBlobConfiguration that = (ObjectStorageBlobConfiguration) o;
+
+            return Objects.equals(this.payloadCodec, that.payloadCodec)
+                && Objects.equals(this.namespace, that.namespace)
+                && Objects.equals(this.bucketPrefix, that.bucketPrefix)
+                && Objects.equals(this.provider, that.provider)
+                && Objects.equals(this.specificAuthConfiguration, that.specificAuthConfiguration)
+                && Objects.equals(this.aesSalt, that.aesSalt)
+                && Objects.equals(this.aesPassword, that.aesPassword);
+        }
+        return false;
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(payloadCodec, namespace, bucketPrefix, provider, specificAuthConfiguration, aesSalt, aesPassword);
     }
 
     @Override
@@ -243,6 +260,7 @@ public class ObjectStorageBlobConfiguration {
         return MoreObjects.toStringHelper(this)
             .add("payloadCodec", payloadCodec)
             .add("namespace", namespace)
+            .add("bucketPrefix", bucketPrefix)
             .add("provider", provider)
             .add("specificAuthConfiguration", specificAuthConfiguration)
             .add("aesSalt", aesSalt)

@@ -96,7 +96,7 @@ public interface Store<T, I> {
 
         private Mono<Tuple2<BlobType, BlobId>> saveEntry(Pair<BlobType, InputStream> entry) {
             return Mono.just(entry.getLeft())
-                .zipWith(blobStore.save(BucketName.DEFAULT, entry.getRight()));
+                .zipWith(blobStore.save(blobStore.getDefaultBucketName(), entry.getRight()));
         }
 
         @Override
@@ -104,7 +104,7 @@ public interface Store<T, I> {
             return Flux.fromIterable(blobIds.asMap().entrySet())
                 .publishOn(Schedulers.elastic())
                 .flatMapSequential(
-                    entry -> blobStore.readBytes(BucketName.DEFAULT, entry.getValue())
+                    entry -> blobStore.readBytes(blobStore.getDefaultBucketName(), entry.getValue())
                         .zipWith(Mono.just(entry.getKey())))
                 .map(entry -> Pair.of(entry.getT2(), entry.getT1()))
                 .collectList()
