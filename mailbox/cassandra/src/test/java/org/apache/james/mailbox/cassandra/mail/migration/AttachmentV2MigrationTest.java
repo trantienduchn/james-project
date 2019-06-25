@@ -155,7 +155,7 @@ class AttachmentV2MigrationTest {
         when(attachmentDAO.retrieveAll()).thenReturn(Flux.just(
             attachment1,
             attachment2));
-        when(blobsDAO.save(BucketName.DEFAULT, any(byte[].class))).thenThrow(new RuntimeException());
+        when(blobsDAO.save(any(BucketName.class), any(byte[].class))).thenThrow(new RuntimeException());
 
         assertThat(migration.run()).isEqualTo(Migration.Result.PARTIAL);
     }
