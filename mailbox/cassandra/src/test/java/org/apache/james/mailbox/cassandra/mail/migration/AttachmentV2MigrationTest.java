@@ -114,9 +114,9 @@ class AttachmentV2MigrationTest {
             .contains(CassandraAttachmentDAOV2.from(attachment1, BLOB_ID_FACTORY.forPayload(attachment1.getBytes())));
         assertThat(attachmentDAOV2.getAttachment(ATTACHMENT_ID_2).blockOptional())
             .contains(CassandraAttachmentDAOV2.from(attachment2, BLOB_ID_FACTORY.forPayload(attachment2.getBytes())));
-        assertThat(blobsDAO.readBytes(BLOB_ID_FACTORY.forPayload(attachment1.getBytes())).block())
+        assertThat(blobsDAO.readBytes(BucketName.DEFAULT, BLOB_ID_FACTORY.forPayload(attachment1.getBytes())).block())
             .isEqualTo(attachment1.getBytes());
-        assertThat(blobsDAO.readBytes(BLOB_ID_FACTORY.forPayload(attachment2.getBytes())).block())
+        assertThat(blobsDAO.readBytes(BucketName.DEFAULT, BLOB_ID_FACTORY.forPayload(attachment2.getBytes())).block())
             .isEqualTo(attachment2.getBytes());
     }
 
