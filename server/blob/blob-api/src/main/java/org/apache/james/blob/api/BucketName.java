@@ -19,10 +19,11 @@
 
 package org.apache.james.blob.api;
 
+import java.util.Objects;
+
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
 public final class BucketName {
@@ -41,25 +42,22 @@ public final class BucketName {
         this.value = value;
     }
 
-    public String value() {
+    public String asString() {
         return value;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
+    public final boolean equals(Object o) {
+        if (o instanceof BucketName) {
+            BucketName that = (BucketName) o;
+            return Objects.equals(this.value, that.value);
         }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        BucketName that = (BucketName) o;
-        return Objects.equal(value, that.value);
+        return false;
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hashCode(value);
+    public final int hashCode() {
+        return Objects.hash(value);
     }
 
     @Override
