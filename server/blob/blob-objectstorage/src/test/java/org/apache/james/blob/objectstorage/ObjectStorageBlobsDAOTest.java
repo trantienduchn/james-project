@@ -67,7 +67,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
         .password(PASSWORD.value().toCharArray())
         .build();
 
-    private ContainerName containerName;
+    private BucketName bucketName;
     private org.jclouds.blobstore.BlobStore blobStore;
     private SwiftTempAuthObjectStorage.Configuration testConfig;
     private ObjectStorageBlobsDAO objectStorageBlobsDAO;
@@ -75,7 +75,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
 
     @BeforeEach
     void setUp(DockerSwift dockerSwift) {
-        containerName = ContainerName.of(UUID.randomUUID().toString());
+        bucketName = BucketName.of(UUID.randomUUID().toString());
         testConfig = SwiftTempAuthObjectStorage.configBuilder()
             .endpoint(dockerSwift.swiftEndpoint())
             .identity(SWIFT_IDENTITY)
@@ -86,17 +86,17 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
         BlobId.Factory blobIdFactory = blobIdFactory();
         ObjectStorageBlobsDAOBuilder.ReadyToBuild daoBuilder = ObjectStorageBlobsDAO
             .builder(testConfig)
-            .container(containerName)
+            .container(bucketName)
             .blobIdFactory(blobIdFactory);
         blobStore = daoBuilder.getSupplier().get();
         objectStorageBlobsDAO = daoBuilder.build();
-        objectStorageBlobsDAO.createContainer(containerName).block();
+        objectStorageBlobsDAO.createContainer(bucketName).block();
         testee = new MetricableBlobStore(metricsTestExtension.getMetricFactory(), objectStorageBlobsDAO);
     }
 
     @AfterEach
     void tearDown() {
-        blobStore.deleteContainer(containerName.value());
+        blobStore.deleteContainer(bucketName.asString());
         blobStore.getContext().close();
     }
 
@@ -112,17 +112,17 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
 
     @Test
     void createContainerShouldMakeTheContainerToExist() {
-        ContainerName containerName = ContainerName.of(UUID.randomUUID().toString());
-        objectStorageBlobsDAO.createContainer(containerName).block();
-        assertThat(blobStore.containerExists(containerName.value())).isTrue();
+        BucketName bucketName = BucketName.of(UUID.randomUUID().toString());
+        objectStorageBlobsDAO.createContainer(bucketName).block();
+        assertThat(blobStore.containerExists(bucketName.asString())).isTrue();
     }
 
     @Test
     void createContainerShouldNotFailWithRuntimeExceptionWhenCreateContainerTwice() {
-        ContainerName containerName = ContainerName.of(UUID.randomUUID().toString());
+        BucketName bucketName = BucketName.of(UUID.randomUUID().toString());
 
-        objectStorageBlobsDAO.createContainer(containerName).block();
-        assertThatCode(() -> objectStorageBlobsDAO.createContainer(containerName).block())
+        objectStorageBlobsDAO.createContainer(bucketName).block();
+        assertThatCode(() -> objectStorageBlobsDAO.createContainer(bucketName).block())
             .doesNotThrowAnyException();
     }
 
@@ -130,7 +130,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     void supportsEncryptionWithCustomPayloadCodec() throws IOException {
         ObjectStorageBlobsDAO encryptedDao = ObjectStorageBlobsDAO
             .builder(testConfig)
-            .container(containerName)
+            .container(bucketName)
             .blobIdFactory(blobIdFactory())
             .payloadCodec(new AESPayloadCodec(CRYPTO_CONFIG))
             .build();
@@ -146,7 +146,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     void encryptionWithCustomPayloadCodeCannotBeReadFromUnencryptedDAO() throws Exception {
         ObjectStorageBlobsDAO encryptedDao = ObjectStorageBlobsDAO
             .builder(testConfig)
-            .container(containerName)
+            .container(bucketName)
             .blobIdFactory(blobIdFactory())
             .payloadCodec(new AESPayloadCodec(CRYPTO_CONFIG))
             .build();
@@ -166,7 +166,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     @Test
     void deleteContainerShouldDeleteSwiftContainer() {
         objectStorageBlobsDAO.deleteContainer();
-        assertThat(blobStore.containerExists(containerName.value()))
+        assertThat(blobStore.containerExists(bucketName.asString()))
             .isFalse();
     }
 
