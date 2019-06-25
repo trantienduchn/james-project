@@ -19,8 +19,11 @@
 
 package org.apache.james.blob.api;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 
 public final class BucketName {
     public static BucketName of(String value) {
@@ -29,14 +32,17 @@ public final class BucketName {
 
     public static final BucketName DEFAULT = BucketName.of("default");
 
-    private final String bucket;
+    private final String value;
 
     private BucketName(String value) {
-        this.bucket = value;
+        Preconditions.checkNotNull(value);
+        Preconditions.checkArgument(StringUtils.isNotBlank(value), "`value` cannot be blank");
+
+        this.value = value;
     }
 
     public String value() {
-        return bucket;
+        return value;
     }
 
     @Override
@@ -48,18 +54,18 @@ public final class BucketName {
             return false;
         }
         BucketName that = (BucketName) o;
-        return Objects.equal(bucket, that.bucket);
+        return Objects.equal(value, that.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(bucket);
+        return Objects.hashCode(value);
     }
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-            .add("bucket", bucket)
+            .add("value", value)
             .toString();
     }
 }
