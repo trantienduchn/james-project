@@ -86,7 +86,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
         BlobId.Factory blobIdFactory = blobIdFactory();
         ObjectStorageBlobsDAOBuilder.ReadyToBuild daoBuilder = ObjectStorageBlobsDAO
             .builder(testConfig)
-            .container(bucketName)
+            .defaultBucketName(bucketName)
             .blobIdFactory(blobIdFactory);
         blobStore = daoBuilder.getSupplier().get();
         objectStorageBlobsDAO = daoBuilder.build();
@@ -130,7 +130,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     void supportsEncryptionWithCustomPayloadCodec() throws IOException {
         ObjectStorageBlobsDAO encryptedDao = ObjectStorageBlobsDAO
             .builder(testConfig)
-            .container(bucketName)
+            .defaultBucketName(bucketName)
             .blobIdFactory(blobIdFactory())
             .payloadCodec(new AESPayloadCodec(CRYPTO_CONFIG))
             .build();
@@ -146,7 +146,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     void encryptionWithCustomPayloadCodeCannotBeReadFromUnencryptedDAO() throws Exception {
         ObjectStorageBlobsDAO encryptedDao = ObjectStorageBlobsDAO
             .builder(testConfig)
-            .container(bucketName)
+            .defaultBucketName(bucketName)
             .blobIdFactory(blobIdFactory())
             .payloadCodec(new AESPayloadCodec(CRYPTO_CONFIG))
             .build();
