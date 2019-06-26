@@ -73,6 +73,11 @@ public class MetricableBlobStore implements BlobStore {
     }
 
     @Override
+    public BucketName getDefaultBucketName() {
+        return blobStoreImpl.getDefaultBucketName();
+    }
+
+    @Override
     public Mono<Void> deleteBucket(BucketName bucketName) {
         return metricFactory
             .runPublishingTimerMetric(DELETE_TIMER_NAME, () -> blobStoreImpl.deleteBucket(bucketName));

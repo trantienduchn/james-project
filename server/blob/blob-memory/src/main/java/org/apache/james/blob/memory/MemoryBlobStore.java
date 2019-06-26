@@ -32,6 +32,7 @@ import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.BucketName;
 import org.apache.james.blob.api.ObjectStoreException;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
@@ -41,10 +42,17 @@ import reactor.core.publisher.Mono;
 public class MemoryBlobStore implements BlobStore {
     private final BlobId.Factory factory;
     private final Table<BucketName, BlobId, byte[]> blobs;
+    private final BucketName defaultBucketName;
 
     @Inject
     public MemoryBlobStore(BlobId.Factory factory) {
+        this(factory, BucketName.DEFAULT);
+    }
+
+    @VisibleForTesting
+    public MemoryBlobStore(BlobId.Factory factory, BucketName defaultBucketName) {
         this.factory = factory;
+        this.defaultBucketName = defaultBucketName;
         blobs = HashBasedTable.create();
     }
 
@@ -85,6 +93,11 @@ public class MemoryBlobStore implements BlobStore {
     public InputStream read(BucketName bucketName, BlobId blobId) {
         Preconditions.checkNotNull(bucketName);
         return new ByteArrayInputStream(retrieveStoredValue(bucketName, blobId));
+    }
+
+    @Override
+    public BucketName getDefaultBucketName() {
+        return defaultBucketName;
     }
 
     @Override
