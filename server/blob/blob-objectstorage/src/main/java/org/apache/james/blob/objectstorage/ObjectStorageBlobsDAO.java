@@ -103,26 +103,26 @@ public class ObjectStorageBlobsDAO implements BlobStore {
         Preconditions.checkNotNull(data);
 
         BlobId tmpId = blobIdFactory.randomId();
-        return save(data, tmpId)
-            .flatMap(id -> updateBlobId(tmpId, id));
+        return save(bucketName, data, tmpId)
+            .flatMap(id -> updateBlobId(bucketName, tmpId, id));
     }
 
-    private Mono<BlobId> updateBlobId(BlobId from, BlobId to) {
-        String bucketName = this.defaultBucketName.asString();
+    private Mono<BlobId> updateBlobId(BucketName bucketName, BlobId from, BlobId to) {
+        String bucketNameAsString = bucketName.asString();
         return Mono
-            .fromCallable(() -> blobStore.copyBlob(bucketName, from.asString(), bucketName, to.asString(), CopyOptions.NONE))
-            .then(Mono.fromRunnable(() -> blobStore.removeBlob(bucketName, from.asString())))
+            .fromCallable(() -> blobStore.copyBlob(bucketNameAsString, from.asString(), bucketNameAsString, to.asString(), CopyOptions.NONE))
+            .then(Mono.fromRunnable(() -> blobStore.removeBlob(bucketNameAsString, from.asString())))
             .thenReturn(to);
     }
 
-    private Mono<BlobId> save(InputStream data, BlobId id) {
+    private Mono<BlobId> save(BucketName bucketName, InputStream data, BlobId id) {
         HashingInputStream hashingInputStream = new HashingInputStream(Hashing.sha256(), data);
         Payload payload = payloadCodec.write(hashingInputStream);
         Blob blob = blobStore.blobBuilder(id.asString())
                             .payload(payload.getPayload())
                             .build();
 
-        return Mono.fromRunnable(() -> putBlobFunction.putBlob(blob))
+        return Mono.fromRunnable(() -> putBlobFunction.putBlob(bucketName, blob))
             .then(Mono.fromCallable(() -> blobIdFactory.from(hashingInputStream.hash().toString())));
     }
 
@@ -133,7 +133,7 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
     @Override
     public InputStream read(BucketName bucketName, BlobId blobId) throws ObjectStoreException {
-        Blob blob = blobStore.getBlob(this.defaultBucketName.asString(), blobId.asString());
+        Blob blob = blobStore.getBlob(bucketName.asString(), blobId.asString());
 
         try {
             if (blob != null) {
