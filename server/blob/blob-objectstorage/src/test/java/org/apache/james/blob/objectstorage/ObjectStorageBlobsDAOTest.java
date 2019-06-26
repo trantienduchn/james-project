@@ -91,7 +91,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
             .blobIdFactory(blobIdFactory);
         blobStore = daoBuilder.getSupplier().get();
         objectStorageBlobsDAO = daoBuilder.build();
-        objectStorageBlobsDAO.createContainer(bucketName).block();
+        objectStorageBlobsDAO.createBucket(bucketName).block();
         testee = new MetricableBlobStore(metricsTestExtension.getMetricFactory(), objectStorageBlobsDAO);
     }
 
@@ -111,16 +111,16 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
         return new HashBlobId.Factory();
     }
 
+    @Disabled("This objectstorage implementation yet doesn't support to store blobs on non existing buckets")
+    @Test
     @Override
-    @Disabled("JAMES-2806: delete bucket not implemented yet for ObjectStorage")
     public void deleteBucketShouldPublishDeleteTimerMetrics() {
-
     }
 
     @Test
     void createContainerShouldMakeTheContainerToExist() {
         BucketName bucketName = BucketName.of(UUID.randomUUID().toString());
-        objectStorageBlobsDAO.createContainer(bucketName).block();
+        objectStorageBlobsDAO.createBucket(bucketName).block();
         assertThat(blobStore.containerExists(bucketName.asString())).isTrue();
     }
 
@@ -128,8 +128,8 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     void createContainerShouldNotFailWithRuntimeExceptionWhenCreateContainerTwice() {
         BucketName bucketName = BucketName.of(UUID.randomUUID().toString());
 
-        objectStorageBlobsDAO.createContainer(bucketName).block();
-        assertThatCode(() -> objectStorageBlobsDAO.createContainer(bucketName).block())
+        objectStorageBlobsDAO.createBucket(bucketName).block();
+        assertThatCode(() -> objectStorageBlobsDAO.createBucket(bucketName).block())
             .doesNotThrowAnyException();
     }
 
@@ -172,7 +172,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
 
     @Test
     void deleteContainerShouldDeleteSwiftContainer() {
-        objectStorageBlobsDAO.deleteBucket(bucketName);
+        objectStorageBlobsDAO.deleteBucket(bucketName).block();
         assertThat(blobStore.containerExists(bucketName.asString()))
             .isFalse();
     }
