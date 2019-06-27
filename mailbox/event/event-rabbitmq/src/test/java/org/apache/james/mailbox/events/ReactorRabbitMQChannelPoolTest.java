@@ -30,7 +30,6 @@ import java.util.concurrent.ExecutionException;
 
 import org.apache.james.backend.rabbitmq.RabbitMQExtension;
 import org.apache.james.util.concurrency.ConcurrentTestRunner;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,7 +67,6 @@ class ReactorRabbitMQChannelPoolTest implements ChannelPoolContract {
         return channelPool;
     }
 
-    @NotNull
     private ReactorRabbitMQChannelPool generateChannelPool(int poolSize) {
         return new ReactorRabbitMQChannelPool(
                 rabbitMQExtension.getRabbitConnectionPool().getResilientConnection(),
