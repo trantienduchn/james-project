@@ -45,6 +45,7 @@ import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
 
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public class ObjectStorageBlobsDAO implements BlobStore {
     private static final Location DEFAULT_LOCATION = null;
@@ -153,8 +154,9 @@ public class ObjectStorageBlobsDAO implements BlobStore {
         return defaultBucketName;
     }
 
-    public void deleteContainer(BucketName bucketName) {
-        blobStore.deleteContainer(bucketName.asString());
+    public Mono<Void> deleteBucket(BucketName bucketName) {
+        return Mono.<Void>fromRunnable(() -> blobStore.deleteContainer(bucketName.asString()))
+            .subscribeOn(Schedulers.elastic());
     }
 
     public PayloadCodec getPayloadCodec() {

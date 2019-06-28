@@ -165,7 +165,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
 
     @Test
     void deleteContainerShouldDeleteSwiftContainer() {
-        objectStorageBlobsDAO.deleteContainer(defaultBucketName);
+        objectStorageBlobsDAO.deleteBucket(defaultBucketName).block();
         assertThat(blobStore.containerExists(defaultBucketName.asString()))
             .isFalse();
     }
