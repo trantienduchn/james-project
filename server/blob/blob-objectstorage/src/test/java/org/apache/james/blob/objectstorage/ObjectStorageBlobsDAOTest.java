@@ -21,7 +21,6 @@ package org.apache.james.blob.objectstorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -44,7 +43,6 @@ import org.apache.james.blob.objectstorage.swift.SwiftTempAuthObjectStorage;
 import org.apache.james.blob.objectstorage.swift.TenantName;
 import org.apache.james.blob.objectstorage.swift.UserHeaderName;
 import org.apache.james.blob.objectstorage.swift.UserName;
-import org.jclouds.http.HttpResponseException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -92,7 +90,6 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
             .blobIdFactory(blobIdFactory);
         blobStore = daoBuilder.getSupplier().get();
         objectStorageBlobsDAO = daoBuilder.build();
-        objectStorageBlobsDAO.createBucketIfNotExist(defaultBucketName).block();
         testee = new MetricableBlobStore(metricsTestExtension.getMetricFactory(), objectStorageBlobsDAO);
     }
 
@@ -205,11 +202,13 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     }
 
     @Test
-    void lazilyCreateBucketWhenSaveCannotWork() {
+    void lazilyCreateBucketWhenSaveShouldWork() {
         BucketName name = BucketName.of("newBucket");
 
-        assertThatThrownBy(() -> testee.save(name, SHORT_BYTEARRAY).block())
-            .isInstanceOf(HttpResponseException.class);
+        BlobId blobId = testee.save(name, SHORT_BYTEARRAY).block();
+
+        assertThat(testee.read(name, blobId))
+            .hasSameContentAs(new ByteArrayInputStream(SHORT_BYTEARRAY));
     }
 }
 

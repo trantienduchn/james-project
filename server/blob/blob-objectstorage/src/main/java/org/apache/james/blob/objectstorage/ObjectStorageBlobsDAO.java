@@ -88,7 +88,7 @@ public class ObjectStorageBlobsDAO implements BlobStore {
     }
 
     @VisibleForTesting
-    public Mono<BucketName> createBucketIfNotExist(BucketName name) {
+    Mono<BucketName> createBucketIfNotExist(BucketName name) {
         return Mono.fromCallable(() -> blobStore.containerExists(name.asString()))
             .filter(existed -> !existed)
             .map(notExisted -> blobStore.createContainerInLocation(DEFAULT_LOCATION, name.asString()))
@@ -124,7 +124,8 @@ public class ObjectStorageBlobsDAO implements BlobStore {
                             .payload(payload.getPayload())
                             .build();
 
-        return Mono.fromRunnable(() -> putBlobFunction.putBlob(bucketName, blob))
+        return createBucketIfNotExist(bucketName)
+            .then(Mono.fromRunnable(() -> putBlobFunction.putBlob(bucketName, blob)))
             .then(Mono.fromCallable(() -> blobIdFactory.from(hashingInputStream.hash().toString())));
     }
 
@@ -135,7 +136,7 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
     @Override
     public InputStream read(BucketName bucketName, BlobId blobId) throws ObjectStoreException {
-        Blob blob = blobStore.getBlob(this.defaultBucketName.asString(), blobId.asString());
+        Blob blob = blobStore.getBlob(bucketName.asString(), blobId.asString());
 
         try {
             if (blob != null) {
