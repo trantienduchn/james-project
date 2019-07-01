@@ -40,6 +40,7 @@ import org.jclouds.domain.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
@@ -86,10 +87,11 @@ public class ObjectStorageBlobsDAO implements BlobStore {
         return AwsS3ObjectStorage.daoBuilder(testConfig);
     }
 
-    public Mono<BucketName> createBucket(BucketName name) {
-        return Mono.fromCallable(() -> blobStore.createContainerInLocation(DEFAULT_LOCATION, name.asString()))
-            .filter(created -> created == false)
-            .doOnNext(ignored -> LOGGER.debug("{} already existed", name))
+    @VisibleForTesting
+    public Mono<BucketName> createBucketIfNotExist(BucketName name) {
+        return Mono.fromCallable(() -> blobStore.containerExists(name.asString()))
+            .filter(existed -> !existed)
+            .map(notExisted -> blobStore.createContainerInLocation(DEFAULT_LOCATION, name.asString()))
             .thenReturn(name);
     }
 

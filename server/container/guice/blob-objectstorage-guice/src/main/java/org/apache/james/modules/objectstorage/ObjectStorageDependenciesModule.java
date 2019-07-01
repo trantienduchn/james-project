@@ -72,7 +72,7 @@ public class ObjectStorageDependenciesModule extends AbstractModule {
             .payloadCodec(configuration.getPayloadCodec())
             .putBlob(putBlob(blobIdFactory, configuration, awsS3ObjectStorageProvider))
             .build();
-        dao.createBucket(dao.getDefaultBucketName()).block(Duration.ofMinutes(1));
+        dao.createBucketIfNotExist(dao.getDefaultBucketName()).block(Duration.ofMinutes(1));
         return dao;
     }
 

@@ -90,7 +90,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
             .blobIdFactory(blobIdFactory);
         blobStore = daoBuilder.getSupplier().get();
         objectStorageBlobsDAO = daoBuilder.build();
-        objectStorageBlobsDAO.createBucket(defaultBucketName).block();
+        objectStorageBlobsDAO.createBucketIfNotExist(defaultBucketName).block();
         testee = new MetricableBlobStore(metricsTestExtension.getMetricFactory(), objectStorageBlobsDAO);
     }
 
@@ -111,18 +111,18 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
     }
 
     @Test
-    void createBucketShouldMakeTheContainerToExist() {
+    void createBucketIfNotExistShouldMakeTheContainerToExist() {
         BucketName bucketName = BucketName.of(UUID.randomUUID().toString());
-        objectStorageBlobsDAO.createBucket(bucketName).block();
+        objectStorageBlobsDAO.createBucketIfNotExist(bucketName).block();
         assertThat(blobStore.containerExists(bucketName.asString())).isTrue();
     }
 
     @Test
-    void createBucketShouldNotFailWithRuntimeExceptionWhenCreateBucketTwice() {
+    void createBucketIfNotExistShouldNotFailWithRuntimeExceptionWhenCreateBucketTwice() {
         BucketName bucketName = BucketName.of(UUID.randomUUID().toString());
 
-        objectStorageBlobsDAO.createBucket(bucketName).block();
-        assertThatCode(() -> objectStorageBlobsDAO.createBucket(bucketName).block())
+        objectStorageBlobsDAO.createBucketIfNotExist(bucketName).block();
+        assertThatCode(() -> objectStorageBlobsDAO.createBucketIfNotExist(bucketName).block())
             .doesNotThrowAnyException();
     }
 

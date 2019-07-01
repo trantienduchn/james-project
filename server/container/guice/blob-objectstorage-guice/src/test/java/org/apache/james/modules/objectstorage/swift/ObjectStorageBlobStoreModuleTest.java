@@ -137,7 +137,7 @@ class ObjectStorageBlobStoreModuleTest {
                 .with(binder -> binder.bind(ObjectStorageBlobConfiguration.class).toInstance(configuration)));
 
         ObjectStorageBlobsDAO dao = injector.getInstance(ObjectStorageBlobsDAO.class);
-        dao.createBucket(dao.getDefaultBucketName()).block();
+        dao.createBucketIfNotExist(dao.getDefaultBucketName()).block();
 
         BlobStore blobStore = injector.getInstance(Key.get(BlobStore.class, Names.named(MetricableBlobStore.BLOB_STORE_IMPLEMENTATION)));
 
