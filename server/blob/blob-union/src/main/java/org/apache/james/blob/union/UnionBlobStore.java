@@ -113,12 +113,8 @@ public class UnionBlobStore implements BlobStore {
                 .equals(legacyBlobStore.getDefaultBucketName()),
             "currentBlobStore and legacyBlobStore doen't have same defaultBucketName which could lead to " +
                 "unexpected result when interact with other APIs");
-        try {
-            return currentBlobStore.getDefaultBucketName();
-        } catch (Exception e) {
-            LOGGER.error("exception directly happens while get the default bucket name, fall back to legacy blob store", e);
-            return legacyBlobStore.getDefaultBucketName();
-        }
+
+        return currentBlobStore.getDefaultBucketName();
     }
 
     @Override
