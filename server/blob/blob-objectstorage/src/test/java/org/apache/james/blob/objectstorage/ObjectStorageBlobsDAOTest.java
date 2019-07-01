@@ -21,11 +21,13 @@ package org.apache.james.blob.objectstorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
@@ -43,6 +45,7 @@ import org.apache.james.blob.objectstorage.swift.SwiftTempAuthObjectStorage;
 import org.apache.james.blob.objectstorage.swift.TenantName;
 import org.apache.james.blob.objectstorage.swift.UserHeaderName;
 import org.apache.james.blob.objectstorage.swift.UserName;
+import org.apache.james.util.concurrency.ConcurrentTestRunner;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -201,5 +204,50 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract {
         Mono<byte[]> resultFuture = testee.readBytes(testee.getDefaultBucketName(), blobId).subscribeOn(Schedulers.elastic());
         assertThat(resultFuture.toFuture()).isNotCompleted();
     }
+
+    @Test
+    void concurrentCreateBucketShouldCreateBucket() throws Exception {
+        BucketName bucketName = BucketName.of("concurrentCreating");
+
+        ConcurrentTestRunner.builder()
+            .operation((threadNumber, step) -> objectStorageBlobsDAO.createBucket(bucketName).block())
+            .threadCount(20)
+            .operationCount(20)
+            .runSuccessfullyWithin(Duration.ofSeconds(30));
+
+        assertThat(blobStore.containerExists(bucketName.asString()))
+            .isTrue();
+    }
+
+    @Test
+    void concurrentDeleteBucketShouldDeleteBucket() throws Exception {
+        BucketName bucketName = BucketName.of("concurrentDeleting");
+        objectStorageBlobsDAO.createBucket(bucketName)
+            .block();
+
+        ConcurrentTestRunner.builder()
+            .operation((threadNumber, step) -> objectStorageBlobsDAO.deleteBucket(bucketName).block())
+            .threadCount(50)
+            .operationCount(100)
+            .runSuccessfullyWithin(Duration.ofMinutes(10));
+
+        assertThat(blobStore.containerExists(bucketName.asString()))
+            .isFalse();
+    }
+
+    @Test
+    void concurrentCreateBucketCannotCreateAtACertainConcurrencyLevel() throws Exception {
+        BucketName bucketName = BucketName.of("concurrentCreating");
+
+        assertThatThrownBy(() ->
+            ConcurrentTestRunner.builder()
+                .operation((threadNumber, step) -> objectStorageBlobsDAO.createBucket(bucketName).block())
+                .threadCount(50)
+                .operationCount(100)
+                .runSuccessfullyWithin(Duration.ofMinutes(10)))
+            .isInstanceOf(ConcurrentTestRunner.NotTerminatedException.class)
+            .hasMessageContaining("org.jclouds.http.HttpResponseException: Read timed out connecting to PUT");
+    }
+
 }
 

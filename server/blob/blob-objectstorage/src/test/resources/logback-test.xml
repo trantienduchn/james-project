@@ -35,6 +35,6 @@
     </root>
 
 
-    <logger name="jclouds.headers" level="DEBUG"/>
+    <logger name="jclouds.headers" level="WARN"/>
     <logger name="org.apache.james" level="ERROR"/>
 </configuration>
