@@ -27,6 +27,8 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 
+import javax.inject.Inject;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.core.User;
@@ -55,6 +57,7 @@ public class MemoryDeletedMessagesVault implements DeletedMessageVault {
     private final Clock clock;
     private DeleteByQueryExecutor deleteByQueryExecutor;
 
+    @Inject
     public MemoryDeletedMessagesVault(RetentionConfiguration retentionConfiguration, Clock clock) {
         this.deleteByQueryExecutor = new DeleteByQueryExecutor(this);
         this.retentionConfiguration = retentionConfiguration;
