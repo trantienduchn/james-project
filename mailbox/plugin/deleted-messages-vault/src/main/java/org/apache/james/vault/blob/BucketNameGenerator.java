@@ -38,6 +38,6 @@ public class BucketNameGenerator {
         ZonedDateTime now = ZonedDateTime.now(clock);
         int month = now.getMonthValue();
         int year = now.getYear();
-        return BucketName.of(String.format("deletedMessages-%d-%02d-01", year, month));
+        return BucketName.of(String.format("deleted-messages-%d-%02d-01", year, month));
     }
 }
