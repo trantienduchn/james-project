@@ -22,11 +22,14 @@ package org.apache.james.vault.blob;
 import java.time.Clock;
 import java.time.ZonedDateTime;
 
+import javax.inject.Inject;
+
 import org.apache.james.blob.api.BucketName;
 
 public class BucketNameGenerator {
     private final Clock clock;
 
+    @Inject
     public BucketNameGenerator(Clock clock) {
         this.clock = clock;
     }
@@ -35,6 +38,6 @@ public class BucketNameGenerator {
         ZonedDateTime now = ZonedDateTime.now(clock);
         int month = now.getMonthValue();
         int year = now.getYear();
-        return BucketName.of(String.format("deletedMessages-%d-%02d-01", year, month));
+        return BucketName.of(String.format("deleted-messages-%d-%02d-01", year, month));
     }
 }

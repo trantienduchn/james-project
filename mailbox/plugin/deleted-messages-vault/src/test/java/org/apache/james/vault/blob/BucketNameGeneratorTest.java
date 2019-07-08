@@ -37,12 +37,12 @@ class BucketNameGeneratorTest {
     @Test
     void currentBucketShouldReturnBucketFormattedOnFirstDayOfMonth() {
         assertThat(new BucketNameGenerator(CLOCK).currentBucket())
-            .isEqualTo(BucketName.of("deletedMessages-2007-12-01"));
+            .isEqualTo(BucketName.of("deleted-messages-2007-12-01"));
     }
 
     @Test
     void monthShouldBeFormattedWithTwoDigits() {
         assertThat(new BucketNameGenerator(CLOCK_2).currentBucket())
-            .isEqualTo(BucketName.of("deletedMessages-2007-07-01"));
+            .isEqualTo(BucketName.of("deleted-messages-2007-07-01"));
     }
 }

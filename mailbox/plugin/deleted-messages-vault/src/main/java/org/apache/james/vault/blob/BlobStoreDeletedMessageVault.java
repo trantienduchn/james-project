@@ -21,6 +21,8 @@ package org.apache.james.vault.blob;
 
 import java.io.InputStream;
 
+import javax.inject.Inject;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.BucketName;
@@ -35,6 +37,7 @@ import org.apache.james.vault.metadata.StorageInformation;
 import org.apache.james.vault.search.Query;
 import org.reactivestreams.Publisher;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 import reactor.core.publisher.Flux;
@@ -45,7 +48,9 @@ public class BlobStoreDeletedMessageVault implements DeletedMessageVault {
     private final BlobStore blobStore;
     private final BucketNameGenerator nameGenerator;
 
-    public BlobStoreDeletedMessageVault(DeletedMessageMetadataVault messageMetadataVault, BlobStore blobStore, BucketNameGenerator nameGenerator) {
+    @Inject
+    @VisibleForTesting
+    BlobStoreDeletedMessageVault(DeletedMessageMetadataVault messageMetadataVault, BlobStore blobStore, BucketNameGenerator nameGenerator) {
         this.messageMetadataVault = messageMetadataVault;
         this.blobStore = blobStore;
         this.nameGenerator = nameGenerator;
@@ -58,7 +63,9 @@ public class BlobStoreDeletedMessageVault implements DeletedMessageVault {
         Preconditions.checkNotNull(mimeMessage);
         BucketName bucketName = nameGenerator.currentBucket();
         return blobStore.save(bucketName, mimeMessage)
-            .map(blobId -> new StorageInformation(bucketName, blobId))
+            .map(blobId -> StorageInformation.builder()
+                .bucketName(bucketName)
+                .blobId(blobId))
             .map(storageInformation -> new DeletedMessageWithStorageInformation(deletedMessage, storageInformation))
             .flatMap(message -> Mono.from(messageMetadataVault.store(message)))
             .then();
