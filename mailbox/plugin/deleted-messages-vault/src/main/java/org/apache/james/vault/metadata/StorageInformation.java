@@ -27,10 +27,27 @@ import org.apache.james.blob.api.BucketName;
 import com.google.common.base.Preconditions;
 
 public class StorageInformation {
+
+    public static class Builder {
+        @FunctionalInterface
+        public interface RequireBucketName {
+            RequireBlobId bucketName(BucketName bucketName);
+        }
+
+        @FunctionalInterface
+        public interface RequireBlobId {
+            StorageInformation blobId(BlobId blobId);
+        }
+    }
+
+    public static Builder.RequireBucketName builder() {
+        return bucketName -> blobId -> new StorageInformation(bucketName, blobId);
+    }
+
     private final BucketName bucketName;
     private final BlobId blobId;
 
-    public StorageInformation(BucketName bucketName, BlobId blobId) {
+    private StorageInformation(BucketName bucketName, BlobId blobId) {
         Preconditions.checkNotNull(bucketName);
         Preconditions.checkNotNull(blobId);
 

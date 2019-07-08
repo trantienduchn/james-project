@@ -19,33 +19,41 @@
 
 package org.apache.james.vault.metadata;
 
-import static org.apache.james.vault.metadata.DeletedMessageVaultMetadataFixture.BLOB_ID;
-import static org.apache.james.vault.metadata.DeletedMessageVaultMetadataFixture.BUCKET_NAME;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import java.util.Objects;
 
-import org.junit.jupiter.api.Test;
+import org.apache.james.core.User;
+import org.apache.james.mailbox.model.MessageId;
 
-import nl.jqno.equalsverifier.EqualsVerifier;
+public class DeletedMessageIdentifier {
+    private final User owner;
+    private final MessageId messageId;
 
-class StorageInformationTest {
-    @Test
-    void shouldRespectBeanContract() {
-        EqualsVerifier.forClass(StorageInformation.class).verify();
+    public DeletedMessageIdentifier(User owner, MessageId messageId) {
+        this.owner = owner;
+        this.messageId = messageId;
     }
 
-    @Test
-    void constructorShouldThrowOnNullBucketName() {
-        assertThatThrownBy(() -> StorageInformation.builder()
-                .bucketName(null)
-                .blobId(BLOB_ID))
-            .isInstanceOf(NullPointerException.class);
+    public User getOwner() {
+        return owner;
     }
 
-    @Test
-    void constructorShouldThrowOnNullBlobId() {
-        assertThatThrownBy(() -> StorageInformation.builder()
-                .bucketName(BUCKET_NAME)
-                .blobId(null))
-            .isInstanceOf(NullPointerException.class);
+    public MessageId getMessageId() {
+        return messageId;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (o instanceof DeletedMessageIdentifier) {
+            DeletedMessageIdentifier that = (DeletedMessageIdentifier) o;
+
+            return Objects.equals(this.owner, that.owner)
+                && Objects.equals(this.messageId, that.messageId);
+        }
+        return false;
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(owner, messageId);
     }
 }

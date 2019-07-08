@@ -19,33 +19,13 @@
 
 package org.apache.james.vault.metadata;
 
-import static org.apache.james.vault.metadata.DeletedMessageVaultMetadataFixture.BLOB_ID;
-import static org.apache.james.vault.metadata.DeletedMessageVaultMetadataFixture.BUCKET_NAME;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-class StorageInformationTest {
+class DeletedMessageIdentifierTest {
     @Test
-    void shouldRespectBeanContract() {
-        EqualsVerifier.forClass(StorageInformation.class).verify();
-    }
-
-    @Test
-    void constructorShouldThrowOnNullBucketName() {
-        assertThatThrownBy(() -> StorageInformation.builder()
-                .bucketName(null)
-                .blobId(BLOB_ID))
-            .isInstanceOf(NullPointerException.class);
-    }
-
-    @Test
-    void constructorShouldThrowOnNullBlobId() {
-        assertThatThrownBy(() -> StorageInformation.builder()
-                .bucketName(BUCKET_NAME)
-                .blobId(null))
-            .isInstanceOf(NullPointerException.class);
+    void shouldMatchBeanContract() {
+        EqualsVerifier.forClass(DeletedMessageIdentifier.class).verify();
     }
 }
