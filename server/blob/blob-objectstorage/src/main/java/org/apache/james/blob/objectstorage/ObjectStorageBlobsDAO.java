@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.james.blob.api.BlobId;
@@ -36,10 +37,12 @@ import org.apache.james.blob.objectstorage.swift.SwiftKeystone2ObjectStorage;
 import org.apache.james.blob.objectstorage.swift.SwiftKeystone3ObjectStorage;
 import org.apache.james.blob.objectstorage.swift.SwiftTempAuthObjectStorage;
 import org.jclouds.blobstore.domain.Blob;
+import org.jclouds.blobstore.domain.StorageType;
 import org.jclouds.domain.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.hash.Hashing;
 import com.google.common.hash.HashingInputStream;
@@ -182,5 +185,14 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
     public PayloadCodec getPayloadCodec() {
         return payloadCodec;
+    }
+
+    @VisibleForTesting
+    public Stream<BucketName> allBuckets() {
+        return blobStore.list()
+            .stream()
+            .filter(storageMetadata -> storageMetadata.getType().equals(StorageType.CONTAINER))
+            .map(storageMetadata -> storageMetadata.getName())
+            .map(BucketName::of);
     }
 }

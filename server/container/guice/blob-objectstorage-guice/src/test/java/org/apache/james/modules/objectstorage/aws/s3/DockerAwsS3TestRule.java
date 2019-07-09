@@ -41,6 +41,8 @@ import org.junit.runners.model.Statement;
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
 
+import reactor.core.publisher.Flux;
+
 public class DockerAwsS3TestRule implements GuiceModuleTestRule {
 
     public static class TestAwsS3BlobStoreProbe implements GuiceProbe {
@@ -68,8 +70,10 @@ public class DockerAwsS3TestRule implements GuiceModuleTestRule {
 
         @Override
         public Result run() {
-            blobsDAO.deleteBucket(blobsDAO.getDefaultBucketName()).block();
-
+            Flux.fromStream(blobsDAO.allBuckets())
+                .flatMap(blobsDAO::deleteBucket)
+                .then()
+                .block();
             return Result.COMPLETED;
         }
     }
