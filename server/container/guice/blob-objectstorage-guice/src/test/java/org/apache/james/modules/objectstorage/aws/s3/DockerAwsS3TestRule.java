@@ -19,10 +19,12 @@
 
 package org.apache.james.modules.objectstorage.aws.s3;
 
+import java.util.Locale;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.james.CleanupTasksPerformer;
 import org.apache.james.GuiceModuleTestRule;
 import org.apache.james.blob.api.BucketName;
@@ -40,8 +42,6 @@ import org.junit.runners.model.Statement;
 
 import com.google.inject.Module;
 import com.google.inject.multibindings.Multibinder;
-
-import reactor.core.publisher.Flux;
 
 public class DockerAwsS3TestRule implements GuiceModuleTestRule {
 
@@ -121,6 +121,7 @@ public class DockerAwsS3TestRule implements GuiceModuleTestRule {
             .aesSalt("c603a7327ee3dcbc031d8d34b1096c605feca5e1")
             .aesPassword("dockerAwsS3Encryption".toCharArray())
             .defaultBucketName(defaultBucketName)
+            .bucketPrefix(RandomStringUtils.random(10, true, false).toLowerCase(Locale.US))
             .build();
 
         return binder -> {

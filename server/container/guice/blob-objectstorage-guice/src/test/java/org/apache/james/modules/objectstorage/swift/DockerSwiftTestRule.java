@@ -19,11 +19,13 @@
 
 package org.apache.james.modules.objectstorage.swift;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.james.CleanupTasksPerformer;
 import org.apache.james.GuiceModuleTestRule;
 import org.apache.james.blob.api.BucketName;
@@ -118,6 +120,7 @@ public class DockerSwiftTestRule implements GuiceModuleTestRule {
             .aesSalt("c603a7327ee3dcbc031d8d34b1096c605feca5e1")
             .aesPassword("dockerSwiftEncryption".toCharArray())
             .defaultBucketName(defaultBucketName)
+            .bucketPrefix(RandomStringUtils.random(10, true, false).toLowerCase(Locale.US))
             .build();
 
         return binder -> {
