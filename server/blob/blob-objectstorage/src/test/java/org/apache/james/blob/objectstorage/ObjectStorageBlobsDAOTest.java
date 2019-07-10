@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.BlobStore;
+import org.apache.james.blob.api.BlobStoreContract;
 import org.apache.james.blob.api.BucketBlobStoreContract;
 import org.apache.james.blob.api.BucketName;
 import org.apache.james.blob.api.HashBlobId;
@@ -74,6 +75,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract, B
     private SwiftTempAuthObjectStorage.Configuration testConfig;
     private ObjectStorageBlobsDAO objectStorageBlobsDAO;
     private BlobStore testee;
+    private ObjectStorageBlobsDAOBuilder.ReadyToBuild daoBuilder;
 
     @BeforeEach
     void setUp(DockerSwift dockerSwift) {
@@ -86,7 +88,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract, B
             .tempAuthHeaderPassName(PassHeaderName.of("X-Storage-Pass"))
             .build();
         BlobId.Factory blobIdFactory = blobIdFactory();
-        ObjectStorageBlobsDAOBuilder.ReadyToBuild daoBuilder = ObjectStorageBlobsDAO
+        daoBuilder = ObjectStorageBlobsDAO
             .builder(testConfig)
             .blobIdFactory(blobIdFactory)
             .namespace(defaultBucketName);
@@ -97,8 +99,7 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract, B
 
     @AfterEach
     void tearDown() {
-        blobStore.deleteContainer(defaultBucketName.asString());
-        blobStore.deleteContainer(CUSTOM.asString());
+        objectStorageBlobsDAO.deleteAllBuckets().block();
         blobStore.getContext().close();
     }
 
@@ -201,6 +202,57 @@ public class ObjectStorageBlobsDAOTest implements MetricableBlobStoreContract, B
         BlobId blobId = testee().save(testee.getDefaultBucketName(), BIG_STRING).block();
         Mono<byte[]> resultFuture = testee.readBytes(testee.getDefaultBucketName(), blobId).subscribeOn(Schedulers.elastic());
         assertThat(resultFuture.toFuture()).isNotCompleted();
+    }
+
+    @Test
+    void blobsDaoWithPrefixCanSaveAndRetrieve() {
+        ObjectStorageBlobsDAO dao = daoBuilder
+            .bucketPrefix("prefix-")
+            .build();
+
+        BlobId blobId = dao.save(dao.getDefaultBucketName(), BlobStoreContract.SHORT_BYTEARRAY).block();
+
+        assertThat(dao.read(dao.getDefaultBucketName(), blobId))
+            .hasSameContentAs(new ByteArrayInputStream(BlobStoreContract.SHORT_BYTEARRAY));
+    }
+
+    @Test
+    void blobsDaoWithPrefixShouldCreateContainerNameWithPrefixInsideBlobStore() {
+        ObjectStorageBlobsDAO dao = daoBuilder
+            .bucketPrefix("prefix-")
+            .build();
+
+        BucketName bucketName = BucketName.of("bucket");
+        dao.save(bucketName, BlobStoreContract.SHORT_BYTEARRAY).block();
+
+        assertThat(blobStore.containerExists("prefix-bucket"))
+            .isTrue();
+    }
+
+    @Test
+    void blobsDaoWithPrefixShouldNotCreateContainerNameWithOutPrefixInsideBlobStore() {
+        ObjectStorageBlobsDAO dao = daoBuilder
+            .bucketPrefix("prefix-")
+            .build();
+
+        BucketName bucketName = BucketName.of("bucket");
+        dao.save(bucketName, BlobStoreContract.SHORT_BYTEARRAY).block();
+
+        assertThat(blobStore.containerExists("bucket"))
+            .isFalse();
+    }
+
+    @Test
+    void blobsDaoWithPrefixCanDeleteBucket() {
+        ObjectStorageBlobsDAO dao = daoBuilder
+            .bucketPrefix("prefix-")
+            .build();
+
+        BucketName bucketName = BucketName.of("bucket");
+        dao.deleteBucket(bucketName).block();
+
+        assertThat(blobStore.containerExists("prefix-bucket"))
+            .isFalse();
     }
 }
 

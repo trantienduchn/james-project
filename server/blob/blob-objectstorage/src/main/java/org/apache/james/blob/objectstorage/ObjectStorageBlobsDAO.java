@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.james.blob.api.BlobId;
@@ -159,7 +158,8 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
     @Override
     public InputStream read(BucketName bucketName, BlobId blobId) throws ObjectStoreException {
-        Blob blob = blobStore.getBlob(bucketName.asString(), blobId.asString());
+        ObjectStorageBucketName resolvedBucketName = bucketNameResolver.resolve(bucketName);
+        Blob blob = blobStore.getBlob(resolvedBucketName.asString(), blobId.asString());
 
         try {
             if (blob != null) {
@@ -181,7 +181,9 @@ public class ObjectStorageBlobsDAO implements BlobStore {
 
     @Override
     public Mono<Void> deleteBucket(BucketName bucketName) {
-        return Mono.<Void>fromRunnable(() -> blobStore.deleteContainer(bucketName.asString()))
+        ObjectStorageBucketName resolvedBucketName = bucketNameResolver.resolve(bucketName);
+
+        return Mono.<Void>fromRunnable(() -> blobStore.deleteContainer(resolvedBucketName.asString()))
             .subscribeOn(Schedulers.elastic());
     }
 
