@@ -71,7 +71,8 @@ public class DockerSwiftTestRule implements GuiceModuleTestRule {
 
         @Override
         public Result run() {
-            blobsDAO.deleteBucket(blobsDAO.getDefaultBucketName()).block();
+            blobsDAO.deleteAllBuckets()
+                .block();
 
             return Result.COMPLETED;
         }

@@ -70,9 +70,7 @@ public class DockerAwsS3TestRule implements GuiceModuleTestRule {
 
         @Override
         public Result run() {
-            Flux.fromStream(blobsDAO.allBuckets())
-                .flatMap(blobsDAO::deleteBucket)
-                .then()
+            blobsDAO.deleteAllBuckets()
                 .block();
             return Result.COMPLETED;
         }
