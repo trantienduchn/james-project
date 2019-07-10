@@ -27,6 +27,8 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static org.apache.james.vault.metadata.DeletedMessageMetadataModule.BucketListTable.BUCKET_NAME;
 import static org.apache.james.vault.metadata.DeletedMessageMetadataModule.BucketListTable.TABLE;
 
+import javax.inject.Inject;
+
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
 import org.apache.james.blob.api.BucketName;
 
@@ -36,12 +38,13 @@ import com.datastax.driver.core.Session;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-class BucketListDAO {
+public class BucketListDAO {
     private final CassandraAsyncExecutor cassandraAsyncExecutor;
     private final PreparedStatement addStatement;
     private final PreparedStatement removeStatement;
     private final PreparedStatement listStatement;
 
+    @Inject
     BucketListDAO(Session session) {
         cassandraAsyncExecutor = new CassandraAsyncExecutor(session);
 

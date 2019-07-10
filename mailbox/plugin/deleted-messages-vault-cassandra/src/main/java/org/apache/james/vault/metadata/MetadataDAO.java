@@ -30,6 +30,8 @@ import static org.apache.james.vault.metadata.DeletedMessageMetadataModule.Delet
 import static org.apache.james.vault.metadata.DeletedMessageMetadataModule.DeletedMessageMetadataTable.PAYLOAD;
 import static org.apache.james.vault.metadata.DeletedMessageMetadataModule.DeletedMessageMetadataTable.TABLE;
 
+import javax.inject.Inject;
+
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
 import org.apache.james.blob.api.BucketName;
 import org.apache.james.core.User;
@@ -47,7 +49,7 @@ import com.github.fge.lambdas.Throwing;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-class MetadataDAO {
+public class MetadataDAO {
     private final CassandraAsyncExecutor cassandraAsyncExecutor;
     private final PreparedStatement addStatement;
     private final PreparedStatement removeStatement;
@@ -58,7 +60,7 @@ class MetadataDAO {
     private final ObjectMapper objectMapper;
     private final DeletedMessageWithStorageInformationConverter dtoConverter;
 
-
+    @Inject
     MetadataDAO(Session session, MessageId.Factory messageIdFactory, DeletedMessageWithStorageInformationConverter dtoConverter) {
         this.cassandraAsyncExecutor = new CassandraAsyncExecutor(session);
         this.addStatement = prepareAdd(session);
