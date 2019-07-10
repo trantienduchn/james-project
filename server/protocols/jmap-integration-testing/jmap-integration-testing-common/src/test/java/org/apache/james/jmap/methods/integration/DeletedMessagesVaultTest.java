@@ -93,6 +93,8 @@ import io.restassured.specification.RequestSpecification;
 public abstract class DeletedMessagesVaultTest {
     private static final Instant NOW = Instant.now();
     private static final Instant ONE_DAY_AFTER_ONE_YEAR_EXPIRATION = NOW.plus(366, ChronoUnit.DAYS);
+    private static final Instant ONE_MONTH_AFTER_ONE_YEAR_EXPIRATION = NOW.plus(365, ChronoUnit.DAYS)
+        .plus(30, ChronoUnit.DAYS);
     private static final String FIRST_SUBJECT = "first subject";
     private static final String SECOND_SUBJECT = "second subject";
     private static final String HOMER = "homer@" + DOMAIN;
@@ -606,6 +608,25 @@ public abstract class DeletedMessagesVaultTest {
         homerDeletesMessages(listMessageIdsForAccount(homerAccessToken));
         WAIT_TWO_MINUTES.until(() -> listMessageIdsForAccount(homerAccessToken).size() == 0);
 
+        clock.setInstant(ONE_MONTH_AFTER_ONE_YEAR_EXPIRATION);
+        purgeVault(webAdminApi);
+
+        String fileLocation = exportAndGetFileLocationFromLastMail(EXPORT_ALL_HOMER_MESSAGES_TO_BART, bartAccessToken);
+        try (ZipAssert zipAssert = assertThatZip(new FileInputStream(fileLocation))) {
+            zipAssert.hasNoEntry();
+        }
+    }
+
+    @Test
+    public void vaultPurgeShouldMakeExportProduceEmptyZipWhenAllMessagesAreExpiredJustOneDay() throws Exception {
+        bartSendMessageToHomer();
+        bartSendMessageToHomer();
+        bartSendMessageToHomer();
+        WAIT_TWO_MINUTES.until(() -> listMessageIdsForAccount(homerAccessToken).size() == 3);
+
+        homerDeletesMessages(listMessageIdsForAccount(homerAccessToken));
+        WAIT_TWO_MINUTES.until(() -> listMessageIdsForAccount(homerAccessToken).size() == 0);
+
         clock.setInstant(ONE_DAY_AFTER_ONE_YEAR_EXPIRATION);
         purgeVault(webAdminApi);
 
@@ -628,7 +649,7 @@ public abstract class DeletedMessagesVaultTest {
 
         String messageIdOfNotExpiredMessage = listMessageIdsForAccount(homerAccessToken).get(0);
 
-        clock.setInstant(ONE_DAY_AFTER_ONE_YEAR_EXPIRATION);
+        clock.setInstant(ONE_MONTH_AFTER_ONE_YEAR_EXPIRATION);
         homerDeletesMessages(listMessageIdsForAccount(homerAccessToken));
         WAIT_TWO_MINUTES.until(() -> listMessageIdsForAccount(homerAccessToken).size() == 0);
 
@@ -667,7 +688,7 @@ public abstract class DeletedMessagesVaultTest {
         homerDeletesMessages(listMessageIdsForAccount(homerAccessToken));
         WAIT_TWO_MINUTES.until(() -> listMessageIdsForAccount(homerAccessToken).size() == 0);
 
-        clock.setInstant(ONE_DAY_AFTER_ONE_YEAR_EXPIRATION);
+        clock.setInstant(ONE_MONTH_AFTER_ONE_YEAR_EXPIRATION);
         purgeVault(webAdminApi);
 
         assertThat(listMessageIdsForAccount(homerAccessToken))

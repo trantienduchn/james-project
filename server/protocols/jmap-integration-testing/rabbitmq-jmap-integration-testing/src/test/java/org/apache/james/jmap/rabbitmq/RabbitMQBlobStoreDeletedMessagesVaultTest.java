@@ -56,24 +56,10 @@ public class RabbitMQBlobStoreDeletedMessagesVaultTest extends DeletedMessagesVa
         rule.await();
     }
 
-    @Ignore("Will be implemented latter")
+    @Ignore("BlobStore Vault doesn't delete all messages before the beginning of retention " +
+        "but just delete messages are located in buckets fully before the beginning of retention")
     @Test
-    public void vaultPurgeShouldMakeExportProduceEmptyZipWhenAllMessagesAreExpired() throws Exception {
-    }
-
-    @Ignore("Will be implemented latter")
-    @Test
-    public void vaultPurgeShouldMakeExportProduceAZipWhenOneMessageIsNotExpired() throws Exception {
-    }
-
-    @Ignore("Will be implemented latter")
-    @Test
-    public void vaultPurgeShouldMakeExportProduceZipWhenAllMessagesAreNotExpired() throws Exception {
-    }
-
-    @Ignore("Will be implemented latter")
-    @Test
-    public void vaultPurgeShouldNotAppendMessageToTheUserMailbox() {
+    public void vaultPurgeShouldMakeExportProduceEmptyZipWhenAllMessagesAreExpiredJustOneDay() {
     }
 
     @Ignore("Will be implemented latter")
