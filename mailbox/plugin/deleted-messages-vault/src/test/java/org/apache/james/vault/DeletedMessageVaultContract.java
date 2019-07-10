@@ -37,10 +37,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.ByteArrayInputStream;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
 import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.task.Task;
 import org.apache.james.util.concurrency.ConcurrentTestRunner;
+import org.apache.james.utils.UpdatableTickingClock;
 import org.apache.james.vault.search.CriterionFactory;
 import org.apache.james.vault.search.Query;
 import org.junit.jupiter.api.Test;
@@ -52,6 +54,8 @@ public interface DeletedMessageVaultContract {
     Clock CLOCK = Clock.fixed(NOW.toInstant(), NOW.getZone());
 
     DeletedMessageVault getVault();
+
+    UpdatableTickingClock getClock();
 
     @Test
     default void searchAllShouldThrowOnNullUser() {
@@ -278,6 +282,7 @@ public interface DeletedMessageVaultContract {
     default void deleteExpiredMessagesTaskShouldDeleteOldMails() throws InterruptedException {
         Mono.from(getVault().append(USER, OLD_DELETED_MESSAGE, new ByteArrayInputStream(CONTENT))).block();
 
+        getClock().setInstant(NOW.toInstant().plus(365 * 2, ChronoUnit.DAYS));
         getVault().deleteExpiredMessagesTask().run();
 
         assertThat(Flux.from(getVault().search(USER, ALL)).collectList().block())
@@ -287,9 +292,11 @@ public interface DeletedMessageVaultContract {
     @Test
     default void deleteExpiredMessagesTaskShouldDeleteOldMailsWhenRunSeveralTime() throws InterruptedException {
         Mono.from(getVault().append(USER, OLD_DELETED_MESSAGE, new ByteArrayInputStream(CONTENT))).block();
+        getClock().setInstant(NOW.toInstant().plus(365 * 2, ChronoUnit.DAYS));
         getVault().deleteExpiredMessagesTask().run();
 
         Mono.from(getVault().append(USER_2, OLD_DELETED_MESSAGE, new ByteArrayInputStream(CONTENT))).block();
+        getClock().setInstant(NOW.toInstant().plus(365 * 4, ChronoUnit.DAYS));
         getVault().deleteExpiredMessagesTask().run();
 
         assertThat(Flux.from(getVault().search(USER, ALL)).collectList().block())
