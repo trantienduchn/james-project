@@ -79,6 +79,7 @@ public class BlobStoreDeletedMessageVault implements DeletedMessageVault {
         return Flux.from(messageMetadataVault.listRelatedBuckets())
             .concatMap(bucketName -> Flux.from(messageMetadataVault.listMessages(bucketName, user)))
             .map(DeletedMessageWithStorageInformation::getDeletedMessage)
+            .filter(deletedMessage -> user.equals(deletedMessage.getOwner()))
             .filter(query.toPredicate());
     }
 
