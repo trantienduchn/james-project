@@ -47,16 +47,15 @@ public class MemoryDeletedMessageMetadataVault implements DeletedMessageMetadata
     }
 
     @Override
-    public Publisher<Void> store(DeletedMessageWithStorageInformation deletedMessage) {
+    public Publisher<Void> store(User user, DeletedMessageWithStorageInformation deletedMessage) {
         BucketName bucketName = deletedMessage.getStorageInformation().getBucketName();
-        User owner = deletedMessage.getDeletedMessage().getOwner();
         MessageId messageId = deletedMessage.getDeletedMessage().getMessageId();
 
         return Mono.fromRunnable(() -> {
             synchronized (table) {
-                Map<MessageId, DeletedMessageWithStorageInformation> userVault = userVault(bucketName, owner);
+                Map<MessageId, DeletedMessageWithStorageInformation> userVault = userVault(bucketName, user);
                 userVault.put(messageId, deletedMessage);
-                table.put(bucketName, owner, userVault);
+                table.put(bucketName, user, userVault);
             }
         });
     }

@@ -53,7 +53,7 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void listMessagesShouldContainPreviouslyInsertedMessage() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE)).block();
 
         Stream<DeletedMessageWithStorageInformation> messages = Flux.from(metadataVault().listMessages(BUCKET_NAME, USER)).toStream();
         assertThat(messages).containsOnly(DELETED_MESSAGE);
@@ -61,8 +61,8 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void listMessagesShouldContainAllPreviouslyInsertedMessages() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE)).block();
-        Mono.from(metadataVault().store(DELETED_MESSAGE_2)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE_2)).block();
 
         Stream<DeletedMessageWithStorageInformation> messages = Flux.from(metadataVault().listMessages(BUCKET_NAME, USER)).toStream();
         assertThat(messages).containsOnly(DELETED_MESSAGE, DELETED_MESSAGE_2);
@@ -70,8 +70,8 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void listMessagesShouldNotReturnMessagesOfOtherBuckets() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE)).block();
-        Mono.from(metadataVault().store(DELETED_MESSAGE_2_OTHER_BUCKET)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE_2_OTHER_BUCKET)).block();
 
         Stream<DeletedMessageWithStorageInformation> messages = Flux.from(metadataVault().listMessages(BUCKET_NAME, USER)).toStream();
         assertThat(messages).containsOnly(DELETED_MESSAGE);
@@ -85,8 +85,8 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void listBucketsShouldReturnAllUsedBuckets() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE)).block();
-        Mono.from(metadataVault().store(DELETED_MESSAGE_2_OTHER_BUCKET)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE_2_OTHER_BUCKET)).block();
 
         Stream<BucketName> messages = Flux.from(metadataVault().listRelatedBuckets()).toStream();
         assertThat(messages).containsOnly(BUCKET_NAME, OTHER_BUCKET_NAME);
@@ -94,8 +94,8 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void listBucketsShouldNotReturnDuplicates() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE)).block();
-        Mono.from(metadataVault().store(DELETED_MESSAGE_2)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE_2)).block();
 
         Stream<BucketName> messages = Flux.from(metadataVault().listRelatedBuckets()).toStream();
         assertThat(messages).containsExactly(BUCKET_NAME);
@@ -103,8 +103,8 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void listBucketsShouldStillListNotYetDeletedBuckets() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE)).block();
-        Mono.from(metadataVault().store(DELETED_MESSAGE_2_OTHER_BUCKET)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE_2_OTHER_BUCKET)).block();
 
         Mono.from(metadataVault().removeMetadataRelatedToBucket(BUCKET_NAME)).block();
 
@@ -114,8 +114,8 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void listBucketsShouldNotReturnDeletedBuckets() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE)).block();
-        Mono.from(metadataVault().store(DELETED_MESSAGE_2)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE_2)).block();
 
         Mono.from(metadataVault().removeMetadataRelatedToBucket(BUCKET_NAME)).block();
 
@@ -125,8 +125,8 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void removeBucketShouldOnlyRemoveEntriesOfTheGivenBucket() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE)).block();
-        Mono.from(metadataVault().store(DELETED_MESSAGE_2_OTHER_BUCKET)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE_2_OTHER_BUCKET)).block();
 
         Mono.from(metadataVault().removeMetadataRelatedToBucket(BUCKET_NAME)).block();
 
@@ -136,8 +136,8 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void removeBucketShouldRemoveAllEntriesOfTheGivenBucket() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE)).block();
-        Mono.from(metadataVault().store(DELETED_MESSAGE_2)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE_2)).block();
 
         Mono.from(metadataVault().removeMetadataRelatedToBucket(BUCKET_NAME)).block();
 
@@ -147,8 +147,8 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void listMessagesShouldNotReturnRemovedItems() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE)).block();
-        Mono.from(metadataVault().store(DELETED_MESSAGE_2)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE_2)).block();
 
         Mono.from(metadataVault().remove(BUCKET_NAME, USER, DELETED_MESSAGE.getDeletedMessage().getMessageId())).block();
 
@@ -158,7 +158,7 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void removeShouldNotFailWhenTheMessageDoesNotExist() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE_2)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE_2)).block();
 
         assertThatCode(() -> Mono.from(metadataVault()
                 .remove(BUCKET_NAME, USER, DELETED_MESSAGE.getDeletedMessage().getMessageId()))
@@ -168,7 +168,7 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void retrieveStorageInformationShouldReturnStoredValue() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE)).block();
 
         StorageInformation storageInformation = Mono.from(metadataVault()
             .retrieveStorageInformation(USER, DELETED_MESSAGE.getDeletedMessage().getMessageId()))
@@ -179,7 +179,7 @@ public interface DeletedMessageMetadataVaultContract {
 
     @Test
     default void retrieveStorageInformationShouldReturnEmptyWhenNotStored() {
-        Mono.from(metadataVault().store(DELETED_MESSAGE_2)).block();
+        Mono.from(metadataVault().store(USER, DELETED_MESSAGE_2)).block();
 
         Optional<StorageInformation> storageInformation = Mono.from(metadataVault()
             .retrieveStorageInformation(USER, DELETED_MESSAGE.getDeletedMessage().getMessageId()))

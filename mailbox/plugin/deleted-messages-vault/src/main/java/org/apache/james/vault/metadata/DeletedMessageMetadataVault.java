@@ -25,7 +25,7 @@ import org.apache.james.mailbox.model.MessageId;
 import org.reactivestreams.Publisher;
 
 public interface DeletedMessageMetadataVault {
-    Publisher<Void> store(DeletedMessageWithStorageInformation deletedMessage);
+    Publisher<Void> store(User user, DeletedMessageWithStorageInformation deletedMessage);
 
     Publisher<Void> removeMetadataRelatedToBucket(BucketName bucketName);
 

@@ -31,7 +31,6 @@ import org.apache.james.vault.DeletedMessageVaultSearchContract;
 import org.apache.james.vault.memory.metadata.MemoryDeletedMessageMetadataVault;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 
 class BlobStoreDeletedMessageVaultTest implements DeletedMessageVaultContract, DeletedMessageVaultSearchContract.AllContracts {
     private static final Instant NOW = Instant.parse("2007-12-03T10:15:30.00Z");
@@ -49,17 +48,6 @@ class BlobStoreDeletedMessageVaultTest implements DeletedMessageVaultContract, D
     @Override
     public DeletedMessageVault getVault() {
         return messageVault;
-    }
-
-
-    @Disabled("the BlobStoreDeletedMessageVaultTest.append(user, deletedMessage, inputStream)" +
-        "doesn't use user argument, it use the owner retrieved from deletedMessage for storing messages" +
-        "this test passes not the same user and owner in DeletedMessage to append()" +
-        "as the consequence, the filter cannot rely on user argument" +
-        "It raised a concern in append() where we pass user information in two different arguments")
-    @Test
-    @Override
-    public void searchForAnUserShouldNotReturnMessagesFromAnotherUser() {
     }
 
     @Disabled("Will be implemented later")
