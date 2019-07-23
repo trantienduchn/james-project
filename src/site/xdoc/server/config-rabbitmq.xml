@@ -26,6 +26,12 @@
 <body>
 
   <section name="RabbitMQ Server Configuration">
+      <p>
+          RabbitMQ is used in distributed James in order to have a distributed MailQueue and distributed Event dispatching system.
+
+          This configuration helps you configure components using RabbitMQ in case you want to setup a distributed James.
+          And it is only applicable with Guice product.
+      </p>
       <p>Consult
           <a href="https://github.com/apache/james-project/blob/master/dockerfiles/run/guice/cassandra-rabbitmq/destination/conf/rabbitmq.properties">
           rabbitmq.properties</a>
