@@ -29,7 +29,7 @@
 
       <p>
           Blob Exporting is the mechanism to help James to export a blob from an user to another user.
-          It usually used to export deleted messages(consult <a href="/server/config-vault">configuring deleted messages vault</a>).
+          It is usually used to export deleted messages (consult <a href="/server/config-vault">configuring deleted messages vault</a>).
           The deleted messages are transformed into a blob and James will export that blob to the target user.
 
           This configuration helps you choose the blob exporting mechanism fit with your James setup and it is only applicable with Guice product.
