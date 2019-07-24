@@ -32,6 +32,7 @@ import javax.mail.MessagingException;
 
 import org.apache.commons.net.smtp.AuthenticatingSMTPClient;
 import org.apache.james.core.MailAddress;
+import org.apache.james.core.User;
 import org.apache.james.util.Port;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
@@ -79,6 +80,10 @@ public class SMTPMessageSender extends ExternalResource implements Closeable {
             throw new SMTPSendingException(SmtpSendingStep.Authentication, smtpClient.getReplyString());
         }
         return this;
+    }
+
+    public SMTPMessageSender sendMessage(User from, User recipient) throws IOException {
+        return sendMessage(from.asString(), recipient.asString());
     }
 
     public SMTPMessageSender sendMessage(String from, String recipient) throws IOException {
