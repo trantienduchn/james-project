@@ -29,10 +29,10 @@
 
       <p>
           Blob Exporting is the mechanism to help James to export a blob from an user to another user.
-          It is usually used to export deleted messages (consult <a href="/server/config-vault">configuring deleted messages vault</a>).
+          It is commonly used to export deleted messages (consult <a href="/server/config-vault">configuring deleted messages vault</a>).
           The deleted messages are transformed into a blob and James will export that blob to the target user.
 
-          This configuration helps you choose the blob exporting mechanism fit with your James setup and it is only applicable with Guice product.
+          This configuration helps you choose the blob exporting mechanism fit with your James setup and it is only applicable with Guice products.
       </p>
 
       <p>Consult <a href="https://github.com/apache/james-project/blob/master/dockerfiles/run/guice/cassandra-rabbitmq/destination/conf/blob.properties">blob.properties</a> in GIT to get some examples and hints.</p>
@@ -43,7 +43,7 @@
       <dl>
           <dt><strong>blob.export.implementation</strong></dt>
           <dd>localFile: Local File Exporting Mechanism (explained below). Default: localFile</dd>
-          <dd>linshare: LinShare Exporting Mechanism (explained below)e</dd>
+          <dd>linshare: LinShare Exporting Mechanism (explained below)</dd>
       </dl>
 
       <subsection name="Local File Blob Export Configuration">
