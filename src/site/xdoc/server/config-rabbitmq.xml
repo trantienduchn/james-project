@@ -30,11 +30,10 @@
           RabbitMQ is used in distributed James in order to have a distributed MailQueue and distributed Event dispatching system.
 
           This configuration helps you configure components using RabbitMQ in case you want to setup a distributed James.
-          And it is only applicable with Guice product.
+          And it is only applicable with Guice products.
       </p>
-      <p>Consult
-          <a href="https://github.com/apache/james-project/blob/master/dockerfiles/run/guice/cassandra-rabbitmq/destination/conf/rabbitmq.properties">
-          rabbitmq.properties</a>
+      <p>
+          Consult <a href="https://github.com/apache/james-project/blob/master/dockerfiles/run/guice/cassandra-rabbitmq/destination/conf/rabbitmq.properties">rabbitmq.properties</a>
           in GIT to get some examples and hints.
       </p>
 
@@ -54,10 +53,10 @@
           </dd>
 
           <dt><strong>management.user</strong></dt>
-          <dd>username to access management service</dd>
+          <dd>username used to access management service</dd>
 
           <dt><strong>management.password</strong></dt>
-          <dd>password to access management service</dd>
+          <dd>password used to access management service</dd>
       </dl>
   </section>
 
