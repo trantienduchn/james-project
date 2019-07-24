@@ -19,47 +19,58 @@
 
 package org.apache.james.utils.smtp;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.james.core.User;
+import org.subethamail.smtp.server.Session;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
-public class MockMail {
+class MockMailProcessingState {
 
-    private final User from;
-    private final List<User> recipients;
-    private final String content;
+    static MockMailProcessingState start(MessageStateHandler completeHandler, Session session) {
+        return new MockMailProcessingState(completeHandler, session);
+    }
 
-    MockMail(User from, List<User> recipients, String content) {
-        Preconditions.checkNotNull(from);
-        Preconditions.checkNotNull(recipients);
+    private final MessageStateHandler completeHandler;
+    private final Session session;
+
+    private User from;
+    private List<User> recipients;
+    private String content;
+
+    MockMailProcessingState(MessageStateHandler completeHandler, Session session) {
+        this.completeHandler = completeHandler;
+        this.session = session;
+        this.recipients = new ArrayList<>();
+    }
+
+    void setFrom(String from) {
+        this.from = User.fromUsername(from);
+    }
+
+    void addRecipient(String recipient) {
+        Preconditions.checkNotNull(recipient);
+
+        this.recipients.add(User.fromUsername(recipient));
+    }
+
+    void setContent(String content) {
         Preconditions.checkNotNull(content);
 
-        this.from = from;
-        this.recipients = recipients;
         this.content = content;
     }
 
-    public User getFrom() {
-        return from;
+    void complete() {
+        completeHandler.handle(this);
     }
 
-    public List<User> getRecipients() {
-        return recipients;
+    Session getSession() {
+        return session;
     }
 
-    public String getContent() {
-        return content;
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-            .add("from", from)
-            .add("recipients", recipients)
-            .add("content", content)
-            .toString();
+    MockMail buildMockMail() {
+        return new MockMail(from, recipients, content);
     }
 }

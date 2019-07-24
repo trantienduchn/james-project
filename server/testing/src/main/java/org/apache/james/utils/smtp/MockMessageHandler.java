@@ -22,52 +22,58 @@ package org.apache.james.utils.smtp;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.function.Consumer;
 
 import org.apache.commons.io.IOUtils;
 import org.subethamail.smtp.MessageHandler;
 import org.subethamail.smtp.RejectException;
 import org.subethamail.smtp.TooMuchDataException;
+import org.subethamail.smtp.server.Session;
 
 public class MockMessageHandler implements MessageHandler {
 
     public static class Builder {
 
-        private Consumer<String> fromMessageHandler;
-        private Consumer<String> recipientMessageHandler;
-        private Consumer<String> dataMessageHandler;
-        private Consumer<MockMail> endMessageHandler;
+        private MessageStateHandler fromMessageHandler;
+        private MessageStateHandler recipientMessageHandler;
+        private MessageStateHandler dataMessageHandler;
+        private MessageStateHandler endMessageHandler;
+        private Session session;
 
         private Builder() {
-            this.fromMessageHandler = from -> {};
-            this.recipientMessageHandler = recipient -> {};
-            this.dataMessageHandler = data -> {};
-            this.endMessageHandler = mockMail -> {};
+            this.fromMessageHandler = MessageStateHandler.noop();
+            this.recipientMessageHandler = MessageStateHandler.noop();
+            this.dataMessageHandler = MessageStateHandler.noop();
+            this.endMessageHandler = MessageStateHandler.noop();
         }
 
-        public Builder fromMessageHandler(Consumer<String> fromMessageHandler) {
+        public Builder fromMessageHandler(MessageStateHandler fromMessageHandler) {
             this.fromMessageHandler = fromMessageHandler;
             return this;
         }
 
-        public Builder recipientMessageHandler(Consumer<String> recipientMessageHandler) {
+        public Builder recipientMessageHandler(MessageStateHandler recipientMessageHandler) {
             this.recipientMessageHandler = recipientMessageHandler;
             return this;
         }
 
-        public Builder dataMessageHandler(Consumer<String> dataMessageHandler) {
+        public Builder dataMessageHandler(MessageStateHandler dataMessageHandler) {
             this.dataMessageHandler = dataMessageHandler;
             return this;
         }
 
-        Builder endMessageHandler(Consumer<MockMail> endMessageHandler) {
+        Builder endMessageHandler(MessageStateHandler endMessageHandler) {
             this.endMessageHandler = endMessageHandler;
+            return this;
+        }
+
+        Builder session(Session session) {
+            this.session = session;
             return this;
         }
 
         public MockMessageHandler build() {
             return new MockMessageHandler(fromMessageHandler, recipientMessageHandler,
-                dataMessageHandler, endMessageHandler);
+                dataMessageHandler, endMessageHandler, session);
         }
     }
 
@@ -75,43 +81,41 @@ public class MockMessageHandler implements MessageHandler {
         return new Builder();
     }
 
-    private final Consumer<String> fromMessageHandler;
-    private final Consumer<String> recipientMessageHandler;
-    private final Consumer<String> dataMessageHandler;
-    private final Consumer<MockMail> endMessageHandler;
-    private final MockMail.Builder mailBuilder;
+    private final MessageStateHandler fromMessageHandler;
+    private final MessageStateHandler recipientMessageHandler;
+    private final MessageStateHandler dataMessageHandler;
+    private final MockMailProcessingState mailState;
 
-    private MockMessageHandler(Consumer<String> fromMessageHandler, Consumer<String> recipientMessageHandler,
-                              Consumer<String> dataMessageHandler, Consumer<MockMail> endMessageHandler) {
+    private MockMessageHandler(MessageStateHandler fromMessageHandler, MessageStateHandler recipientMessageHandler,
+                               MessageStateHandler dataMessageHandler, MessageStateHandler endMessageHandler,
+                               Session session) {
         this.fromMessageHandler = fromMessageHandler;
         this.recipientMessageHandler = recipientMessageHandler;
         this.dataMessageHandler = dataMessageHandler;
-        this.endMessageHandler = endMessageHandler;
-        this.mailBuilder = MockMail.builder();
+        this.mailState = MockMailProcessingState.start(endMessageHandler, session);
     }
 
     @Override
     public void from(String from) throws RejectException {
-        fromMessageHandler.accept(from);
-        mailBuilder.setFrom(from);
+        mailState.setFrom(from);
+        fromMessageHandler.handle(mailState);
     }
 
     @Override
     public void recipient(String recipient) throws RejectException {
-        recipientMessageHandler.accept(recipient);
-        mailBuilder.addRecipient(recipient);
+        mailState.addRecipient(recipient);
+        recipientMessageHandler.handle(mailState);
     }
 
     @Override
     public void data(InputStream data) throws RejectException, TooMuchDataException, IOException {
         String dataString = IOUtils.toString(data, StandardCharsets.UTF_8);
-        dataMessageHandler.accept(dataString);
-        mailBuilder.setContent(dataString);
+        mailState.setContent(dataString);
+        dataMessageHandler.handle(mailState);
     }
 
     @Override
     public void done() {
-        MockMail mockMail = mailBuilder.build();
-        endMessageHandler.accept(mockMail);
+        mailState.complete();
     }
 }

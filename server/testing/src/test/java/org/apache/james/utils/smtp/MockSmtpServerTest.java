@@ -19,6 +19,10 @@
 
 package org.apache.james.utils.smtp;
 
+import static org.apache.james.utils.smtp.MessageStateHandler.RejectingHandler.ERROR_431_OUT_OF_MEMORY;
+import static org.apache.james.utils.smtp.MessageStateHandler.RejectingHandler.ERROR_450_RETRY_SUCCESSES;
+import static org.apache.james.utils.smtp.MessageStateHandler.RejectingHandler.ERROR_500_COMMAND_NOT_FOUND;
+import static org.apache.james.utils.smtp.MessageStateHandler.noop;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -34,7 +38,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.subethamail.smtp.RejectException;
 
 class MockSmtpServerTest {
 
@@ -81,9 +84,7 @@ class MockSmtpServerTest {
     @Test
     void serverShouldReturnErrorCodeWhenSetupErrorResponseCode() throws Exception {
         server.setMessageHandler(MockMessageHandler.builder()
-            .fromMessageHandler(from -> {
-                throw new RejectException(500, "the server could not recognize the command");
-            }));
+            .fromMessageHandler(ERROR_500_COMMAND_NOT_FOUND));
 
         assertThatThrownBy(() -> smtpSender.sendMessage(SENDER_1, RECIPIENT_1))
             .isEqualTo(new SMTPSendingException(SmtpSendingStep.Sender, "500 the server could not recognize the command"));
@@ -92,9 +93,7 @@ class MockSmtpServerTest {
     @Test
     void serverShouldRejectAtTheMockedStep() throws Exception {
         server.setMessageHandler(MockMessageHandler.builder()
-            .recipientMessageHandler(recipient -> {
-                throw new RejectException(431, "out of memory");
-            }));
+            .recipientMessageHandler(ERROR_431_OUT_OF_MEMORY));
 
         assertThatThrownBy(() -> smtpSender.sendMessage(SENDER_1, RECIPIENT_1))
             .isEqualTo(new SMTPSendingException(SmtpSendingStep.RCPT, "431 out of memory"));
@@ -104,10 +103,8 @@ class MockSmtpServerTest {
     @Test
     void serverShouldAllowToSetupMultipleExpectedCallsForOneStep() throws Exception {
         server.setMessageHandler(MockMessageHandler.builder()
-            .recipientMessageHandler(recipient -> {
-                throw new RejectException(431, "out of memory");
-            })
-            .recipientMessageHandler(recipient -> {}));
+            .recipientMessageHandler(ERROR_431_OUT_OF_MEMORY)
+            .recipientMessageHandler(noop()));
 
         assertThatThrownBy(() -> smtpSender.sendMessage(SENDER_1, RECIPIENT_1))
             .isEqualTo(new SMTPSendingException(SmtpSendingStep.RCPT, "431 out of memory"));
@@ -121,16 +118,13 @@ class MockSmtpServerTest {
             }));
     }
 
-    @Disabled("this is not supported")
     @Test
     void serverShouldAllowRetryAbleHandler() throws Exception {
         server.setMessageHandler(MockMessageHandler.builder()
-            .recipientMessageHandler(recipient -> {
-                throw new RejectException(450, "The server will retry to mail the message again");
-            }));
+            .dataMessageHandler(ERROR_450_RETRY_SUCCESSES));
 
         assertThatThrownBy(() -> smtpSender.sendMessage(SENDER_1, RECIPIENT_1))
-            .isEqualTo(new SMTPSendingException(SmtpSendingStep.RCPT, "450 The server will retry to mail the message again"));
+            .isEqualTo(new SMTPSendingException(SmtpSendingStep.Data, "450 Server will retry later and will be succeed"));
 
         assertThat(server.messageStream())
             .anySatisfy(mockMail -> SoftAssertions.assertSoftly(softly -> {

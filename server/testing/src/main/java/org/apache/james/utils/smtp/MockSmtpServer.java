@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Stream;
 
 import org.subethamail.smtp.server.SMTPServer;
+import org.subethamail.smtp.server.Session;
 
 public class MockSmtpServer {
 
@@ -51,7 +52,7 @@ public class MockSmtpServer {
     public MockSmtpServer() {
         this.mailRepository = new MockSmtpMailRepository();
         this.getMessageHandlerBuilder = MockMessageHandler.builder();
-        this.server = new SMTPServer(ctx -> messageBuilderWithMailRepositoryCallBack().build());
+        this.server = new SMTPServer(ctx -> prepareMessageBuilder((Session) ctx).build());
         this.server.setPort(0);
     }
 
@@ -79,8 +80,9 @@ public class MockSmtpServer {
         return getMessageHandlerBuilder;
     }
 
-    private MockMessageHandler.Builder messageBuilderWithMailRepositoryCallBack() {
+    private MockMessageHandler.Builder prepareMessageBuilder(Session session) {
         return getMessageHandlerBuilder()
-            .endMessageHandler(mailRepository::store);
+            .session(session)
+            .endMessageHandler(mailState -> mailRepository.store(mailState.buildMockMail()));
     }
 }
