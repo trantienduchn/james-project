@@ -28,9 +28,9 @@
         <section name="BlobStore Configuration">
             <p>
                 BlobStore is the dedicated component to store blobs, non-indexable content.
-                James use BlobStore for storing blobs which are usually mail contents, attachments, deleted mails...
+                James uses the BlobStore for storing blobs which are usually mail contents, attachments, deleted mails...
                 You can choose the underlying implementation of BlobStore to fit with your James setup.
-                It could be the implementation of top of Cassandra or file storage service like Openstack Swift, AWS S3.
+                It could be the implementation on top of Cassandra or file storage service like Openstack Swift, AWS S3.
 
                 This configuration is only applicable with Guice product
             </p>
