@@ -26,7 +26,6 @@ import org.apache.james.GuiceJamesServer;
 import org.apache.james.MemoryJmapTestRule;
 import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.jmap.methods.integration.DeletedMessagesVaultTest;
-import org.apache.james.modules.mailbox.MemoryDeletedMessageVaultModule;
 import org.apache.james.modules.vault.TestDeleteMessageVaultPreDeletionHookModule;
 import org.apache.james.webadmin.WebAdminConfiguration;
 import org.junit.Rule;
@@ -38,7 +37,6 @@ public class MemoryBlobStoreDeletedMessagesVaultTest extends DeletedMessagesVaul
     @Override
     protected GuiceJamesServer createJmapServer(FileSystem fileSystem, Clock clock) throws IOException {
         return memoryJmap.jmapServer(
-            new MemoryDeletedMessageVaultModule(),
             new TestDeleteMessageVaultPreDeletionHookModule(),
             binder -> binder.bind(WebAdminConfiguration.class).toInstance(WebAdminConfiguration.TEST_CONFIGURATION),
             binder -> binder.bind(FileSystem.class).toInstance(fileSystem),
