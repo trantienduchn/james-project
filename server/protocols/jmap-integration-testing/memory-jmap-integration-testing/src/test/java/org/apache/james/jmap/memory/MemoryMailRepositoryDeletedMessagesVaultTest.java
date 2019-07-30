@@ -26,23 +26,30 @@ import org.apache.james.GuiceJamesServer;
 import org.apache.james.MemoryJmapTestRule;
 import org.apache.james.filesystem.api.FileSystem;
 import org.apache.james.jmap.methods.integration.DeletedMessagesVaultTest;
+import org.apache.james.mailrepository.api.MailRepositoryUrl;
+import org.apache.james.modules.vault.DeletedMessageVaultModule;
 import org.apache.james.modules.vault.TestDeleteMessageVaultPreDeletionHookModule;
+import org.apache.james.vault.MailRepositoryDeletedMessageVault;
 import org.apache.james.webadmin.WebAdminConfiguration;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
-public class MemoryDeletedMessagesVaultTest extends DeletedMessagesVaultTest {
+public class MemoryMailRepositoryDeletedMessagesVaultTest extends DeletedMessagesVaultTest {
     @Rule
     public MemoryJmapTestRule memoryJmap = new MemoryJmapTestRule();
 
     @Override
     protected GuiceJamesServer createJmapServer(FileSystem fileSystem, Clock clock) throws IOException {
         return memoryJmap.jmapServer(
-            new TestDeleteMessageVaultPreDeletionHookModule(),
-            binder -> binder.bind(WebAdminConfiguration.class).toInstance(WebAdminConfiguration.TEST_CONFIGURATION),
-            binder -> binder.bind(FileSystem.class).toInstance(fileSystem),
-            binder -> binder.bind(Clock.class).toInstance(clock));
+                new DeletedMessageVaultModule(),
+                new TestDeleteMessageVaultPreDeletionHookModule(),
+                binder -> binder.bind(WebAdminConfiguration.class).toInstance(WebAdminConfiguration.TEST_CONFIGURATION),
+                binder -> binder.bind(FileSystem.class).toInstance(fileSystem),
+                binder -> binder.bind(Clock.class).toInstance(clock))
+            .overrideWith(
+                binder -> binder.bind(MailRepositoryDeletedMessageVault.Configuration.class)
+                    .toInstance(new MailRepositoryDeletedMessageVault.Configuration(MailRepositoryUrl.from("memory://var/deletedMessages/user"))));
     }
 
     @Override

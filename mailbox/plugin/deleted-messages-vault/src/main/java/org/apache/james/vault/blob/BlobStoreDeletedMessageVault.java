@@ -72,7 +72,8 @@ public class BlobStoreDeletedMessageVault implements DeletedMessageVault {
     private final RetentionConfiguration retentionConfiguration;
 
     @Inject
-    BlobStoreDeletedMessageVault(MetricFactory metricFactory, DeletedMessageMetadataVault messageMetadataVault,
+    @VisibleForTesting
+    public BlobStoreDeletedMessageVault(MetricFactory metricFactory, DeletedMessageMetadataVault messageMetadataVault,
                                  BlobStore blobStore, BucketNameGenerator nameGenerator,
                                  Clock clock,
                                  RetentionConfiguration retentionConfiguration) {
