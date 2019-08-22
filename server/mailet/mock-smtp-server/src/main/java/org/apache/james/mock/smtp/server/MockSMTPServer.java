@@ -19,9 +19,11 @@
 
 package org.apache.james.mock.smtp.server;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.james.mock.smtp.server.model.Mail;
+import org.apache.james.mock.smtp.server.model.MockSMTPBehavior;
 import org.apache.james.util.Port;
 import org.subethamail.smtp.server.SMTPServer;
 
@@ -29,10 +31,12 @@ class MockSMTPServer {
 
     private final SMTPServer server;
     private final ReceivedMailRepository mailRepository;
+    private final List<MockSMTPBehavior> behaviors;
 
     MockSMTPServer() {
+        this.behaviors = new ArrayList<>();
         this.mailRepository = new ReceivedMailRepository();
-        this.server = new SMTPServer(ctx -> new MockMessageHandler(mailRepository));
+        this.server = new SMTPServer(ctx -> new MockMessageHandler(mailRepository, behaviors));
         this.server.setPort(0);
     }
 
@@ -52,5 +56,14 @@ class MockSMTPServer {
 
     void stop() {
         server.stop();
+        clearBehavior();
+    }
+
+    void addBehavior(MockSMTPBehavior behavior) {
+        behaviors.add(behavior);
+    }
+
+    private void clearBehavior() {
+        behaviors.clear();
     }
 }
