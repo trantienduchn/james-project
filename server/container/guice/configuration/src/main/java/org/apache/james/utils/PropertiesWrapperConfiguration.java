@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Stream;
 
@@ -370,8 +371,10 @@ public class PropertiesWrapperConfiguration implements Configuration {
     }
 
     private Stream<String> splitAndStripDoubleQuotes(String value) {
-        return Stream.of(StringUtils.strip(value, "\"")
-                .split(delimiter))
-            .map(String::trim);
+        return Optional.ofNullable(value)
+            .map(notNullValue -> Stream
+                .of(StringUtils.strip(notNullValue, "\"").split(delimiter))
+                .map(String::trim))
+            .orElseGet(Stream::empty);
     }
 }
