@@ -43,12 +43,12 @@ import org.apache.commons.lang3.StringUtils;
 import com.github.steveash.guavate.Guavate;
 import com.google.common.collect.ImmutableList;
 
-public class PropertiesWrapperConfiguration implements Configuration {
+public class DelegatedPropertiesConfiguration implements Configuration {
 
     private final String delimiter;
     private final Configuration configuration;
 
-    PropertiesWrapperConfiguration(String delimiter, Configuration configuration) {
+    DelegatedPropertiesConfiguration(String delimiter, Configuration configuration) {
         this.delimiter = delimiter;
         this.configuration = configuration;
     }
