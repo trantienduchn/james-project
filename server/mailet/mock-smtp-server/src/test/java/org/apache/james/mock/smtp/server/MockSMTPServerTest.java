@@ -33,7 +33,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.net.ConnectException;
 import java.util.List;
-import java.util.Optional;
 
 import javax.mail.internet.MimeMessage;
 
@@ -144,7 +143,7 @@ class MockSMTPServerTest {
 
         @Test
         void serverShouldReceiveMessageFromClient() throws Exception {
-            mockServer.addBehavior(new MockSMTPBehavior(
+            mockServer.setBehaviors(new MockSMTPBehavior(
                 MAIL_FROM,
                 Condition.MATCH_ALL,
                 Response.serverReject(SERVICE_NOT_AVAILABLE_421, "mock response"),
@@ -157,7 +156,7 @@ class MockSMTPServerTest {
 
         @Test
         void serverShouldReceiveMessageRecipientClient() throws Exception {
-            mockServer.addBehavior(new MockSMTPBehavior(
+            mockServer.setBehaviors(new MockSMTPBehavior(
                 RCPT_TO,
                 Condition.MATCH_ALL,
                 Response.serverReject(SERVICE_NOT_AVAILABLE_421, "mock response"),
@@ -170,7 +169,7 @@ class MockSMTPServerTest {
 
         @Test
         void serverShouldReceiveMessageDataClient() throws Exception {
-            mockServer.addBehavior(new MockSMTPBehavior(
+            mockServer.setBehaviors(new MockSMTPBehavior(
                 DATA,
                 Condition.MATCH_ALL,
                 Response.serverReject(SERVICE_NOT_AVAILABLE_421, "mock response"),

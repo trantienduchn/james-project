@@ -20,6 +20,7 @@
 package org.apache.james.mock.smtp.server;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.james.mock.smtp.server.model.Mail;
@@ -59,8 +60,8 @@ class MockSMTPServer {
         clearBehavior();
     }
 
-    void addBehavior(MockSMTPBehavior behavior) {
-        behaviors.add(behavior);
+    void setBehaviors(MockSMTPBehavior... behaviors) {
+        this.behaviors.addAll(Arrays.asList(behaviors));
     }
 
     private void clearBehavior() {
