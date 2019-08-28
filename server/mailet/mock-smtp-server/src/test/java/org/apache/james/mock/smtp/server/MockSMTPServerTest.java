@@ -338,6 +338,64 @@ class MockSMTPServerTest {
         }
     }
 
+    @Nested
+    class RejectingTest {
+        private MockSMTPServer mockServer;
+        private FakeMail mail1;
+        private MimeMessage mimeMessage1;
+        private SMTPMessageSender smtpClient;
+        private SMTPBehaviorRepository behaviorRepository;
+
+        @BeforeEach
+        void setUp() throws Exception {
+            behaviorRepository = new SMTPBehaviorRepository();
+            mockServer = new MockSMTPServer(behaviorRepository);
+
+            mimeMessage1 = MimeMessageBuilder.mimeMessageBuilder()
+                .setSubject("test")
+                .setText("any text")
+                .build();
+            mail1 = FakeMail.builder()
+                .name("name")
+                .sender(BOB)
+                .recipients(ALICE, JACK)
+                .mimeMessage(mimeMessage1)
+                .build();
+
+            mockServer.start();
+            smtpClient = new SMTPMessageSender(DOMAIN)
+                .connect("localhost", mockServer.getPort());
+        }
+
+        @AfterEach
+        void tearDown() {
+            mockServer.stop();
+        }
+
+        @Test
+        void serverShouldNotReceiveMessageWhenSetRejected() throws Exception {
+            behaviorRepository.setBehaviors(new MockSMTPBehavior(
+                MAIL_FROM,
+                Condition.MATCH_ALL,
+                Response.serverReject(SERVICE_NOT_AVAILABLE_421, "mock response"),
+                MockSMTPBehavior.NumberOfAnswersPolicy.anytime()));
+
+            sendMessageIgnoreError(mail1);
+
+            assertThat(mockServer.listReceivedMails())
+                .isEmpty();
+        }
+
+        private void sendMessageIgnoreError(FakeMail mail) {
+            try {
+                smtpClient.sendMessage(mail);
+            } catch (MessagingException | IOException e) {
+                // ignore error
+            }
+        }
+
+    }
+
     @Test
     void serverStartShouldOpenASmtpPort() {
         MockSMTPServer mockServer = new MockSMTPServer();
