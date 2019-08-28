@@ -23,16 +23,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import javax.mail.internet.AddressException;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.core.MailAddress;
+import org.apache.james.mock.smtp.server.Behaviors.Behavior;
+import org.apache.james.mock.smtp.server.Behaviors.Behavior.BehavingState;
+import org.apache.james.mock.smtp.server.Behaviors.LinkedBehavior;
+import org.apache.james.mock.smtp.server.Behaviors.MockBehavior;
+import org.apache.james.mock.smtp.server.Behaviors.SMTPBehaviorRepositoryUpdater;
 import org.apache.james.mock.smtp.server.model.Mail;
 import org.apache.james.mock.smtp.server.model.MockSMTPBehavior;
 import org.apache.james.mock.smtp.server.model.MockSMTPBehaviorInformation;
-import org.apache.james.mock.smtp.server.model.Response;
 import org.apache.james.mock.smtp.server.model.Response.SMTPStatusCode;
 import org.apache.james.mock.smtp.server.model.SMTPCommand;
 import org.subethamail.smtp.MessageHandler;
@@ -41,47 +45,8 @@ import org.subethamail.smtp.TooMuchDataException;
 
 public class MockMessageHandler implements MessageHandler {
 
-    @FunctionalInterface
-    interface Behavior<T> {
-        void behave(T input) throws RejectException;
-    }
-
-    class MockBehavior<T> implements Behavior<T> {
-
-        private final MockSMTPBehavior behavior;
-
-        MockBehavior(MockSMTPBehavior behavior) {
-            this.behavior = behavior;
-        }
-
-        @Override
-        public void behave(T input) throws RejectException {
-            Response response = behavior.getResponse();
-            if (response.isServerRejected()) {
-                throw new RejectException(response.getCode().getRawCode(), response.getMessage());
-            }
-            throw new NotImplementedException("Not rejecting commands in mock behaviours is not supported yet");
-        }
-    }
-
-    class SMTPBehaviorRepositoryUpdater<T> implements Behavior<T> {
-
-        private final SMTPBehaviorRepository behaviorRepository;
-        private final MockBehavior<T> actualBehavior;
-
-        SMTPBehaviorRepositoryUpdater(SMTPBehaviorRepository behaviorRepository, MockSMTPBehavior behavior) {
-            this.behaviorRepository = behaviorRepository;
-            this.actualBehavior = new MockBehavior<>(behavior);
-        }
-
-        @Override
-        public void behave(T input) throws RejectException {
-            try {
-                actualBehavior.behave(input);
-            } finally {
-                behaviorRepository.decreaseRemainingAnswers(actualBehavior.behavior);
-            }
-        }
+    static <T> Behavior<T> buildMessageBehavior(Consumer<T> buildingStage) {
+        return state -> buildingStage.accept(state.getInputData());
     }
 
     private final Mail.Envelope.Builder envelopeBuilder;
@@ -98,37 +63,48 @@ public class MockMessageHandler implements MessageHandler {
 
     @Override
     public void from(String from) throws RejectException {
-        Optional<Behavior<MailAddress>> fromBehavior = firstMatchedBehavior(SMTPCommand.MAIL_FROM);
+        BehavingState<MailAddress> initState = BehavingState.init(
+            firstMatchedBehavior(SMTPCommand.MAIL_FROM),
+            parse(from));
 
-        fromBehavior
-            .orElseGet(() -> envelopeBuilder::from)
-            .behave(parse(from));
+        LinkedBehavior.current(buildMessageBehavior(envelopeBuilder::from))
+            .withNext(new MockBehavior<>())
+            .withNext(new SMTPBehaviorRepositoryUpdater<>(behaviorRepository))
+            .withNext(new Behaviors.Terminator<>())
+            .behave(initState);
     }
 
     @Override
     public void recipient(String recipient) throws RejectException {
-        Optional<Behavior<MailAddress>> recipientBehavior = firstMatchedBehavior(SMTPCommand.RCPT_TO);
+        BehavingState<MailAddress> initState = BehavingState.init(
+            firstMatchedBehavior(SMTPCommand.RCPT_TO),
+            parse(recipient));
 
-        recipientBehavior
-            .orElseGet(() -> envelopeBuilder::addRecipient)
-            .behave(parse(recipient));
+        LinkedBehavior.current(buildMessageBehavior(envelopeBuilder::addRecipient))
+            .withNext(new MockBehavior<>())
+            .withNext(new SMTPBehaviorRepositoryUpdater<>(behaviorRepository))
+            .withNext(new Behaviors.Terminator<>())
+            .behave(initState);
     }
 
     @Override
     public void data(InputStream data) throws RejectException, TooMuchDataException, IOException {
-        Optional<Behavior<InputStream>> dataBehavior = firstMatchedBehavior(SMTPCommand.DATA);
+        BehavingState<InputStream> initState = BehavingState.init(
+            firstMatchedBehavior(SMTPCommand.DATA),
+            data);
 
-        dataBehavior
-            .orElseGet(() -> content -> mailBuilder.message(readData(content)))
-            .behave(data);
+        LinkedBehavior.<InputStream>current(buildMessageBehavior(content -> mailBuilder.message(readData(content))))
+            .withNext(new MockBehavior<>())
+            .withNext(new SMTPBehaviorRepositoryUpdater<>(behaviorRepository))
+            .withNext(new Behaviors.Terminator<>())
+            .behave(initState);
     }
 
-    private <T> Optional<Behavior<T>> firstMatchedBehavior(SMTPCommand data) {
+    private Optional<MockSMTPBehavior> firstMatchedBehavior(SMTPCommand data) {
         return behaviorRepository.remainingBehaviors()
             .map(MockSMTPBehaviorInformation::getBehavior)
             .filter(behavior -> behavior.getCommand().equals(data))
-            .findFirst()
-            .map(mockBehavior -> new SMTPBehaviorRepositoryUpdater<>(behaviorRepository, mockBehavior));
+            .findFirst();
     }
 
     @Override
