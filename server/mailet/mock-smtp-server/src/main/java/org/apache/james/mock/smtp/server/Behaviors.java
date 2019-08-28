@@ -19,9 +19,9 @@
 
 package org.apache.james.mock.smtp.server;
 
+import java.io.IOException;
 import java.util.Optional;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.james.mock.smtp.server.model.MockSMTPBehavior;
 import org.apache.james.mock.smtp.server.model.Response;
 import org.subethamail.smtp.RejectException;
@@ -122,6 +122,12 @@ interface Behaviors {
 
     class MockBehavior<T> implements Behavior<T> {
 
+        private final Session smtpSession;
+
+        MockBehavior(Session smtpSession) {
+            this.smtpSession = smtpSession;
+        }
+
         @Override
         public void behave(BehavingState<T> state) throws RejectException {
             state.matchedBehavior.ifPresent(behavior -> {
@@ -129,9 +135,19 @@ interface Behaviors {
                 if (response.isServerRejected()) {
                     state.setRejectException(new RejectException(response.getCode().getRawCode(), response.getMessage()));
                 } else {
-                    throw new NotImplementedException("Not rejecting commands in mock behaviours is not supported yet");
+                    sendResponse(behavior);
                 }
             });
+        }
+
+        private void sendResponse(MockSMTPBehavior behavior) {
+            try {
+                smtpSession.sendResponse(
+                    behavior.getResponse().asReplyString());
+            } catch (IOException e) {
+                throw new RuntimeException(String.format("Cannot send response '%s' to the client",
+                    behavior.getResponse().asReplyString()));
+            }
         }
     }
 

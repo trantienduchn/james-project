@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.james.mock.smtp.server.model.Mail;
 import org.apache.james.util.Port;
 import org.subethamail.smtp.server.SMTPServer;
+import org.subethamail.smtp.server.Session;
 
 class MockSMTPServer {
 
@@ -36,7 +37,7 @@ class MockSMTPServer {
 
     MockSMTPServer(SMTPBehaviorRepository behaviorRepository) {
         this.mailRepository = new ReceivedMailRepository();
-        this.server = new SMTPServer(ctx -> new MockMessageHandler(mailRepository, behaviorRepository));
+        this.server = new SMTPServer(ctx -> new MockMessageHandler(mailRepository, behaviorRepository, (Session) ctx));
         this.server.setPort(0);
     }
 

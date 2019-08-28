@@ -23,6 +23,7 @@ import static org.apache.james.mock.smtp.server.Fixture.ALICE;
 import static org.apache.james.mock.smtp.server.Fixture.BOB;
 import static org.apache.james.mock.smtp.server.Fixture.DOMAIN;
 import static org.apache.james.mock.smtp.server.Fixture.JACK;
+import static org.apache.james.mock.smtp.server.model.Response.SMTPStatusCode.REQUESTED_MAIL_ACTION_NOT_TAKEN_450;
 import static org.apache.james.mock.smtp.server.model.Response.SMTPStatusCode.SERVICE_NOT_AVAILABLE_421;
 import static org.apache.james.mock.smtp.server.model.SMTPCommand.DATA;
 import static org.apache.james.mock.smtp.server.model.SMTPCommand.MAIL_FROM;
@@ -49,6 +50,7 @@ import org.apache.james.mock.smtp.server.model.Response;
 import org.apache.james.util.MimeMessageUtil;
 import org.apache.james.util.Port;
 import org.apache.james.utils.SMTPMessageSender;
+import org.apache.james.utils.SMTPSendingException;
 import org.apache.mailet.base.test.FakeMail;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
@@ -386,10 +388,40 @@ class MockSMTPServerTest {
                 .isEmpty();
         }
 
+        @Test
+        void serverShouldNotReceiveMessageWhenSetAcceptedAtNonFinalStep() throws Exception {
+            behaviorRepository.setBehaviors(new MockSMTPBehavior(
+                RCPT_TO,
+                Condition.MATCH_ALL,
+                Response.serverAccept(REQUESTED_MAIL_ACTION_NOT_TAKEN_450,
+                    "server cannot delivery message at at rcpt step, will retry later"),
+                MockSMTPBehavior.NumberOfAnswersPolicy.anytime()));
+
+            sendMessageIgnoreError(mail1);
+
+            assertThat(mockServer.listReceivedMails())
+                .isEmpty();
+        }
+
+        @Test
+        void serverShouldReceiveMessageWhenSetAcceptedAtFinalStep() throws Exception {
+            behaviorRepository.setBehaviors(new MockSMTPBehavior(
+                DATA,
+                Condition.MATCH_ALL,
+                Response.serverAccept(REQUESTED_MAIL_ACTION_NOT_TAKEN_450,
+                    "server cannot delivery message at after data step, will retry later"),
+                MockSMTPBehavior.NumberOfAnswersPolicy.anytime()));
+
+            sendMessageIgnoreError(mail1);
+
+            assertThat(mockServer.listReceivedMails())
+                .hasSize(1);
+        }
+
         private void sendMessageIgnoreError(FakeMail mail) {
             try {
                 smtpClient.sendMessage(mail);
-            } catch (MessagingException | IOException e) {
+            } catch (MessagingException | IOException | SMTPSendingException e) {
                 // ignore error
             }
         }

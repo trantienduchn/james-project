@@ -42,6 +42,7 @@ import org.apache.james.mock.smtp.server.model.SMTPCommand;
 import org.subethamail.smtp.MessageHandler;
 import org.subethamail.smtp.RejectException;
 import org.subethamail.smtp.TooMuchDataException;
+import org.subethamail.smtp.server.Session;
 
 public class MockMessageHandler implements MessageHandler {
 
@@ -53,12 +54,14 @@ public class MockMessageHandler implements MessageHandler {
     private final Mail.Builder mailBuilder;
     private final ReceivedMailRepository mailRepository;
     private final SMTPBehaviorRepository behaviorRepository;
+    private final Session smtpSession;
 
-    MockMessageHandler(ReceivedMailRepository mailRepository, SMTPBehaviorRepository behaviorRepository) {
+    MockMessageHandler(ReceivedMailRepository mailRepository, SMTPBehaviorRepository behaviorRepository, Session smtpSession) {
         this.mailRepository = mailRepository;
         this.behaviorRepository = behaviorRepository;
         this.envelopeBuilder = new Mail.Envelope.Builder();
         this.mailBuilder = new Mail.Builder();
+        this.smtpSession = smtpSession;
     }
 
     @Override
@@ -68,7 +71,7 @@ public class MockMessageHandler implements MessageHandler {
             parse(from));
 
         LinkedBehavior.current(buildMessageBehavior(envelopeBuilder::from))
-            .withNext(new MockBehavior<>())
+            .withNext(new MockBehavior<>(smtpSession))
             .withNext(new SMTPBehaviorRepositoryUpdater<>(behaviorRepository))
             .withNext(new Behaviors.Terminator<>())
             .behave(initState);
@@ -81,7 +84,7 @@ public class MockMessageHandler implements MessageHandler {
             parse(recipient));
 
         LinkedBehavior.current(buildMessageBehavior(envelopeBuilder::addRecipient))
-            .withNext(new MockBehavior<>())
+            .withNext(new MockBehavior<>(smtpSession))
             .withNext(new SMTPBehaviorRepositoryUpdater<>(behaviorRepository))
             .withNext(new Behaviors.Terminator<>())
             .behave(initState);
@@ -94,7 +97,7 @@ public class MockMessageHandler implements MessageHandler {
             data);
 
         LinkedBehavior.<InputStream>current(buildMessageBehavior(content -> mailBuilder.message(readData(content))))
-            .withNext(new MockBehavior<>())
+            .withNext(new MockBehavior<>(smtpSession))
             .withNext(new SMTPBehaviorRepositoryUpdater<>(behaviorRepository))
             .withNext(new Behaviors.Terminator<>())
             .behave(initState);
