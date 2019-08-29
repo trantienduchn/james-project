@@ -61,8 +61,10 @@ class SMTPBehaviorRepository {
     }
 
     Stream<MockSMTPBehaviorInformation> remainingBehaviors() {
-        return behaviorsInformation.stream()
-            .filter(MockSMTPBehaviorInformation::hasRemainingAnswers);
+        synchronized (behaviorsInformation) {
+            return behaviorsInformation.stream()
+                .filter(MockSMTPBehaviorInformation::hasRemainingAnswers);
+        }
     }
 
     void decreaseRemainingAnswers(MockSMTPBehavior behavior) {
@@ -72,9 +74,11 @@ class SMTPBehaviorRepository {
 
     @VisibleForTesting
     MockSMTPBehaviorInformation getBehaviorInformation(MockSMTPBehavior behavior) {
-        return behaviorsInformation.stream()
-            .filter(behaviorInformation -> behaviorInformation.getBehavior().equals(behavior))
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("behavior " + behavior + " not found"));
+        synchronized (behaviorsInformation) {
+            return behaviorsInformation.stream()
+                .filter(behaviorInformation -> behaviorInformation.getBehavior().equals(behavior))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("behavior " + behavior + " not found"));
+        }
     }
 }
