@@ -39,16 +39,21 @@ class SMTPBehaviorRepository {
     }
 
     void clearBehaviors() {
-        this.behaviorsInformation.clear();
+        synchronized (behaviorsInformation) {
+            this.behaviorsInformation.clear();
+        }
     }
 
     void setBehaviors(MockSmtpBehaviors behaviors) {
-        clearBehaviors();
-        behaviorsInformation.addAll(behaviors
-            .getBehaviorList()
-            .stream()
-            .map(MockSMTPBehaviorInformation::from)
-            .collect(Guavate.toImmutableList()));
+        synchronized (behaviorsInformation) {
+            clearBehaviors();
+
+            behaviorsInformation.addAll(behaviors
+                .getBehaviorList()
+                .stream()
+                .map(MockSMTPBehaviorInformation::from)
+                .collect(Guavate.toImmutableList()));
+        }
     }
 
     void setBehaviors(MockSMTPBehavior... behaviors) {
