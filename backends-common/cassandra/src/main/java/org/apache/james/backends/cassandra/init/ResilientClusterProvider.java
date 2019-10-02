@@ -59,19 +59,10 @@ public class ResilientClusterProvider implements Provider<Cluster> {
         LOGGER.info("Trying to connect to Cassandra service at {} (list {})", LocalDateTime.now(),
             ImmutableList.copyOf(configuration.getHosts()).toString());
 
+        Cluster cluster = ClusterFactory.create(configuration);
         return () -> {
-            Cluster cluster = ClusterBuilder.builder()
-                    .servers(configuration.getHosts())
-                    .username(configuration.getUsername())
-                    .password(configuration.getPassword())
-                    .useSsl(configuration.isUseSsl())
-                    .poolingOptions(configuration.getPoolingOptions())
-                    .queryLoggerConfiguration(configuration.getQueryLoggerConfiguration())
-                    .readTimeoutMillis(configuration.getReadTimeoutMillis())
-                    .connectTimeoutMillis(configuration.getConnectTimeoutMillis())
-                    .build();
             try {
-                ClusterWithKeyspaceCreatedFactory.createKeyspace(cluster, configuration);
+                ClusterFactory.createKeyspace(configuration, cluster);
                 return cluster;
             } catch (Exception e) {
                 cluster.close();
