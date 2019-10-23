@@ -23,16 +23,38 @@ import java.util.Optional;
 
 import javax.inject.Inject;
 
+import com.datastax.driver.core.BoundStatement;
+import com.datastax.driver.core.ColumnDefinitions;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
+
 import net.javacrumbs.futureconverter.java8guava.FutureConverter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 public class CassandraAsyncExecutor {
+
+    static class StatementSanitizer {
+
+        static void clean(Statement statement) {
+            if (statement instanceof BoundStatement) {
+                ignoreInsertingTombstones((BoundStatement) statement);
+            }
+        }
+
+        private static void ignoreInsertingTombstones(BoundStatement boundStatement) {
+            boundStatement.preparedStatement()
+                .getVariables()
+                .asList()
+                .stream()
+                .map(ColumnDefinitions.Definition::getName)
+                .filter(boundStatement::isNull)
+                .forEach(boundStatement::unset);
+        }
+    }
 
     private final Session session;
 
@@ -42,6 +64,8 @@ public class CassandraAsyncExecutor {
     }
 
     public Mono<ResultSet> execute(Statement statement) {
+        StatementSanitizer.clean(statement);
+
         return Mono.defer(() -> Mono.fromFuture(FutureConverter
                 .toCompletableFuture(session.executeAsync(statement)))
                 .publishOn(Schedulers.boundedElastic()));
