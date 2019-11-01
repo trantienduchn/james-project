@@ -99,9 +99,18 @@ class SieveQuotaRoutesTest {
     }
 
     @Test
-    void updateGlobalSieveQuotaShouldReturn400WhenMalformedJSON() {
+    void updateGlobalSieveQuotaShouldReturn400WhenInvalidNumberFormatInTheBody() {
         given()
             .body("invalid")
+            .put("/sieve/quota/default")
+        .then()
+            .statusCode(HttpStatus.BAD_REQUEST_400);
+    }
+
+    @Test
+    void updateGlobalSieveQuotaShouldReturn400WhenInvalidIntegerFormatInTheBody() {
+        given()
+            .body("1900.999")
             .put("/sieve/quota/default")
         .then()
             .statusCode(HttpStatus.BAD_REQUEST_400);
@@ -174,9 +183,18 @@ class SieveQuotaRoutesTest {
     }
 
     @Test
-    void updatePerUserSieveQuotaShouldReturn400WhenMalformedJSON() {
+    void updatePerUserSieveQuotaShouldReturn400WhenInvalidNumberFormatInTheBody() {
         given()
             .body("invalid")
+            .put("/sieve/quota/users/" + USER_A.asString())
+        .then()
+            .statusCode(HttpStatus.BAD_REQUEST_400);
+    }
+
+    @Test
+    void updatePerUserSieveQuotaShouldReturn400WhenInvalidIntegerFormatInTheBody() {
+        given()
+            .body("89884743.9999")
             .put("/sieve/quota/users/" + USER_A.asString())
         .then()
             .statusCode(HttpStatus.BAD_REQUEST_400);
