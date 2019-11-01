@@ -21,6 +21,7 @@ package org.apache.james.webadmin.routes;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import org.apache.james.core.User;
 import org.apache.james.core.quota.QuotaSize;
@@ -104,7 +105,8 @@ class SieveQuotaRoutesTest {
             .body("invalid")
             .put("/sieve/quota/default")
         .then()
-            .statusCode(HttpStatus.BAD_REQUEST_400);
+            .statusCode(HttpStatus.BAD_REQUEST_400)
+            .body("message", is("unrecognized integer number 'invalid'"));
     }
 
     @Test
@@ -113,7 +115,8 @@ class SieveQuotaRoutesTest {
             .body("1900.999")
             .put("/sieve/quota/default")
         .then()
-            .statusCode(HttpStatus.BAD_REQUEST_400);
+            .statusCode(HttpStatus.BAD_REQUEST_400)
+            .body("message", is("unrecognized integer number '1900.999'"));
     }
 
     @Test
@@ -188,7 +191,8 @@ class SieveQuotaRoutesTest {
             .body("invalid")
             .put("/sieve/quota/users/" + USER_A.asString())
         .then()
-            .statusCode(HttpStatus.BAD_REQUEST_400);
+            .statusCode(HttpStatus.BAD_REQUEST_400)
+            .body("message", is("unrecognized integer number 'invalid'"));
     }
 
     @Test
@@ -197,7 +201,8 @@ class SieveQuotaRoutesTest {
             .body("89884743.9999")
             .put("/sieve/quota/users/" + USER_A.asString())
         .then()
-            .statusCode(HttpStatus.BAD_REQUEST_400);
+            .statusCode(HttpStatus.BAD_REQUEST_400)
+            .body("message", is("unrecognized integer number '89884743.9999'"));
     }
 
     @Test
