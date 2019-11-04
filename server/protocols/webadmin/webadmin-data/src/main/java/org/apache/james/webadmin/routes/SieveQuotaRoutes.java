@@ -34,7 +34,6 @@ import org.apache.james.sieverepository.api.SieveQuotaRepository;
 import org.apache.james.sieverepository.api.exception.QuotaNotFoundException;
 import org.apache.james.webadmin.Routes;
 import org.apache.james.webadmin.utils.ErrorResponder;
-import org.apache.james.webadmin.utils.JsonExtractor;
 import org.apache.james.webadmin.utils.JsonTransformer;
 import org.apache.james.webadmin.utils.Responses;
 import org.eclipse.jetty.http.HttpStatus;
@@ -63,13 +62,11 @@ public class SieveQuotaRoutes implements Routes {
 
     private final SieveQuotaRepository sieveQuotaRepository;
     private final JsonTransformer jsonTransformer;
-    private final JsonExtractor<Long> jsonExtractor;
 
     @Inject
     public SieveQuotaRoutes(SieveQuotaRepository sieveQuotaRepository, JsonTransformer jsonTransformer) {
         this.sieveQuotaRepository = sieveQuotaRepository;
         this.jsonTransformer = jsonTransformer;
-        this.jsonExtractor = new JsonExtractor<>(Long.class);
     }
 
     @Override
