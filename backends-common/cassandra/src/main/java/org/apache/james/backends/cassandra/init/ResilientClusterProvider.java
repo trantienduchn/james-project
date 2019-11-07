@@ -59,8 +59,8 @@ public class ResilientClusterProvider implements Provider<Cluster> {
         LOGGER.info("Trying to connect to Cassandra service at {} (list {})", LocalDateTime.now(),
             ImmutableList.copyOf(configuration.getHosts()).toString());
 
-        Cluster cluster = ClusterFactory.create(configuration);
         return () -> {
+            Cluster cluster = ClusterFactory.create(configuration);
             try {
                 KeyspaceFactory.createKeyspace(configuration, cluster);
                 return cluster;
