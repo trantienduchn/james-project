@@ -215,7 +215,7 @@
             There are possible solutions to let the ES RestHighLevelClient to trust your self signed certificate.
         </p>
         <p>
-            First solution: ignoring SSL check or configure to trust the server's certificate.
+            First solution: ignoring SSL check.
             In case you want to ignore the SSL check, simply, just don't specify below options. Otherwise, configuring the trust
             requires some prerequisites and they are explained in below block.
         </p>
