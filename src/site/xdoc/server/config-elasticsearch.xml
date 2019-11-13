@@ -222,7 +222,7 @@
         <p>
             Second solution: importing a TrustStore containing the certificate into SSL context.
             A certificate normally contains two parts: a public part in .crt file, another private part in .key file.
-            To trust the server, the client need to be acknowledged that the server's certificate is in the list of
+            To trust the server, the client needs to be acknowledged that the server's certificate is in the list of
             client's TrustStore. Basically, you can create a local TrustStore file containing the public part of a remote server
             by execute this command:
         </p>
@@ -242,14 +242,14 @@
             <dd>
               Optional. Use it when https is configured in elasticsearch.hostScheme, and sslValidationStrategy is <strong>override</strong>
               Configure Elasticsearch rest client to use this trustStore file to recognize nginx's ssl certificate.
-              Once, you chose <strong>override</strong>, you need to specify both trustStorePath and trustStorePassword.
+              Once you chose <strong>override</strong>, you need to specify both trustStorePath and trustStorePassword.
             </dd>
 
             <dt><strong>elasticsearch.hostScheme.https.trustStorePassword</strong></dt>
             <dd>
               Optional. Use it when https is configured in elasticsearch.hostScheme, and sslValidationStrategy is <strong>override</strong>
               Configure Elasticsearch rest client to use this trustStore file with the specified password.
-              Once, you chose <strong>override</strong>, you need to specify both trustStorePath and trustStorePassword.
+              Once you chose <strong>override</strong>, you need to specify both trustStorePath and trustStorePassword.
             </dd>
         </dl>
     </section>
