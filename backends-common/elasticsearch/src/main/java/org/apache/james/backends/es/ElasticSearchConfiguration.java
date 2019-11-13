@@ -75,21 +75,21 @@ public class ElasticSearchConfiguration {
         }
 
         private final String username;
-        private final String password;
+        private final char[] password;
 
         private Credential(String username, String password) {
             Preconditions.checkNotNull(username, "username cannot be null when password is specified");
             Preconditions.checkNotNull(password, "password cannot be null when username is specified");
 
             this.username = username;
-            this.password = password;
+            this.password = password.toCharArray();
         }
 
         public String getUsername() {
             return username;
         }
 
-        public String getPassword() {
+        public char[] getPassword() {
             return password;
         }
 
@@ -99,14 +99,14 @@ public class ElasticSearchConfiguration {
                 Credential that = (Credential) o;
 
                 return Objects.equals(this.username, that.username)
-                    && Objects.equals(this.password, that.password);
+                    && Arrays.equals(this.password, that.password);
             }
             return false;
         }
 
         @Override
         public final int hashCode() {
-            return Objects.hash(username, password);
+            return Objects.hash(username, Arrays.hashCode(password));
         }
     }
 

@@ -139,7 +139,7 @@ public class ClientProvider implements Provider<RestHighLevelClient> {
                 .ifPresent(credential -> {
                     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
                     credentialsProvider.setCredentials(AuthScope.ANY,
-                        new UsernamePasswordCredentials(credential.getUsername(), credential.getPassword()));
+                        new UsernamePasswordCredentials(credential.getUsername(), String.valueOf(credential.getPassword())));
                     builder.setDefaultCredentialsProvider(credentialsProvider);
                 });
         }

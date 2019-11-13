@@ -88,7 +88,7 @@ public interface DockerElasticSearch {
 
             public Builder credential(Credential credential) {
                 requestBuilder.requestInterceptor(
-                    new BasicAuthRequestInterceptor(credential.getUsername(), credential.getPassword()));
+                    new BasicAuthRequestInterceptor(credential.getUsername(), String.valueOf(credential.getPassword())));
                 return this;
             }
 
