@@ -264,7 +264,7 @@
             </dd>
             <dd>
               default: using the default hostname verifier provided by apache http client.
-              noop: accept any host (not recommended).
+              accept_any_hostname: accept any host (not recommended).
             </dd>
         </dl>
     </section>

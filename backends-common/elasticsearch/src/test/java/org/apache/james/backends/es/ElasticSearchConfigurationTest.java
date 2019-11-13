@@ -158,13 +158,13 @@ class ElasticSearchConfigurationTest {
                 PropertiesConfiguration configuration = new PropertiesConfiguration();
                 configuration.addProperty("elasticsearch.hosts", "127.0.0.1");
 
-                configuration.addProperty("elasticsearch.hostScheme.https.hostNameVerifier", "Noop");
+                configuration.addProperty("elasticsearch.hostScheme.https.hostNameVerifier", "Accept_Any_Hostname");
 
                 assertThat(ElasticSearchConfiguration.fromProperties(configuration)
                         .getSslConfiguration())
                     .isEqualTo(SSLConfiguration.builder()
                         .strategyDefault()
-                        .noopHostNameVerifier()
+                        .acceptAnyHostNameVerifier()
                         .build());
             }
 

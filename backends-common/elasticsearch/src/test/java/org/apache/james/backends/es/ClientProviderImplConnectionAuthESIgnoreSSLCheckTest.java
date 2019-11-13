@@ -41,7 +41,7 @@ class ClientProviderImplConnectionAuthESIgnoreSSLCheckTest implements ClientProv
             .hostScheme(Optional.of(HostScheme.HTTPS))
             .sslTrustConfiguration(SSLConfiguration.builder()
                 .strategyIgnore()
-                .noopHostNameVerifier()
+                .acceptAnyHostNameVerifier()
                 .build());
     }
 }

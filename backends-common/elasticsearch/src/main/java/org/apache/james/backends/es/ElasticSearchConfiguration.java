@@ -131,7 +131,7 @@ public class ElasticSearchConfiguration {
 
         public enum HostNameVerifier {
             DEFAULT,
-            NOOP;
+            ACCEPT_ANY_HOSTNAME;
 
             static HostNameVerifier from(String rawValue) {
                 Preconditions.checkNotNull(rawValue);
@@ -211,8 +211,8 @@ public class ElasticSearchConfiguration {
             interface RequireHostNameVerifier {
                 ReadyToBuild hostNameVerifier(HostNameVerifier hostNameVerifier);
 
-                default ReadyToBuild noopHostNameVerifier() {
-                    return hostNameVerifier(HostNameVerifier.NOOP);
+                default ReadyToBuild acceptAnyHostNameVerifier() {
+                    return hostNameVerifier(HostNameVerifier.ACCEPT_ANY_HOSTNAME);
                 }
 
                 default ReadyToBuild defaultHostNameVerifier() {

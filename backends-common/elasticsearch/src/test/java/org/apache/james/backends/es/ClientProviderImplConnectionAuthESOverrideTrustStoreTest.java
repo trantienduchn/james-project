@@ -42,7 +42,7 @@ public class ClientProviderImplConnectionAuthESOverrideTrustStoreTest implements
             .hostScheme(Optional.of(ElasticSearchConfiguration.HostScheme.HTTPS))
             .sslTrustConfiguration(SSLConfiguration.builder()
                 .strategyOverride(SSLTrustStore.of(TRUST_STORE_FILE_PATH, TRUST_STORE_PASSWORD))
-                .noopHostNameVerifier()
+                .acceptAnyHostNameVerifier()
                 .build());
     }
 }

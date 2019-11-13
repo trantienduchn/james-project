@@ -62,7 +62,7 @@ public class ClientProvider implements Provider<RestHighLevelClient> {
     private static class HttpAsyncClientConfigurer {
 
         private static final TrustStrategy TRUST_ALL = (x509Certificates, authType) -> true;
-        private static final HostnameVerifier NOOP_VERIFIER = (hostname, sslSession) -> true;
+        private static final HostnameVerifier ACCEPT_ANY_HOSTNAME = (hostname, sslSession) -> true;
 
         private final ElasticSearchConfiguration configuration;
 
@@ -132,8 +132,8 @@ public class ClientProvider implements Provider<RestHighLevelClient> {
             switch (hostnameVerifier) {
                 case DEFAULT:
                     return new DefaultHostnameVerifier();
-                case NOOP:
-                    return NOOP_VERIFIER;
+                case ACCEPT_ANY_HOSTNAME:
+                    return ACCEPT_ANY_HOSTNAME;
                 default:
                     throw new NotImplementedException(
                         String.format("unrecognized HostNameVerifier '%s'", hostnameVerifier.name()));
