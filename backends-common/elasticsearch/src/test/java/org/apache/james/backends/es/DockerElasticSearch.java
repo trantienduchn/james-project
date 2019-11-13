@@ -62,7 +62,7 @@ public interface DockerElasticSearch {
     interface ElasticSearchAPI {
 
         class Builder {
-            private static final HostnameVerifier ACCEPT_ANY_HOST = (hostname1, sslSession) -> true;
+            private static final HostnameVerifier ACCEPT_ANY_HOST = (hostname, sslSession) -> true;
             private static final TrustManager[] TRUST_ALL = new TrustManager[] {
                 new X509TrustManager() {
 
