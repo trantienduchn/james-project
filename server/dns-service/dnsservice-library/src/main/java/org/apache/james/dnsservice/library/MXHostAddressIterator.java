@@ -69,7 +69,7 @@ public class MXHostAddressIterator implements Iterator<HostAddress> {
                 }
                 for (InetAddress addr : addrs) {
                     hAddresses.add(new HostAddress(hostAndPort.getKey(),
-                        "smtp://" + addr.getHostAddress() + ":" + hostAndPort.getValue()));
+                        "smtp://" + addr.getHostAddress()));
                 }
             } catch (UnknownHostException uhe) {
                 // this should never happen, since we just got
