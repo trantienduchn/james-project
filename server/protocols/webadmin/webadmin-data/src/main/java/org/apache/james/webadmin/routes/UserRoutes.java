@@ -169,11 +169,11 @@ public class UserRoutes implements Routes {
             throw ErrorResponder.builder()
                 .statusCode(HttpStatus.BAD_REQUEST_400)
                 .type(ErrorType.INVALID_ARGUMENT)
-                .message(e.getMessage())
+                .message("Username supplied is invalid")
                 .cause(e)
                 .haltError();
         } catch (UsersRepositoryException e) {
-            String errorMessage = String.format("Error while adding/updating user '%s'", username);
+            String errorMessage = String.format("Error while upserting user '%s'", username);
             LOGGER.info(errorMessage, e);
             throw ErrorResponder.builder()
                 .statusCode(HttpStatus.INTERNAL_SERVER_ERROR_500)

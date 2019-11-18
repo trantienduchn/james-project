@@ -511,7 +511,8 @@ class UserRoutesTest {
                 .statusCode(HttpStatus.BAD_REQUEST_400)
                 .body("statusCode", is(HttpStatus.BAD_REQUEST_400))
                 .body("type", is(ErrorResponder.ErrorType.INVALID_ARGUMENT.getType()))
-                .body("message", is("Given Username needs to contain a @domainpart"));
+                .body("message", is("Username supplied is invalid"))
+                .body("details", is("Given Username needs to contain a @domainpart"));
         }
 
         @Test
@@ -602,7 +603,8 @@ class UserRoutesTest {
                 .statusCode(HttpStatus.BAD_REQUEST_400)
                 .body("statusCode", is(HttpStatus.BAD_REQUEST_400))
                 .body("type", is(ErrorResponder.ErrorType.INVALID_ARGUMENT.getType()))
-                .body("message", is("Given Username contains a @domainpart but virtualhosting support is disabled"));
+                .body("message", is("Username supplied is invalid"))
+                .body("details", is("Given Username contains a @domainpart but virtualhosting support is disabled"));
         }
 
         @Test
