@@ -64,7 +64,7 @@ public class MailDelivrerToHost {
 
         SMTPTransport transport = null;
         try {
-            transport = (SMTPTransport) session.getTransport(outgoingMailServer);
+            transport = (SMTPTransport) session.getTransport(new InternetAddress(outgoingMailServer.getHost()));
             transport.setLocalHost(props.getProperty("mail.smtp.localhost", configuration.getHeloNameProvider().getHeloName()));
             connect(outgoingMailServer, transport);
             transport.sendMessage(adaptToTransport(mail.getMessage(), transport), toArray(addr));
