@@ -98,10 +98,10 @@
                 <deliveryThreads>10</deliveryThreads>
                 <sendpartial>true</sendpartial>
                 <bounceProcessor>bounces</bounceProcessor>
-                <!--<mail.smtp.ssl.enable>true</mail.smtp.ssl.enable>-->
-                <!--<mail.smtp.port>465</mail.smtp.port>-->
-                <mail.smtp.port>587</mail.smtp.port>
-                <mail.smtp.starttls.enable>true</mail.smtp.starttls.enable>
+                <mail.smtp.ssl.enable>true</mail.smtp.ssl.enable>
+                <mail.smtp.port>465</mail.smtp.port>
+                <!--<mail.smtp.port>587</mail.smtp.port>-->
+                <!--<mail.smtp.starttls.enable>true</mail.smtp.starttls.enable>-->
                 <mail.debug>true</mail.debug>
             </mailet>
             <mailet match="All" class="ToProcessor">
