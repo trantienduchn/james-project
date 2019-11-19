@@ -46,5 +46,4 @@ services:
     image: linagora/openstack-keystone-swift:pike
     ports:
       - "5000:5000"
-      - "8080:8080"
       - "35357:35357"
