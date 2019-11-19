@@ -18,14 +18,11 @@
   under the License.                                           
  -->
 
-<!-- Read https://james.apache.org/server/config-dnsservice.html for further details -->
+<!-- Read https://james.apache.org/server/config-users.html for further details -->
 
-<dnsservice>
-  <servers>
-    <server>8.8.8.8</server>
-    <server>62.210.16.6</server>
-  </servers>
-  <autodiscover>true</autodiscover>
-  <authoritative>false</authoritative>
-  <maxcachesize>50000</maxcachesize>
-</dnsservice>
+<usersrepository name="LocalUsers">
+    <algorithm>MD5</algorithm>
+    <enableVirtualHosting>true</enableVirtualHosting>    
+    <enableForwarding>true</enableForwarding>
+</usersrepository>
+

@@ -1,4 +1,7 @@
-version: '2'
+version: "3.7"
+
+networks:
+  mynetwork:
 
 services:
 
@@ -6,11 +9,8 @@ services:
     depends_on:
       - elasticsearch
       - cassandra
-      - tika
-      - rabbitmq
-      - swift
-    entrypoint: bash -c "java -Dworking.directory=/root/ -Dlogback.configurationFile=/root/conf/logback.xml -jar james-server.jar"
-    image: linagora/james-rabbitmq-project:latest
+    entrypoint: bash -c "java -Dlogback.configurationFile=/root/conf/logback.xml -Dworking.directory=/root/ -Xdebug -Xrunjdwp:transport=dt_socket,address=10000,server=y,suspend=n -jar james-server.jar"
+    image: james_remote_ssl
     container_name: james
     hostname: james.local
     ports:
@@ -22,29 +22,49 @@ services:
       - "587:587"
       - "993:993"
       - "8000:8000"
-
+      - "10000:10000"
+    volumes:
+      - ./guice/cassandra/destination/conf:/root/conf
+    networks:
+      mynetwork:
+        aliases:
+          - james.local
+  james2:
+    depends_on:
+      - elasticsearch
+      - cassandra
+      - james
+    entrypoint: bash -c "java -Dworking.directory=/root/ -Dlogback.configurationFile=/root/conf/logback.xml -Djavax.net.debug=ssl:handshake:verbose:keymanager:trustmanager  -Djava.security.debug=access:stack
+      -Djavax.net.debug=ssl -jar james-server.jar"
+    image: linagora/james-project:branch-master
+    container_name: james2
+    hostname: james2.local
+    ports:
+      - "180:80"
+      - "125:25"
+      - "1110:110"
+      - "1143:143"
+      - "1465:465"
+      - "1587:587"
+      - "1993:993"
+      - "18000:8000"
+    volumes:
+      - ./guice/cassandra/destination/conf2:/root/conf
+    networks:
+      mynetwork:
+        aliases:
+          - james2.local
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
     environment:
       - discovery.type=single-node
-
+    networks:
+      mynetwork:
+        aliases:
+          - elasticsearch
   cassandra:
     image: cassandra:3.11.3
-    ports:
-      - "9042:9042"
-
-  tika:
-    image: linagora/docker-tikaserver:1.22
-
-  rabbitmq:
-    image: rabbitmq:3.7.7-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-
-  swift:
-    image: linagora/openstack-keystone-swift:pike
-    ports:
-      - "5000:5000"
-      - "8080:8080"
-      - "35357:35357"
+    networks:
+      mynetwork:
+        aliases:
+          - cassandra

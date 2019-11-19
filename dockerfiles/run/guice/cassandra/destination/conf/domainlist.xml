@@ -21,10 +21,7 @@
 <!-- Read https://james.apache.org/server/config-domainlist.html for further details -->
 
 <domainlist>
-    <domainnames>
-        <domainname>james.linagora.com</domainname>
-    </domainnames>
     <autodetect>true</autodetect>
     <autodetectIP>true</autodetectIP>
-    <defaultDomain>localhost</defaultDomain>
+    <defaultDomain>james.local</defaultDomain>
 </domainlist>

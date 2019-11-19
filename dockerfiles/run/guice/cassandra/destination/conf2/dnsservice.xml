@@ -25,7 +25,7 @@
     <server>8.8.8.8</server>
     <server>62.210.16.6</server>
   </servers>
-  <autodiscover>true</autodiscover>
+  <autodiscover>false</autodiscover>
   <authoritative>false</authoritative>
   <maxcachesize>50000</maxcachesize>
 </dnsservice>
