@@ -34,7 +34,7 @@
       <p>Consult <a href="https://github.com/apache/james-project/tree/master/server/app/src/main/resources/usersrepository.xml">usersrepository.xml</a> in GIT to get some examples and hints.</p>
 
       <p>
-        An user has two attributes: username and password. A valid user should satisfy these criteria:
+        A user has two attributes: username and password. A valid user should satisfy these criteria:
       </p>
       <ul>
         <li>username and password cannot be null or empty</li>
@@ -44,7 +44,7 @@
         <li>A username can have only a local part when virtualHosting is disabled. E.g.'myUser'</li>
         <li>
             When virtualHosting is enabled, a username should have a domain part,
-            and the domain part should be concatenated after a domain delimiter('@'). E.g. 'myuser@james.org
+            and the domain part should be concatenated after a domain delimiter('@'). E.g. 'myuser@james.org'
         </li>
       </ul>
     </subsection>
