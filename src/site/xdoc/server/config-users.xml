@@ -41,8 +41,11 @@
         <li>username should not be longer than 255 characters</li>
         <li>username can not contain '/'</li>
         <li>username can not contain multiple domain delimiter('@')</li>
-        <li>A username can have only local part. E.g.'myUser'</li>
-        <li>A username can have domain part, and the domain part should be concatenated after a domain delimiter('@'). E.g. 'myuser@james.org'</li>
+        <li>A username can have only a local part when virtualHosting is disabled. E.g.'myUser'</li>
+        <li>
+            When virtualHosting is enabled, a username should have a domain part,
+            and the domain part should be concatenated after a domain delimiter('@'). E.g. 'myuser@james.org
+        </li>
       </ul>
     </subsection>
 
