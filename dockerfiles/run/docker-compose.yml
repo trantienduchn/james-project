@@ -10,7 +10,7 @@ services:
       - elasticsearch
       - cassandra
     entrypoint: bash -c "java -Dlogback.configurationFile=/root/conf/logback.xml -Dworking.directory=/root/ -Xdebug -Xrunjdwp:transport=dt_socket,address=10000,server=y,suspend=n -jar james-server.jar"
-    image: james_remote_ssl
+    image: james_remote_ssl # image is built from https://github.com/linagora/james-project/pull/2892
     container_name: james
     hostname: james.local
     ports:
