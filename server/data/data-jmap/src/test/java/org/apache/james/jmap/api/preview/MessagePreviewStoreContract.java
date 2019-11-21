@@ -23,8 +23,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
+import java.util.stream.IntStream;
+
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.TestMessageId;
+import org.apache.james.util.concurrency.ConcurrentTestRunner;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.Test;
 
@@ -112,6 +116,28 @@ public interface MessagePreviewStoreContract {
 
         assertThat(Mono.from(testee().retrieve(MESSAGE_ID_1)).block())
             .isEqualTo(PREVIEW_1);
+    }
+
+    @Test
+    default void concurrentStoreShouldStoreAllRecords() throws Exception {
+        int threadCount = 10;
+        int stepCount = 100;
+
+        ConcurrentTestRunner.builder()
+            .operation((thread, step) -> {
+                int id = thread * stepCount + step;
+                Mono.from(testee().store(TestMessageId.of(id), Preview.from(String.valueOf(id))))
+                    .block();
+            })
+            .threadCount(threadCount)
+            .operationCount(stepCount)
+            .runSuccessfullyWithin(Duration.ofMinutes(1));
+
+        IntStream.range(0, threadCount * stepCount)
+            .forEach(index -> assertThat(Mono.from(testee()
+                    .retrieve(TestMessageId.of(index)))
+                    .block())
+                .isEqualTo(Preview.from(String.valueOf(index))));
     }
 
     @Test
