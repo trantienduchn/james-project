@@ -29,6 +29,7 @@ import org.apache.james.jmap.api.vacation.VacationRepository;
 import org.apache.james.jmap.cassandra.access.CassandraAccessModule;
 import org.apache.james.jmap.cassandra.access.CassandraAccessTokenRepository;
 import org.apache.james.jmap.cassandra.filtering.FilteringRuleSetDefineDTOModules;
+import org.apache.james.jmap.cassandra.preview.CassandraMessagePreviewModule;
 import org.apache.james.jmap.cassandra.vacation.CassandraNotificationRegistry;
 import org.apache.james.jmap.cassandra.vacation.CassandraNotificationRegistryModule;
 import org.apache.james.jmap.cassandra.vacation.CassandraVacationModule;
@@ -59,6 +60,7 @@ public class CassandraJmapModule extends AbstractModule {
         cassandraDataDefinitions.addBinding().toInstance(CassandraAccessModule.MODULE);
         cassandraDataDefinitions.addBinding().toInstance(CassandraVacationModule.MODULE);
         cassandraDataDefinitions.addBinding().toInstance(CassandraNotificationRegistryModule.MODULE);
+        cassandraDataDefinitions.addBinding().toInstance(CassandraMessagePreviewModule.MODULE);
 
         Multibinder<EventDTOModule<?, ?>> eventDTOModuleBinder = Multibinder.newSetBinder(binder(), new TypeLiteral<EventDTOModule<?, ?>>() {});
         eventDTOModuleBinder.addBinding().toInstance(FilteringRuleSetDefineDTOModules.FILTERING_RULE_SET_DEFINED);
