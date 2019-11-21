@@ -49,7 +49,6 @@ class MessageMetadataViewFactoryTest {
 
     public static final Username BOB = Username.of("bob");
     private MessageIdManager messageIdManager;
-    private InMemoryMailboxManager mailboxManager;
     private MessageMetadataViewFactory testee;
     private MailboxSession session;
     private MessageManager bobInbox;
@@ -60,7 +59,7 @@ class MessageMetadataViewFactoryTest {
     void setUp() throws Exception {
         InMemoryIntegrationResources resources = InMemoryIntegrationResources.defaultResources();
         messageIdManager = resources.getMessageIdManager();
-        mailboxManager = resources.getMailboxManager();
+        InMemoryMailboxManager mailboxManager = resources.getMailboxManager();
 
         session = mailboxManager.createSystemSession(BOB);
         MailboxId bobInboxId = mailboxManager.createMailbox(MailboxPath.inbox(session), session).get();
