@@ -146,7 +146,7 @@ public class GetMessagesMethod implements Method {
             try {
                 return Stream.of(messageFullViewFactory.fromMessageResults(messageResults));
             } catch (Exception e) {
-                LOGGER.error("Can not convert metaData with content to Message for {}", messageResults.iterator().next().getMessageId().serialize(), e);
+                LOGGER.error("Can not convert MessageResults to Message for {}", messageResults.iterator().next().getMessageId().serialize(), e);
                 return Stream.of();
             }
         };
