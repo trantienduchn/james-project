@@ -19,33 +19,22 @@
 
 package org.apache.james.jmap.cassandra.preview;
 
-import org.apache.james.backends.cassandra.CassandraCluster;
-import org.apache.james.backends.cassandra.DockerCassandraExtension;
+import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.jmap.api.preview.MessagePreviewStore;
 import org.apache.james.jmap.api.preview.MessagePreviewStoreContract;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 class CassandraMessagePreviewStoreTest implements MessagePreviewStoreContract {
 
     @RegisterExtension
-    static DockerCassandraExtension extension = new DockerCassandraExtension();
+    static CassandraClusterExtension cassandra = new CassandraClusterExtension(CassandraMessagePreviewModule.MODULE);
 
-    private CassandraCluster cassandra;
     private CassandraMessagePreviewStore testee;
 
     @BeforeEach
     void setUp() {
-        cassandra = CassandraCluster.create(CassandraMessagePreviewModule.MODULE,
-            extension.getDockerCassandra().getHost());
-        testee = new CassandraMessagePreviewStore(cassandra.getConf());
-    }
-
-    @AfterEach
-    void tearDown() {
-        cassandra.clearTables();
-        cassandra.closeCluster();
+        testee = new CassandraMessagePreviewStore(cassandra.getCassandraCluster().getConf());
     }
 
     @Override

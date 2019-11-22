@@ -29,7 +29,7 @@ import com.datastax.driver.core.schemabuilder.SchemaBuilder;
 
 public interface CassandraMessagePreviewModule {
     CassandraModule MODULE = CassandraModule.table(CassandraMessagePreviewTable.TABLE_NAME)
-        .comment("Storing the the JMAP preview property extracted from message bodies")
+        .comment("Storing the JMAP preview property extracted from message bodies")
         .options(options -> options
             .caching(SchemaBuilder.KeyCaching.ALL,
                 SchemaBuilder.rows(CassandraConstants.DEFAULT_CACHED_ROW_PER_PARTITION)))
