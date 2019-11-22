@@ -19,9 +19,6 @@
 
 package org.apache.james.jmap.draft.model.message.view;
 
-import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,7 +41,7 @@ import org.apache.james.mailbox.model.MailboxId;
 import org.apache.james.mailbox.model.MailboxPath;
 import org.apache.james.mailbox.model.MessageRange;
 import org.apache.james.mailbox.model.MessageResult;
-import org.apache.james.mime4j.dom.Message;
+import org.apache.james.util.ClassLoaderUtils;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,10 +51,6 @@ import com.google.common.collect.ImmutableMap;
 
 class MessageHeaderViewFactoryTest {
     private static final Username BOB = Username.of("bob@local");
-    private static final Username ALICE = Username.of("alice@local");
-    private static final String DELIVERY_DATE = "2010-10-30T15:12:00Z";
-    private static final ZonedDateTime ZONED_DELIVERY_DATE = ZonedDateTime.parse(DELIVERY_DATE);
-    private static final Date MESSAGE_DATE = Date.from(ZONED_DELIVERY_DATE.toInstant());
 
     private MessageIdManager messageIdManager;
     private MessageHeaderViewFactory testee;
@@ -79,17 +72,9 @@ class MessageHeaderViewFactoryTest {
         bobInbox = mailboxManager.getMailbox(bobInboxId, session);
         bobMailbox = mailboxManager.getMailbox(bobMailboxId, session);
 
-        Message headerMessage = Message.Builder.of()
-            .setSubject("test")
-            .setFrom(ALICE.asString())
-            .setTo(BOB.asString())
-            .setDate(MESSAGE_DATE)
-            .setBody("test content", StandardCharsets.UTF_8)
-            .build();
-
         message1 = bobInbox.appendMessage(MessageManager.AppendCommand.builder()
                 .withFlags(new Flags(Flags.Flag.SEEN))
-                .build(headerMessage),
+                .build(ClassLoaderUtils.getSystemResourceAsSharedStream("fullMessage.eml")),
             session);
 
         testee = new MessageHeaderViewFactory(resources.getBlobManager());
@@ -100,16 +85,23 @@ class MessageHeaderViewFactoryTest {
         List<MessageResult> messages = messageIdManager
             .getMessages(ImmutableList.of(message1.getMessageId()), FetchGroupImpl.MINIMAL, session);
 
-        Emailer aliceEmail = Emailer.builder().name(ALICE.asString()).email(ALICE.asString()).build();
-        Emailer bobEmail = Emailer.builder().name(BOB.asString()).email(BOB.asString()).build();
+        Emailer bobEmail = Emailer.builder().name(BOB.getLocalPart()).email(BOB.asString()).build();
+        Emailer aliceEmail = Emailer.builder().name("alice").email("alice@local").build();
+        Emailer jackEmail = Emailer.builder().name("jack").email("jack@local").build();
+        Emailer jacobEmail = Emailer.builder().name("jacob").email("jacob@local").build();
 
         ImmutableMap<String, String> headersMap = ImmutableMap.<String, String>builder()
-            .put("Content-Type", "text/plain; charset=UTF-8")
-            .put("Date", "Sat, 30 Oct 2010 22:12:00 +0700")
-            .put("From", "alice@local")
-            .put("To", "bob@local")
-            .put("Subject", "test")
-            .put("MIME-Version", "1.0")
+            .put("Content-Type", "multipart/mixed; boundary=\"------------7AF1D14DE1DFA16229726B54\"")
+            .put("Date", "Tue, 7 Jun 2016 16:23:37 +0200")
+            .put("From", "alice <alice@local>")
+            .put("To", "bob <bob@local>")
+            .put("Subject", "Full message")
+            .put("Mime-Version", "1.0")
+            .put("Message-ID", "<1cc7f114-dbc4-42c2-99bd-f1100db6d0c1@open-paas.org>")
+            .put("Cc", "jack <jack@local>, jacob <jacob@local>")
+            .put("Bcc", "alice <alice@local>")
+            .put("Reply-to", "alice <alice@local>")
+            .put("In-reply-to", "bob@local")
             .build();
 
         MessageHeaderView actual = testee.fromMessageResults(messages);
@@ -117,18 +109,18 @@ class MessageHeaderViewFactoryTest {
             softly.assertThat(actual.getId()).isEqualTo(message1.getMessageId());
             softly.assertThat(actual.getMailboxIds()).containsExactly(bobInbox.getId());
             softly.assertThat(actual.getThreadId()).isEqualTo(message1.getMessageId().serialize());
-            softly.assertThat(actual.getSize()).isEqualTo(Number.fromLong(162));
+            softly.assertThat(actual.getSize()).isEqualTo(Number.fromLong(2255));
             softly.assertThat(actual.getKeywords()).isEqualTo(Keywords.strictFactory().from(Keyword.SEEN).asMap());
             softly.assertThat(actual.getBlobId()).isEqualTo(BlobId.of(message1.getMessageId().serialize()));
-            softly.assertThat(actual.getInReplyToMessageId()).isEqualTo(Optional.empty());
+            softly.assertThat(actual.getInReplyToMessageId()).isEqualTo(Optional.of(BOB.asString()));
             softly.assertThat(actual.getHeaders()).isEqualTo(headersMap);
             softly.assertThat(actual.getFrom()).isEqualTo(Optional.of(aliceEmail));
             softly.assertThat(actual.getTo()).isEqualTo(ImmutableList.of(bobEmail));
-            softly.assertThat(actual.getCc()).isEqualTo(ImmutableList.of());
-            softly.assertThat(actual.getBcc()).isEqualTo(ImmutableList.of());
-            softly.assertThat(actual.getReplyTo()).isEqualTo(ImmutableList.of());
-            softly.assertThat(actual.getSubject()).isEqualTo("test");
-            softly.assertThat(actual.getDate()).isEqualTo(DELIVERY_DATE);
+            softly.assertThat(actual.getCc()).isEqualTo(ImmutableList.of(jackEmail, jacobEmail));
+            softly.assertThat(actual.getBcc()).isEqualTo(ImmutableList.of(aliceEmail));
+            softly.assertThat(actual.getReplyTo()).isEqualTo(ImmutableList.of(aliceEmail));
+            softly.assertThat(actual.getSubject()).isEqualTo("Full message");
+            softly.assertThat(actual.getDate()).isEqualTo("2016-06-07T14:23:37Z");
         });
     }
 
