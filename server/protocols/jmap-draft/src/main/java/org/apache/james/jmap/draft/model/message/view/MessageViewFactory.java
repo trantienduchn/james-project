@@ -44,7 +44,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimaps;
 
 public interface MessageViewFactory<T extends MessageView> {
-    KeywordsCombiner ACCUMULATOR = new KeywordsCombiner();
+    KeywordsCombiner KEYWORDS_COMBINER = new KeywordsCombiner();
     Keywords.KeywordsFactory KEYWORDS_FACTORY = Keywords.lenientFactory();
     String JMAP_MULTIVALUED_FIELD_DELIMITER = "\n";
 
@@ -74,7 +74,7 @@ public interface MessageViewFactory<T extends MessageView> {
         return messageResults.stream()
                 .map(MessageResult::getFlags)
                 .map(KEYWORDS_FACTORY::fromFlags)
-                .reduce(ACCUMULATOR)
+                .reduce(KEYWORDS_COMBINER)
                 .get();
     }
 
