@@ -24,6 +24,7 @@ import java.util.Objects;
 import org.apache.james.jmap.api.preview.Preview;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
 public class PreviewDTO {
@@ -32,6 +33,7 @@ public class PreviewDTO {
         return new PreviewDTO(preview.getValue());
     }
 
+    @VisibleForTesting
     public static PreviewDTO of(String value) {
         return new PreviewDTO(value);
     }
