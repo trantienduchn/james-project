@@ -23,16 +23,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.IntStream;
 
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.TestMessageId;
-import org.apache.james.util.concurrency.ConcurrentTestRunner;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.Test;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public interface MessagePreviewStoreContract {
 
@@ -119,25 +120,37 @@ public interface MessagePreviewStoreContract {
     }
 
     @Test
-    default void concurrentStoreShouldStoreAllRecords() throws Exception {
+    default void concurrentStoreShouldStoreTheLatestValueDespiteOfCollisions() throws Exception {
         int threadCount = 10;
         int stepCount = 100;
+        int repeatCount = 10;
 
-        ConcurrentTestRunner.builder()
-            .operation((thread, step) -> {
-                int id = thread * stepCount + step;
-                Mono.from(testee().store(TestMessageId.of(id), Preview.from(String.valueOf(id))))
-                    .block();
+        ConcurrentHashMap<Integer, Integer> indexCounter = new ConcurrentHashMap<>();
+
+        Flux.range(0, stepCount)
+            .repeat(repeatCount)
+            .parallel(threadCount)
+            .runOn(Schedulers.newParallel("preview", threadCount))
+            .flatMap(index -> {
+                Integer counter = indexCounter.compute(index, (id, count) -> {
+                    if (count == null) {
+                        return 0;
+                    }
+                    return count + 1;
+                });
+
+                return Mono.from(testee()
+                    .store(TestMessageId.of(index), Preview.from(String.valueOf(counter))))
+                    .then();
             })
-            .threadCount(threadCount)
-            .operationCount(stepCount)
-            .runSuccessfullyWithin(Duration.ofMinutes(1));
+            .then()
+            .block();
 
-        IntStream.range(0, threadCount * stepCount)
+        IntStream.range(0, stepCount)
             .forEach(index -> assertThat(Mono.from(testee()
                     .retrieve(TestMessageId.of(index)))
                     .block())
-                .isEqualTo(Preview.from(String.valueOf(index))));
+                .isEqualTo(Preview.from(String.valueOf(repeatCount))));
     }
 
     @Test
