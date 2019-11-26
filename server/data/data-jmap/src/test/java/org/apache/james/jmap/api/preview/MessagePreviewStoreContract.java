@@ -23,17 +23,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.TestMessageId;
+import org.apache.james.util.concurrency.ConcurrentTestRunner;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.Test;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 public interface MessagePreviewStoreContract {
 
@@ -120,37 +120,40 @@ public interface MessagePreviewStoreContract {
     }
 
     @Test
-    default void concurrentStoreShouldStoreTheLatestValueDespiteOfCollisions() throws Exception {
+    default void concurrentStoreShouldOverrideOldValueWhenSameMessageId() throws Exception {
         int threadCount = 10;
         int stepCount = 100;
-        int repeatCount = 10;
 
-        ConcurrentHashMap<Integer, Integer> indexCounter = new ConcurrentHashMap<>();
+        ConcurrentTestRunner.builder()
+            .operation((thread, step) -> Mono.from(testee()
+                .store(TestMessageId.of(thread), Preview.from(String.valueOf(step))))
+                .block())
+            .threadCount(threadCount)
+            .operationCount(stepCount)
+            .runSuccessfullyWithin(Duration.ofMinutes(1));
 
-        Flux.range(0, stepCount)
-            .repeat(repeatCount)
-            .parallel(threadCount)
-            .runOn(Schedulers.newParallel("preview", threadCount))
-            .flatMap(index -> {
-                Integer counter = indexCounter.compute(index, (id, count) -> {
-                    if (count == null) {
-                        return 0;
-                    }
-                    return count + 1;
-                });
-
-                return Mono.from(testee()
-                    .store(TestMessageId.of(index), Preview.from(String.valueOf(counter))))
-                    .then();
-            })
-            .then()
-            .block();
-
-        IntStream.range(0, stepCount)
+        IntStream.range(0, threadCount)
             .forEach(index -> assertThat(Mono.from(testee()
                     .retrieve(TestMessageId.of(index)))
                     .block())
-                .isEqualTo(Preview.from(String.valueOf(repeatCount))));
+                .isEqualTo(Preview.from(String.valueOf(stepCount - 1))));
+    }
+
+    @Test
+    default void concurrentStoreOnSameMessageIdShouldStoreTheLatestValue() throws Exception {
+        AtomicInteger previewValue = new AtomicInteger();
+
+        ConcurrentTestRunner.builder()
+            .operation((thread, step) -> Mono.from(testee()
+                .store(MESSAGE_ID_1, Preview.from(String.valueOf(previewValue.incrementAndGet()))))
+                .block())
+            .threadCount(10)
+            .operationCount(100)
+            .runSuccessfullyWithin(Duration.ofMinutes(1));
+
+        assertThat(Mono.from(testee().retrieve(MESSAGE_ID_1))
+                .block())
+            .isEqualTo(Preview.from(String.valueOf(previewValue)));
     }
 
     @Test

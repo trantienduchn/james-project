@@ -22,6 +22,7 @@ package org.apache.james.jmap.api.preview;
 import java.util.Objects;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
 public class Preview {
@@ -60,5 +61,12 @@ public class Preview {
     @Override
     public final int hashCode() {
         return Objects.hash(value);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+            .add("value", value)
+            .toString();
     }
 }
