@@ -30,11 +30,11 @@ import com.google.common.base.Preconditions;
 
 public class PreviewDTO {
 
-    private static final PreviewDTO NO_BODY = PreviewDTO.of("(Empty)");
+    private static final String NO_BODY_AS_STRING = "(Empty)";
+    private static final PreviewDTO NO_BODY = PreviewDTO.of(NO_BODY_AS_STRING);
 
     public static PreviewDTO from(Optional<Preview> preview) {
         return preview.map(Preview::getValue)
-            .filter(previewAsString -> !previewAsString.isEmpty())
             .map(PreviewDTO::of)
             .orElse(NO_BODY);
     }
@@ -48,7 +48,10 @@ public class PreviewDTO {
 
     private PreviewDTO(String value) {
         Preconditions.checkNotNull(value);
-        this.value = value;
+
+        this.value = Optional.of(value)
+            .filter(previewValue -> !previewValue.isEmpty())
+            .orElse(NO_BODY_AS_STRING);
     }
 
     @JsonValue

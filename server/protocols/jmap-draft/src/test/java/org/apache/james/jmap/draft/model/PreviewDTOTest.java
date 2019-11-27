@@ -56,4 +56,16 @@ class PreviewDTOTest {
         assertThat(PreviewDTO.from(Optional.of(Preview.from(""))))
             .isEqualTo(PreviewDTO.of(EMPTY_PREVIEW));
     }
+
+    @Test
+    void ofShouldReturnPreviewWithTheValue() {
+        assertThat(PreviewDTO.of(SAMPLE_PREVIEW_VALUE))
+            .isEqualTo(PreviewDTO.of(SAMPLE_PREVIEW_VALUE));
+    }
+
+    @Test
+    void ofShouldReturnNoBodyWhenPreviewOfEmptyString() {
+        assertThat(PreviewDTO.of(""))
+            .isEqualTo(PreviewDTO.of(EMPTY_PREVIEW));
+    }
 }
