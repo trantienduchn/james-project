@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import org.apache.james.jmap.api.model.Preview;
 import org.apache.james.jmap.draft.methods.JmapResponseWriterImpl;
 import org.apache.james.jmap.draft.model.Attachment;
 import org.apache.james.jmap.draft.model.BlobId;
@@ -46,15 +45,14 @@ import com.google.common.collect.ImmutableMap;
 
 @JsonDeserialize(builder = MessageFullView.Builder.class)
 @JsonFilter(JmapResponseWriterImpl.PROPERTIES_FILTER)
-public class MessageFullView extends MessageHeaderView {
+public class MessageFullView extends MessageFastView {
 
     public static Builder builder() {
         return new Builder();
     }
 
     @JsonPOJOBuilder(withPrefix = "")
-    public static class Builder extends MessageHeaderView.Builder<MessageFullView.Builder> {
-        private Optional<Preview> preview;
+    public static class Builder extends MessageFastView.Builder<MessageFullView.Builder> {
         private Optional<String> textBody = Optional.empty();
         private Optional<String> htmlBody = Optional.empty();
         private final ImmutableList.Builder<Attachment> attachments;
@@ -64,16 +62,6 @@ public class MessageFullView extends MessageHeaderView {
             super();
             attachments = ImmutableList.builder();
             attachedMessages = ImmutableMap.builder();
-        }
-
-        public Builder preview(Preview preview) {
-            this.preview = Optional.of(preview);
-            return this;
-        }
-
-        public Builder preview(Optional<Preview> preview) {
-            this.preview = preview;
-            return this;
         }
 
         public Builder textBody(Optional<String> textBody) {
@@ -88,7 +76,8 @@ public class MessageFullView extends MessageHeaderView {
 
         public Builder attachments(List<Attachment> attachments) {
             this.attachments.addAll(attachments);
-            return this;
+            boolean hasAttachments = MessageFullView.hasAttachment(this.attachments.build());
+            return super.hasAttachment(hasAttachments);
         }
 
         public Builder attachedMessages(Map<BlobId, SubMessage> attachedMessages) {
@@ -100,19 +89,22 @@ public class MessageFullView extends MessageHeaderView {
             ImmutableList<Attachment> attachments = this.attachments.build();
             ImmutableMap<BlobId, SubMessage> attachedMessages = this.attachedMessages.build();
             checkState(attachments, attachedMessages);
-            boolean hasAttachment = hasAttachment(attachments);
 
             return new MessageFullView(id, blobId, threadId, mailboxIds, Optional.ofNullable(inReplyToMessageId),
-                hasAttachment, headers, Optional.ofNullable(from),
+                hasAttachment.get(), headers, from,
                 to.build(), cc.build(), bcc.build(), replyTo.build(), subject, date, size, PreviewDTO.from(preview), textBody, htmlBody, attachments, attachedMessages,
                 keywords.orElse(Keywords.DEFAULT_VALUE));
         }
 
-        public void checkState(ImmutableList<Attachment> attachments, ImmutableMap<BlobId, SubMessage> attachedMessages) {
+        private void checkState(ImmutableList<Attachment> attachments, ImmutableMap<BlobId, SubMessage> attachedMessages) {
             super.checkState();
-            Preconditions.checkState(preview != null, "'preview' is mandatory");
             Preconditions.checkState(areAttachedMessagesKeysInAttachments(attachments, attachedMessages), "'attachedMessages' keys must be in 'attachements'");
         }
+    }
+
+    static boolean hasAttachment(List<Attachment> attachments) {
+        return attachments.stream()
+            .anyMatch(attachment -> !attachment.isInlinedWithCid());
     }
 
     protected static boolean areAttachedMessagesKeysInAttachments(ImmutableList<Attachment> attachments, ImmutableMap<BlobId, SubMessage> attachedMessages) {
@@ -126,13 +118,7 @@ public class MessageFullView extends MessageHeaderView {
             .anyMatch(blobId -> blobId.equals(key));
     }
 
-    private static boolean hasAttachment(List<Attachment> attachments) {
-        return attachments.stream()
-                .anyMatch(attachment -> !attachment.isInlinedWithCid());
-    }
-
     private final boolean hasAttachment;
-    private final PreviewDTO preview;
     private final Optional<String> textBody;
     private final Optional<String> htmlBody;
     private final ImmutableList<Attachment> attachments;
@@ -160,9 +146,8 @@ public class MessageFullView extends MessageHeaderView {
                     ImmutableList<Attachment> attachments,
                     ImmutableMap<BlobId, SubMessage> attachedMessages,
                     Keywords keywords) {
-        super(id, blobId, threadId, mailboxIds, inReplyToMessageId, headers, from, to, cc, bcc, replyTo, subject, date, size, keywords);
+        super(id, blobId, threadId, mailboxIds, inReplyToMessageId, headers, from, to, cc, bcc, replyTo, subject, date, size, preview, keywords, hasAttachment);
         this.hasAttachment = hasAttachment;
-        this.preview = preview;
         this.textBody = textBody;
         this.htmlBody = htmlBody;
         this.attachments = attachments;
@@ -171,10 +156,6 @@ public class MessageFullView extends MessageHeaderView {
 
     public boolean isHasAttachment() {
         return hasAttachment;
-    }
-
-    public PreviewDTO getPreview() {
-        return preview;
     }
 
     public Optional<String> getTextBody() {

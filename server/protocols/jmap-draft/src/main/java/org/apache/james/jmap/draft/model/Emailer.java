@@ -19,12 +19,16 @@
 
 package org.apache.james.jmap.draft.model;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import javax.mail.internet.AddressException;
 
 import org.apache.james.core.MailAddress;
+import org.apache.james.mime4j.dom.address.AddressList;
+import org.apache.james.mime4j.dom.address.Mailbox;
+import org.apache.james.mime4j.dom.address.MailboxList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,14 +36,46 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.github.steveash.guavate.Guavate;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 
 @JsonDeserialize(builder = Emailer.Builder.class)
 public class Emailer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Emailer.class);
+
+    public static List<Emailer> fromAddressList(AddressList list) {
+        return Optional.ofNullable(list)
+            .map(addresses -> addresses.flatten()
+                .stream()
+                .map(Emailer::fromMailbox)
+                .collect(Guavate.toImmutableList()))
+            .orElse(ImmutableList.of());
+    }
+
+    public static Optional<Emailer> firstFromMailboxList(MailboxList list) {
+        return Optional.ofNullable(list)
+            .flatMap(mailboxes -> mailboxes.stream()
+                .map(Emailer::fromMailbox)
+                .findFirst());
+    }
+
+    private static Emailer fromMailbox(Mailbox mailbox) {
+        return Emailer.builder()
+            .name(getNameOrAddress(mailbox))
+            .email(mailbox.getAddress())
+            .allowInvalid()
+            .build();
+    }
+
+    private static String getNameOrAddress(Mailbox mailbox) {
+        return Optional.ofNullable(mailbox.getName())
+            .orElseGet(mailbox::getAddress);
+    }
+
 
     public static Builder builder() {
         return new Builder();
