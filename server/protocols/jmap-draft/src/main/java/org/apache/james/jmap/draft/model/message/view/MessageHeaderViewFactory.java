@@ -20,77 +20,67 @@
 package org.apache.james.jmap.draft.model.message.view;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 import javax.inject.Inject;
 
 import org.apache.james.jmap.draft.model.BlobId;
+import org.apache.james.jmap.draft.model.Emailer;
+import org.apache.james.jmap.draft.model.MessageProperties;
 import org.apache.james.mailbox.BlobManager;
+import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.MessageIdManager;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.MailboxId;
+import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mime4j.dom.Message;
-import org.apache.james.mime4j.stream.MimeConfig;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 
 public class MessageHeaderViewFactory implements MessageViewFactory<MessageHeaderView> {
     private final BlobManager blobManager;
+    private final MessageIdManager messageIdManager;
 
     @Inject
     @VisibleForTesting
-    public MessageHeaderViewFactory(BlobManager blobManager) {
+    public MessageHeaderViewFactory(BlobManager blobManager, MessageIdManager messageIdManager) {
         this.blobManager = blobManager;
+        this.messageIdManager = messageIdManager;
     }
 
     @Override
-    public MessageHeaderView fromMessageResults(Collection<MessageResult> messageResults) throws MailboxException {
-        assertOneMessageId(messageResults);
+    public List<MessageHeaderView> fromMessageIds(List<MessageId> messageIds, MailboxSession mailboxSession) throws MailboxException {
+        List<MessageResult> messages = messageIdManager.getMessages(messageIds, MessageProperties.ReadProfile.Header.getFetchGroup(), mailboxSession);
+        return Helpers.toMessageViews(messages, this::fromMessageResults);
+    }
+
+    private MessageHeaderView fromMessageResults(Collection<MessageResult> messageResults) throws MailboxException, IOException {
+        Helpers.assertOneMessageId(messageResults);
 
         MessageResult firstMessageResult = messageResults.iterator().next();
-        List<MailboxId> mailboxIds = getMailboxIds(messageResults);
+        List<MailboxId> mailboxIds = Helpers.getMailboxIds(messageResults);
 
-        Message mimeMessage = parse(firstMessageResult);
+        Message mimeMessage = Helpers.parse(firstMessageResult.getFullContent().getInputStream());
 
         return MessageHeaderView.messageHeaderBuilder()
             .id(firstMessageResult.getMessageId())
             .mailboxIds(mailboxIds)
             .blobId(BlobId.of(blobManager.toBlobId(firstMessageResult.getMessageId())))
             .threadId(firstMessageResult.getMessageId().serialize())
-            .keywords(getKeywords(messageResults))
+            .keywords(Helpers.getKeywords(messageResults))
             .size(firstMessageResult.getSize())
-            .inReplyToMessageId(getHeader(mimeMessage, "in-reply-to"))
+            .inReplyToMessageId(Helpers.getHeaderValue(mimeMessage, "in-reply-to"))
             .subject(Strings.nullToEmpty(mimeMessage.getSubject()).trim())
-            .headers(toMap(mimeMessage.getHeader().getFields()))
-            .from(firstFromMailboxList(mimeMessage.getFrom()))
-            .to(fromAddressList(mimeMessage.getTo()))
-            .cc(fromAddressList(mimeMessage.getCc()))
-            .bcc(fromAddressList(mimeMessage.getBcc()))
-            .replyTo(fromAddressList(mimeMessage.getReplyTo()))
-            .date(getDateFromHeaderOrInternalDateOtherwise(mimeMessage, firstMessageResult))
+            .headers(Helpers.toHeaderMap(mimeMessage.getHeader().getFields()))
+            .from(Emailer.firstFromMailboxList(mimeMessage.getFrom()))
+            .to(Emailer.fromAddressList(mimeMessage.getTo()))
+            .cc(Emailer.fromAddressList(mimeMessage.getCc()))
+            .bcc(Emailer.fromAddressList(mimeMessage.getBcc()))
+            .replyTo(Emailer.fromAddressList(mimeMessage.getReplyTo()))
+            .date(Helpers.getDateFromHeaderOrInternalDateOtherwise(mimeMessage, firstMessageResult))
             .build();
-    }
-
-    private Message parse(MessageResult message) throws MailboxException {
-        try {
-            return Message.Builder
-                .of()
-                .use(MimeConfig.PERMISSIVE)
-                .parse(message.getFullContent().getInputStream())
-                .build();
-        } catch (IOException e) {
-            throw new MailboxException("Unable to parse message: " + e.getMessage(), e);
-        }
-    }
-
-    private Instant getDateFromHeaderOrInternalDateOtherwise(Message mimeMessage, MessageResult message) {
-        return Optional.ofNullable(mimeMessage.getDate())
-            .map(Date::toInstant)
-            .orElse(message.getInternalDate().toInstant());
     }
 }

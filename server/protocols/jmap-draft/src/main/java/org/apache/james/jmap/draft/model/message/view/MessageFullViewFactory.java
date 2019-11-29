@@ -33,9 +33,13 @@ import javax.mail.internet.SharedInputStream;
 import org.apache.james.jmap.api.model.Preview;
 import org.apache.james.jmap.draft.model.Attachment;
 import org.apache.james.jmap.draft.model.BlobId;
+import org.apache.james.jmap.draft.model.Emailer;
 import org.apache.james.jmap.draft.model.Keywords;
+import org.apache.james.jmap.draft.model.MessageProperties;
 import org.apache.james.jmap.draft.utils.HtmlTextExtractor;
 import org.apache.james.mailbox.BlobManager;
+import org.apache.james.mailbox.MailboxSession;
+import org.apache.james.mailbox.MessageIdManager;
 import org.apache.james.mailbox.MessageUid;
 import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.Cid;
@@ -44,7 +48,6 @@ import org.apache.james.mailbox.model.MessageAttachment;
 import org.apache.james.mailbox.model.MessageId;
 import org.apache.james.mailbox.model.MessageResult;
 import org.apache.james.mime4j.dom.Message;
-import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.james.util.mime.MessageContentExtractor;
 import org.apache.james.util.mime.MessageContentExtractor.MessageContent;
 
@@ -57,22 +60,25 @@ public class MessageFullViewFactory implements MessageViewFactory<MessageFullVie
     private final BlobManager blobManager;
     private final MessageContentExtractor messageContentExtractor;
     private final HtmlTextExtractor htmlTextExtractor;
+    private final MessageIdManager messageIdManager;
 
     @Inject
     public MessageFullViewFactory(BlobManager blobManager, MessageContentExtractor messageContentExtractor,
-                                  HtmlTextExtractor htmlTextExtractor) {
+                                  HtmlTextExtractor htmlTextExtractor, MessageIdManager messageIdManager) {
         this.blobManager = blobManager;
         this.messageContentExtractor = messageContentExtractor;
         this.htmlTextExtractor = htmlTextExtractor;
+        this.messageIdManager = messageIdManager;
     }
 
     @Override
-    public MessageFullView fromMessageResults(Collection<MessageResult> messageResults) throws MailboxException {
-        return fromMetaDataWithContent(toMetaDataWithContent(messageResults));
+    public List<MessageFullView> fromMessageIds(List<MessageId> messageIds, MailboxSession mailboxSession) throws MailboxException {
+        List<MessageResult> messages = messageIdManager.getMessages(messageIds, MessageProperties.ReadProfile.Full.getFetchGroup(), mailboxSession);
+        return Helpers.toMessageViews(messages, this::fromMessageResults);
     }
 
-    public MessageFullView fromMetaDataWithContent(MetaDataWithContent message) throws MailboxException {
-        Message mimeMessage = parse(message);
+    public MessageFullView fromMetaDataWithContent(MetaDataWithContent message) throws MailboxException, IOException {
+        Message mimeMessage = Helpers.parse(message.getContent());
         MessageContent messageContent = extractContent(mimeMessage);
         Optional<String> htmlBody = messageContent.getHtmlBody();
         Optional<String> mainTextContent = mainTextContent(messageContent);
@@ -85,15 +91,15 @@ public class MessageFullViewFactory implements MessageViewFactory<MessageFullVie
                 .blobId(BlobId.of(blobManager.toBlobId(message.getMessageId())))
                 .threadId(message.getMessageId().serialize())
                 .mailboxIds(message.getMailboxIds())
-                .inReplyToMessageId(getHeader(mimeMessage, "in-reply-to"))
+                .inReplyToMessageId(Helpers.getHeaderValue(mimeMessage, "in-reply-to"))
                 .keywords(message.getKeywords())
                 .subject(Strings.nullToEmpty(mimeMessage.getSubject()).trim())
-                .headers(toMap(mimeMessage.getHeader().getFields()))
-                .from(firstFromMailboxList(mimeMessage.getFrom()))
-                .to(fromAddressList(mimeMessage.getTo()))
-                .cc(fromAddressList(mimeMessage.getCc()))
-                .bcc(fromAddressList(mimeMessage.getBcc()))
-                .replyTo(fromAddressList(mimeMessage.getReplyTo()))
+                .headers(Helpers.toHeaderMap(mimeMessage.getHeader().getFields()))
+                .from(Emailer.firstFromMailboxList(mimeMessage.getFrom()))
+                .to(Emailer.fromAddressList(mimeMessage.getTo()))
+                .cc(Emailer.fromAddressList(mimeMessage.getCc()))
+                .bcc(Emailer.fromAddressList(mimeMessage.getBcc()))
+                .replyTo(Emailer.fromAddressList(mimeMessage.getReplyTo()))
                 .size(message.getSize())
                 .date(getDateFromHeaderOrInternalDateOtherwise(mimeMessage, message))
                 .textBody(textBody)
@@ -103,12 +109,22 @@ public class MessageFullViewFactory implements MessageViewFactory<MessageFullVie
                 .build();
     }
 
-    private MetaDataWithContent toMetaDataWithContent(Collection<MessageResult> messageResults) throws MailboxException {
-        assertOneMessageId(messageResults);
+    private Instant getDateFromHeaderOrInternalDateOtherwise(Message mimeMessage, MessageFullViewFactory.MetaDataWithContent message) {
+        return Optional.ofNullable(mimeMessage.getDate())
+            .map(Date::toInstant)
+            .orElse(message.getInternalDate());
+    }
+
+    MessageFullView fromMessageResults(Collection<MessageResult> messageResults) throws MailboxException, IOException {
+        return fromMetaDataWithContent(toMetaDataWithContent(messageResults));
+    }
+
+    MetaDataWithContent toMetaDataWithContent(Collection<MessageResult> messageResults) throws MailboxException {
+        Helpers.assertOneMessageId(messageResults);
 
         MessageResult firstMessageResult = messageResults.iterator().next();
-        List<MailboxId> mailboxIds = getMailboxIds(messageResults);
-        Keywords keywords = getKeywords(messageResults);
+        List<MailboxId> mailboxIds = Helpers.getMailboxIds(messageResults);
+        Keywords keywords = Helpers.getKeywords(messageResults);
 
         return MetaDataWithContent.builderFromMessageResult(firstMessageResult)
             .messageId(firstMessageResult.getMessageId())
@@ -117,19 +133,13 @@ public class MessageFullViewFactory implements MessageViewFactory<MessageFullVie
             .build();
     }
 
-    private Instant getDateFromHeaderOrInternalDateOtherwise(Message mimeMessage, MetaDataWithContent message) {
-        return Optional.ofNullable(mimeMessage.getDate())
-            .map(Date::toInstant)
-            .orElse(message.getInternalDate());
-    }
-
     private Optional<String> computeTextBodyIfNeeded(MessageContent messageContent, Optional<String> mainTextContent) {
         return messageContent.getTextBody()
             .map(Optional::of)
             .orElse(mainTextContent);
     }
 
-    private Optional<String> mainTextContent(MessageContent messageContent) {
+    Optional<String> mainTextContent(MessageContent messageContent) {
         return messageContent.getHtmlBody()
             .map(htmlTextExtractor::toPlainText)
             .filter(s -> !Strings.isNullOrEmpty(s))
@@ -137,19 +147,7 @@ public class MessageFullViewFactory implements MessageViewFactory<MessageFullVie
             .orElse(messageContent.getTextBody());
     }
 
-    private Message parse(MetaDataWithContent message) throws MailboxException {
-        try {
-            return Message.Builder
-                    .of()
-                    .use(MimeConfig.PERMISSIVE)
-                    .parse(message.getContent())
-                    .build();
-        } catch (IOException e) {
-            throw new MailboxException("Unable to parse message: " + e.getMessage(), e);
-        }
-    }
-
-    private MessageContent extractContent(Message mimeMessage) throws MailboxException {
+    MessageContent extractContent(Message mimeMessage) throws MailboxException {
         try {
             return messageContentExtractor.extract(mimeMessage);
         } catch (IOException e) {
