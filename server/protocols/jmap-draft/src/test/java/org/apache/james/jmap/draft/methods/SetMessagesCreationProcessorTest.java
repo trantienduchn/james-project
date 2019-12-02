@@ -43,6 +43,7 @@ import org.apache.james.jmap.draft.model.message.view.MessageFullViewFactory;
 import org.apache.james.jmap.draft.send.MailMetadata;
 import org.apache.james.jmap.draft.send.MailSpool;
 import org.apache.james.jmap.draft.utils.HtmlTextExtractor;
+import org.apache.james.jmap.memory.projections.MemoryMessageFastViewProjection;
 import org.apache.james.mailbox.AttachmentManager;
 import org.apache.james.mailbox.BlobManager;
 import org.apache.james.mailbox.MailboxManager;
@@ -123,14 +124,15 @@ public class SetMessagesCreationProcessorTest {
         HtmlTextExtractor htmlTextExtractor = mock(HtmlTextExtractor.class);
         MessageContentExtractor messageContentExtractor = new MessageContentExtractor();
         BlobManager blobManager = mock(BlobManager.class);
+        MessageIdManager mockMessageIdManager = mock(MessageIdManager.class);
         when(blobManager.toBlobId(any(MessageId.class))).thenReturn(org.apache.james.mailbox.model.BlobId.fromString("fake"));
-        MessageIdManager messageIdManager = mock(MessageIdManager.class);
-        messageFullViewFactory = new MessageFullViewFactory(blobManager, messageContentExtractor, htmlTextExtractor, messageIdManager);
+        messageFullViewFactory = new MessageFullViewFactory(blobManager, messageContentExtractor, htmlTextExtractor,
+            mockMessageIdManager,
+            new MemoryMessageFastViewProjection());
         mockedMailSpool = mock(MailSpool.class);
         mockedAttachmentManager = mock(AttachmentManager.class);
         mockedMailboxManager = mock(MailboxManager.class);
         mockedMailboxIdFactory = mock(Factory.class);
-        MessageIdManager mockMessageIdManager = mock(MessageIdManager.class);
         
         fakeSystemMailboxesProvider = new TestSystemMailboxesProvider(() -> optionalOutbox, () -> optionalDrafts);
         session = MailboxSessionUtil.create(USER);
