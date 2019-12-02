@@ -51,6 +51,7 @@ import org.apache.james.jmap.draft.model.message.view.MessageMetadataViewFactory
 import org.apache.james.jmap.draft.model.message.view.MetaMessageViewFactory;
 import org.apache.james.jmap.draft.utils.HtmlTextExtractor;
 import org.apache.james.jmap.draft.utils.JsoupHtmlTextExtractor;
+import org.apache.james.jmap.memory.projections.MemoryMessageFastViewProjection;
 import org.apache.james.mailbox.BlobManager;
 import org.apache.james.mailbox.FlagsBuilder;
 import org.apache.james.mailbox.MailboxSession;
@@ -111,7 +112,7 @@ public class GetMessagesMethodTest {
         when(blobManager.toBlobId(any(MessageId.class))).thenReturn(BlobId.fromString("fake"));
         messageMetadataViewFactory = spy(new MessageMetadataViewFactory(blobManager));
         MetaMessageViewFactory metaMessageViewFactory = new MetaMessageViewFactory(
-            new MessageFullViewFactory(blobManager, messageContentExtractor, htmlTextExtractor),
+            new MessageFullViewFactory(blobManager, messageContentExtractor, htmlTextExtractor, new MemoryMessageFastViewProjection()),
             new MessageHeaderViewFactory(blobManager),
             messageMetadataViewFactory);
 

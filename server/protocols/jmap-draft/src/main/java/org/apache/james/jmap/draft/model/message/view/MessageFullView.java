@@ -126,7 +126,7 @@ public class MessageFullView extends MessageHeaderView {
             .anyMatch(blobId -> blobId.equals(key));
     }
 
-    private static boolean hasAttachment(List<Attachment> attachments) {
+    static boolean hasAttachment(List<Attachment> attachments) {
         return attachments.stream()
                 .anyMatch(attachment -> !attachment.isInlinedWithCid());
     }
