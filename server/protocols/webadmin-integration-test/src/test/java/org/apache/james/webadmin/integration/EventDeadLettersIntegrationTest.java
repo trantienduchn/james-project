@@ -24,8 +24,10 @@ import static io.restassured.RestAssured.when;
 import static io.restassured.RestAssured.with;
 import static org.awaitility.Duration.ONE_HUNDRED_MILLISECONDS;
 import static org.awaitility.Duration.ONE_MINUTE;
+import static org.awaitility.Duration.TEN_SECONDS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 
 import java.util.ArrayList;
@@ -189,12 +191,14 @@ public class EventDeadLettersIntegrationTest {
     }
 
     private String retrieveFirstFailedInsertionId() {
-        List<String> response = with()
-            .get(EventDeadLettersRoutes.BASE_PATH + "/groups/" + GROUP_ID)
-            .jsonPath()
-            .getList(".");
+        List<String> insertionIds = calmlyAwait.atMost(TEN_SECONDS)
+            .until(() -> with()
+                    .get(EventDeadLettersRoutes.BASE_PATH + "/groups/" + GROUP_ID)
+                    .jsonPath()
+                    .getList("."),
+                hasSize(greaterThanOrEqualTo(1)));
 
-        return response.get(0);
+        return insertionIds.get(0);
     }
 
     @Test
