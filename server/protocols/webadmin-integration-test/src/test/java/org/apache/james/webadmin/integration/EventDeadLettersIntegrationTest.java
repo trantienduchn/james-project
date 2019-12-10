@@ -191,14 +191,18 @@ public class EventDeadLettersIntegrationTest {
     }
 
     private String retrieveFirstFailedInsertionId() {
-        List<String> insertionIds = calmlyAwait.atMost(TEN_SECONDS)
-            .until(() -> with()
+        calmlyAwait.atMost(TEN_SECONDS)
+            .untilAsserted(() ->
+                when()
                     .get(EventDeadLettersRoutes.BASE_PATH + "/groups/" + GROUP_ID)
-                    .jsonPath()
-                    .getList("."),
-                hasSize(greaterThanOrEqualTo(1)));
+                .then()
+                    .body(".", hasSize(1)));
 
-        return insertionIds.get(0);
+        return (String) with()
+            .get(EventDeadLettersRoutes.BASE_PATH + "/groups/" + GROUP_ID)
+            .jsonPath()
+            .getList(".")
+            .get(0);
     }
 
     @Test
