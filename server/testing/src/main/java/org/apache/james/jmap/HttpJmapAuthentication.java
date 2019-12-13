@@ -19,7 +19,7 @@
 
 package org.apache.james.jmap;
 
-import static org.apache.james.jmap.TestingConstants.calmlyAwait;
+import static org.apache.james.jmap.JMAPTestingConstants.calmlyAwait;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -30,7 +30,6 @@ import org.apache.http.client.fluent.Response;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.james.core.Username;
-import org.apache.james.jmap.api.access.AccessToken;
 import org.hamcrest.core.IsAnything;
 
 import com.jayway.jsonpath.JsonPath;
@@ -47,7 +46,7 @@ public class HttpJmapAuthentication {
 
         Response response = postAuthenticate(uriBuilder, password, continuationToken);
 
-        return AccessToken.fromString(
+        return AccessToken.of(
             JsonPath.parse(response.returnContent().asString())
                 .read("accessToken"));
     }

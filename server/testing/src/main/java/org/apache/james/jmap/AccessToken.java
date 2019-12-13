@@ -17,31 +17,24 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap.rabbitmq;
+package org.apache.james.jmap;
 
-import java.io.IOException;
+import com.google.common.annotations.VisibleForTesting;
 
-import org.apache.james.CassandraRabbitMQAwsS3JmapTestRule;
-import org.apache.james.DockerCassandraRule;
-import org.apache.james.GuiceJamesServer;
-import org.apache.james.jmap.draft.methods.integration.ForwardIntegrationTest;
-import org.apache.james.webadmin.WebAdminConfiguration;
-import org.junit.Rule;
+@VisibleForTesting
+public class AccessToken {
 
-public class RabbitMQAwsS3ForwardIntegrationTest extends ForwardIntegrationTest {
-
-    @Rule
-    public DockerCassandraRule cassandra = new DockerCassandraRule();
-
-    @Rule
-    public CassandraRabbitMQAwsS3JmapTestRule rule = CassandraRabbitMQAwsS3JmapTestRule.defaultTestRule();
-
-    @Override
-    protected GuiceJamesServer createJmapServer() throws IOException {
-        return rule.jmapServer(cassandra.getModule(),
-            binder -> binder.bind(WebAdminConfiguration.class)
-                .toInstance(WebAdminConfiguration.TEST_CONFIGURATION));
+    public static AccessToken of(String tokenString) {
+        return new AccessToken(tokenString);
     }
 
-}
+    private final String token;
 
+    private AccessToken(String token) {
+        this.token = token;
+    }
+
+    public String asString() {
+        return token;
+    }
+}

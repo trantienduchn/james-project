@@ -16,47 +16,20 @@
  * specific language governing permissions and limitations      *
  * under the License.                                           *
  ****************************************************************/
-
 package org.apache.james.jmap;
 
-public class ExportRequest {
+import java.nio.charset.StandardCharsets;
 
-    public static class Builder {
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.james.util.Port;
 
-        @FunctionalInterface
-        public interface RequireSharee {
-            RequireMatchingQuery exportTo(String sharee);
-        }
+public class LocalHostURIBuilder {
 
-        @FunctionalInterface
-        public interface RequireMatchingQuery {
-            ExportRequest query(String query);
-        }
-    }
-
-    public static Builder.RequireSharee userExportFrom(String userExportFrom) {
-        return sharee -> query -> new ExportRequest(userExportFrom, sharee, query);
-    }
-
-    private final String userExportFrom;
-    private final String sharee;
-    private final String matchingQuery;
-
-    private ExportRequest(String userExportFrom, String sharee, String matchingQuery) {
-        this.userExportFrom = userExportFrom;
-        this.sharee = sharee;
-        this.matchingQuery = matchingQuery;
-    }
-
-    public String getUserExportFrom() {
-        return userExportFrom;
-    }
-
-    public String getSharee() {
-        return sharee;
-    }
-
-    public String getMatchingQuery() {
-        return matchingQuery;
+    public static URIBuilder baseUri(Port jmapPort) {
+        return new URIBuilder()
+            .setScheme("http")
+            .setHost("localhost")
+            .setPort(jmapPort.getValue())
+            .setCharset(StandardCharsets.UTF_8);
     }
 }

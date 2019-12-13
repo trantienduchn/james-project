@@ -17,15 +17,15 @@
  * under the License.                                           *
  ****************************************************************/
 
-package org.apache.james.jmap;
+package org.apache.james.webadmin.integration.vault;
 
 import static org.hamcrest.Matchers.is;
 
 import io.restassured.specification.RequestSpecification;
 
-public class DeletedMessagesVaultRequests {
+class DeletedMessagesVaultRequests {
 
-    public static void exportVaultContent(RequestSpecification webAdminApi, ExportRequest exportRequest) {
+    static void exportVaultContent(RequestSpecification webAdminApi, ExportRequest exportRequest) {
         String taskId =
             webAdminApi.with()
                 .queryParam("action", "export")
@@ -41,7 +41,7 @@ public class DeletedMessagesVaultRequests {
             .body("status", is("completed"));
     }
 
-    public static void restoreMessagesForUserWithQuery(RequestSpecification webAdminApi, String user, String criteria) {
+    static void restoreMessagesForUserWithQuery(RequestSpecification webAdminApi, String user, String criteria) {
         String taskId = webAdminApi.with()
             .body(criteria)
             .post("/deletedMessages/users/" + user + "?action=restore")
@@ -54,7 +54,7 @@ public class DeletedMessagesVaultRequests {
             .body("status", is("completed"));
     }
 
-    public static void purgeVault(RequestSpecification webAdminApi) {
+    static void purgeVault(RequestSpecification webAdminApi) {
         String taskId =
             webAdminApi.with()
                 .queryParam("scope", "expired")
@@ -68,7 +68,7 @@ public class DeletedMessagesVaultRequests {
             .body("status", is("completed"));
     }
 
-    public static void deleteFromVault(RequestSpecification webAdminApi, String user, String messageId) {
+    static void deleteFromVault(RequestSpecification webAdminApi, String user, String messageId) {
         String taskId =
             webAdminApi.with()
                 .delete("/deletedMessages/users/" + user + "/messages/" + messageId)

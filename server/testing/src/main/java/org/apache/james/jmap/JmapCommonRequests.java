@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.james.jmap.api.access.AccessToken;
 import org.apache.james.mailbox.Role;
 import org.apache.james.mailbox.model.MailboxId;
 
@@ -62,7 +61,7 @@ public class JmapCommonRequests {
 
     public static List<Map<String, String>> getAllMailboxesIds(AccessToken accessToken) {
         return with()
-            .header("Authorization", accessToken.serialize())
+            .header("Authorization", accessToken.asString())
             .body("[[\"getMailboxes\", {\"properties\": [\"role\", \"name\", \"id\"]}, \"#0\"]]")
             .post("/jmap")
         .andReturn()
@@ -74,7 +73,7 @@ public class JmapCommonRequests {
     public static boolean isAnyMessageFoundInRecipientsMailboxes(AccessToken recipientToken) {
         try {
             with()
-                .header("Authorization", recipientToken.serialize())
+                .header("Authorization", recipientToken.asString())
                 .body("[[\"getMessageList\", {}, \"#0\"]]")
             .when()
                 .post("/jmap")
@@ -92,7 +91,7 @@ public class JmapCommonRequests {
     public static boolean isAnyMessageFoundInRecipientsMailbox(AccessToken recipientToken, MailboxId mailboxId) {
         try {
             with()
-                .header("Authorization", recipientToken.serialize())
+                .header("Authorization", recipientToken.asString())
                 .body("[[\"getMessageList\", {\"filter\":{\"inMailboxes\":[\"" + mailboxId.serialize() + "\"]}}, \"#0\"]]")
             .when()
                 .post("/jmap")
@@ -113,7 +112,7 @@ public class JmapCommonRequests {
 
     public static List<String> listMessageIdsForAccount(AccessToken accessToken) {
         return with()
-                .header("Authorization", accessToken.serialize())
+                .header("Authorization", accessToken.asString())
                 .body("[[\"getMessageList\", {}, \"#0\"]]")
                 .post("/jmap")
             .then()
@@ -124,7 +123,7 @@ public class JmapCommonRequests {
 
     public static String getLastMessageId(AccessToken accessToken) {
         return with()
-                .header("Authorization", accessToken.serialize())
+                .header("Authorization", accessToken.asString())
                 .body("[[\"getMessageList\", {\"sort\":[\"date desc\"]}, \"#0\"]]")
                 .post("/jmap")
             .then()
@@ -136,7 +135,7 @@ public class JmapCommonRequests {
     public static String getLatestMessageId(AccessToken accessToken, Role mailbox) {
         String inboxId = getMailboxId(accessToken, mailbox);
         return with()
-                .header("Authorization", accessToken.serialize())
+                .header("Authorization", accessToken.asString())
                 .body("[[\"getMessageList\", {\"filter\":{\"inMailboxes\":[\"" + inboxId + "\"]}, \"sort\":[\"date desc\"]}, \"#0\"]]")
                 .post("/jmap")
             .then()
@@ -156,7 +155,7 @@ public class JmapCommonRequests {
 
     private static JsonPath getMessageContent(AccessToken accessToken, String messageId) {
         return with()
-                .header("Authorization", accessToken.serialize())
+                .header("Authorization", accessToken.asString())
                 .body("[[\"getMessages\", {\"ids\": [\"" + messageId + "\"]}, \"#0\"]]")
             .when()
                 .post("/jmap")
@@ -170,7 +169,7 @@ public class JmapCommonRequests {
 
     public static List<String> listMessageIdsInMailbox(AccessToken accessToken, String mailboxId) {
         return with()
-                .header("Authorization", accessToken.serialize())
+                .header("Authorization", accessToken.asString())
                 .body("[[\"getMessageList\", {\"filter\":{\"inMailboxes\":[\"" + mailboxId + "\"]}}, \"#0\"]]")
                 .post("/jmap")
             .then()
@@ -194,7 +193,7 @@ public class JmapCommonRequests {
         String idString = concatMessageIds(idsToDestroy);
 
         with()
-            .header("Authorization", accessToken.serialize())
+            .header("Authorization", accessToken.asString())
             .body("[[\"setMessages\", {\"destroy\": [" + idString + "]}, \"#0\"]]")
             .post("/jmap");
     }
