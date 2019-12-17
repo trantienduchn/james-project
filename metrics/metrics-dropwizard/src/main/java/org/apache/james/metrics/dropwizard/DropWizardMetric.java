@@ -20,10 +20,14 @@
 package org.apache.james.metrics.dropwizard;
 
 import org.apache.james.metrics.api.Metric;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.codahale.metrics.Counter;
 
 public class DropWizardMetric implements Metric {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DropWizardMetric.class);
 
     private final Counter counter;
 
@@ -53,6 +57,12 @@ public class DropWizardMetric implements Metric {
 
     @Override
     public long getCount() {
-        return counter.getCount();
+        long value = counter.getCount();
+        if (value < 0) {
+            LOGGER.error("counter value({}) should not be a negative number", value);
+            return 0;
+        }
+
+        return value;
     }
 }

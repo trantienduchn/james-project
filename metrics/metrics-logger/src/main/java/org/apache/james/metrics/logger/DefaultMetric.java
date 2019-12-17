@@ -18,6 +18,7 @@
  ****************************************************************/
 package org.apache.james.metrics.logger;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.james.metrics.api.Metric;
@@ -52,6 +53,8 @@ public class DefaultMetric implements Metric {
 
     @Override
     public long getCount() {
-        return value.get();
+        return Optional.of(value.get())
+            .filter(counter -> counter > 0)
+            .orElse(0);
     }
 }
