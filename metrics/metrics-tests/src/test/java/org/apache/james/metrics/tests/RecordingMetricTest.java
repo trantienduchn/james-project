@@ -19,9 +19,13 @@
 
 package org.apache.james.metrics.tests;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import org.apache.james.metrics.api.Metric;
 import org.apache.james.metrics.api.MetricContract;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 class RecordingMetricTest implements MetricContract {
 
@@ -35,5 +39,25 @@ class RecordingMetricTest implements MetricContract {
     @Override
     public Metric testee() {
         return testee;
+    }
+
+    @Disabled("This metric doesn't allow negative counter value")
+    @Test
+    public void getCountShouldReturnZeroWhenCounterIsNegative() {
+    }
+
+    @Test
+    void decrementShouldThrowWhenCounterIsZero() {
+        assertThatThrownBy(() -> testee.decrement())
+            .isInstanceOf(UnsupportedOperationException.class)
+            .hasMessage("metric counter is supposed to be a non-negative number, thus this operation cannot be applied");
+    }
+
+    @Test
+    void removeShouldThrowWhenCounterIsLessThanPassedParam() {
+        testee.add(10);
+        assertThatThrownBy(() -> testee.remove(11))
+            .isInstanceOf(UnsupportedOperationException.class)
+            .hasMessage("metric counter is supposed to be a non-negative number, thus this operation cannot be applied");
     }
 }

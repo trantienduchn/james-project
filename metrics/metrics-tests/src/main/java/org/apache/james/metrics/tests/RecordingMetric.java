@@ -19,7 +19,6 @@
 
 package org.apache.james.metrics.tests;
 
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.james.metrics.api.Metric;
@@ -42,7 +41,7 @@ public class RecordingMetric implements Metric {
 
     @Override
     public void decrement() {
-        value.decrementAndGet();
+        value.updateAndGet(currentValue -> subtractFrom(currentValue, 1));
     }
 
     @Override
@@ -52,13 +51,20 @@ public class RecordingMetric implements Metric {
 
     @Override
     public void remove(int i) {
-        value.addAndGet(-1 * i);
+        value.updateAndGet(currentValue -> subtractFrom(currentValue, i));
     }
 
     @Override
     public long getCount() {
-        return Optional.of(value.get())
-            .filter(counter -> counter > 0)
-            .orElse(0);
+        return value.longValue();
+    }
+
+    private int subtractFrom(int currentValue, int minus) {
+        int result = currentValue - minus;
+        if (result < 0) {
+            throw new UnsupportedOperationException("metric counter is supposed to be a non-negative number," +
+            " thus this operation cannot be applied");
+        }
+        return result;
     }
 }

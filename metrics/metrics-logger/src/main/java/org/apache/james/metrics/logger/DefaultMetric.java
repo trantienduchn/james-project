@@ -18,16 +18,21 @@
  ****************************************************************/
 package org.apache.james.metrics.logger;
 
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.james.metrics.api.Metric;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DefaultMetric implements Metric {
 
-    private AtomicInteger value;
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultMetric.class);
 
-    public DefaultMetric() {
+    private final AtomicInteger value;
+    private final String metricName;
+
+    public DefaultMetric(String metricName) {
+        this.metricName = metricName;
         value = new AtomicInteger();
     }
 
@@ -53,8 +58,12 @@ public class DefaultMetric implements Metric {
 
     @Override
     public long getCount() {
-        return Optional.of(value.get())
-            .filter(counter -> counter > 0)
-            .orElse(0);
+        long counter = value.longValue();
+        if (counter < 0) {
+            LOGGER.error("counter value({}) of the metric '{}' should not be a negative number", value, metricName);
+            return 0;
+        }
+
+        return counter;
     }
 }

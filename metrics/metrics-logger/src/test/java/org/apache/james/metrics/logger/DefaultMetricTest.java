@@ -29,7 +29,7 @@ class DefaultMetricTest implements MetricContract {
 
     @BeforeEach
     void setUp() {
-        testee = new DefaultMetric();
+        testee = new DefaultMetric("metricName");
     }
 
     @Override
