@@ -30,9 +30,11 @@ public class DropWizardMetric implements Metric {
     private static final Logger LOGGER = LoggerFactory.getLogger(DropWizardMetric.class);
 
     private final Counter counter;
+    private final String metricName;
 
-    public DropWizardMetric(Counter counter) {
+    public DropWizardMetric(Counter counter, String metricName) {
         this.counter = counter;
+        this.metricName = metricName;
     }
 
     @Override
@@ -59,7 +61,7 @@ public class DropWizardMetric implements Metric {
     public long getCount() {
         long value = counter.getCount();
         if (value < 0) {
-            LOGGER.error("counter value({}) should not be a negative number", value);
+            LOGGER.error("counter value({}) of the metric '{}' should not be a negative number", value, metricName);
             return 0;
         }
 

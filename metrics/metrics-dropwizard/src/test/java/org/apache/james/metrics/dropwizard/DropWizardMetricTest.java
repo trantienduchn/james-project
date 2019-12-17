@@ -34,7 +34,7 @@ class DropWizardMetricTest implements MetricContract {
     @BeforeEach
     void setUp() {
         MetricRegistry registry = new MetricRegistry();
-        testee = new DropWizardMetric(registry.counter(METRIC_NAME));
+        testee = new DropWizardMetric(registry.counter(METRIC_NAME), METRIC_NAME);
     }
 
     @Override
