@@ -126,14 +126,6 @@ public interface MetricContract {
     }
 
     @Test
-    default void getCountShouldReturnZeroWhenCounterIsNegative() {
-        testee().remove(9);
-
-        assertThat(testee().getCount())
-            .isEqualTo(0);
-    }
-
-    @Test
     default void getCountShouldReturnValueWhenCounterIsPositive() {
         testee().add(19);
         assertThat(testee().getCount())

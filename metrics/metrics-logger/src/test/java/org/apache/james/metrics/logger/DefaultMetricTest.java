@@ -19,9 +19,12 @@
 
 package org.apache.james.metrics.logger;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.apache.james.metrics.api.Metric;
 import org.apache.james.metrics.api.MetricContract;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class DefaultMetricTest implements MetricContract {
 
@@ -35,5 +38,13 @@ class DefaultMetricTest implements MetricContract {
     @Override
     public Metric testee() {
         return testee;
+    }
+
+    @Test
+    void getCountShouldReturnZeroWhenCounterIsNegative() {
+        testee().remove(9);
+
+        assertThat(testee().getCount())
+            .isEqualTo(0);
     }
 }
