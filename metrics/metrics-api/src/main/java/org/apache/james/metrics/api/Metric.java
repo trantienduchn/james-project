@@ -30,7 +30,7 @@ public interface Metric {
     void remove(int value);
 
     /**
-     * @return A long guarantied to be positive.
+     * @return A long guaranteed to be positive.
      *
      * Implementation might be doing strict validation (throwing on negative value) or lenient (log and sanitize to 0)
      */
