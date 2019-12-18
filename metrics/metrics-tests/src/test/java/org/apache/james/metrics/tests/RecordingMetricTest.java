@@ -43,7 +43,7 @@ class RecordingMetricTest implements MetricContract {
     @Test
     void decrementShouldThrowWhenCounterIsZero() {
         assertThatThrownBy(() -> testee.decrement())
-            .isInstanceOf(UnsupportedOperationException.class)
+            .isInstanceOf(IllegalStateException.class)
             .hasMessage("metric counter is supposed to be a non-negative number, thus this operation cannot be applied");
     }
 
@@ -51,7 +51,7 @@ class RecordingMetricTest implements MetricContract {
     void removeShouldThrowWhenCounterIsLessThanPassedParam() {
         testee.add(10);
         assertThatThrownBy(() -> testee.remove(11))
-            .isInstanceOf(UnsupportedOperationException.class)
+            .isInstanceOf(IllegalStateException.class)
             .hasMessage("metric counter is supposed to be a non-negative number, thus this operation cannot be applied");
     }
 }

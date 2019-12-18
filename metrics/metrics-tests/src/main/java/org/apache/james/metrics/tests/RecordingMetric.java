@@ -62,7 +62,7 @@ public class RecordingMetric implements Metric {
     private int subtractFrom(int currentValue, int minus) {
         int result = currentValue - minus;
         if (result < 0) {
-            throw new UnsupportedOperationException("metric counter is supposed to be a non-negative number," +
+            throw new IllegalStateException("metric counter is supposed to be a non-negative number," +
             " thus this operation cannot be applied");
         }
         return result;
