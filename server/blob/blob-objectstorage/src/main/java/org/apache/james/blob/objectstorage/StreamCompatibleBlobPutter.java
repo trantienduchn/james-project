@@ -21,13 +21,10 @@ package org.apache.james.blob.objectstorage;
 
 import java.time.Duration;
 import java.util.Optional;
-import java.util.function.Supplier;
 
-import org.apache.james.blob.api.BlobId;
 import org.jclouds.blobstore.BlobStore;
 import org.jclouds.blobstore.KeyNotFoundException;
 import org.jclouds.blobstore.domain.Blob;
-import org.jclouds.blobstore.options.CopyOptions;
 import org.jclouds.domain.Location;
 import org.jclouds.http.HttpResponseException;
 
@@ -66,17 +63,11 @@ public class StreamCompatibleBlobPutter implements BlobPutter {
     }
 
     @Override
-    public Mono<BlobId> putAndComputeId(ObjectStorageBucketName bucketName, Blob initialBlob, Supplier<BlobId> blobIdSupplier) {
-        return putDirectly(bucketName, initialBlob)
-            .then(Mono.fromCallable(blobIdSupplier::get))
-            .map(blobId -> updateBlobId(bucketName, initialBlob.getMetadata().getName(), blobId));
-    }
-
-    private BlobId updateBlobId(ObjectStorageBucketName bucketName, String from, BlobId to) {
-        String bucketNameAsString = bucketName.asString();
-        blobStore.copyBlob(bucketNameAsString, from, bucketNameAsString, to.asString(), CopyOptions.NONE);
-        blobStore.removeBlob(bucketNameAsString, from);
-        return to;
+    public Mono<Void> putTempBlob(ObjectStorageBucketName bucketName, TempBlob tempBlob) {
+        return putDirectly(bucketName, blobStore.blobBuilder(tempBlob.getBlobId().asString())
+                .payload(tempBlob.getContent())
+                .contentLength(tempBlob.getContent().length())
+                .build());
     }
 
     private boolean needToCreateBucket(Throwable throwable, ObjectStorageBucketName bucketName) {

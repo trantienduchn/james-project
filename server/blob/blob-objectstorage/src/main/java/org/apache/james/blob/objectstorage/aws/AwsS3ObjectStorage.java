@@ -19,13 +19,11 @@
 
 package org.apache.james.blob.objectstorage.aws;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Supplier;
@@ -33,8 +31,6 @@ import java.util.function.Supplier;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.objectstorage.BlobPutter;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobStoreBuilder;
 import org.apache.james.blob.objectstorage.ObjectStorageBucketName;
@@ -151,23 +147,8 @@ public class AwsS3ObjectStorage {
         }
 
         @Override
-        public Mono<BlobId> putAndComputeId(ObjectStorageBucketName bucketName, Blob initialBlob, Supplier<BlobId> blobIdSupplier) {
-            return Mono.using(
-                () -> createTempFile(initialBlob),
-                file -> putByFile(bucketName, blobIdSupplier, file),
-                FileUtils::deleteQuietly);
-        }
-
-        private Mono<BlobId> putByFile(ObjectStorageBucketName bucketName, Supplier<BlobId> blobIdSupplier, File file) {
-            return Mono.fromSupplier(blobIdSupplier)
-                .flatMap(blobId -> putWithRetry(bucketName, () -> uploadByFile(bucketName, blobId, file))
-                    .then(Mono.just(blobId)));
-        }
-
-        private File createTempFile(Blob blob) throws IOException {
-            File file = File.createTempFile(UUID.randomUUID().toString(), ".tmp");
-            FileUtils.copyToFile(blob.getPayload().openStream(), file);
-            return file;
+        public Mono<Void> putTempBlob(ObjectStorageBucketName bucketName, TempBlob tempBlob) {
+            return putWithRetry(bucketName, () -> uploadByTempBlob(bucketName, tempBlob));
         }
 
         private Mono<Void> putWithRetry(ObjectStorageBucketName bucketName, ThrowingRunnable puttingAttempt) {
@@ -181,8 +162,12 @@ public class AwsS3ObjectStorage {
                     .doOnRetry(retryContext -> createBucket(bucketName, configuration)));
         }
 
-        private void uploadByFile(ObjectStorageBucketName bucketName, BlobId blobId, File file) throws InterruptedException {
-            PutObjectRequest request = new PutObjectRequest(bucketName.asString(), blobId.asString(), file);
+        private void uploadByTempBlob(ObjectStorageBucketName bucketName, TempBlob tempBlob) throws InterruptedException {
+            PutObjectRequest request = new PutObjectRequest(
+                bucketName.asString(),
+                tempBlob.getBlobId().asString(),
+                tempBlob.getContent());
+
             upload(request);
         }
 
