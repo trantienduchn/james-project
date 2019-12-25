@@ -20,13 +20,14 @@
 package org.apache.james.blob.objectstorage.aws;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.annotation.PreDestroy;
@@ -53,10 +54,11 @@ import com.amazonaws.retry.PredefinedRetryPolicies;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.github.fge.lambdas.Throwing;
+import com.github.fge.lambdas.runnable.ThrowingRunnable;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Module;
@@ -68,12 +70,11 @@ import reactor.retry.Retry;
 public class AwsS3ObjectStorage {
 
     private static final Iterable<Module> JCLOUDS_MODULES = ImmutableSet.of(new SLF4JLoggingModule());
-    public  static final int MAX_THREADS = 5;
+    private static final int MAX_THREADS = 5;
     private static final boolean DO_NOT_SHUTDOWN_THREAD_POOL = false;
     private static final int MAX_ERROR_RETRY = 5;
-    private static final int FIRST_TRY = 0;
     private static final int MAX_RETRY_ON_EXCEPTION = 3;
-    public static Size MULTIPART_UPLOAD_THRESHOLD;
+    private static Size MULTIPART_UPLOAD_THRESHOLD;
 
     static {
         try {
@@ -146,33 +147,31 @@ public class AwsS3ObjectStorage {
 
         @Override
         public Mono<Void> putDirectly(ObjectStorageBucketName bucketName, Blob blob) {
-            return writeFileAndAct(blob, file -> putWithRetry(bucketName, configuration, blob, file));
+            return putWithRetry(bucketName, () -> uploadByBlob(bucketName, blob));
         }
 
         @Override
         public Mono<BlobId> putAndComputeId(ObjectStorageBucketName bucketName, Blob initialBlob, Supplier<BlobId> blobIdSupplier) {
-            Function<File, Mono<Void>> putChangedBlob = file -> {
-                initialBlob.getMetadata().setName(blobIdSupplier.get().asString());
-                return putWithRetry(bucketName, configuration, initialBlob, file);
-            };
-            return writeFileAndAct(initialBlob, putChangedBlob)
-                .then(Mono.fromCallable(blobIdSupplier::get));
-        }
-
-        private Mono<Void> writeFileAndAct(Blob blob, Function<File, Mono<Void>> putFile) {
             return Mono.using(
-                () -> {
-                    File file = File.createTempFile(UUID.randomUUID().toString(), ".tmp");
-                    FileUtils.copyToFile(blob.getPayload().openStream(), file);
-                    return file;
-                },
-                putFile::apply,
-                FileUtils::deleteQuietly
-            );
+                () -> createTempFile(initialBlob),
+                file -> putByFile(bucketName, blobIdSupplier, file),
+                FileUtils::deleteQuietly);
         }
 
-        private Mono<Void> putWithRetry(ObjectStorageBucketName bucketName, AwsS3AuthConfiguration configuration, Blob blob, File file) {
-            return Mono.<Void>fromRunnable(Throwing.runnable(() -> put(bucketName, configuration, blob, file)).sneakyThrow())
+        private Mono<BlobId> putByFile(ObjectStorageBucketName bucketName, Supplier<BlobId> blobIdSupplier, File file) {
+            return Mono.fromSupplier(blobIdSupplier)
+                .flatMap(blobId -> putWithRetry(bucketName, () -> uploadByFile(bucketName, blobId, file))
+                    .then(Mono.just(blobId)));
+        }
+
+        private File createTempFile(Blob blob) throws IOException {
+            File file = File.createTempFile(UUID.randomUUID().toString(), ".tmp");
+            FileUtils.copyToFile(blob.getPayload().openStream(), file);
+            return file;
+        }
+
+        private Mono<Void> putWithRetry(ObjectStorageBucketName bucketName, ThrowingRunnable puttingAttempt) {
+            return Mono.<Void>fromRunnable(puttingAttempt)
                 .publishOn(Schedulers.elastic())
                 .retryWhen(Retry
                     .<Void>onlyIf(retryContext -> needToCreateBucket(retryContext.exception()))
@@ -182,14 +181,28 @@ public class AwsS3ObjectStorage {
                     .doOnRetry(retryContext -> createBucket(bucketName, configuration)));
         }
 
-        private void put(ObjectStorageBucketName bucketName, AwsS3AuthConfiguration configuration, Blob blob, File file) throws InterruptedException {
-            PutObjectRequest request = new PutObjectRequest(bucketName.asString(),
-                blob.getMetadata().getName(),
-                file);
+        private void uploadByFile(ObjectStorageBucketName bucketName, BlobId blobId, File file) throws InterruptedException {
+            PutObjectRequest request = new PutObjectRequest(bucketName.asString(), blobId.asString(), file);
+            upload(request);
+        }
 
-            getTransferManager(configuration)
+        private void uploadByBlob(ObjectStorageBucketName bucketName, Blob blob) throws InterruptedException, IOException {
+            try (InputStream payload = blob.getPayload().openStream()) {
+                PutObjectRequest request = new PutObjectRequest(bucketName.asString(),
+                    blob.getMetadata().getName(),
+                    payload,
+                    new ObjectMetadata());
+
+                upload(request);
+            }
+        }
+
+        private void upload(PutObjectRequest request) throws InterruptedException {
+            TransferManager transferManager = getTransferManager();
+            transferManager
                 .upload(request)
                 .waitForUploadResult();
+            transferManager.shutdownNow();
         }
 
         private void createBucket(ObjectStorageBucketName bucketName, AwsS3AuthConfiguration configuration) {
@@ -207,7 +220,7 @@ public class AwsS3ObjectStorage {
             return false;
         }
 
-        private TransferManager getTransferManager(AwsS3AuthConfiguration configuration) {
+        private TransferManager getTransferManager() {
             ClientConfiguration clientConfiguration = getClientConfiguration();
             AmazonS3 amazonS3 = getS3Client(configuration, clientConfiguration);
 
