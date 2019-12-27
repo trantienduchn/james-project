@@ -19,19 +19,19 @@
 
 package org.apache.james.blob.objectstorage.aws;
 
+import static software.amazon.awssdk.regions.Region.US_EAST_1;
+
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Supplier;
-
-import javax.annotation.PreDestroy;
-import javax.inject.Inject;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.james.blob.api.BlobId;
@@ -39,45 +39,33 @@ import org.apache.james.blob.objectstorage.BlobPutter;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobStoreBuilder;
 import org.apache.james.blob.objectstorage.ObjectStorageBucketName;
 import org.apache.james.util.Size;
-import org.apache.james.util.concurrent.NamedThreadFactory;
 import org.jclouds.ContextBuilder;
 import org.jclouds.blobstore.BlobStore;
 import org.jclouds.blobstore.BlobStoreContext;
 import org.jclouds.blobstore.domain.Blob;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.event.ProgressEvent;
-import com.amazonaws.event.ProgressEventType;
-import com.amazonaws.event.ProgressListener;
-import com.amazonaws.retry.PredefinedRetryPolicies;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Module;
 
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.MonoSink;
 import reactor.core.scheduler.Schedulers;
 import reactor.retry.Retry;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.async.AsyncRequestBody;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.core.retry.RetryPolicy;
+import software.amazon.awssdk.core.retry.backoff.BackoffStrategy;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 public class AwsS3ObjectStorage {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AwsS3ObjectStorage.class);
-
     private static final Iterable<Module> JCLOUDS_MODULES = ImmutableSet.of(new SLF4JLoggingModule());
-    private static final int MAX_THREADS = 5;
-    private static final boolean DO_NOT_SHUTDOWN_THREAD_POOL = false;
     private static final int MAX_ERROR_RETRY = 5;
     private static final int MAX_RETRY_ON_EXCEPTION = 3;
     private static Size MULTIPART_UPLOAD_THRESHOLD;
@@ -90,25 +78,12 @@ public class AwsS3ObjectStorage {
         }
     }
 
-    private final ExecutorService executorService;
-
-    @Inject
-    @VisibleForTesting
-    public AwsS3ObjectStorage() {
-        executorService = Executors.newFixedThreadPool(MAX_THREADS, NamedThreadFactory.withClassName(AwsS3ObjectStorage.class));
-    }
-
-    @PreDestroy
-    public void tearDown() {
-        executorService.shutdownNow();
-    }
-
     public static ObjectStorageBlobStoreBuilder.RequireBlobIdFactory blobStoreBuilder(AwsS3AuthConfiguration configuration) {
         return ObjectStorageBlobStoreBuilder.forBlobStore(new BlobStoreBuilder(configuration));
     }
 
     public Optional<BlobPutter> putBlob(AwsS3AuthConfiguration configuration) {
-        return Optional.of(new AwsS3BlobPutter(configuration, executorService));
+        return Optional.of(new AwsS3BlobPutter(configuration));
     }
 
     private static class BlobStoreBuilder implements Supplier<BlobStore> {
@@ -138,24 +113,23 @@ public class AwsS3ObjectStorage {
 
     private static class AwsS3BlobPutter implements BlobPutter {
 
-        private static class UploadFailedException extends Exception {
-        }
-
+        private static final int NOT_FOUND_STATUS_CODE = 404;
+        private static final String BUCKET_NOT_FOUND_ERROR_CODE = "NoSuchBucket";
         private static final Duration FIRST_BACK_OFF = Duration.ofMillis(100);
         private static final Duration FOREVER = Duration.ofMillis(Long.MAX_VALUE);
-        private static final long RETRY_ONE_LAST_TIME_ON_CONCURRENT_SAVING = 1;
 
         private final AwsS3AuthConfiguration configuration;
-        private final ExecutorService executorService;
 
-        AwsS3BlobPutter(AwsS3AuthConfiguration configuration, ExecutorService executorService) {
+        AwsS3BlobPutter(AwsS3AuthConfiguration configuration) {
             this.configuration = configuration;
-            this.executorService = executorService;
         }
 
         @Override
         public Mono<Void> putDirectly(ObjectStorageBucketName bucketName, Blob blob) {
-            return putWithRetry(bucketName, uploadByBlob(bucketName, blob));
+            return Mono.using(
+                () -> createTempFile(blob),
+                file -> putWithRetry(bucketName, uploadAsync(bucketName, blob.getMetadata().getName(), file)),
+                FileUtils::deleteQuietly);
         }
 
         @Override
@@ -168,7 +142,7 @@ public class AwsS3ObjectStorage {
 
         private Mono<BlobId> putByFile(ObjectStorageBucketName bucketName, Supplier<BlobId> blobIdSupplier, File file) {
             return Mono.fromSupplier(blobIdSupplier)
-                .flatMap(blobId -> putWithRetry(bucketName, uploadByFile(bucketName, blobId, file))
+                .flatMap(blobId -> putWithRetry(bucketName, uploadAsync(bucketName, blobId.asString(), file))
                     .then(Mono.just(blobId)));
         }
 
@@ -182,108 +156,75 @@ public class AwsS3ObjectStorage {
             return puttingAttempt
                 .publishOn(Schedulers.elastic())
                 .retryWhen(Retry
-                    .onlyIf(retryContext -> failOnNoSuchBucket(retryContext.exception(), bucketName))
+                    .onlyIf(retryContext -> failOnNoSuchBucket(retryContext.exception()))
                     .exponentialBackoff(FIRST_BACK_OFF, FOREVER)
                     .withBackoffScheduler(Schedulers.elastic())
                     .retryMax(MAX_RETRY_ON_EXCEPTION)
-                    .doOnRetry(retryContext -> createBucket(bucketName, configuration)))
-                .retryWhen(Retry
-                    .onlyIf(retryContext -> failOnExistingBucket(retryContext.exception(), bucketName))
-                    .withBackoffScheduler(Schedulers.elastic())
-                    .exponentialBackoff(FIRST_BACK_OFF, FOREVER)
-                    .retryMax(RETRY_ONE_LAST_TIME_ON_CONCURRENT_SAVING));
+                    .doOnRetry(retryContext -> createBucket(bucketName)));
         }
 
-        private Mono<Void> uploadByFile(ObjectStorageBucketName bucketName, BlobId blobId, File file) {
-            return Mono.fromSupplier(() -> new PutObjectRequest(bucketName.asString(), blobId.asString(), file))
-                .flatMap(this::upload);
+        private Mono<Void> uploadAsync(ObjectStorageBucketName bucketName, String blobIdAsString, File file) {
+            return s3Act(client -> Mono
+                .fromFuture(putObject(bucketName, blobIdAsString, file, client))
+                .then());
         }
 
-        private Mono<Void> uploadByBlob(ObjectStorageBucketName bucketName, Blob blob) {
-            return Mono.fromCallable(() -> blob.getPayload().openStream())
-                .flatMap(inputStream -> upload(new PutObjectRequest(
-                        bucketName.asString(),
-                        blob.getMetadata().getName(),
-                        inputStream,
-                        new ObjectMetadata()))
-                    .doFinally(ignored -> closeQuietly(inputStream)));
+        private CompletableFuture<PutObjectResponse> putObject(ObjectStorageBucketName bucketName,
+                                                               String blobIdAsString,
+                                                               File file,
+                                                               S3AsyncClient client) {
+            return client.putObject(
+                PutObjectRequest.builder()
+                    .bucket(bucketName.asString())
+                    .key(blobIdAsString)
+                    .build(),
+                AsyncRequestBody.fromFile(file));
         }
 
-        private Mono<Void> upload(PutObjectRequest request) {
-            return Mono.create(sink -> {
-                TransferManager transferManager = getTransferManager();
-                transferManager
-                    .upload(request)
-                    .addProgressListener((ProgressListener) progressEvent -> watchingUploadEvent(sink, transferManager, progressEvent));
-            });
+        private void createBucket(ObjectStorageBucketName bucketName) {
+            s3Act(client -> Mono.fromFuture(client
+                .createBucket(CreateBucketRequest.builder()
+                    .bucket(bucketName.asString())
+                    .build())))
+                .block();
         }
 
-        private void watchingUploadEvent(MonoSink<Void> sink, TransferManager transferManager, ProgressEvent progressEvent) {
-            if (progressEvent.getEventType() == ProgressEventType.TRANSFER_FAILED_EVENT) {
-                sink.error(new UploadFailedException());
-                transferManager.shutdownNow();
-            } else if (progressEvent.getEventType() == ProgressEventType.TRANSFER_COMPLETED_EVENT) {
-                sink.success();
-                transferManager.shutdownNow();
+        private <T> Mono<T> s3Act(Function<S3AsyncClient, Mono<T>> s3Action) {
+            return Mono.using(
+                () -> getS3AsyncClient(configuration),
+                s3Action,
+                this::closeClient);
+        }
+
+        private void closeClient(S3AsyncClient client) {
+            Mono.fromRunnable(client::close)
+                .subscribeOn(Schedulers.elastic())
+                .subscribe();
+        }
+
+        private boolean failOnNoSuchBucket(Throwable th) {
+            if (th instanceof NoSuchBucketException) {
+                NoSuchBucketException s3Exception = (NoSuchBucketException) th;
+                return NOT_FOUND_STATUS_CODE == s3Exception.statusCode()
+                    && BUCKET_NOT_FOUND_ERROR_CODE.equals(s3Exception.awsErrorDetails().errorCode());
             }
 
-            // ignore other events
+            return false;
         }
 
-        private void closeQuietly(InputStream inputStream) {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-                LOGGER.error("Cannot close resource", e);
-            }
-        }
-
-        private void createBucket(ObjectStorageBucketName bucketName, AwsS3AuthConfiguration configuration) {
-            getS3Client(configuration, getClientConfiguration())
-                .createBucket(bucketName.asString());
-        }
-
-        private boolean failOnNoSuchBucket(Throwable th, ObjectStorageBucketName bucketName) {
-            return th instanceof UploadFailedException
-                && !doesBucketExist(bucketName);
-        }
-
-        private boolean failOnExistingBucket(Throwable th, ObjectStorageBucketName bucketName) {
-            return th instanceof UploadFailedException
-                && doesBucketExist(bucketName);
-        }
-
-        private boolean doesBucketExist(ObjectStorageBucketName bucketName) {
-            return getS3Client(configuration, getClientConfiguration())
-                .doesBucketExistV2(bucketName.asString());
-        }
-
-        private TransferManager getTransferManager() {
-            ClientConfiguration clientConfiguration = getClientConfiguration();
-            AmazonS3 amazonS3 = getS3Client(configuration, clientConfiguration);
-
-            return TransferManagerBuilder
-                    .standard()
-                    .withS3Client(amazonS3)
-                    .withMultipartUploadThreshold(MULTIPART_UPLOAD_THRESHOLD.getValue())
-                    .withExecutorFactory(() -> executorService)
-                    .withShutDownThreadPools(DO_NOT_SHUTDOWN_THREAD_POOL)
-                    .build();
-        }
-
-        private static AmazonS3 getS3Client(AwsS3AuthConfiguration configuration, ClientConfiguration clientConfiguration) {
-            return AmazonS3ClientBuilder
-                    .standard()
-                    .withClientConfiguration(clientConfiguration)
-                    .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(configuration.getAccessKeyId(), configuration.getSecretKey())))
-                    .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(configuration.getEndpoint(), null))
-                    .build();
-        }
-
-        private static ClientConfiguration getClientConfiguration() {
-            ClientConfiguration clientConfiguration = new ClientConfiguration();
-            clientConfiguration.setRetryPolicy(PredefinedRetryPolicies.getDefaultRetryPolicyWithCustomMaxRetries(MAX_ERROR_RETRY));
-            return clientConfiguration;
+        private static S3AsyncClient getS3AsyncClient(AwsS3AuthConfiguration configuration) throws URISyntaxException {
+            return S3AsyncClient.builder()
+                .credentialsProvider(StaticCredentialsProvider.create(
+                    AwsBasicCredentials.create(configuration.getAccessKeyId(), configuration.getSecretKey())))
+                .overrideConfiguration(ClientOverrideConfiguration.builder()
+                    .retryPolicy(RetryPolicy.builder()
+                        .numRetries(MAX_ERROR_RETRY)
+                        .backoffStrategy(BackoffStrategy.defaultStrategy())
+                        .build())
+                    .build())
+                .endpointOverride(new URI(configuration.getEndpoint()))
+                .region(US_EAST_1)
+                .build();
         }
     }
 }

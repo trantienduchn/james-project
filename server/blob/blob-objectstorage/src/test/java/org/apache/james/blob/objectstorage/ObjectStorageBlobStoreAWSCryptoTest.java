@@ -72,7 +72,6 @@ public class ObjectStorageBlobStoreAWSCryptoTest implements MetricableBlobStoreC
     void tearDown() {
         objectStorageBlobStore.deleteAllBuckets().block();
         objectStorageBlobStore.close();
-        awsS3ObjectStorage.tearDown();
     }
 
     @Override

@@ -26,7 +26,6 @@ import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobStore;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobStoreBuilder;
 import org.apache.james.blob.objectstorage.ObjectStorageBlobStoreContract;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,12 +47,6 @@ class AwsS3ObjectStorageBlobStoreBuilderTest implements ObjectStorageBlobStoreCo
             .secretKey(DockerAwsS3Container.SECRET_ACCESS_KEY)
             .build();
     }
-
-    @AfterEach
-    void tearDown() {
-        awsS3ObjectStorage.tearDown();
-    }
-
     @Override
     public BucketName defaultBucketName() {
         return defaultBucketName;

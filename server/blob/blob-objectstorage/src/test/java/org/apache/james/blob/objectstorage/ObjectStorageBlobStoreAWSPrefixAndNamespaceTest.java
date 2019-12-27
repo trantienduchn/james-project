@@ -66,7 +66,6 @@ public class ObjectStorageBlobStoreAWSPrefixAndNamespaceTest implements Metricab
     void tearDown() {
         objectStorageBlobStore.deleteAllBuckets().block();
         objectStorageBlobStore.close();
-        awsS3ObjectStorage.tearDown();
     }
 
     @Override

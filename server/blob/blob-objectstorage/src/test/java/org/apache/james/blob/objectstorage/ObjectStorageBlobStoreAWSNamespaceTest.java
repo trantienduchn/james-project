@@ -65,7 +65,6 @@ public class ObjectStorageBlobStoreAWSNamespaceTest implements MetricableBlobSto
     void tearDown() {
         objectStorageBlobStore.deleteAllBuckets().block();
         objectStorageBlobStore.close();
-        awsS3ObjectStorage.tearDown();
     }
 
     @Override

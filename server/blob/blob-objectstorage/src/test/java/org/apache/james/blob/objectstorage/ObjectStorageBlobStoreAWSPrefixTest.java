@@ -64,7 +64,6 @@ public class ObjectStorageBlobStoreAWSPrefixTest implements MetricableBlobStoreC
     void tearDown() {
         objectStorageBlobStore.deleteAllBuckets().block();
         objectStorageBlobStore.close();
-        awsS3ObjectStorage.tearDown();
     }
 
     @Override
