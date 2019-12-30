@@ -40,17 +40,18 @@ import static org.apache.james.mailbox.cassandra.table.CassandraMessageV2Table.T
 import static org.apache.james.mailbox.cassandra.table.CassandraMessageV2Table.TEXTUAL_LINE_COUNT;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.mail.util.SharedByteArrayInputStream;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
@@ -61,7 +62,6 @@ import org.apache.james.mailbox.cassandra.ids.CassandraMessageId;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageV2Table;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageV2Table.Attachments;
 import org.apache.james.mailbox.cassandra.table.CassandraMessageV2Table.Properties;
-import org.apache.james.mailbox.exception.MailboxException;
 import org.apache.james.mailbox.model.AttachmentId;
 import org.apache.james.mailbox.model.Cid;
 import org.apache.james.mailbox.model.ComposedMessageId;
@@ -73,6 +73,8 @@ import org.apache.james.mailbox.store.mail.model.MailboxMessage;
 import org.apache.james.mailbox.store.mail.model.Property;
 import org.apache.james.mailbox.store.mail.model.impl.PropertyBuilder;
 import org.apache.james.util.streams.Limit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
@@ -95,6 +97,8 @@ import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
 
 public class CassandraMessageDAO {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CassandraMessageDAO.class);
+
     public static final long DEFAULT_LONG_VALUE = 0L;
     private static final byte[] EMPTY_BYTE_ARRAY = {};
 
@@ -171,23 +175,26 @@ public class CassandraMessageDAO {
             .where(eq(MESSAGE_ID, bindMarker(MESSAGE_ID))));
     }
 
-    public Mono<Void> save(MailboxMessage message) throws MailboxException {
-        return saveContent(message)
+    public Mono<Void> save(MailboxMessage message) {
+        return Mono.zip(
+                saveContent(message::getHeaderContent),
+                saveContent(message::getBodyContent))
             .flatMap(pair -> cassandraAsyncExecutor.executeVoid(boundWriteStatement(message, pair)))
             .then();
     }
 
-    private Mono<Tuple2<BlobId, BlobId>> saveContent(MailboxMessage message) throws MailboxException {
+    private Mono<BlobId> saveContent(Callable<InputStream> contentSupplier) {
+        return Mono.using(
+            contentSupplier,
+            content -> blobStore.save(blobStore.getDefaultBucketName(), content),
+            this::closeQuietly);
+    }
+
+    private void closeQuietly(InputStream inputStream) {
         try {
-            byte[] headerContent = IOUtils.toByteArray(message.getHeaderContent());
-            byte[] bodyContent = IOUtils.toByteArray(message.getBodyContent());
-
-            Mono<BlobId> bodyFuture = blobStore.save(blobStore.getDefaultBucketName(), bodyContent);
-            Mono<BlobId> headerFuture = blobStore.save(blobStore.getDefaultBucketName(), headerContent);
-
-            return headerFuture.zipWith(bodyFuture);
+            inputStream.close();
         } catch (IOException e) {
-            throw new MailboxException("Error saving mail content", e);
+            LOGGER.error("Cannot close InputStream", e);
         }
     }
 
