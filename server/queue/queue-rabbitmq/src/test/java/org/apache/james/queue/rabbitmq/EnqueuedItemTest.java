@@ -25,8 +25,8 @@ import java.time.Instant;
 
 import javax.mail.MessagingException;
 
-import org.apache.james.blob.api.HashBlobId;
-import org.apache.james.blob.mail.MimeMessagePartsId;
+import org.apache.james.blob.api.BlobId;
+import org.apache.james.blob.api.TestBlobId;
 import org.apache.mailet.Mail;
 import org.apache.mailet.base.test.FakeMail;
 import org.junit.jupiter.api.Test;
@@ -38,16 +38,13 @@ class EnqueuedItemTest {
     private MailQueueName mailQueueName;
     private Mail mail;
     private Instant enqueuedTime;
-    private MimeMessagePartsId partsId;
+    private BlobId blobId;
 
     EnqueuedItemTest() throws MessagingException {
         mailQueueName = MailQueueName.fromString("mailQueueName");
         mail = FakeMail.defaultFakeMail();
         enqueuedTime = Instant.now();
-        partsId = MimeMessagePartsId.builder()
-                .headerBlobId(new HashBlobId.Factory().from("headerBlobId"))
-                .bodyBlobId(new HashBlobId.Factory().from("bodyBlobId"))
-                .build();
+        blobId = new TestBlobId("blobId");
     }
 
     @Test
@@ -63,7 +60,7 @@ class EnqueuedItemTest {
                 .mailQueueName(mailQueueName)
                 .mail(mail)
                 .enqueuedTime(enqueuedTime)
-                .mimeMessagePartsId(partsId)
+                .blobId(blobId)
                 .build())
             .isInstanceOf(NullPointerException.class);
     }
@@ -75,7 +72,7 @@ class EnqueuedItemTest {
                 .mailQueueName(null)
                 .mail(mail)
                 .enqueuedTime(enqueuedTime)
-                .mimeMessagePartsId(partsId)
+                .blobId(blobId)
                 .build())
             .isInstanceOf(NullPointerException.class);
     }
@@ -87,7 +84,7 @@ class EnqueuedItemTest {
                 .mailQueueName(mailQueueName)
                 .mail(null)
                 .enqueuedTime(enqueuedTime)
-                .mimeMessagePartsId(partsId)
+                .blobId(blobId)
                 .build())
             .isInstanceOf(NullPointerException.class);
     }
@@ -99,7 +96,7 @@ class EnqueuedItemTest {
                 .mailQueueName(mailQueueName)
                 .mail(mail)
                 .enqueuedTime(null)
-                .mimeMessagePartsId(partsId)
+                .blobId(blobId)
                 .build())
             .isInstanceOf(NullPointerException.class);
     }
@@ -111,7 +108,7 @@ class EnqueuedItemTest {
                 .mailQueueName(mailQueueName)
                 .mail(mail)
                 .enqueuedTime(enqueuedTime)
-                .mimeMessagePartsId(null)
+                .blobId(null)
                 .build())
             .isInstanceOf(NullPointerException.class);
     }

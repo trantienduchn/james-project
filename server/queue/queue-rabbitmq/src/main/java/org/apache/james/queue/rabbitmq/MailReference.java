@@ -19,19 +19,19 @@
 
 package org.apache.james.queue.rabbitmq;
 
-import org.apache.james.blob.mail.MimeMessagePartsId;
+import org.apache.james.blob.api.BlobId;
 import org.apache.mailet.Mail;
 
 public class MailReference {
 
     private final EnqueueId enqueueId;
     private final Mail mail;
-    private final MimeMessagePartsId partsId;
+    private final BlobId blobId;
 
-    public MailReference(EnqueueId enqueueId, Mail mail, MimeMessagePartsId partsId) {
+    public MailReference(EnqueueId enqueueId, Mail mail, BlobId blobId) {
         this.enqueueId = enqueueId;
         this.mail = mail;
-        this.partsId = partsId;
+        this.blobId = blobId;
     }
 
     public EnqueueId getEnqueueId() {
@@ -42,7 +42,7 @@ public class MailReference {
         return mail;
     }
 
-    public MimeMessagePartsId getPartsId() {
-        return partsId;
+    public BlobId getBlobId() {
+        return blobId;
     }
 }

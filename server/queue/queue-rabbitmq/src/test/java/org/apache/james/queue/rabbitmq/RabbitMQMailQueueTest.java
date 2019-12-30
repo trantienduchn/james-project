@@ -39,10 +39,10 @@ import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionModule;
 import org.apache.james.backends.rabbitmq.RabbitMQExtension;
+import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.cassandra.CassandraBlobModule;
-import org.apache.james.blob.cassandra.CassandraBlobStore;
-import org.apache.james.blob.mail.MimeMessageStore;
+import org.apache.james.blob.memory.MemoryBlobStore;
 import org.apache.james.eventsourcing.eventstore.cassandra.CassandraEventStoreModule;
 import org.apache.james.metrics.api.Gauge;
 import org.apache.james.queue.api.MailQueue;
@@ -291,8 +291,9 @@ class RabbitMQMailQueueTest {
     }
 
     private void setUp(CassandraCluster cassandra, MailQueueMetricExtension.MailQueueMetricTestSystem metricTestSystem, RabbitMQMailQueueConfiguration configuration) throws Exception {
-        CassandraBlobStore blobStore = new CassandraBlobStore(cassandra.getConf());
-        MimeMessageStore.Factory mimeMessageStoreFactory = MimeMessageStore.factory(blobStore);
+//        CassandraBlobStore blobStore = new CassandraBlobStore(cassandra.getConf());
+        // TODO for debugging
+        BlobStore blobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
         clock = new UpdatableTickingClock(IN_SLICE_1);
 
         MailQueueView.Factory mailQueueViewFactory = CassandraMailQueueViewTestFactory.factory(clock, cassandra.getConf(),
@@ -301,13 +302,13 @@ class RabbitMQMailQueueTest {
                 .updateBrowseStartPace(UPDATE_BROWSE_START_PACE)
                 .sliceWindow(ONE_HOUR_SLICE_WINDOW)
                 .build(),
-            mimeMessageStoreFactory);
+            blobStore);
 
         RabbitMQMailQueueFactory.PrivateFactory factory = new RabbitMQMailQueueFactory.PrivateFactory(
             metricTestSystem.getMetricFactory(),
             metricTestSystem.getSpyGaugeRegistry(),
             rabbitMQExtension.getRabbitChannelPool(),
-            mimeMessageStoreFactory,
+            blobStore,
             BLOB_ID_FACTORY,
             mailQueueViewFactory,
             clock,

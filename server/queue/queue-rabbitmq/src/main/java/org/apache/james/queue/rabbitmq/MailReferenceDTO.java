@@ -30,7 +30,6 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.blob.api.BlobId;
-import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.core.MailAddress;
 import org.apache.james.core.MaybeSender;
 import org.apache.james.server.core.MailImpl;
@@ -52,7 +51,6 @@ class MailReferenceDTO {
 
     static MailReferenceDTO fromMailReference(MailReference mailReference) {
         Mail mail = mailReference.getMail();
-        MimeMessagePartsId partsId = mailReference.getPartsId();
 
         return new MailReferenceDTO(
             mailReference.getEnqueueId().serialize(),
@@ -69,8 +67,7 @@ class MailReferenceDTO {
             mail.getRemoteAddr(),
             mail.getRemoteHost(),
             fromPerRecipientHeaders(mail.getPerRecipientSpecificHeaders()),
-            partsId.getHeaderBlobId().asString(),
-            partsId.getBodyBlobId().asString());
+            mailReference.getBlobId().asString());
     }
 
     private static Map<String, HeadersDto> fromPerRecipientHeaders(PerRecipientHeaders perRecipientHeaders) {
@@ -102,8 +99,7 @@ class MailReferenceDTO {
     private final String remoteAddr;
     private final String remoteHost;
     private final Map<String, HeadersDto> perRecipientHeaders;
-    private final String headerBlobId;
-    private final String bodyBlobId;
+    private final String blobId;
 
     @JsonCreator
     private MailReferenceDTO(@JsonProperty("enqueueId") String enqueueId,
@@ -117,8 +113,7 @@ class MailReferenceDTO {
                              @JsonProperty("remoteAddr") String remoteAddr,
                              @JsonProperty("remoteHost") String remoteHost,
                              @JsonProperty("perRecipientHeaders") Map<String, HeadersDto> perRecipientHeaders,
-                             @JsonProperty("headerBlobId") String headerBlobId,
-                             @JsonProperty("bodyBlobId") String bodyBlobId) {
+                             @JsonProperty("headerBlobId") String blobId) {
         this.enqueueId = enqueueId;
         this.recipients = recipients;
         this.name = name;
@@ -130,8 +125,7 @@ class MailReferenceDTO {
         this.remoteAddr = remoteAddr;
         this.remoteHost = remoteHost;
         this.perRecipientHeaders = perRecipientHeaders;
-        this.headerBlobId = headerBlobId;
-        this.bodyBlobId = bodyBlobId;
+        this.blobId = blobId;
     }
 
     @JsonProperty("enqueueId")
@@ -189,23 +183,13 @@ class MailReferenceDTO {
         return perRecipientHeaders;
     }
 
-    @JsonProperty("headerBlobId")
-    String getHeaderBlobId() {
-        return headerBlobId;
-    }
-
-    @JsonProperty("bodyBlobId")
-    String getBodyBlobId() {
-        return bodyBlobId;
+    @JsonProperty("blobId")
+    String getBlobId() {
+        return blobId;
     }
 
     MailReference toMailReference(BlobId.Factory blobIdFactory) {
-        MimeMessagePartsId messagePartsId = MimeMessagePartsId.builder()
-            .headerBlobId(blobIdFactory.from(headerBlobId))
-            .bodyBlobId(blobIdFactory.from(bodyBlobId))
-            .build();
-
-        return new MailReference(EnqueueId.ofSerialized(enqueueId), mailMetadata(), messagePartsId);
+        return new MailReference(EnqueueId.ofSerialized(enqueueId), mailMetadata(), blobIdFactory.from(blobId));
     }
 
     private MailImpl mailMetadata() {
@@ -262,14 +246,13 @@ class MailReferenceDTO {
                 && Objects.equals(this.remoteAddr, mailDTO.remoteAddr)
                 && Objects.equals(this.remoteHost, mailDTO.remoteHost)
                 && Objects.equals(this.perRecipientHeaders, mailDTO.perRecipientHeaders)
-                && Objects.equals(this.headerBlobId, mailDTO.headerBlobId)
-                && Objects.equals(this.bodyBlobId, mailDTO.bodyBlobId);
+                && Objects.equals(this.blobId, mailDTO.blobId);
         }
         return false;
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(enqueueId, recipients, name, sender, state, errorMessage, lastUpdated, attributes, remoteAddr, remoteHost, perRecipientHeaders, headerBlobId, bodyBlobId);
+        return Objects.hash(enqueueId, recipients, name, sender, state, errorMessage, lastUpdated, attributes, remoteAddr, remoteHost, perRecipientHeaders, blobId);
     }
 }

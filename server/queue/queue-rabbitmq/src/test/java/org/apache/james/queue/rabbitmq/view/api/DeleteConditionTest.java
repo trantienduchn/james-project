@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 
-import org.apache.james.blob.api.HashBlobId;
-import org.apache.james.blob.mail.MimeMessagePartsId;
+import org.apache.james.blob.api.BlobId;
+import org.apache.james.blob.api.TestBlobId;
 import org.apache.james.core.MailAddress;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.queue.rabbitmq.EnqueueId;
@@ -46,10 +46,7 @@ class DeleteConditionTest {
     private static final EnqueueId ENQUEUE_ID_2 = EnqueueId.ofSerialized("464765a0-e4e7-11e4-aba4-710c1de3782b");
     private static final MailQueueName OUT_GOING_1 = MailQueueName.fromString("OUT_GOING_1");
     private static final Instant ENQUEUE_TIME = Instant.now();
-    private static final MimeMessagePartsId MESSAGE_PARTS_ID = MimeMessagePartsId.builder()
-        .headerBlobId(new HashBlobId.Factory().from("headerBlobId"))
-        .bodyBlobId(new HashBlobId.Factory().from("bodyBlobId"))
-        .build();
+    private static final BlobId BLOB_ID = new TestBlobId("blobId");
 
     @Nested
     class AllTest {
@@ -94,7 +91,7 @@ class DeleteConditionTest {
                     .sender(ADDRESS)
                     .build())
                 .enqueuedTime(ENQUEUE_TIME)
-                .mimeMessagePartsId(MESSAGE_PARTS_ID)
+                .blobId(BLOB_ID)
                 .build();
 
             assertThat(DeleteCondition.withEnqueueId(ENQUEUE_ID_1).shouldBeDeleted(enqueuedItem))
@@ -111,7 +108,7 @@ class DeleteConditionTest {
                     .sender(ADDRESS)
                     .build())
                 .enqueuedTime(ENQUEUE_TIME)
-                .mimeMessagePartsId(MESSAGE_PARTS_ID)
+                .blobId(BLOB_ID)
                 .build();
 
             assertThat(DeleteCondition.withEnqueueId(ENQUEUE_ID_1).shouldBeDeleted(enqueuedItem))
@@ -324,7 +321,7 @@ class DeleteConditionTest {
             .mailQueueName(OUT_GOING_1)
             .mail(mail)
             .enqueuedTime(ENQUEUE_TIME)
-            .mimeMessagePartsId(MESSAGE_PARTS_ID)
+            .blobId(BLOB_ID)
             .build();
     }
 }

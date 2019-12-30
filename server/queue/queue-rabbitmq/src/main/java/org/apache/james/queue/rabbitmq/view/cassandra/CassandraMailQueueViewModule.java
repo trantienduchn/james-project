@@ -45,8 +45,7 @@ public interface CassandraMailQueueViewModule {
         String ENQUEUED_TIME = "enqueuedTime";
         String ENQUEUE_ID = "enqueueId";
         String NAME = "name";
-        String HEADER_BLOB_ID = "headerBlobId";
-        String BODY_BLOB_ID = "bodyBlobId";
+        String BLOB_ID = "blobId";
         String STATE = "state";
         String SENDER = "sender";
         String RECIPIENTS = "recipients";
@@ -93,8 +92,7 @@ public interface CassandraMailQueueViewModule {
             .addColumn(EnqueuedMailsTable.ENQUEUED_TIME, timestamp())
             .addColumn(EnqueuedMailsTable.NAME, text())
             .addColumn(EnqueuedMailsTable.STATE, text())
-            .addColumn(EnqueuedMailsTable.HEADER_BLOB_ID, text())
-            .addColumn(EnqueuedMailsTable.BODY_BLOB_ID, text())
+            .addColumn(EnqueuedMailsTable.BLOB_ID, text())
             .addColumn(EnqueuedMailsTable.ATTRIBUTES, map(text(), blob()))
             .addColumn(EnqueuedMailsTable.ERROR_MESSAGE, text())
             .addColumn(EnqueuedMailsTable.SENDER, text())

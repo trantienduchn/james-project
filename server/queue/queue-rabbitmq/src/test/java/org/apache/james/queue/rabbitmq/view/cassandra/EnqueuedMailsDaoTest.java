@@ -32,7 +32,6 @@ import org.apache.james.backends.cassandra.components.CassandraModule;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionModule;
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.HashBlobId;
-import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.queue.rabbitmq.EnqueueId;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
 import org.apache.james.queue.rabbitmq.MailQueueName;
@@ -55,12 +54,7 @@ class EnqueuedMailsDaoTest {
     private static final Slice SLICE_OF_NOW = Slice.of(NOW);
 
     private static final BlobId.Factory BLOB_ID_FACTORY = new HashBlobId.Factory();
-    private static final BlobId HEADER_BLOB_ID = BLOB_ID_FACTORY.from("header blob id");
-    private static final BlobId BODY_BLOB_ID = BLOB_ID_FACTORY.from("body blob id");
-    private static final MimeMessagePartsId MIME_MESSAGE_PARTS_ID = MimeMessagePartsId.builder()
-        .headerBlobId(HEADER_BLOB_ID)
-        .bodyBlobId(BODY_BLOB_ID)
-        .build();
+    private static final BlobId BLOB_ID = BLOB_ID_FACTORY.from("blobId");
 
     @RegisterExtension
     static CassandraClusterExtension cassandraCluster = new CassandraClusterExtension(
@@ -86,7 +80,7 @@ class EnqueuedMailsDaoTest {
                         .name(NAME)
                         .build())
                     .enqueuedTime(NOW)
-                    .mimeMessagePartsId(MIME_MESSAGE_PARTS_ID)
+                    .blobId(BLOB_ID)
                     .build())
                 .slicingContext(EnqueuedItemWithSlicingContext.SlicingContext.of(BucketId.of(BUCKET_ID_VALUE), NOW))
                 .build())
@@ -109,7 +103,7 @@ class EnqueuedMailsDaoTest {
                         .name(NAME)
                         .build())
                     .enqueuedTime(NOW)
-                    .mimeMessagePartsId(MIME_MESSAGE_PARTS_ID)
+                    .blobId(BLOB_ID)
                     .build())
                 .slicingContext(EnqueuedItemWithSlicingContext.SlicingContext.of(BucketId.of(BUCKET_ID_VALUE), NOW))
                 .build())
@@ -123,7 +117,7 @@ class EnqueuedMailsDaoTest {
                         .name(NAME)
                         .build())
                     .enqueuedTime(NOW)
-                    .mimeMessagePartsId(MIME_MESSAGE_PARTS_ID)
+                    .blobId(BLOB_ID)
                     .build())
                 .slicingContext(EnqueuedItemWithSlicingContext.SlicingContext.of(BucketId.of(BUCKET_ID_VALUE + 1), NOW))
                 .build())
@@ -144,7 +138,7 @@ class EnqueuedMailsDaoTest {
                     softly.assertThat(enqueuedItem.getEnqueuedTime()).isEqualTo(NOW.truncatedTo(ChronoUnit.MILLIS));
                     softly.assertThat(enqueuedItem.getEnqueueId()).isEqualTo(ENQUEUE_ID);
                     softly.assertThat(enqueuedItem.getMail().getName()).isEqualTo(NAME);
-                    softly.assertThat(enqueuedItem.getPartsId()).isEqualTo(MIME_MESSAGE_PARTS_ID);
+                    softly.assertThat(enqueuedItem.getBlobId()).isEqualTo(BLOB_ID);
                 });
             });
     }

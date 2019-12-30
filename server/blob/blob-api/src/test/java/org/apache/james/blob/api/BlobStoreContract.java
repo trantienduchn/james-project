@@ -219,7 +219,7 @@ public interface BlobStoreContract extends DeleteBlobStoreContract, BucketBlobSt
         BucketName defaultBucketName = store.getDefaultBucketName();
 
         // 12 MB of text
-        BlobId blobId = store.save(defaultBucketName, TWELVE_MEGABYTES).block();
+        BlobId blobId = store.save(defaultBucketName, new ByteArrayInputStream(TWELVE_MEGABYTES)).block();
 
         InputStream read = store.read(defaultBucketName, blobId);
 

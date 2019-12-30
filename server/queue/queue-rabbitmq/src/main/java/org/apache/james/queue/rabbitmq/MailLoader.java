@@ -24,17 +24,17 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.MimeMessage;
 
 import org.apache.james.blob.api.BlobId;
-import org.apache.james.blob.api.Store;
-import org.apache.james.blob.mail.MimeMessagePartsId;
+import org.apache.james.blob.api.BlobStore;
+import org.apache.james.blob.mail.MimeMessageStore;
 import org.apache.james.queue.api.MailQueue;
 import org.apache.mailet.Mail;
 
 class MailLoader {
-    private final Store<MimeMessage, MimeMessagePartsId> mimeMessageStore;
+    private final BlobStore blobStore;
     private final BlobId.Factory blobIdFactory;
 
-    MailLoader(Store<MimeMessage, MimeMessagePartsId> mimeMessageStore, BlobId.Factory blobIdFactory) {
-        this.mimeMessageStore = mimeMessageStore;
+    MailLoader(BlobStore blobStore, BlobId.Factory blobIdFactory) {
+        this.blobStore = blobStore;
         this.blobIdFactory = blobIdFactory;
     }
 
@@ -43,7 +43,7 @@ class MailLoader {
             MailReference mailReference = dto.toMailReference(blobIdFactory);
 
             Mail mail = mailReference.getMail();
-            MimeMessage mimeMessage = mimeMessageStore.read(mailReference.getPartsId()).block();
+            MimeMessage mimeMessage = MimeMessageStore.MimeMessageDecoder.toMimeMessage(blobStore.read(blobStore.getDefaultBucketName(), mailReference.getBlobId()));
             mail.setMessage(mimeMessage);
             return new MailWithEnqueueId(mailReference.getEnqueueId(), mail);
         } catch (AddressException e) {

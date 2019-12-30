@@ -33,13 +33,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import javax.inject.Inject;
-import javax.mail.internet.MimeMessage;
 
 import org.apache.james.backends.rabbitmq.ReactorRabbitMQChannelPool;
 import org.apache.james.blob.api.BlobId;
-import org.apache.james.blob.api.Store;
-import org.apache.james.blob.mail.MimeMessagePartsId;
-import org.apache.james.blob.mail.MimeMessageStore;
+import org.apache.james.blob.api.BlobStore;
 import org.apache.james.metrics.api.GaugeRegistry;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.queue.api.MailQueueFactory;
@@ -62,7 +59,7 @@ public class RabbitMQMailQueueFactory implements MailQueueFactory<RabbitMQMailQu
         private final MetricFactory metricFactory;
         private final GaugeRegistry gaugeRegistry;
         private final ReactorRabbitMQChannelPool reactorRabbitMQChannelPool;
-        private final Store<MimeMessage, MimeMessagePartsId> mimeMessageStore;
+        private final BlobStore blobStore;
         private final MailReferenceSerializer mailReferenceSerializer;
         private final Function<MailReferenceDTO, MailWithEnqueueId> mailLoader;
         private final MailQueueView.Factory mailQueueViewFactory;
@@ -74,7 +71,7 @@ public class RabbitMQMailQueueFactory implements MailQueueFactory<RabbitMQMailQu
         @VisibleForTesting PrivateFactory(MetricFactory metricFactory,
                                           GaugeRegistry gaugeRegistry,
                                           ReactorRabbitMQChannelPool reactorRabbitMQChannelPool,
-                                          MimeMessageStore.Factory mimeMessageStoreFactory,
+                                          BlobStore blobStore,
                                           BlobId.Factory blobIdFactory,
                                           MailQueueView.Factory mailQueueViewFactory,
                                           Clock clock,
@@ -83,12 +80,12 @@ public class RabbitMQMailQueueFactory implements MailQueueFactory<RabbitMQMailQu
             this.metricFactory = metricFactory;
             this.gaugeRegistry = gaugeRegistry;
             this.reactorRabbitMQChannelPool = reactorRabbitMQChannelPool;
-            this.mimeMessageStore = mimeMessageStoreFactory.mimeMessageStore();
+            this.blobStore = blobStore;
             this.mailQueueViewFactory = mailQueueViewFactory;
             this.clock = clock;
             this.decoratorFactory = decoratorFactory;
             this.mailReferenceSerializer = new MailReferenceSerializer();
-            this.mailLoader = Throwing.function(new MailLoader(mimeMessageStore, blobIdFactory)::load).sneakyThrow();
+            this.mailLoader = Throwing.function(new MailLoader(blobStore, blobIdFactory)::load).sneakyThrow();
             this.configuration = configuration;
         }
 
@@ -99,7 +96,7 @@ public class RabbitMQMailQueueFactory implements MailQueueFactory<RabbitMQMailQu
             RabbitMQMailQueue rabbitMQMailQueue = new RabbitMQMailQueue(
                 metricFactory,
                 mailQueueName,
-                new Enqueuer(mailQueueName, reactorRabbitMQChannelPool, mimeMessageStore, mailReferenceSerializer,
+                new Enqueuer(mailQueueName, reactorRabbitMQChannelPool, blobStore, mailReferenceSerializer,
                     metricFactory, mailQueueView, clock),
                 new Dequeuer(mailQueueName, reactorRabbitMQChannelPool, mailLoader, mailReferenceSerializer,
                     metricFactory, mailQueueView),

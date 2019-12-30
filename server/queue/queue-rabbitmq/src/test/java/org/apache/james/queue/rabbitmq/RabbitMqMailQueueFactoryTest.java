@@ -30,8 +30,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.james.backends.rabbitmq.RabbitMQExtension;
+import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.HashBlobId;
-import org.apache.james.blob.mail.MimeMessageStore;
+import org.apache.james.blob.memory.MemoryBlobStore;
 import org.apache.james.metrics.api.NoopGaugeRegistry;
 import org.apache.james.metrics.tests.RecordingMetricFactory;
 import org.apache.james.queue.api.MailQueueFactory;
@@ -56,7 +57,7 @@ class RabbitMqMailQueueFactoryTest implements MailQueueFactoryContract<RabbitMQM
 
     @BeforeEach
     void setup() throws Exception {
-        MimeMessageStore.Factory mimeMessageStoreFactory = mock(MimeMessageStore.Factory.class);
+        BlobStore blobStore = new MemoryBlobStore(BLOB_ID_FACTORY);
         MailQueueView.Factory mailQueueViewFactory = mock(MailQueueView.Factory.class);
         MailQueueView mailQueueView = mock(MailQueueView.class);
         when(mailQueueViewFactory.create(any()))
@@ -70,7 +71,7 @@ class RabbitMqMailQueueFactoryTest implements MailQueueFactoryContract<RabbitMQM
             new RecordingMetricFactory(),
             new NoopGaugeRegistry(),
             rabbitMQExtension.getRabbitChannelPool(),
-            mimeMessageStoreFactory,
+            blobStore,
             BLOB_ID_FACTORY,
             mailQueueViewFactory,
             Clock.systemUTC(),

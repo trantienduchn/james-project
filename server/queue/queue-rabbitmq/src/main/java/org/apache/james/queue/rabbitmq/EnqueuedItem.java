@@ -22,7 +22,7 @@ package org.apache.james.queue.rabbitmq;
 import java.time.Instant;
 import java.util.Objects;
 
-import org.apache.james.blob.mail.MimeMessagePartsId;
+import org.apache.james.blob.api.BlobId;
 import org.apache.mailet.Mail;
 
 import com.google.common.base.Preconditions;
@@ -48,12 +48,12 @@ public class EnqueuedItem {
 
         @FunctionalInterface
         interface RequireEnqueuedTime {
-            RequireMimeMessagePartsId enqueuedTime(Instant clock);
+            RequireBlobId enqueuedTime(Instant clock);
         }
 
         @FunctionalInterface
-        interface RequireMimeMessagePartsId {
-            ReadyToBuild mimeMessagePartsId(MimeMessagePartsId partsId);
+        interface RequireBlobId {
+            ReadyToBuild blobId(BlobId blobId);
         }
 
         class ReadyToBuild {
@@ -61,24 +61,24 @@ public class EnqueuedItem {
             private final MailQueueName mailQueueName;
             private final Mail mail;
             private final Instant enqueuedTime;
-            private final MimeMessagePartsId partsId;
+            private final BlobId blobId;
 
-            ReadyToBuild(EnqueueId enqueueId, MailQueueName mailQueueName, Mail mail, Instant enqueuedTime, MimeMessagePartsId partsId) {
+            ReadyToBuild(EnqueueId enqueueId, MailQueueName mailQueueName, Mail mail, Instant enqueuedTime, BlobId blobId) {
                 Preconditions.checkNotNull(enqueueId, "'enqueueId' is mandatory");
                 Preconditions.checkNotNull(mailQueueName, "'mailQueueName' is mandatory");
                 Preconditions.checkNotNull(mail, "'mail' is mandatory");
                 Preconditions.checkNotNull(enqueuedTime, "'enqueuedTime' is mandatory");
-                Preconditions.checkNotNull(partsId, "'partsId' is mandatory");
+                Preconditions.checkNotNull(blobId, "'blobId' is mandatory");
 
                 this.enqueueId = enqueueId;
                 this.mailQueueName = mailQueueName;
                 this.mail = mail;
                 this.enqueuedTime = enqueuedTime;
-                this.partsId = partsId;
+                this.blobId = blobId;
             }
 
             public EnqueuedItem build() {
-                return new EnqueuedItem(enqueueId, mailQueueName, mail, enqueuedTime, partsId);
+                return new EnqueuedItem(enqueueId, mailQueueName, mail, enqueuedTime, blobId);
             }
         }
     }
@@ -91,14 +91,14 @@ public class EnqueuedItem {
     private final MailQueueName mailQueueName;
     private final Mail mail;
     private final Instant enqueuedTime;
-    private final MimeMessagePartsId partsId;
+    private final BlobId blobId;
 
-    EnqueuedItem(EnqueueId enqueueId, MailQueueName mailQueueName, Mail mail, Instant enqueuedTime, MimeMessagePartsId partsId) {
+    EnqueuedItem(EnqueueId enqueueId, MailQueueName mailQueueName, Mail mail, Instant enqueuedTime, BlobId blobId) {
         this.enqueueId = enqueueId;
         this.mailQueueName = mailQueueName;
         this.mail = mail;
         this.enqueuedTime = enqueuedTime;
-        this.partsId = partsId;
+        this.blobId = blobId;
     }
 
     public EnqueueId getEnqueueId() {
@@ -117,8 +117,8 @@ public class EnqueuedItem {
         return enqueuedTime;
     }
 
-    public MimeMessagePartsId getPartsId() {
-        return partsId;
+    public BlobId getBlobId() {
+        return blobId;
     }
 
     @Override
@@ -130,13 +130,13 @@ public class EnqueuedItem {
                 && Objects.equals(this.mailQueueName, that.mailQueueName)
                 && Objects.equals(this.mail, that.mail)
                 && Objects.equals(this.enqueuedTime, that.enqueuedTime)
-                && Objects.equals(this.partsId, that.partsId);
+                && Objects.equals(this.blobId, that.blobId);
         }
         return false;
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(enqueueId, mailQueueName, mail, enqueuedTime, partsId);
+        return Objects.hash(enqueueId, mailQueueName, mail, enqueuedTime, blobId);
     }
 }

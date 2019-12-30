@@ -126,7 +126,7 @@ public class MimeMessageStore {
         }
     }
 
-    static class MimeMessageDecoder implements Store.Impl.Decoder<MimeMessage> {
+    public static class MimeMessageDecoder implements Store.Impl.Decoder<MimeMessage> {
         @Override
         public MimeMessage decode(Stream<Pair<BlobType, byte[]>> streams) {
             Preconditions.checkNotNull(streams);
@@ -140,7 +140,7 @@ public class MimeMessageStore {
                     new ByteArrayInputStream(pairs.get(BODY_BLOB_TYPE))));
         }
 
-        private MimeMessage toMimeMessage(InputStream inputStream) {
+        public static MimeMessage toMimeMessage(InputStream inputStream) {
             try {
                 return new MimeMessage(Session.getInstance(new Properties()), inputStream);
             } catch (MessagingException e) {

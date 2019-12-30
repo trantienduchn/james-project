@@ -22,14 +22,17 @@ package org.apache.james.queue.rabbitmq;
 import static org.apache.james.backends.rabbitmq.Constants.EMPTY_ROUTING_KEY;
 import static org.apache.james.queue.api.MailQueue.ENQUEUED_METRIC_NAME_PREFIX;
 
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.time.Clock;
 
 import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.james.backends.rabbitmq.ReactorRabbitMQChannelPool;
-import org.apache.james.blob.api.Store;
-import org.apache.james.blob.mail.MimeMessagePartsId;
+import org.apache.james.blob.api.BlobId;
+import org.apache.james.blob.api.BlobStore;
 import org.apache.james.metrics.api.Metric;
 import org.apache.james.metrics.api.MetricFactory;
 import org.apache.james.queue.api.MailQueue;
@@ -46,38 +49,42 @@ import reactor.rabbitmq.Sender;
 class Enqueuer {
     private final MailQueueName name;
     private final Sender sender;
-    private final Store<MimeMessage, MimeMessagePartsId> mimeMessageStore;
     private final MailReferenceSerializer mailReferenceSerializer;
     private final Metric enqueueMetric;
     private final MailQueueView mailQueueView;
     private final Clock clock;
+    private final BlobStore blobStore;
 
-    Enqueuer(MailQueueName name, ReactorRabbitMQChannelPool reactorRabbitMQChannelPool, Store<MimeMessage, MimeMessagePartsId> mimeMessageStore,
+    Enqueuer(MailQueueName name, ReactorRabbitMQChannelPool reactorRabbitMQChannelPool, BlobStore blobStore,
              MailReferenceSerializer serializer, MetricFactory metricFactory,
              MailQueueView mailQueueView, Clock clock) {
         this.name = name;
         this.sender = reactorRabbitMQChannelPool.getSender();
-        this.mimeMessageStore = mimeMessageStore;
         this.mailReferenceSerializer = serializer;
         this.mailQueueView = mailQueueView;
         this.clock = clock;
+        this.blobStore = blobStore;
         this.enqueueMetric = metricFactory.generate(ENQUEUED_METRIC_NAME_PREFIX + name.asString());
     }
 
     void enQueue(Mail mail) throws MailQueue.MailQueueException {
         EnqueueId enqueueId = EnqueueId.generate();
         saveMail(mail)
-            .map(partIds -> new MailReference(enqueueId, mail, partIds))
+            .map(blobId -> new MailReference(enqueueId, mail, blobId))
             .flatMap(Throwing.function(this::publishReferenceToRabbit).sneakyThrow())
             .flatMap(mailQueueView::storeMail)
             .thenEmpty(Mono.fromRunnable(enqueueMetric::increment))
             .block();
     }
 
-    private Mono<MimeMessagePartsId> saveMail(Mail mail) throws MailQueue.MailQueueException {
+    private Mono<BlobId> saveMail(Mail mail) throws MailQueue.MailQueueException {
         try {
-            return mimeMessageStore.save(mail.getMessage());
-        } catch (MessagingException e) {
+            PipedInputStream in = new PipedInputStream();
+            PipedOutputStream out = new PipedOutputStream(in);
+            mail.getMessage().writeTo(out);
+            IOUtils.toString(in, "utf-8");
+            return blobStore.save(blobStore.getDefaultBucketName(), in);
+        } catch (MessagingException | IOException e) {
             throw new MailQueue.MailQueueException("Error while saving blob", e);
         }
     }
@@ -94,7 +101,7 @@ class Enqueuer {
                     .mailQueueName(name)
                     .mail(mailReference.getMail())
                     .enqueuedTime(clock.instant())
-                    .mimeMessagePartsId(mailReference.getPartsId())
+                    .blobId(mailReference.getBlobId())
                     .build()));
     }
 

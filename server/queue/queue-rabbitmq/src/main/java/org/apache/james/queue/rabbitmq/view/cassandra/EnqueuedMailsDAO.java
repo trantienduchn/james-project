@@ -25,12 +25,11 @@ import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.insertInto;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ATTRIBUTES;
-import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.BODY_BLOB_ID;
+import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.BLOB_ID;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.BUCKET_ID;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ENQUEUED_TIME;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ENQUEUE_ID;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ERROR_MESSAGE;
-import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.HEADER_BLOB_ID;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.LAST_UPDATED;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.NAME;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.PER_RECIPIENT_SPECIFIC_HEADERS;
@@ -53,7 +52,6 @@ import javax.inject.Inject;
 
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
 import org.apache.james.blob.api.BlobId;
-import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.core.MailAddress;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
 import org.apache.james.queue.rabbitmq.MailQueueName;
@@ -66,6 +64,7 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.TupleType;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -102,8 +101,7 @@ public class EnqueuedMailsDAO {
             .value(BUCKET_ID, bindMarker(BUCKET_ID))
             .value(ENQUEUE_ID, bindMarker(ENQUEUE_ID))
             .value(NAME, bindMarker(NAME))
-            .value(HEADER_BLOB_ID, bindMarker(HEADER_BLOB_ID))
-            .value(BODY_BLOB_ID, bindMarker(BODY_BLOB_ID))
+            .value(BLOB_ID, bindMarker(BLOB_ID))
             .value(ENQUEUED_TIME, bindMarker(ENQUEUED_TIME))
             .value(STATE, bindMarker(STATE))
             .value(SENDER, bindMarker(SENDER))
@@ -120,7 +118,6 @@ public class EnqueuedMailsDAO {
         EnqueuedItem enqueuedItem = enqueuedItemWithSlicing.getEnqueuedItem();
         EnqueuedItemWithSlicingContext.SlicingContext slicingContext = enqueuedItemWithSlicing.getSlicingContext();
         Mail mail = enqueuedItem.getMail();
-        MimeMessagePartsId mimeMessagePartsId = enqueuedItem.getPartsId();
 
         BoundStatement statement = insert.bind()
             .setString(QUEUE_NAME, enqueuedItem.getMailQueueName().asString())
@@ -129,8 +126,7 @@ public class EnqueuedMailsDAO {
             .setTimestamp(ENQUEUED_TIME, Date.from(enqueuedItem.getEnqueuedTime()))
             .setUUID(ENQUEUE_ID, enqueuedItem.getEnqueueId().asUUID())
             .setString(NAME, mail.getName())
-            .setString(HEADER_BLOB_ID, mimeMessagePartsId.getHeaderBlobId().asString())
-            .setString(BODY_BLOB_ID, mimeMessagePartsId.getBodyBlobId().asString())
+            .setString(BLOB_ID, enqueuedItem.getBlobId().asString())
             .setString(STATE, mail.getState())
             .setList(RECIPIENTS, asStringList(mail.getRecipients()))
 

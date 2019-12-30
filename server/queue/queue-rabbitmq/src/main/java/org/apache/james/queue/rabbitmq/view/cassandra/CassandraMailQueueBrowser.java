@@ -31,8 +31,7 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
-import org.apache.james.blob.api.Store;
-import org.apache.james.blob.mail.MimeMessagePartsId;
+import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.mail.MimeMessageStore;
 import org.apache.james.queue.api.ManageableMailQueue;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
@@ -46,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Preconditions;
 
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 public class CassandraMailQueueBrowser {
@@ -82,28 +80,28 @@ public class CassandraMailQueueBrowser {
     private final BrowseStartDAO browseStartDao;
     private final DeletedMailsDAO deletedMailsDao;
     private final EnqueuedMailsDAO enqueuedMailsDao;
-    private final Store<MimeMessage, MimeMessagePartsId> mimeMessageStore;
     private final CassandraMailQueueViewConfiguration configuration;
     private final Clock clock;
+    private final BlobStore blobStore;
 
     @Inject
     CassandraMailQueueBrowser(BrowseStartDAO browseStartDao,
                               DeletedMailsDAO deletedMailsDao,
                               EnqueuedMailsDAO enqueuedMailsDao,
-                              MimeMessageStore.Factory mimeMessageStoreFactory,
+                              BlobStore blobStore,
                               CassandraMailQueueViewConfiguration configuration,
                               Clock clock) {
         this.browseStartDao = browseStartDao;
         this.deletedMailsDao = deletedMailsDao;
         this.enqueuedMailsDao = enqueuedMailsDao;
-        this.mimeMessageStore = mimeMessageStoreFactory.mimeMessageStore();
+        this.blobStore = blobStore;
         this.configuration = configuration;
         this.clock = clock;
     }
 
     Flux<ManageableMailQueue.MailQueueItemView> browse(MailQueueName queueName) {
         return browseReferences(queueName)
-            .flatMapSequential(this::toMailFuture)
+            .map(this::toMailFuture)
             .map(ManageableMailQueue.MailQueueItemView::new);
     }
 
@@ -114,10 +112,11 @@ public class CassandraMailQueueBrowser {
             .subscribeOn(Schedulers.parallel());
     }
 
-    private Mono<Mail> toMailFuture(EnqueuedItemWithSlicingContext enqueuedItemWithSlicingContext) {
+    private Mail toMailFuture(EnqueuedItemWithSlicingContext enqueuedItemWithSlicingContext) {
         EnqueuedItem enqueuedItem = enqueuedItemWithSlicingContext.getEnqueuedItem();
-        return mimeMessageStore.read(enqueuedItem.getPartsId())
-            .map(mimeMessage -> toMail(enqueuedItem, mimeMessage));
+        MimeMessage mimeMessage = MimeMessageStore.MimeMessageDecoder.toMimeMessage(blobStore.read(blobStore.getDefaultBucketName(), enqueuedItem.getBlobId()));
+
+        return toMail(enqueuedItem, mimeMessage);
     }
 
     private Mail toMail(EnqueuedItem enqueuedItem, MimeMessage mimeMessage) {

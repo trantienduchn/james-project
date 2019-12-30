@@ -39,7 +39,6 @@ import org.apache.james.backends.rabbitmq.RabbitMQExtension;
 import org.apache.james.blob.api.HashBlobId;
 import org.apache.james.blob.cassandra.CassandraBlobModule;
 import org.apache.james.blob.cassandra.CassandraBlobStore;
-import org.apache.james.blob.mail.MimeMessageStore;
 import org.apache.james.eventsourcing.eventstore.cassandra.CassandraEventStoreModule;
 import org.apache.james.metrics.api.NoopGaugeRegistry;
 import org.apache.james.metrics.tests.RecordingMetricFactory;
@@ -88,12 +87,11 @@ class RabbitMQMailQueueConfigurationChangeTest {
 
     private UpdatableTickingClock clock;
     private RabbitMQMailQueueManagement mqManagementApi;
-    private MimeMessageStore.Factory mimeMessageStoreFactory;
+    private CassandraBlobStore blobStore;
 
     @BeforeEach
     void setup(CassandraCluster cassandra) throws Exception {
-        CassandraBlobStore blobsDAO = new CassandraBlobStore(cassandra.getConf());
-        mimeMessageStoreFactory = MimeMessageStore.factory(blobsDAO);
+        blobStore = new CassandraBlobStore(cassandra.getConf());
         clock = new UpdatableTickingClock(IN_SLICE_1);
         mqManagementApi = new RabbitMQMailQueueManagement(rabbitMQExtension.managementAPI());
     }
@@ -107,7 +105,7 @@ class RabbitMQMailQueueConfigurationChangeTest {
         CassandraMailQueueView.Factory mailQueueViewFactory = CassandraMailQueueViewTestFactory.factory(clock,
             cassandra.getConf(),
             mailQueueViewConfiguration,
-            mimeMessageStoreFactory);
+            blobStore);
 
 
         RabbitMQMailQueueConfiguration mailQueueSizeConfiguration = RabbitMQMailQueueConfiguration.builder()
@@ -119,7 +117,7 @@ class RabbitMQMailQueueConfigurationChangeTest {
             new RecordingMetricFactory(),
             new NoopGaugeRegistry(),
             rabbitMQExtension.getRabbitChannelPool(),
-            mimeMessageStoreFactory,
+            blobStore,
             BLOB_ID_FACTORY,
             mailQueueViewFactory,
             clock,

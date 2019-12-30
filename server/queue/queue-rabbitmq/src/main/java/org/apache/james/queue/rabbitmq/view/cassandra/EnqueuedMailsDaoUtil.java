@@ -20,12 +20,11 @@
 package org.apache.james.queue.rabbitmq.view.cassandra;
 
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ATTRIBUTES;
-import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.BODY_BLOB_ID;
+import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.BLOB_ID;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.BUCKET_ID;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ENQUEUED_TIME;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ENQUEUE_ID;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.ERROR_MESSAGE;
-import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.HEADER_BLOB_ID;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.LAST_UPDATED;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.NAME;
 import static org.apache.james.queue.rabbitmq.view.cassandra.CassandraMailQueueViewModule.EnqueuedMailsTable.PER_RECIPIENT_SPECIFIC_HEADERS;
@@ -55,7 +54,6 @@ import javax.mail.internet.AddressException;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.blob.api.BlobId;
-import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.core.MailAddress;
 import org.apache.james.queue.rabbitmq.EnqueueId;
 import org.apache.james.queue.rabbitmq.EnqueuedItem;
@@ -86,13 +84,7 @@ public class EnqueuedMailsDaoUtil {
         Instant timeRangeStart = row.getTimestamp(TIME_RANGE_START).toInstant();
         BucketedSlices.BucketId bucketId = BucketedSlices.BucketId.of(row.getInt(BUCKET_ID));
         Instant enqueuedTime = row.getTimestamp(ENQUEUED_TIME).toInstant();
-        BlobId headerBlobId = blobFactory.from(row.getString(HEADER_BLOB_ID));
-        BlobId bodyBlobId = blobFactory.from(row.getString(BODY_BLOB_ID));
-        MimeMessagePartsId mimeMessagePartsId = MimeMessagePartsId
-            .builder()
-            .headerBlobId(headerBlobId)
-            .bodyBlobId(bodyBlobId)
-            .build();
+        BlobId blobId = blobFactory.from(row.getString(BLOB_ID));
 
         MailAddress sender = Optional.ofNullable(row.getString(SENDER))
             .map(Throwing.function(MailAddress::new))
@@ -127,7 +119,7 @@ public class EnqueuedMailsDaoUtil {
             .mailQueueName(queueName)
             .mail(mail)
             .enqueuedTime(enqueuedTime)
-            .mimeMessagePartsId(mimeMessagePartsId)
+            .blobId(blobId)
             .build();
 
 

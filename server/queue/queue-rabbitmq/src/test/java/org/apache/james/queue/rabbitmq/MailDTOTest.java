@@ -29,7 +29,6 @@ import java.util.Date;
 import javax.mail.MessagingException;
 
 import org.apache.james.blob.api.HashBlobId;
-import org.apache.james.blob.mail.MimeMessagePartsId;
 import org.apache.james.server.core.MailImpl;
 import org.apache.mailet.Attribute;
 import org.apache.mailet.AttributeName;
@@ -87,30 +86,27 @@ class MailDTOTest {
     private MailReferenceDTO mailDTO1() throws MessagingException {
         return MailReferenceDTO.fromMailReference(
             new MailReference(
-            EN_QUEUE_ID,
-            FakeMail.builder()
-                .name("mail-name-558")
-                .recipients(MailAddressFixture.RECIPIENT1, MailAddressFixture.RECIPIENT2)
-                .sender(MailAddressFixture.SENDER)
-                .attribute(new Attribute(AttributeName.of("att1"), AttributeValue.of("value")))
-                .errorMessage("an error")
-                .lastUpdated(LAST_UPDATED)
-                .remoteHost("toto.com")
-                .remoteAddr("159.221.12.145")
-                .addHeaderForRecipient(PerRecipientHeaders.Header.builder()
-                    .name("X-custom-header")
-                    .value("uedcgukrcg")
-                    .build(), MailAddressFixture.RECIPIENT1)
-                .addHeaderForRecipient(PerRecipientHeaders.Header.builder()
-                    .name("X-custom-header-2")
-                    .value("uedcgukrcg")
-                    .build(), MailAddressFixture.RECIPIENT2)
-                .state("state")
-                .build(),
-            MimeMessagePartsId.builder()
-                .headerBlobId(BLOB_ID_FACTORY.from("210e7136-ede3-44eb-9495-3ed816d6e23b"))
-                .bodyBlobId(BLOB_ID_FACTORY.from("ef46c026-7819-4048-b562-3a37469191ed"))
-                .build()));
+                EN_QUEUE_ID,
+                FakeMail.builder()
+                    .name("mail-name-558")
+                    .recipients(MailAddressFixture.RECIPIENT1, MailAddressFixture.RECIPIENT2)
+                    .sender(MailAddressFixture.SENDER)
+                    .attribute(new Attribute(AttributeName.of("att1"), AttributeValue.of("value")))
+                    .errorMessage("an error")
+                    .lastUpdated(LAST_UPDATED)
+                    .remoteHost("toto.com")
+                    .remoteAddr("159.221.12.145")
+                    .addHeaderForRecipient(PerRecipientHeaders.Header.builder()
+                        .name("X-custom-header")
+                        .value("uedcgukrcg")
+                        .build(), MailAddressFixture.RECIPIENT1)
+                    .addHeaderForRecipient(PerRecipientHeaders.Header.builder()
+                        .name("X-custom-header-2")
+                        .value("uedcgukrcg")
+                        .build(), MailAddressFixture.RECIPIENT2)
+                    .state("state")
+                    .build(),
+                BLOB_ID_FACTORY.from("ef46c026-7819-4048-b562-3a37469191ed")));
     }
 
     private MailReferenceDTO mailDTOMin() {
@@ -123,9 +119,6 @@ class MailDTOTest {
             new MailReference(
                 EN_QUEUE_ID,
                 mail,
-                MimeMessagePartsId.builder()
-                    .headerBlobId(BLOB_ID_FACTORY.from("210e7136-ede3-44eb-9495-3ed816d6e23b"))
-                    .bodyBlobId(BLOB_ID_FACTORY.from("ef46c026-7819-4048-b562-3a37469191ed"))
-                    .build()));
+                BLOB_ID_FACTORY.from("ef46c026-7819-4048-b562-3a37469191ed")));
     }
 }
