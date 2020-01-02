@@ -19,6 +19,7 @@
 
 package org.apache.james.blob.api;
 
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -69,16 +70,16 @@ public interface Store<T, I> {
             Mono<BlobId> saveIn(BucketName bucketName, BlobStore blobStore);
         }
 
-        public static class BytesToSave implements ValueToSave {
-            private final byte[] bytes;
+        public static class InputStreamToSave implements ValueToSave {
+            private final InputStream inputStream;
 
-            public BytesToSave(byte[] bytes) {
-                this.bytes = bytes;
+            public InputStreamToSave(InputStream inputStream) {
+                this.inputStream = inputStream;
             }
 
             @Override
             public Mono<BlobId> saveIn(BucketName bucketName, BlobStore blobStore) {
-                return blobStore.save(bucketName, bytes);
+                return blobStore.save(bucketName, inputStream);
             }
         }
 

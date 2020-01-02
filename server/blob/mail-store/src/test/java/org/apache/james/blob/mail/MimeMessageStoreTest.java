@@ -37,6 +37,8 @@ import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.google.common.base.Strings;
+
 class MimeMessageStoreTest {
     private static final HashBlobId.Factory BLOB_ID_FACTORY = new HashBlobId.Factory();
 
@@ -125,4 +127,38 @@ class MimeMessageStoreTest {
                     .isEqualTo("Important mail content");
             });
     }
+
+    @Test
+    void saveShouldSupportMessageWithABigBody() throws Exception {
+        String messageText = Strings.repeat("0123456789\r\n", 1024 * 1024);
+        MimeMessage message = MimeMessageBuilder.mimeMessageBuilder()
+            .addHeader("Date", "Thu, 6 Sep 2018 13:29:13 +0700 (ICT)")
+            .addHeader("Message-ID", "<84739718.0.1536215353507@localhost.localdomain>")
+            .addFrom("any@any.com")
+            .addToRecipient("toddy@any.com")
+            .setSubject("Important Mail")
+            .setText(messageText)
+            .build();
+
+        MimeMessagePartsId parts = testee.save(message).block();
+
+        SoftAssertions.assertSoftly(
+            softly -> {
+                BlobId headerBlobId = parts.getHeaderBlobId();
+                BlobId bodyBlobId = parts.getBodyBlobId();
+
+                softly.assertThat(new String(blobStore.readBytes(blobStore.getDefaultBucketName(), headerBlobId).block(), StandardCharsets.UTF_8))
+                    .isEqualTo("Date: Thu, 6 Sep 2018 13:29:13 +0700 (ICT)\r\n" +
+                        "From: any@any.com\r\n" +
+                        "To: toddy@any.com\r\n" +
+                        "Message-ID: <84739718.0.1536215353507@localhost.localdomain>\r\n" +
+                        "Subject: Important Mail\r\n" +
+                        "MIME-Version: 1.0\r\n" +
+                        "Content-Type: text/plain; charset=UTF-8\r\n" +
+                        "Content-Transfer-Encoding: 7bit\r\n\r\n");
+                softly.assertThat(new String(blobStore.readBytes(blobStore.getDefaultBucketName(), bodyBlobId).block(), StandardCharsets.UTF_8))
+                    .isEqualTo(messageText);
+            });
+    }
+
 }

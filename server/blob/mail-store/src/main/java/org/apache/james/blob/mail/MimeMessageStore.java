@@ -19,16 +19,15 @@
 
 package org.apache.james.blob.mail;
 
-import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
 import static org.apache.james.blob.mail.MimeMessagePartsId.BODY_BLOB_TYPE;
 import static org.apache.james.blob.mail.MimeMessagePartsId.HEADER_BLOB_TYPE;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.io.SequenceInputStream;
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -38,15 +37,19 @@ import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.Store;
 import org.apache.james.blob.api.Store.BlobType;
 import org.apache.james.util.BodyOffsetInputStream;
+import org.apache.james.util.BodyOffsetInputStream.Splitter.MessageParts;
 
+import com.github.fge.lambdas.Throwing;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public class MimeMessageStore {
 
@@ -70,59 +73,29 @@ public class MimeMessageStore {
     static class MimeMessageEncoder implements Store.Impl.Encoder<MimeMessage> {
         @Override
         public Stream<Pair<BlobType, Store.Impl.ValueToSave>> encode(MimeMessage message) {
+            Preconditions.checkNotNull(message);
             try {
-                byte[] messageAsArray = messageToArray(message);
-                int bodyStartOctet = computeBodyStartOctet(messageAsArray);
-                byte[] headerBytes = getHeaderBytes(messageAsArray, bodyStartOctet);
-                byte[] bodyBytes = getBodyBytes(messageAsArray, bodyStartOctet);
+                MessageParts messageParts = readMessage(message);
                 return Stream.of(
-                    Pair.of(HEADER_BLOB_TYPE, new Store.Impl.BytesToSave(headerBytes)),
-                    Pair.of(BODY_BLOB_TYPE, new Store.Impl.BytesToSave(bodyBytes)));
-            } catch (MessagingException | IOException e) {
+                    Pair.of(HEADER_BLOB_TYPE, new Store.Impl.InputStreamToSave(messageParts.getHeaderContent())),
+                    Pair.of(BODY_BLOB_TYPE, new Store.Impl.InputStreamToSave(messageParts.getBodyContent())));
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
-        
-        private static byte[] messageToArray(MimeMessage message) throws IOException, MessagingException {
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            message.writeTo(byteArrayOutputStream);
-            return byteArrayOutputStream.toByteArray();
-        }
 
-        private static byte[] getHeaderBytes(byte[] messageContentAsArray, int bodyStartOctet) {
-            ByteBuffer headerContent = ByteBuffer.wrap(messageContentAsArray, 0, bodyStartOctet);
-            byte[] headerBytes = new byte[bodyStartOctet];
-            headerContent.get(headerBytes);
-            return headerBytes;
-        }
+        private static MessageParts readMessage(MimeMessage message) throws IOException {
+            PipedOutputStream outputStream = new PipedOutputStream();
 
-        private static byte[] getBodyBytes(byte[] messageContentAsArray, int bodyStartOctet) {
-            if (bodyStartOctet < messageContentAsArray.length) {
-                ByteBuffer bodyContent = ByteBuffer.wrap(messageContentAsArray,
-                    bodyStartOctet,
-                    messageContentAsArray.length - bodyStartOctet);
-                byte[] bodyBytes = new byte[messageContentAsArray.length - bodyStartOctet];
-                bodyContent.get(bodyBytes);
-                return bodyBytes;
-            } else {
-                return new byte[] {};
-            }
-        }
+            Mono.fromRunnable(Throwing.runnable(() -> {
+                    message.writeTo(outputStream);
+                    outputStream.close();
+                }))
+                .subscribeOn(Schedulers.elastic())
+                .subscribe();
 
-        private static int computeBodyStartOctet(byte[] messageAsArray) throws IOException {
-            try (BodyOffsetInputStream bodyOffsetInputStream =
-                     new BodyOffsetInputStream(new ByteArrayInputStream(messageAsArray))) {
-                consume(bodyOffsetInputStream);
-
-                if (bodyOffsetInputStream.getBodyStartOffset() == -1) {
-                    return 0;
-                }
-                return (int) bodyOffsetInputStream.getBodyStartOffset();
-            }
-        }
-
-        private static void consume(InputStream in) throws IOException {
-            IOUtils.copy(in, NULL_OUTPUT_STREAM);
+            return BodyOffsetInputStream.Splitter
+                .split(new BodyOffsetInputStream(new PipedInputStream(outputStream)));
         }
     }
 
