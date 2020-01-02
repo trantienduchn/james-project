@@ -25,11 +25,15 @@ import static org.apache.james.blob.mail.MimeMessagePartsId.HEADER_BLOB_TYPE;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+import java.io.OutputStream;
 import java.io.SequenceInputStream;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -41,11 +45,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.blob.api.BlobStore;
 import org.apache.james.blob.api.Store;
 import org.apache.james.blob.api.Store.BlobType;
-import org.apache.james.util.BodyOffsetInputStream;
-import org.apache.james.util.BodyOffsetInputStream.Splitter.MessageParts;
 
 import com.github.fge.lambdas.Throwing;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.EvictingQueue;
 import com.google.common.collect.ImmutableMap;
 
 import reactor.core.publisher.Mono;
@@ -74,28 +77,149 @@ public class MimeMessageStore {
         @Override
         public Stream<Pair<BlobType, Store.Impl.ValueToSave>> encode(MimeMessage message) {
             Preconditions.checkNotNull(message);
-            try {
-                MessageParts messageParts = readMessage(message);
-                return Stream.of(
-                    Pair.of(HEADER_BLOB_TYPE, new Store.Impl.InputStreamToSave(messageParts.getHeaderContent())),
-                    Pair.of(BODY_BLOB_TYPE, new Store.Impl.InputStreamToSave(messageParts.getBodyContent())));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            MessageStreamTransformer transformer = new MessageStreamTransformer(message);
+            return Stream.of(
+                Pair.of(HEADER_BLOB_TYPE, new Store.Impl.InputStreamToSave(transformer.getHeaderInputStream())),
+                Pair.of(BODY_BLOB_TYPE, new Store.Impl.InputStreamToSave(transformer.getBodyInputStream())));
+        }
+    }
+
+    static class MessageStreamTransformer {
+
+        static class HeaderInputStream extends InputStream {
+
+            private final Supplier<Integer> readAction;
+            private final AtomicBoolean readingTriggered;
+            private final Mono<Void> publisherAcknowledgement;
+            private final AtomicBoolean finished;
+
+            HeaderInputStream(Supplier<Integer> readAction, Mono<Void> publisherAcknowledgement) {
+                this.readAction = readAction;
+                this.publisherAcknowledgement = publisherAcknowledgement;
+                this.readingTriggered = new AtomicBoolean(false);
+                this.finished = new AtomicBoolean(false);
+            }
+
+            @Override
+            public int read() throws IOException {
+                if (!finished.get()) {
+                    if (!readingTriggered.get()) {
+                        publisherAcknowledgement.subscribe();
+                        readingTriggered.set(true);
+                    }
+
+                    int byteValue = readAction.get();
+                    if (byteValue == -1) {
+                        finished.set(true);
+                    }
+
+                    return byteValue;
+                }
+
+                return -1;
             }
         }
 
-        private static MessageParts readMessage(MimeMessage message) throws IOException {
-            PipedOutputStream outputStream = new PipedOutputStream();
+        static class BodyInputStream extends InputStream {
 
-            Mono.fromRunnable(Throwing.runnable(() -> {
-                    message.writeTo(outputStream);
-                    outputStream.close();
-                }))
-                .subscribeOn(Schedulers.elastic())
-                .subscribe();
+            private final Supplier<Integer> readAction;
+            private final AtomicBoolean finished;
 
-            return BodyOffsetInputStream.Splitter
-                .split(new BodyOffsetInputStream(new PipedInputStream(outputStream)));
+            BodyInputStream(Supplier<Integer> readAction) {
+                this.readAction = readAction;
+                this.finished = new AtomicBoolean(false);
+            }
+
+            @Override
+            public int read() throws IOException {
+                if (!finished.get()) {
+                    int byteValue = readAction.get();
+                    if (byteValue == -1) {
+                        finished.set(true);
+                    }
+
+                    return byteValue;
+                }
+
+                return -1;
+            }
+        }
+
+        static class LinkedOutputStream extends OutputStream {
+
+            private static final int[] HEADER_END_PATTERN = {0x0D, 0x0A, 0x0D, 0x0A};
+
+            private final BlockingQueue<Integer> bodySource;
+            private final BlockingQueue<Integer> headerSource;
+            private final EvictingQueue<Integer> headerEndSignal;
+            private final AtomicBoolean headerEnded;
+
+            LinkedOutputStream(BlockingQueue<Integer> headerSource,
+                               BlockingQueue<Integer> bodySource) {
+                this.bodySource = bodySource;
+                this.headerSource = headerSource;
+                this.headerEndSignal = EvictingQueue.create(4);
+                this.headerEnded = new AtomicBoolean(false);
+            }
+
+            @Override
+            public void write(int b) throws IOException {
+                try {
+                    headerEndSignal.offer(b);
+                    if (!headerEnded.get()) {
+                        headerEnded.set(isHeaderEnded());
+                        headerSource.put(b);
+                    } else {
+                        headerSource.put(-1);
+                        bodySource.put(b);
+                    }
+                } catch (InterruptedException e) {
+                    throw new IOException(e);
+                }
+            }
+
+            private boolean isHeaderEnded() {
+                return Arrays.equals(
+                    headerEndSignal.stream().mapToInt(i -> i).toArray(),
+                    HEADER_END_PATTERN);
+            }
+
+            @Override
+            public void close() throws IOException {
+                try {
+                    headerSource.put(-1);
+                    bodySource.put(-1);
+                } catch (InterruptedException e) {
+                    throw new IOException(e);
+                }
+            }
+        }
+
+        private final BlockingQueue<Integer> headerSource;
+        private final BlockingQueue<Integer> bodySource;
+        private final HeaderInputStream headerInputStream;
+        private final BodyInputStream bodyInputStream;
+        private final LinkedOutputStream outputStream;
+
+        MessageStreamTransformer(MimeMessage message) {
+            this.headerSource = new LinkedBlockingQueue<>();
+            this.bodySource = new LinkedBlockingQueue<>();
+            this.outputStream = new LinkedOutputStream(headerSource, bodySource);
+            this.bodyInputStream = new BodyInputStream(Throwing.supplier(bodySource::take));
+            this.headerInputStream = new HeaderInputStream(Throwing.supplier(headerSource::take),
+                Mono.<Void>fromRunnable(Throwing.runnable(() -> {
+                        message.writeTo(outputStream);
+                        outputStream.close();
+                    }))
+                    .subscribeOn(Schedulers.elastic()));
+        }
+
+        public HeaderInputStream getHeaderInputStream() {
+            return headerInputStream;
+        }
+
+        public BodyInputStream getBodyInputStream() {
+            return bodyInputStream;
         }
     }
 

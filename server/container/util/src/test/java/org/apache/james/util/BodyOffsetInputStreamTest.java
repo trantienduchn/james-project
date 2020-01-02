@@ -22,13 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import org.apache.james.util.BodyOffsetInputStream.Splitter.MessageParts;
-import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 class BodyOffsetInputStreamTest {
@@ -78,59 +74,5 @@ class BodyOffsetInputStreamTest {
         assertThat(testee.getBodyStartOffset()).isEqualTo(EXPECTED_OFFSET);
         assertThat(testee.getReadBytes()).isEqualTo(MAIL_FULL_CONTENT_LENGTH);
         testee.close();
-    }
-
-    @Nested
-    class SplitterTest {
-
-        @Test
-        void splitShouldReturnExactlyParts() throws IOException {
-            MessageParts messageParts = BodyOffsetInputStream.Splitter.split(testee);
-            try (InputStream headerContent = messageParts.getHeaderContent();
-                 InputStream bodyContent = messageParts.getBodyContent()) {
-                SoftAssertions.assertSoftly(softly -> {
-                    softly.assertThat(headerContent)
-                        .hasSameContentAs(new ByteArrayInputStream(MAIL_HEADER_BYTES));
-                    softly.assertThat(bodyContent)
-                        .hasSameContentAs(new ByteArrayInputStream(MAIL_BODY_BYTES));
-                });
-            }
-        }
-
-        @Test
-        void splitShouldReturnEmptyPartsWhenEmptyInputStream() throws IOException {
-            testee = new BodyOffsetInputStream(emptyInputStream());
-
-            MessageParts messageParts = BodyOffsetInputStream.Splitter.split(testee);
-            try (InputStream headerContent = messageParts.getHeaderContent();
-                 InputStream bodyContent = messageParts.getBodyContent()) {
-                SoftAssertions.assertSoftly(softly -> {
-                    softly.assertThat(headerContent)
-                        .hasSameContentAs(emptyInputStream());
-                    softly.assertThat(bodyContent)
-                        .hasSameContentAs(emptyInputStream());
-                });
-            }
-        }
-
-        @Test
-        void splitShouldReturnEmptyBodyPartsWhenEndWithBodyOffset() throws IOException {
-            testee = new BodyOffsetInputStream(new ByteArrayInputStream(MAIL_HEADER_BYTES));
-
-            MessageParts messageParts = BodyOffsetInputStream.Splitter.split(testee);
-            try (InputStream headerContent = messageParts.getHeaderContent();
-                 InputStream bodyContent = messageParts.getBodyContent()) {
-                SoftAssertions.assertSoftly(softly -> {
-                    softly.assertThat(headerContent)
-                        .hasSameContentAs(new ByteArrayInputStream(MAIL_HEADER_BYTES));
-                    softly.assertThat(bodyContent)
-                        .hasSameContentAs(emptyInputStream());
-                });
-            }
-        }
-
-        private ByteArrayInputStream emptyInputStream() {
-            return new ByteArrayInputStream(new byte[0]);
-        }
     }
 }

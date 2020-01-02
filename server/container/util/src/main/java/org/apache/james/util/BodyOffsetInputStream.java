@@ -20,14 +20,7 @@ package org.apache.james.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.io.PushbackInputStream;
-
-import com.github.fge.lambdas.Throwing;
-
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 /**
  * {@link InputStream} which helps to keep track of the BodyOffset of the wrapped
@@ -38,60 +31,7 @@ import reactor.core.scheduler.Schedulers;
  */
 public class BodyOffsetInputStream extends InputStream {
 
-    public static class Splitter {
-
-        public static class MessageParts {
-            private final InputStream headerContent;
-            private final InputStream bodyContent;
-
-            private MessageParts(InputStream headerContent, InputStream bodyContent) {
-                this.headerContent = headerContent;
-                this.bodyContent = bodyContent;
-            }
-
-            public InputStream getHeaderContent() {
-                return headerContent;
-            }
-
-            public InputStream getBodyContent() {
-                return bodyContent;
-            }
-        }
-
-        public static MessageParts split(BodyOffsetInputStream inputStream) {
-            PipedInputStream headerInputStream = new PipedInputStream();
-            PipedInputStream bodyInputStream = new PipedInputStream();
-
-            Mono.fromRunnable(Throwing.runnable(() -> consumeOriginalStream(inputStream, headerInputStream, bodyInputStream)))
-                .subscribeOn(Schedulers.elastic())
-                .subscribe();
-
-            return new MessageParts(headerInputStream, bodyInputStream);
-        }
-
-        private static void consumeOriginalStream(BodyOffsetInputStream inputStream,
-                                                  PipedInputStream headerInputStream,
-                                                  PipedInputStream bodyInputStream) throws IOException {
-            try (BodyOffsetInputStream offsetInputStream = inputStream;
-                 PipedOutputStream headerOutputStream = new PipedOutputStream(headerInputStream);
-                 PipedOutputStream bodyOutputStream = new PipedOutputStream(bodyInputStream)) {
-
-                int currentByte;
-                while ((currentByte = offsetInputStream.read()) != END_OF_STREAM) {
-                    if (offsetInputStream.bodyStartOctet == NOT_FOUND
-                        || offsetInputStream.readBytes <= offsetInputStream.bodyStartOctet) {
-                        headerOutputStream.write(currentByte);
-                    } else {
-                        headerOutputStream.close();
-                        bodyOutputStream.write(currentByte);
-                    }
-                }
-            }
-        }
-    }
-
     private static final int NOT_FOUND = -1;
-    private static final int END_OF_STREAM = -1;
 
     private long count = 0;
     private long bodyStartOctet = NOT_FOUND;
