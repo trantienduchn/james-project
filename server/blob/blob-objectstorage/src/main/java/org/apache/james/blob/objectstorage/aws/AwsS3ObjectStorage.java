@@ -45,29 +45,35 @@ import org.jclouds.blobstore.BlobStore;
 import org.jclouds.blobstore.BlobStoreContext;
 import org.jclouds.blobstore.domain.Blob;
 import org.jclouds.logging.slf4j.config.SLF4JLoggingModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.event.ProgressEvent;
+import com.amazonaws.event.ProgressEventType;
+import com.amazonaws.event.ProgressListener;
 import com.amazonaws.retry.PredefinedRetryPolicies;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.github.fge.lambdas.runnable.ThrowingRunnable;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Module;
 
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.MonoSink;
 import reactor.core.scheduler.Schedulers;
 import reactor.retry.Retry;
 
 public class AwsS3ObjectStorage {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AwsS3ObjectStorage.class);
 
     private static final Iterable<Module> JCLOUDS_MODULES = ImmutableSet.of(new SLF4JLoggingModule());
     private static final int MAX_THREADS = 5;
@@ -132,10 +138,12 @@ public class AwsS3ObjectStorage {
 
     private static class AwsS3BlobPutter implements BlobPutter {
 
-        private static final int NOT_FOUND_STATUS_CODE = 404;
-        private static final String BUCKET_NOT_FOUND_ERROR_CODE = "NoSuchBucket";
+        private static class UploadFailedException extends Exception {
+        }
+
         private static final Duration FIRST_BACK_OFF = Duration.ofMillis(100);
         private static final Duration FOREVER = Duration.ofMillis(Long.MAX_VALUE);
+        private static final long RETRY_ONE_LAST_TIME_ON_CONCURRENT_SAVING = 1;
 
         private final AwsS3AuthConfiguration configuration;
         private final ExecutorService executorService;
@@ -147,7 +155,7 @@ public class AwsS3ObjectStorage {
 
         @Override
         public Mono<Void> putDirectly(ObjectStorageBucketName bucketName, Blob blob) {
-            return putWithRetry(bucketName, () -> uploadByBlob(bucketName, blob));
+            return putWithRetry(bucketName, uploadByBlob(bucketName, blob));
         }
 
         @Override
@@ -160,7 +168,7 @@ public class AwsS3ObjectStorage {
 
         private Mono<BlobId> putByFile(ObjectStorageBucketName bucketName, Supplier<BlobId> blobIdSupplier, File file) {
             return Mono.fromSupplier(blobIdSupplier)
-                .flatMap(blobId -> putWithRetry(bucketName, () -> uploadByFile(bucketName, blobId, file))
+                .flatMap(blobId -> putWithRetry(bucketName, uploadByFile(bucketName, blobId, file))
                     .then(Mono.just(blobId)));
         }
 
@@ -170,39 +178,64 @@ public class AwsS3ObjectStorage {
             return file;
         }
 
-        private Mono<Void> putWithRetry(ObjectStorageBucketName bucketName, ThrowingRunnable puttingAttempt) {
-            return Mono.<Void>fromRunnable(puttingAttempt)
+        private Mono<Void> putWithRetry(ObjectStorageBucketName bucketName, Mono<Void> puttingAttempt) {
+            return puttingAttempt
                 .publishOn(Schedulers.elastic())
                 .retryWhen(Retry
-                    .<Void>onlyIf(retryContext -> needToCreateBucket(retryContext.exception()))
+                    .onlyIf(retryContext -> failOnNoSuchBucket(retryContext.exception(), bucketName))
                     .exponentialBackoff(FIRST_BACK_OFF, FOREVER)
                     .withBackoffScheduler(Schedulers.elastic())
                     .retryMax(MAX_RETRY_ON_EXCEPTION)
-                    .doOnRetry(retryContext -> createBucket(bucketName, configuration)));
+                    .doOnRetry(retryContext -> createBucket(bucketName, configuration)))
+                .retryWhen(Retry
+                    .onlyIf(retryContext -> failOnExistingBucket(retryContext.exception(), bucketName))
+                    .withBackoffScheduler(Schedulers.elastic())
+                    .exponentialBackoff(FIRST_BACK_OFF, FOREVER)
+                    .retryMax(RETRY_ONE_LAST_TIME_ON_CONCURRENT_SAVING));
         }
 
-        private void uploadByFile(ObjectStorageBucketName bucketName, BlobId blobId, File file) throws InterruptedException {
-            PutObjectRequest request = new PutObjectRequest(bucketName.asString(), blobId.asString(), file);
-            upload(request);
+        private Mono<Void> uploadByFile(ObjectStorageBucketName bucketName, BlobId blobId, File file) {
+            return Mono.fromSupplier(() -> new PutObjectRequest(bucketName.asString(), blobId.asString(), file))
+                .flatMap(this::upload);
         }
 
-        private void uploadByBlob(ObjectStorageBucketName bucketName, Blob blob) throws InterruptedException, IOException {
-            try (InputStream payload = blob.getPayload().openStream()) {
-                PutObjectRequest request = new PutObjectRequest(bucketName.asString(),
-                    blob.getMetadata().getName(),
-                    payload,
-                    new ObjectMetadata());
+        private Mono<Void> uploadByBlob(ObjectStorageBucketName bucketName, Blob blob) {
+            return Mono.fromCallable(() -> blob.getPayload().openStream())
+                .flatMap(inputStream -> upload(new PutObjectRequest(
+                        bucketName.asString(),
+                        blob.getMetadata().getName(),
+                        inputStream,
+                        new ObjectMetadata()))
+                    .doFinally(ignored -> closeQuietly(inputStream)));
+        }
 
-                upload(request);
+        private Mono<Void> upload(PutObjectRequest request) {
+            return Mono.create(sink -> {
+                TransferManager transferManager = getTransferManager();
+                transferManager
+                    .upload(request)
+                    .addProgressListener((ProgressListener) progressEvent -> watchingUploadEvent(sink, transferManager, progressEvent));
+            });
+        }
+
+        private void watchingUploadEvent(MonoSink<Void> sink, TransferManager transferManager, ProgressEvent progressEvent) {
+            if (progressEvent.getEventType() == ProgressEventType.TRANSFER_FAILED_EVENT) {
+                sink.error(new UploadFailedException());
+                transferManager.shutdownNow();
+            } else if (progressEvent.getEventType() == ProgressEventType.TRANSFER_COMPLETED_EVENT) {
+                sink.success();
+                transferManager.shutdownNow();
             }
+
+            // ignore other events
         }
 
-        private void upload(PutObjectRequest request) throws InterruptedException {
-            TransferManager transferManager = getTransferManager();
-            transferManager
-                .upload(request)
-                .waitForUploadResult();
-            transferManager.shutdownNow();
+        private void closeQuietly(InputStream inputStream) {
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                LOGGER.error("Cannot close resource", e);
+            }
         }
 
         private void createBucket(ObjectStorageBucketName bucketName, AwsS3AuthConfiguration configuration) {
@@ -210,14 +243,19 @@ public class AwsS3ObjectStorage {
                 .createBucket(bucketName.asString());
         }
 
-        private boolean needToCreateBucket(Throwable th) {
-            if (th instanceof AmazonS3Exception) {
-                AmazonS3Exception s3Exception = (AmazonS3Exception) th;
-                return NOT_FOUND_STATUS_CODE == s3Exception.getStatusCode()
-                    && BUCKET_NOT_FOUND_ERROR_CODE.equals(s3Exception.getErrorCode());
-            }
+        private boolean failOnNoSuchBucket(Throwable th, ObjectStorageBucketName bucketName) {
+            return th instanceof UploadFailedException
+                && !doesBucketExist(bucketName);
+        }
 
-            return false;
+        private boolean failOnExistingBucket(Throwable th, ObjectStorageBucketName bucketName) {
+            return th instanceof UploadFailedException
+                && doesBucketExist(bucketName);
+        }
+
+        private boolean doesBucketExist(ObjectStorageBucketName bucketName) {
+            return getS3Client(configuration, getClientConfiguration())
+                .doesBucketExistV2(bucketName.asString());
         }
 
         private TransferManager getTransferManager() {
