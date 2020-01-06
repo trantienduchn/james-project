@@ -112,15 +112,22 @@ class RecomputeUserFastViewProjectionItemsRequestToTaskTest {
     private MemoryMessageFastViewProjection messageFastViewProjection;
     private InMemoryMailboxManager mailboxManager;
     private MemoryUsersRepository usersRepository;
+    private MailboxId bobInboxboxId;
+    private MailboxSession bobSession;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         JsonTransformer jsonTransformer = new JsonTransformer();
         taskManager = new MemoryTaskManager(new Hostname("foo"));
 
         messageFastViewProjection = new MemoryMessageFastViewProjection(new RecordingMetricFactory());
         mailboxManager = InMemoryIntegrationResources.defaultResources().getMailboxManager();
         usersRepository = MemoryUsersRepository.withoutVirtualHosting(NO_DOMAIN_LIST);
+        usersRepository.addUser(BOB, "pass");
+        bobSession = mailboxManager.createSystemSession(BOB);
+        bobInboxboxId = mailboxManager.createMailbox(MailboxPath.inbox(BOB), bobSession)
+            .get();
+
         MessageContentExtractor messageContentExtractor = new MessageContentExtractor();
         HtmlTextExtractor htmlTextExtractor = new JsoupHtmlTextExtractor();
         Preview.Factory previewFactory = new Preview.Factory(messageContentExtractor, htmlTextExtractor);
@@ -211,8 +218,6 @@ class RecomputeUserFastViewProjectionItemsRequestToTaskTest {
 
     @Test
     void postShouldCreateANewTask() throws Exception {
-        usersRepository.addUser(BOB, "pass");
-
         given()
             .queryParam("action", "recomputeFastViewProjectionItems")
             .post()
@@ -223,8 +228,6 @@ class RecomputeUserFastViewProjectionItemsRequestToTaskTest {
 
     @Test
     void recomputeUserShouldCompleteWhenUserWithNoMailbox() throws Exception {
-        usersRepository.addUser(BOB, "pass");
-
         String taskId = with()
             .queryParam("action", "recomputeFastViewProjectionItems")
             .post()
@@ -249,9 +252,6 @@ class RecomputeUserFastViewProjectionItemsRequestToTaskTest {
 
     @Test
     void recomputeUserShouldCompleteWhenUserWithNoMessage() throws Exception {
-        usersRepository.addUser(BOB, "pass");
-        mailboxManager.createMailbox(MailboxPath.inbox(BOB), mailboxManager.createSystemSession(BOB));
-
         String taskId = with()
             .queryParam("action", "recomputeFastViewProjectionItems")
             .post()
@@ -276,12 +276,9 @@ class RecomputeUserFastViewProjectionItemsRequestToTaskTest {
 
     @Test
     void recomputeUserShouldCompleteWhenOneMessage() throws Exception {
-        usersRepository.addUser(BOB, "pass");
-        MailboxSession session = mailboxManager.createSystemSession(BOB);
-        Optional<MailboxId> mailboxId = mailboxManager.createMailbox(MailboxPath.inbox(BOB), session);
-        mailboxManager.getMailbox(mailboxId.get(), session).appendMessage(
+        mailboxManager.getMailbox(bobInboxboxId, bobSession).appendMessage(
             MessageManager.AppendCommand.builder().build("header: value\r\n\r\nbody"),
-            session);
+            bobSession);
 
         String taskId = with()
             .queryParam("action", "recomputeFastViewProjectionItems")
@@ -307,15 +304,12 @@ class RecomputeUserFastViewProjectionItemsRequestToTaskTest {
 
     @Test
     void recomputeUserShouldCompleteWhenManyMessages() throws Exception {
-        usersRepository.addUser(BOB, "pass");
-        MailboxSession session = mailboxManager.createSystemSession(BOB);
-        Optional<MailboxId> mailboxId = mailboxManager.createMailbox(MailboxPath.inbox(BOB), session);
         int totalMessages = 5;
         IntStream.rangeClosed(1, totalMessages)
             .forEach(Throwing.intConsumer(ignored ->
-                mailboxManager.getMailbox(mailboxId.get(), session).appendMessage(
+                mailboxManager.getMailbox(bobInboxboxId, bobSession).appendMessage(
                     MessageManager.AppendCommand.builder().build("header: value\r\n\r\nbody"),
-                    session)));
+                    bobSession)));
 
         String taskId = with()
             .queryParam("action", "recomputeFastViewProjectionItems")
@@ -341,10 +335,7 @@ class RecomputeUserFastViewProjectionItemsRequestToTaskTest {
 
     @Test
     void recomputeUserShouldBeUserBound() throws Exception {
-        usersRepository.addUser(BOB, "pass");
-        MailboxSession bobSession = mailboxManager.createSystemSession(BOB);
-        Optional<MailboxId> mailboxIdBob = mailboxManager.createMailbox(MailboxPath.inbox(BOB), bobSession);
-        mailboxManager.getMailbox(mailboxIdBob.get(), bobSession).appendMessage(
+        mailboxManager.getMailbox(bobInboxboxId, bobSession).appendMessage(
             MessageManager.AppendCommand.builder().build("header: value\r\n\r\nbody"),
             bobSession);
 
@@ -379,12 +370,9 @@ class RecomputeUserFastViewProjectionItemsRequestToTaskTest {
 
     @Test
     void recomputeUserShouldUpdateProjection() throws Exception {
-        usersRepository.addUser(BOB, "pass");
-        MailboxSession session = mailboxManager.createSystemSession(BOB);
-        Optional<MailboxId> mailboxId = mailboxManager.createMailbox(MailboxPath.inbox(BOB), session);
-        ComposedMessageId messageId = mailboxManager.getMailbox(mailboxId.get(), session).appendMessage(
+        ComposedMessageId messageId = mailboxManager.getMailbox(bobInboxboxId, bobSession).appendMessage(
             MessageManager.AppendCommand.builder().build("header: value\r\n\r\nbody"),
-            session);
+            bobSession);
 
         String taskId = with()
             .queryParam("action", "recomputeFastViewProjectionItems")
@@ -402,12 +390,9 @@ class RecomputeUserFastViewProjectionItemsRequestToTaskTest {
 
     @Test
     void recomputeUserShouldBeIdempotent() throws Exception {
-        usersRepository.addUser(BOB, "pass");
-        MailboxSession session = mailboxManager.createSystemSession(BOB);
-        Optional<MailboxId> mailboxId = mailboxManager.createMailbox(MailboxPath.inbox(BOB), session);
-        ComposedMessageId messageId = mailboxManager.getMailbox(mailboxId.get(), session).appendMessage(
+        ComposedMessageId messageId = mailboxManager.getMailbox(bobInboxboxId, bobSession).appendMessage(
             MessageManager.AppendCommand.builder().build("header: value\r\n\r\nbody"),
-            session);
+            bobSession);
 
         String taskId1 = with()
             .queryParam("action", "recomputeFastViewProjectionItems")
