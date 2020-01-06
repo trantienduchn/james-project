@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import org.apache.james.core.Username;
 import org.apache.james.domainlist.api.DomainList;
@@ -60,6 +61,8 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.github.fge.lambdas.Throwing;
 
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
@@ -296,6 +299,40 @@ class RecomputeUserFastViewProjectionItemsRequestToTaskTest {
             .body("type", is("RecomputeUserFastViewProjectionItemsTask"))
             .body("additionalInformation.username", is(BOB.asString()))
             .body("additionalInformation.processedMessageCount", is(1))
+            .body("additionalInformation.failedMessageCount", is(0))
+            .body("startedDate", is(notNullValue()))
+            .body("submitDate", is(notNullValue()))
+            .body("completedDate", is(notNullValue()));
+    }
+
+    @Test
+    void recomputeUserShouldCompleteWhenManyMessages() throws Exception {
+        usersRepository.addUser(BOB, "pass");
+        MailboxSession session = mailboxManager.createSystemSession(BOB);
+        Optional<MailboxId> mailboxId = mailboxManager.createMailbox(MailboxPath.inbox(BOB), session);
+        int totalMessages = 5;
+        IntStream.rangeClosed(1, totalMessages)
+            .forEach(Throwing.intConsumer(ignored ->
+                mailboxManager.getMailbox(mailboxId.get(), session).appendMessage(
+                    MessageManager.AppendCommand.builder().build("header: value\r\n\r\nbody"),
+                    session)));
+
+        String taskId = with()
+            .queryParam("action", "recomputeFastViewProjectionItems")
+            .post()
+            .jsonPath()
+            .get("taskId");
+
+        given()
+            .basePath(TasksRoutes.BASE)
+        .when()
+            .get(taskId + "/await")
+        .then()
+            .body("status", is("completed"))
+            .body("taskId", is(taskId))
+            .body("type", is("RecomputeUserFastViewProjectionItemsTask"))
+            .body("additionalInformation.username", is(BOB.asString()))
+            .body("additionalInformation.processedMessageCount", is(totalMessages))
             .body("additionalInformation.failedMessageCount", is(0))
             .body("startedDate", is(notNullValue()))
             .body("submitDate", is(notNullValue()))
