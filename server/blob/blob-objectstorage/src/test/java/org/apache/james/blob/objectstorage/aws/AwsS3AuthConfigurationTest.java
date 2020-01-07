@@ -22,8 +22,11 @@ package org.apache.james.blob.objectstorage.aws;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
-import org.apache.james.blob.objectstorage.aws.AwsS3AuthConfiguration;
+import java.net.URI;
+
 import org.junit.jupiter.api.Test;
+
+import com.github.fge.lambdas.Throwing;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
@@ -35,14 +38,35 @@ public class AwsS3AuthConfigurationTest {
     }
 
     @Test
-    public void builderShouldThrowWhenEndpointIsNull() {
+    public void builderShouldThrowWhenEndpointIsNullURI() {
         assertThatThrownBy(() -> AwsS3AuthConfiguration.builder()
-                                    .endpoint(null)
+                                    .endpoint((URI) null)
                                     .accessKeyId("myAccessKeyId")
                                     .secretKey("mySecretKey")
                                     .build())
             .isInstanceOf(NullPointerException.class)
             .hasMessage("'endpoint' is mandatory");
+    }
+
+    @Test
+    public void builderShouldThrowWhenEndpointIsNullString() {
+        assertThatThrownBy(() -> AwsS3AuthConfiguration.builder()
+                                    .endpoint((String) null)
+                                    .accessKeyId("myAccessKeyId")
+                                    .secretKey("mySecretKey")
+                                    .build())
+            .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    public void builderShouldThrowWhenInvalidEndpoint() {
+        assertThatThrownBy(() -> AwsS3AuthConfiguration.builder()
+                                    .endpoint("invalid@://endpoint")
+                                    .accessKeyId("myAccessKeyId")
+                                    .secretKey("mySecretKey")
+                                    .build())
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("URISyntaxException");
     }
 
     @Test
@@ -111,10 +135,10 @@ public class AwsS3AuthConfigurationTest {
             .secretKey(secretKey)
             .build();
 
-        assertSoftly(softly -> {
-            softly.assertThat(configuration.getEndpoint()).isEqualTo(endpoint);
+        assertSoftly(Throwing.consumer(softly -> {
+            softly.assertThat(configuration.getEndpoint()).isEqualTo(new URI(endpoint));
             softly.assertThat(configuration.getAccessKeyId()).isEqualTo(accessKeyId);
             softly.assertThat(configuration.getSecretKey()).isEqualTo(secretKey);
-        });
+        }));
     }
 }

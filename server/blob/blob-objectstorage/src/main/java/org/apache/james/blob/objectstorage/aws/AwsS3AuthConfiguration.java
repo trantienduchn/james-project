@@ -19,6 +19,9 @@
 
 package org.apache.james.blob.objectstorage.aws;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import org.apache.james.blob.objectstorage.SpecificAuthConfiguration;
 
 import com.google.common.base.MoreObjects;
@@ -35,7 +38,15 @@ public class AwsS3AuthConfiguration implements SpecificAuthConfiguration {
 
         @FunctionalInterface
         interface RequiredEndpoint {
-            RequiredAccessKeyId endpoint(String endpoint);
+            RequiredAccessKeyId endpoint(URI endpoint);
+
+            default RequiredAccessKeyId endpoint(String endpointAsString) {
+                try {
+                    return endpoint(new URI(endpointAsString));
+                } catch (URISyntaxException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            }
         }
 
         @FunctionalInterface
@@ -49,11 +60,11 @@ public class AwsS3AuthConfiguration implements SpecificAuthConfiguration {
         }
 
         class ReadyToBuild {
-            private final String endpoint;
+            private final URI endpoint;
             private final String accessKeyId;
             private final String secretKey;
 
-            public ReadyToBuild(String endpoint, String accessKeyId, String secretKey) {
+            public ReadyToBuild(URI endpoint, String accessKeyId, String secretKey) {
                 this.endpoint = endpoint;
                 this.accessKeyId = accessKeyId;
                 this.secretKey = secretKey;
@@ -61,7 +72,7 @@ public class AwsS3AuthConfiguration implements SpecificAuthConfiguration {
 
             public AwsS3AuthConfiguration build() {
                 Preconditions.checkNotNull(endpoint, "'endpoint' is mandatory");
-                Preconditions.checkArgument(!endpoint.isEmpty(), "'endpoint' is mandatory");
+                Preconditions.checkArgument(!endpoint.toString().isEmpty(), "'endpoint' is mandatory");
 
                 Preconditions.checkNotNull(accessKeyId, "'accessKeyId' is mandatory");
                 Preconditions.checkArgument(!accessKeyId.isEmpty(), "'accessKeyId' is mandatory");
@@ -74,11 +85,11 @@ public class AwsS3AuthConfiguration implements SpecificAuthConfiguration {
         }
     }
 
-    private final String endpoint;
+    private final URI endpoint;
     private final String accessKeyId;
     private final String secretKey;
 
-    private AwsS3AuthConfiguration(String endpoint,
+    private AwsS3AuthConfiguration(URI endpoint,
                                    String accessKeyId,
                                    String secretKey) {
         this.endpoint = endpoint;
@@ -86,7 +97,7 @@ public class AwsS3AuthConfiguration implements SpecificAuthConfiguration {
         this.secretKey = secretKey;
     }
 
-    public String getEndpoint() {
+    public URI getEndpoint() {
         return endpoint;
     }
 

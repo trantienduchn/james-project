@@ -24,7 +24,30 @@ Change list:
  - [JAMES-2703 Post 3.4.0 release removals](#james-2703-post-340-release-removals)
  - [Health checks routes return code changes](#health-checks-routes-return-code-changes)
  - [User mailboxes reIndexing endpoint change](#user-mailboxes-reindexing-endpoint-change)
+ - [AWS/S3 client upgrade](#awss3-client-upgrade)
  
+### AWS/S3 client upgrade
+
+Date 08/01/2019
+
+SHA-1 XXXX
+
+Concerned products: Guice distributed James
+
+The Amazon documentation state that:
+> The AWS SDK for Java 2.0 is a major rewrite of the version 1.x code base. 
+It’s built on top of Java 8+ and adds several frequently requested features. 
+These include support for non-blocking I/O and the ability to plug in a different HTTP implementation at run time
+
+Belong with the upgrade, the endpoint of AWSAuthConfiguration is consider to be revised if possible. 
+AWS SDK version 1 allow you to configure an endpoint without the protocol part. 
+For example, both `http://s3.service` and `s3.service` are accepted. 
+See [API doc](https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/client/builder/AwsClientBuilder.EndpointConfiguration.html#EndpointConfiguration-java.lang.String-java.lang.String-). 
+With version 2, you should specify the correct endpoint satisfying a java URI format. 
+Basically, it should follow the format of `protocol://domain.part`
+
+Please revise your endpoint specified in `objectstorage.s3.endPoint` property in `blob.properties`       
+
 ### User mailboxes reIndexing endpoint change
  
 Date 16/12/2019

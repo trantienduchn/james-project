@@ -33,8 +33,7 @@ class AwsS3ConfigurationReaderTest {
     void fromShouldThrowWhenEndpointIsNull() {
         Configuration configuration = new PropertiesConfiguration();
         assertThatThrownBy(() -> AwsS3ConfigurationReader.from(configuration))
-            .isInstanceOf(NullPointerException.class)
-            .hasMessage("'endpoint' is mandatory");
+            .isInstanceOf(NullPointerException.class);
     }
 
     @Test

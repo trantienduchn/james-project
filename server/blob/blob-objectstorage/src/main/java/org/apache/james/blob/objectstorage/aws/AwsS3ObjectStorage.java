@@ -23,8 +23,6 @@ import static software.amazon.awssdk.regions.Region.US_EAST_1;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
@@ -98,7 +96,7 @@ public class AwsS3ObjectStorage {
             overrides.setProperty("PROPERTY_S3_VIRTUAL_HOST_BUCKETS", "false");
 
             return contextBuilder()
-                .endpoint(configuration.getEndpoint())
+                .endpoint(configuration.getEndpoint().toString())
                 .credentials(configuration.getAccessKeyId(), configuration.getSecretKey())
                 .overrides(overrides)
                 .modules(JCLOUDS_MODULES)
@@ -212,7 +210,7 @@ public class AwsS3ObjectStorage {
             return false;
         }
 
-        private static S3AsyncClient getS3AsyncClient(AwsS3AuthConfiguration configuration) throws URISyntaxException {
+        private static S3AsyncClient getS3AsyncClient(AwsS3AuthConfiguration configuration) {
             return S3AsyncClient.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(configuration.getAccessKeyId(), configuration.getSecretKey())))
@@ -222,7 +220,7 @@ public class AwsS3ObjectStorage {
                         .backoffStrategy(BackoffStrategy.defaultStrategy())
                         .build())
                     .build())
-                .endpointOverride(new URI(configuration.getEndpoint()))
+                .endpointOverride(configuration.getEndpoint())
                 .region(US_EAST_1)
                 .build();
         }
