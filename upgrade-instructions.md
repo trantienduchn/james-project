@@ -32,7 +32,7 @@ Date 08/01/2019
 
 SHA-1 XXXX
 
-Concerned products: Guice distributed James
+Concerned products: Guice distributed James using AWS/S3
 
 The Amazon documentation state that:
 > The AWS SDK for Java 2.0 is a major rewrite of the version 1.x code base. 
