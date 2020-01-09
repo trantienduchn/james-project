@@ -31,6 +31,8 @@ import javax.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.james.backends.cassandra.encryption.EncryptionCodec;
+import org.apache.james.backends.cassandra.encryption.NoEncryptionCodec;
 import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.BlobStore;
@@ -57,13 +59,15 @@ public class CassandraBlobStore implements BlobStore {
     private final DataChunker dataChunker;
     private final CassandraConfiguration configuration;
     private final HashBlobId.Factory blobIdFactory;
+    private final EncryptionCodec encryptionCodec;
 
     @Inject
-    CassandraBlobStore(CassandraDefaultBucketDAO defaultBucketDAO, CassandraBucketDAO bucketDAO, CassandraConfiguration cassandraConfiguration, HashBlobId.Factory blobIdFactory) {
+    CassandraBlobStore(CassandraDefaultBucketDAO defaultBucketDAO, CassandraBucketDAO bucketDAO, CassandraConfiguration cassandraConfiguration, HashBlobId.Factory blobIdFactory, EncryptionCodec encryptionCodec) {
         this.defaultBucketDAO = defaultBucketDAO;
         this.bucketDAO = bucketDAO;
         this.configuration = cassandraConfiguration;
         this.blobIdFactory = blobIdFactory;
+        this.encryptionCodec = encryptionCodec;
         this.dataChunker = new DataChunker();
     }
 
@@ -72,7 +76,8 @@ public class CassandraBlobStore implements BlobStore {
         this(new CassandraDefaultBucketDAO(session),
             new CassandraBucketDAO(new HashBlobId.Factory(), session),
             CassandraConfiguration.DEFAULT_CONFIGURATION,
-            new HashBlobId.Factory());
+            new HashBlobId.Factory(),
+            new NoEncryptionCodec());
     }
 
     @Override
@@ -93,6 +98,7 @@ public class CassandraBlobStore implements BlobStore {
         Stream<Pair<Integer, ByteBuffer>> chunks = dataChunker.chunk(data, configuration.getBlobPartSize());
         return Flux.fromStream(chunks)
             .publishOn(Schedulers.elastic(), PREFETCH)
+            .map(pair -> Pair.of(pair.getLeft(), encryptionCodec.encrypt(pair.getRight())))
             .flatMap(pair -> writePart(bucketName, blobId, pair.getKey(), pair.getValue())
                 .then(Mono.just(getChunkNum(pair))))
             .collect(Collectors.maxBy(Comparator.comparingInt(x -> x)))
@@ -140,7 +146,8 @@ public class CassandraBlobStore implements BlobStore {
                 .single()
                 .onErrorResume(NoSuchElementException.class, e -> Mono.error(
                     new ObjectNotFoundException(String.format("Missing blob part for blobId %s and position %d", blobId, partIndex)))),
-                MAX_CONCURRENCY, PREFETCH);
+                MAX_CONCURRENCY, PREFETCH)
+            .map(encryptionCodec::decrypt);
     }
 
     @Override

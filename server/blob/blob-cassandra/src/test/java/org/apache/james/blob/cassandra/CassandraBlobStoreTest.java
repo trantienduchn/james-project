@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.james.backends.cassandra.CassandraCluster;
 import org.apache.james.backends.cassandra.CassandraClusterExtension;
+import org.apache.james.backends.cassandra.encryption.NoEncryptionCodec;
 import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.BlobStore;
@@ -71,7 +72,8 @@ public class CassandraBlobStoreTest implements MetricableBlobStoreContract {
                 CassandraConfiguration.builder()
                     .blobPartSize(CHUNK_SIZE)
                     .build(),
-                blobIdFactory));
+                blobIdFactory,
+                new NoEncryptionCodec()));
     }
 
     @Override

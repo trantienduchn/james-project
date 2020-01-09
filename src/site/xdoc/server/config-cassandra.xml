@@ -136,6 +136,14 @@
         <dd>Optional. Defaults to 50.<br/> Controls the number of messages to be expunged in parallel.</dd>
         <dt><strong>mailbox.blob.part.size</strong></dt>
         <dd>Optional. Defaults to 102400 (100KB).<br/> Controls the size of blob parts used to store messages.</dd>
+
+        <dt><strong>cassandra.encryption.algorithm</strong></dt>
+        <dd>DEFAULT: no encryption of sensible binary data stored in Cassandra (default) OR AES-256: AES-256 encryption of sensible binary data stored in Cassandra</dd>
+
+        <dt><strong>cassandra.aes256.salt</strong></dt>
+        <dd>salt string required by AES 256 encryption, required when AES256 is used, must be in hexadecimal format</dd>
+        <dt><strong>cassandra.aes256.password</strong></dt>
+        <dd>password string required by AES 256 encryption, required when AES256 is used</dd>
       </dl>
 
 

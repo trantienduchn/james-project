@@ -20,6 +20,8 @@
 package org.apache.james.mailbox.cassandra.mail.utils;
 
 import org.apache.james.backends.cassandra.CassandraCluster;
+import org.apache.james.backends.cassandra.encryption.EncryptionCodec;
+import org.apache.james.backends.cassandra.encryption.NoEncryptionCodec;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
 import org.apache.james.backends.cassandra.init.configuration.CassandraConfiguration;
 import org.apache.james.blob.api.BlobId;
@@ -47,6 +49,7 @@ public class GuiceUtils {
     public static Injector testInjector(Session session, CassandraTypesProvider typesProvider, CassandraMessageId.Factory messageIdFactory, CassandraConfiguration configuration) {
         return Guice.createInjector(
             Modules.combine(
+                binder -> binder.bind(EncryptionCodec.class).to(NoEncryptionCodec.class),
                 binder -> binder.bind(MessageId.Factory.class).toInstance(messageIdFactory),
                 binder -> binder.bind(BlobId.Factory.class).toInstance(new HashBlobId.Factory()),
                 binder -> binder.bind(BlobStore.class).to(CassandraBlobStore.class),
