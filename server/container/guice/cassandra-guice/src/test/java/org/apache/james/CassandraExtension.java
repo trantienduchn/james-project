@@ -20,6 +20,8 @@
 package org.apache.james;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
 
 import com.google.inject.Module;
 
@@ -55,5 +57,15 @@ public class CassandraExtension implements GuiceModuleTestExtension {
 
     public void unpause() {
         cassandra.unpause();
+    }
+
+    @Override
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+        return parameterContext.getParameter().getType() == DockerCassandraRule.class;
+    }
+
+    @Override
+    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+        return cassandra;
     }
 }
