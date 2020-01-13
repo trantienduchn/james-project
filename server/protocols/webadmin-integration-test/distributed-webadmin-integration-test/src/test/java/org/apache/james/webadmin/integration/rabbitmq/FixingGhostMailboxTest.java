@@ -42,7 +42,6 @@ import java.nio.charset.StandardCharsets;
 
 import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraRabbitMQJamesServerMain;
-import org.apache.james.DockerCassandraRule;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.JamesServerBuilder;
@@ -126,7 +125,7 @@ class FixingGhostMailboxTest {
     private RequestSpecification webadminSpecification;
 
     @BeforeEach
-    void setup(GuiceJamesServer server, DockerCassandraRule cassandra) throws Throwable {
+    void setup(GuiceJamesServer server, Host cassandraHost) throws Throwable {
         WebAdminGuiceProbe webAdminProbe = server.getProbe(WebAdminGuiceProbe.class);
         mailboxProbe = server.getProbe(MailboxProbeImpl.class);
         aclProbe = server.getProbe(ACLProbeImpl.class);
@@ -148,7 +147,6 @@ class FixingGhostMailboxTest {
             .addUser(BOB, BOB_SECRET);
         accessToken = authenticateJamesUser(baseUri(jmapPort), Username.of(ALICE), ALICE_SECRET);
 
-        Host cassandraHost = cassandra.getHost();
         session = Cluster.builder()
             .withoutJMXReporting()
             .addContactPoint(cassandraHost.getHostName())
