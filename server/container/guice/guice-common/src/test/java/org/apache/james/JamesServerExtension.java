@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 
+import org.apache.james.JamesParametersResolver.TestParametersRegistration;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -47,13 +48,16 @@ public class JamesServerExtension implements BeforeAllCallback, BeforeEachCallba
     private final RegistrableExtension registrableExtension;
     private final boolean autoStart;
     private final AwaitCondition awaitCondition;
+    private final TestParametersRegistration paramsRegistration;
 
     private GuiceJamesServer guiceJamesServer;
 
     JamesServerExtension(RegistrableExtension registrableExtension, ThrowingFunction<File, GuiceJamesServer> serverSupplier,
-                         AwaitCondition awaitCondition, boolean autoStart) {
+                         AwaitCondition awaitCondition, boolean autoStart,
+                         TestParametersRegistration paramsRegistration) {
         this.registrableExtension = registrableExtension;
         this.serverSupplier = serverSupplier;
+        this.paramsRegistration = paramsRegistration;
         this.folderRegistrableExtension = new TemporaryFolderRegistrableExtension();
         this.autoStart = autoStart;
         this.awaitCondition = awaitCondition;
@@ -95,6 +99,7 @@ public class JamesServerExtension implements BeforeAllCallback, BeforeEachCallba
         return JamesParametersResolver.builder()
             .jamesServer(guiceJamesServer)
             .registrableExtension(registrableExtension)
+            .paramsRegistration(paramsRegistration)
             .build()
             .supportsParameter(parameterContext, extensionContext);
     }
@@ -104,6 +109,7 @@ public class JamesServerExtension implements BeforeAllCallback, BeforeEachCallba
         return JamesParametersResolver.builder()
             .jamesServer(guiceJamesServer)
             .registrableExtension(registrableExtension)
+            .paramsRegistration(paramsRegistration)
             .build()
             .resolveParameter(parameterContext, extensionContext);
     }

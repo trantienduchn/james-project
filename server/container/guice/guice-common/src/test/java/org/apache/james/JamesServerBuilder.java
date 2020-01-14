@@ -22,12 +22,15 @@ package org.apache.james;
 import java.io.File;
 import java.io.UncheckedIOException;
 import java.util.Optional;
+import java.util.function.Function;
 
+import org.apache.james.JamesParametersResolver.TestParametersRegistration;
 import org.apache.james.server.core.configuration.Configuration;
 
 import com.github.steveash.guavate.Guavate;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Module;
 
 public class JamesServerBuilder {
@@ -46,6 +49,7 @@ public class JamesServerBuilder {
     private final ImmutableList.Builder<GuiceModuleTestExtension> extensions;
     private final TemporaryFolderRegistrableExtension folderRegistrableExtension;
     private final ImmutableList.Builder<Module> overrideModules;
+    private final ImmutableMap.Builder<Class<?>, Function<GuiceJamesServer, ?>> paramsRegistrationBuilder;
     private ServerProvider server;
     private Optional<ConfigurationProvider> configuration;
     private Optional<Boolean> autoStart;
@@ -56,6 +60,7 @@ public class JamesServerBuilder {
         folderRegistrableExtension = new TemporaryFolderRegistrableExtension();
         autoStart = Optional.empty();
         overrideModules = ImmutableList.builder();
+        paramsRegistrationBuilder = new ImmutableMap.Builder<>();
     }
 
     public JamesServerBuilder extensions(GuiceModuleTestExtension... extensions) {
@@ -87,13 +92,19 @@ public class JamesServerBuilder {
         return this;
     }
 
+    public <T> JamesServerBuilder resolveParam(Class<T> paramClass, Function<GuiceJamesServer, T> paramSupplier) {
+        this.paramsRegistrationBuilder.put(paramClass, paramSupplier);
+        return this;
+    }
+
     public JamesServerExtension build() {
         Preconditions.checkNotNull(server);
         ConfigurationProvider configuration = this.configuration.orElse(defaultConfigurationProvider());
         JamesServerExtension.AwaitCondition awaitCondition = () -> extensions.build().forEach(GuiceModuleTestExtension::await);
 
         return new JamesServerExtension(buildAggregateJunitExtension(), file -> overrideServerWithExtensionsModules(file, configuration),
-            awaitCondition, autoStart.orElse(DEFAULT_AUTO_START));
+            awaitCondition, autoStart.orElse(DEFAULT_AUTO_START),
+            new TestParametersRegistration(paramsRegistrationBuilder.build()));
     }
 
     private ConfigurationProvider defaultConfigurationProvider() {
