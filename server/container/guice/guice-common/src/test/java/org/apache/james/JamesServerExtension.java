@@ -92,13 +92,19 @@ public class JamesServerExtension implements BeforeAllCallback, BeforeEachCallba
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return new JamesParametersResolver(guiceJamesServer, registrableExtension)
+        return JamesParametersResolver.builder()
+            .jamesServer(guiceJamesServer)
+            .registrableExtension(registrableExtension)
+            .build()
             .supportsParameter(parameterContext, extensionContext);
     }
 
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return new JamesParametersResolver(guiceJamesServer, registrableExtension)
+        return JamesParametersResolver.builder()
+            .jamesServer(guiceJamesServer)
+            .registrableExtension(registrableExtension)
+            .build()
             .resolveParameter(parameterContext, extensionContext);
     }
 

@@ -7,10 +7,40 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 
 class JamesParametersResolver implements ParameterResolver {
 
+    static class Builder {
+        @FunctionalInterface
+        interface RequireJamesServer {
+            RequireRegistrableExtension jamesServer(GuiceJamesServer jamesServer);
+        }
+
+        @FunctionalInterface
+        interface RequireRegistrableExtension {
+            ReadyToBuild registrableExtension(RegistrableExtension registrableExtension);
+        }
+
+        static class ReadyToBuild {
+            private final GuiceJamesServer jamesServer;
+            private final RegistrableExtension registrableExtension;
+
+            ReadyToBuild(GuiceJamesServer jamesServer, RegistrableExtension registrableExtension) {
+                this.jamesServer = jamesServer;
+                this.registrableExtension = registrableExtension;
+            }
+
+            JamesParametersResolver build() {
+                return new JamesParametersResolver(jamesServer, registrableExtension);
+            }
+        }
+    }
+
+    static Builder.RequireJamesServer builder() {
+        return jamesServer -> registrableExtension -> new Builder.ReadyToBuild(jamesServer, registrableExtension);
+    }
+
     private final GuiceJamesServer jamesServer;
     private final RegistrableExtension registrableExtension;
 
-    JamesParametersResolver(GuiceJamesServer jamesServer, RegistrableExtension registrableExtension) {
+    private JamesParametersResolver(GuiceJamesServer jamesServer, RegistrableExtension registrableExtension) {
         this.jamesServer = jamesServer;
         this.registrableExtension = registrableExtension;
     }
