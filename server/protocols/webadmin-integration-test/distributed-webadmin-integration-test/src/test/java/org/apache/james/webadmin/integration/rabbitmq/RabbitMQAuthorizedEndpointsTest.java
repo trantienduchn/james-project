@@ -28,14 +28,14 @@ import org.apache.james.JamesServerExtension;
 import org.apache.james.junit.categories.BasicFeature;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
 import org.apache.james.modules.RabbitMQExtension;
-import org.apache.james.webadmin.integration.AuthorizedEndpointsTest;
+import org.apache.james.webadmin.integration.AuthorizedEndpointsContract;
 import org.apache.james.webadmin.integration.UnauthorizedModule;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 @Tag(BasicFeature.TAG)
-class RabbitMQAuthorizedEndpointsTest extends AuthorizedEndpointsTest {
+class RabbitMQAuthorizedEndpointsTest implements AuthorizedEndpointsContract {
 
     @RegisterExtension
     static JamesServerExtension testExtension = new JamesServerBuilder()

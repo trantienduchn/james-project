@@ -33,10 +33,10 @@ import org.junit.jupiter.api.Test;
 
 import io.restassured.RestAssured;
 
-public abstract class AuthorizedEndpointsTest {
+public interface AuthorizedEndpointsContract {
 
     @BeforeEach
-    void setUp(GuiceJamesServer guiceJamesServer) {
+    default void setUp(GuiceJamesServer guiceJamesServer) {
         WebAdminGuiceProbe webAdminGuiceProbe = guiceJamesServer.getProbe(WebAdminGuiceProbe.class);
 
         RestAssured.requestSpecification = WebAdminUtils.buildRequestSpecification(webAdminGuiceProbe.getWebAdminPort())
@@ -44,7 +44,7 @@ public abstract class AuthorizedEndpointsTest {
     }
 
     @Test
-    void getHealthchecksShouldNotNeedAuthentication() {
+    default void getHealthchecksShouldNotNeedAuthentication() {
         when()
             .get(HealthCheckRoutes.HEALTHCHECK)
         .then()
@@ -52,7 +52,7 @@ public abstract class AuthorizedEndpointsTest {
     }
 
     @Test
-    void getSwaggerShouldNotNeedAuthentication() {
+    default void getSwaggerShouldNotNeedAuthentication() {
         when()
             .get(SwaggerRoutes.SWAGGER_ENDPOINT)
         .then()

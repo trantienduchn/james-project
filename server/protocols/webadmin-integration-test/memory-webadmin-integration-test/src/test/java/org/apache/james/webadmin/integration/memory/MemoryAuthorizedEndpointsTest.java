@@ -23,12 +23,12 @@ import org.apache.james.GuiceJamesServer;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.MemoryJamesServerMain;
-import org.apache.james.webadmin.integration.AuthorizedEndpointsTest;
+import org.apache.james.webadmin.integration.AuthorizedEndpointsContract;
 import org.apache.james.webadmin.integration.UnauthorizedModule;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class MemoryAuthorizedEndpointsTest extends AuthorizedEndpointsTest {
+class MemoryAuthorizedEndpointsTest implements AuthorizedEndpointsContract {
 
     @RegisterExtension
     static JamesServerExtension jamesServerExtension = new JamesServerBuilder()
