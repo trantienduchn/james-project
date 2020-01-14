@@ -19,6 +19,8 @@
 
 package org.apache.james.webadmin.integration.rabbitmq;
 
+import static org.apache.james.webadmin.integration.JwtFilterIntegrationContract.jwtConfiguration;
+
 import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraRabbitMQJamesServerMain;
 import org.apache.james.DockerElasticSearchExtension;
@@ -28,13 +30,15 @@ import org.apache.james.JamesServerExtension;
 import org.apache.james.jwt.JwtConfiguration;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
 import org.apache.james.modules.RabbitMQExtension;
+import org.apache.james.probe.DataProbe;
+import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.webadmin.authentication.AuthenticationFilter;
 import org.apache.james.webadmin.authentication.JwtFilter;
-import org.apache.james.webadmin.integration.JwtFilterIntegrationTest;
+import org.apache.james.webadmin.integration.JwtFilterIntegrationContract;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class RabbitMQJwtFilterIntegrationTest extends JwtFilterIntegrationTest {
+class RabbitMQJwtFilterIntegrationTest implements JwtFilterIntegrationContract {
 
     @RegisterExtension
     static JamesServerExtension testExtension = new JamesServerBuilder()
@@ -47,5 +51,6 @@ class RabbitMQJwtFilterIntegrationTest extends JwtFilterIntegrationTest {
             .overrideWith(binder -> binder.bind(AuthenticationFilter.class).to(JwtFilter.class))
             .overrideWith(binder -> binder.bind(JwtConfiguration.class).toInstance(jwtConfiguration()))
             .overrideWith(new WebadminIntegrationTestModule()))
+        .resolveParam(DataProbe.class, jamesServer -> jamesServer.getProbe(DataProbeImpl.class))
         .build();
 }

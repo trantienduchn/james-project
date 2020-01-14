@@ -19,18 +19,22 @@
 
 package org.apache.james.webadmin.integration.memory;
 
+import static org.apache.james.webadmin.integration.JwtFilterIntegrationContract.jwtConfiguration;
+
 import org.apache.james.GuiceJamesServer;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.MemoryJamesServerMain;
 import org.apache.james.jwt.JwtConfiguration;
+import org.apache.james.probe.DataProbe;
+import org.apache.james.utils.DataProbeImpl;
 import org.apache.james.webadmin.authentication.AuthenticationFilter;
 import org.apache.james.webadmin.authentication.JwtFilter;
-import org.apache.james.webadmin.integration.JwtFilterIntegrationTest;
+import org.apache.james.webadmin.integration.JwtFilterIntegrationContract;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class MemoryJwtFilterIntegrationTest extends JwtFilterIntegrationTest {
+class MemoryJwtFilterIntegrationTest implements JwtFilterIntegrationContract {
 
     @RegisterExtension
     static JamesServerExtension jamesServerExtension = new JamesServerBuilder()
@@ -39,5 +43,6 @@ class MemoryJwtFilterIntegrationTest extends JwtFilterIntegrationTest {
             .overrideWith(new WebadminIntegrationTestModule())
             .overrideWith(binder -> binder.bind(AuthenticationFilter.class).to(JwtFilter.class))
             .overrideWith(binder -> binder.bind(JwtConfiguration.class).toInstance(jwtConfiguration())))
+        .resolveParam(DataProbe.class, jamesServer -> jamesServer.getProbe(DataProbeImpl.class))
         .build();
 }
