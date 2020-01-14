@@ -23,16 +23,19 @@ import org.apache.james.GuiceJamesServer;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.MemoryJamesServerMain;
-import org.apache.james.webadmin.integration.WebAdminServerIntegrationTest;
+import org.apache.james.probe.DataProbe;
+import org.apache.james.utils.DataProbeImpl;
+import org.apache.james.webadmin.integration.WebAdminServerIntegrationContract;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class MemoryWebAdminServerIntegrationTest extends WebAdminServerIntegrationTest {
+class MemoryWebAdminServerIntegrationTest implements WebAdminServerIntegrationContract {
 
     @RegisterExtension
     static JamesServerExtension jamesServerExtension = new JamesServerBuilder()
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
             .overrideWith(new WebadminIntegrationTestModule()))
+        .resolveParam(DataProbe.class, jamesServer -> jamesServer.getProbe(DataProbeImpl.class))
         .build();
 }

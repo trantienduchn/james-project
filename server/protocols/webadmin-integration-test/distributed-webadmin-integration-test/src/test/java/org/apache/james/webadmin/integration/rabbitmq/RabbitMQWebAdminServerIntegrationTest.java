@@ -38,7 +38,9 @@ import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManage
 import org.apache.james.junit.categories.BasicFeature;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
 import org.apache.james.modules.RabbitMQExtension;
-import org.apache.james.webadmin.integration.WebAdminServerIntegrationTest;
+import org.apache.james.probe.DataProbe;
+import org.apache.james.utils.DataProbeImpl;
+import org.apache.james.webadmin.integration.WebAdminServerIntegrationContract;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
 import org.apache.james.webadmin.routes.AliasRoutes;
 import org.apache.james.webadmin.routes.CassandraMappingsRoutes;
@@ -54,7 +56,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import io.restassured.http.ContentType;
 
 @Tag(BasicFeature.TAG)
-class RabbitMQWebAdminServerIntegrationTest extends WebAdminServerIntegrationTest {
+class RabbitMQWebAdminServerIntegrationTest implements WebAdminServerIntegrationContract {
 
     @RegisterExtension
     static JamesServerExtension testExtension = new JamesServerBuilder()
@@ -65,6 +67,7 @@ class RabbitMQWebAdminServerIntegrationTest extends WebAdminServerIntegrationTes
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(CassandraRabbitMQJamesServerMain.MODULES)
             .overrideWith(new WebadminIntegrationTestModule()))
+        .resolveParam(DataProbe.class, jamesServer -> jamesServer.getProbe(DataProbeImpl.class))
         .build();
 
     private static final String VERSION = "/cassandra/version";

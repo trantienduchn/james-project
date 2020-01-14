@@ -54,24 +54,22 @@ import org.junit.jupiter.api.Test;
 
 import io.restassured.RestAssured;
 
-public abstract class WebAdminServerIntegrationTest {
+public interface WebAdminServerIntegrationContract {
 
-    private static final String DOMAIN = "domain";
-    protected static final String USERNAME = "username@" + DOMAIN;
-    private static final String USERNAME_2 = "username2@" + DOMAIN;
-    private static final String GROUP = "group@" + DOMAIN;
-    private static final String SPECIFIC_DOMAIN = DomainsRoutes.DOMAINS + SEPARATOR + DOMAIN;
-    private static final String SPECIFIC_USER = UserRoutes.USERS + SEPARATOR + USERNAME;
-    private static final String MAILBOX = "mailbox";
-    private static final String SPECIFIC_MAILBOX = SPECIFIC_USER + SEPARATOR + UserMailboxesRoutes.MAILBOXES + SEPARATOR + MAILBOX;
+    String DOMAIN = "domain";
+    String USERNAME = "username@" + DOMAIN;
+    String USERNAME_2 = "username2@" + DOMAIN;
+    String GROUP = "group@" + DOMAIN;
+    String SPECIFIC_DOMAIN = DomainsRoutes.DOMAINS + SEPARATOR + DOMAIN;
+    String SPECIFIC_USER = UserRoutes.USERS + SEPARATOR + USERNAME;
+    String MAILBOX = "mailbox";
+    String SPECIFIC_MAILBOX = SPECIFIC_USER + SEPARATOR + UserMailboxesRoutes.MAILBOXES + SEPARATOR + MAILBOX;
 
-    protected static final String ALIAS_1 = "alias1@" + DOMAIN;
-    protected static final String ALIAS_2 = "alias2@" + DOMAIN;
-
-    private DataProbe dataProbe;
+    String ALIAS_1 = "alias1@" + DOMAIN;
+    String ALIAS_2 = "alias2@" + DOMAIN;
 
     @BeforeEach
-    void setUp(GuiceJamesServer guiceJamesServer) throws Exception {
+    default void setUp(GuiceJamesServer guiceJamesServer, DataProbe dataProbe) throws Exception {
         dataProbe = guiceJamesServer.getProbe(DataProbeImpl.class);
         dataProbe.addDomain(DOMAIN);
         WebAdminGuiceProbe webAdminGuiceProbe = guiceJamesServer.getProbe(WebAdminGuiceProbe.class);
@@ -81,7 +79,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void postShouldAddTheGivenDomain() throws Exception {
+    default void postShouldAddTheGivenDomain(DataProbe dataProbe) throws Exception {
         when()
             .put(SPECIFIC_DOMAIN)
         .then()
@@ -91,7 +89,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void mailQueueRoutesShouldBeExposed() {
+    default void mailQueueRoutesShouldBeExposed() {
         when()
             .get(MailQueueRoutes.BASE_URL)
         .then()
@@ -99,7 +97,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void healthCheckShouldReturn200WhenCalledRepeatedly() {
+    default void healthCheckShouldReturn200WhenCalledRepeatedly() {
         given().get(HealthCheckRoutes.HEALTHCHECK);
         given().get(HealthCheckRoutes.HEALTHCHECK);
         given().get(HealthCheckRoutes.HEALTHCHECK);
@@ -113,7 +111,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void mailRepositoriesRoutesShouldBeExposed() {
+    default void mailRepositoriesRoutesShouldBeExposed() {
         when()
             .get(MailRepositoriesRoutes.MAIL_REPOSITORIES)
         .then()
@@ -125,7 +123,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void gettingANonExistingMailRepositoryShouldNotCreateIt() {
+    default void gettingANonExistingMailRepositoryShouldNotCreateIt() {
         given()
             .get(MailRepositoriesRoutes.MAIL_REPOSITORIES + "file%3A%2F%2Fvar%2Fmail%2Fcustom");
 
@@ -140,7 +138,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void deleteShouldRemoveTheGivenDomain() throws Exception {
+    default void deleteShouldRemoveTheGivenDomain(DataProbe dataProbe) throws Exception {
         when()
             .delete(SPECIFIC_DOMAIN)
         .then()
@@ -150,7 +148,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void postShouldAddTheUser() throws Exception {
+    default void postShouldAddTheUser(DataProbe dataProbe) throws Exception {
         given()
             .body("{\"password\":\"password\"}")
         .when()
@@ -162,7 +160,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void deleteShouldRemoveTheUser() throws Exception {
+    default void deleteShouldRemoveTheUser(DataProbe dataProbe) throws Exception {
         dataProbe.addUser(USERNAME, "anyPassword");
 
         given()
@@ -176,7 +174,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void getUsersShouldDisplayUsers() throws Exception {
+    default void getUsersShouldDisplayUsers(DataProbe dataProbe) throws Exception {
         dataProbe.addUser(USERNAME, "anyPassword");
 
         when()
@@ -188,7 +186,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void putMailboxShouldAddAMailbox(GuiceJamesServer guiceJamesServer) throws Exception {
+    default void putMailboxShouldAddAMailbox(GuiceJamesServer guiceJamesServer, DataProbe dataProbe) throws Exception {
         dataProbe.addUser(USERNAME, "anyPassword");
 
         when()
@@ -200,7 +198,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void deleteMailboxShouldRemoveAMailbox(GuiceJamesServer guiceJamesServer) throws Exception {
+    default void deleteMailboxShouldRemoveAMailbox(GuiceJamesServer guiceJamesServer, DataProbe dataProbe) throws Exception {
         dataProbe.addUser(USERNAME, "anyPassword");
         guiceJamesServer.getProbe(MailboxProbeImpl.class).createMailbox("#private", USERNAME, MAILBOX);
 
@@ -213,7 +211,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void addressGroupsEndpointShouldHandleRequests() throws Exception {
+    default void addressGroupsEndpointShouldHandleRequests() throws Exception {
         with()
             .put(GroupsRoutes.ROOT_PATH + SEPARATOR + GROUP + SEPARATOR + USERNAME);
         with()
@@ -231,7 +229,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void addressForwardsEndpointShouldListForwardAddresses() throws Exception {
+    default void addressForwardsEndpointShouldListForwardAddresses(DataProbe dataProbe) throws Exception {
         dataProbe.addUser(USERNAME, "anyPassword");
         dataProbe.addUser(USERNAME_2, "anyPassword");
 
@@ -252,7 +250,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void addressAliasesEndpointShouldListAliasesAddresses() {
+    default void addressAliasesEndpointShouldListAliasesAddresses() {
         with()
             .put(AliasRoutes.ROOT_PATH + SEPARATOR + USERNAME + "/sources/" + ALIAS_1);
         with()
@@ -270,7 +268,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void getSwaggerShouldReturnJsonDataForSwagger() {
+    default void getSwaggerShouldReturnJsonDataForSwagger() {
         when()
             .get(SwaggerRoutes.SWAGGER_ENDPOINT)
         .then()
@@ -292,7 +290,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void validateHealthChecksShouldReturnOk() {
+    default void validateHealthChecksShouldReturnOk() {
         when()
             .get(HealthCheckRoutes.HEALTHCHECK)
         .then()
@@ -300,7 +298,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void jmapTasksShouldBeExposed() {
+    default void jmapTasksShouldBeExposed() {
         String taskId = with()
             .queryParam("task", "recomputeFastViewProjectionItems")
             .post("/mailboxes")
@@ -317,7 +315,7 @@ public abstract class WebAdminServerIntegrationTest {
     }
 
     @Test
-    void jmapUserTasksShouldBeExposed() throws Exception {
+    default void jmapUserTasksShouldBeExposed(DataProbe dataProbe) throws Exception {
         dataProbe.addUser(USERNAME, "anyPassword");
 
         String taskId = with()
