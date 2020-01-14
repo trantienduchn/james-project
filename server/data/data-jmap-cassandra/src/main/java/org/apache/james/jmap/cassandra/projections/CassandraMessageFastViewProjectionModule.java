@@ -19,8 +19,8 @@
 
 package org.apache.james.jmap.cassandra.projections;
 
+import static com.datastax.driver.core.DataType.blob;
 import static com.datastax.driver.core.DataType.cboolean;
-import static com.datastax.driver.core.DataType.text;
 import static com.datastax.driver.core.DataType.uuid;
 import static org.apache.james.backends.cassandra.utils.CassandraConstants.DEFAULT_CACHED_ROW_PER_PARTITION;
 import static org.apache.james.jmap.cassandra.projections.table.CassandraMessageFastViewProjectionTable.HAS_ATTACHMENT;
@@ -34,12 +34,14 @@ import com.datastax.driver.core.schemabuilder.SchemaBuilder;
 
 public interface CassandraMessageFastViewProjectionModule {
     CassandraModule MODULE = CassandraModule.table(TABLE_NAME)
-        .comment("Storing the JMAP projections for MessageFastView, an aggregation of JMAP properties expected to be fast to fetch.")
+        .comment("Storing the JMAP projections for MessageFastView, " +
+            "the preview property is sensitive data, therefore, it should be encrypted before storing" +
+            "an aggregation of JMAP properties expected to be fast to fetch.")
         .options(options -> options
             .caching(SchemaBuilder.KeyCaching.ALL, SchemaBuilder.rows(DEFAULT_CACHED_ROW_PER_PARTITION)))
         .statement(statement -> statement
             .addPartitionKey(MESSAGE_ID, uuid())
-            .addColumn(PREVIEW, text())
+            .addColumn(PREVIEW, blob())
             .addColumn(HAS_ATTACHMENT, cboolean()))
         .build();
 }

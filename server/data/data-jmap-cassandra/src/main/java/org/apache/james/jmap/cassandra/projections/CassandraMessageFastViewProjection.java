@@ -29,8 +29,12 @@ import static org.apache.james.jmap.cassandra.projections.table.CassandraMessage
 import static org.apache.james.jmap.cassandra.projections.table.CassandraMessageFastViewProjectionTable.PREVIEW;
 import static org.apache.james.jmap.cassandra.projections.table.CassandraMessageFastViewProjectionTable.TABLE_NAME;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
 import javax.inject.Inject;
 
+import org.apache.james.backends.cassandra.encryption.EncryptionCodec;
 import org.apache.james.backends.cassandra.utils.CassandraAsyncExecutor;
 import org.apache.james.jmap.api.model.Preview;
 import org.apache.james.jmap.api.projections.MessageFastViewPrecomputedProperties;
@@ -54,14 +58,14 @@ public class CassandraMessageFastViewProjection implements MessageFastViewProjec
     private final Metric metricRetrieveMissCount;
 
     private final CassandraAsyncExecutor cassandraAsyncExecutor;
-
     private final PreparedStatement storeStatement;
     private final PreparedStatement retrieveStatement;
     private final PreparedStatement deleteStatement;
     private final PreparedStatement truncateStatement;
+    private final EncryptionCodec encryptionCodec;
 
     @Inject
-    CassandraMessageFastViewProjection(MetricFactory metricFactory, Session session) {
+    CassandraMessageFastViewProjection(MetricFactory metricFactory, Session session, EncryptionCodec encryptionCodec) {
         this.cassandraAsyncExecutor = new CassandraAsyncExecutor(session);
 
         this.deleteStatement = session.prepare(QueryBuilder.delete()
@@ -81,6 +85,8 @@ public class CassandraMessageFastViewProjection implements MessageFastViewProjec
 
         this.metricRetrieveHitCount = metricFactory.generate(METRIC_RETRIEVE_HIT_COUNT);
         this.metricRetrieveMissCount = metricFactory.generate(METRIC_RETRIEVE_MISS_COUNT);
+
+        this.encryptionCodec = encryptionCodec;
     }
 
     @Override
@@ -89,8 +95,13 @@ public class CassandraMessageFastViewProjection implements MessageFastViewProjec
 
         return cassandraAsyncExecutor.executeVoid(storeStatement.bind()
             .setUUID(MESSAGE_ID, ((CassandraMessageId) messageId).get())
-            .setString(PREVIEW, precomputedProperties.getPreview().getValue())
+            .setBytes(PREVIEW, encryptionCodec.encrypt(previewToByteBuffer(precomputedProperties.getPreview())))
             .setBool(HAS_ATTACHMENT, precomputedProperties.hasAttachment()));
+    }
+
+    private ByteBuffer previewToByteBuffer(Preview preview) {
+        return ByteBuffer.wrap(
+            preview.getValue().getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
@@ -125,8 +136,14 @@ public class CassandraMessageFastViewProjection implements MessageFastViewProjec
 
     private MessageFastViewPrecomputedProperties fromRow(Row row) {
         return MessageFastViewPrecomputedProperties.builder()
-            .preview(Preview.from(row.getString(PREVIEW)))
+            .preview(byteBufferToPreview(row.getBytes(PREVIEW)))
             .hasAttachment(row.getBool(HAS_ATTACHMENT))
             .build();
+    }
+
+    private Preview byteBufferToPreview(ByteBuffer byteBuffer) {
+        return Preview.from(new String(
+            encryptionCodec.decrypt(byteBuffer).array(),
+            StandardCharsets.UTF_8));
     }
 }
