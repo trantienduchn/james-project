@@ -24,12 +24,12 @@ import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.MemoryJamesServerMain;
 import org.apache.james.modules.vault.TestDeleteMessageVaultPreDeletionHookModule;
-import org.apache.james.webadmin.integration.UnauthorizedEndpointsTest;
+import org.apache.james.webadmin.integration.UnauthorizedEndpointsContract;
 import org.apache.james.webadmin.integration.UnauthorizedModule;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class MemoryUnauthorizedEndpointsTest extends UnauthorizedEndpointsTest {
+class MemoryUnauthorizedEndpointsTest implements UnauthorizedEndpointsContract {
 
     @RegisterExtension
     static JamesServerExtension jamesServerExtension = new JamesServerBuilder()

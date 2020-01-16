@@ -48,10 +48,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import io.restassured.RestAssured;
 
-public abstract class UnauthorizedEndpointsTest {
+public interface UnauthorizedEndpointsContract {
 
     @BeforeEach
-    void setup(GuiceJamesServer jamesServer) {
+    default void setup(GuiceJamesServer jamesServer) {
         WebAdminGuiceProbe webAdminGuiceProbe = jamesServer.getProbe(WebAdminGuiceProbe.class);
 
         RestAssured.requestSpecification = WebAdminUtils.buildRequestSpecification(webAdminGuiceProbe.getWebAdminPort())
@@ -97,7 +97,7 @@ public abstract class UnauthorizedEndpointsTest {
         EventDeadLettersRoutes.BASE_PATH + "/groups/group@james.org",
         EventDeadLettersRoutes.BASE_PATH + "/groups/group@james.org/1"
     })
-    protected void checkUrlProtectionOnGet(String url) {
+    default void checkUrlProtectionOnGet(String url) {
         when()
             .get(url)
         .then()
@@ -111,7 +111,7 @@ public abstract class UnauthorizedEndpointsTest {
         EventDeadLettersRoutes.BASE_PATH + "/groups/group@james.org",
         EventDeadLettersRoutes.BASE_PATH + "/groups/group@james.org/1"
     })
-    protected void checkUrlProtectionOnPost(String url) {
+    default void checkUrlProtectionOnPost(String url) {
         when()
             .post(url)
         .then()
@@ -141,7 +141,7 @@ public abstract class UnauthorizedEndpointsTest {
         SieveQuotaRoutes.DEFAULT_QUOTA_PATH,
         SieveQuotaRoutes.ROOT_PATH + "/users/user@james.org"
     })
-    void checkUrlProtectionOnPut(String url) {
+    default void checkUrlProtectionOnPut(String url) {
         when()
             .put(url)
         .then()
@@ -175,7 +175,7 @@ public abstract class UnauthorizedEndpointsTest {
         TasksRoutes.BASE + "/taskId",
         EventDeadLettersRoutes.BASE_PATH + "/groups/group@james.org/1"
     })
-    void checkUrlProtectionOnDelete(String url) {
+    default void checkUrlProtectionOnDelete(String url) {
         when()
             .delete(url)
         .then()
@@ -188,7 +188,7 @@ public abstract class UnauthorizedEndpointsTest {
         MailRepositoriesRoutes.MAIL_REPOSITORIES + "/myRepo/mails",
         MailRepositoriesRoutes.MAIL_REPOSITORIES + "/myRepo/mails/name1"
     })
-    void checkUrlProtectionOnPath(String url) {
+    default void checkUrlProtectionOnPath(String url) {
         when()
             .patch(url)
         .then()

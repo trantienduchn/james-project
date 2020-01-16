@@ -22,7 +22,7 @@ package org.apache.james.webadmin.integration.rabbitmq;
 import static io.restassured.RestAssured.when;
 
 import org.apache.james.junit.categories.BasicFeature;
-import org.apache.james.webadmin.integration.UnauthorizedEndpointsTest;
+import org.apache.james.webadmin.integration.UnauthorizedEndpointsContract;
 import org.apache.james.webadmin.routes.AliasRoutes;
 import org.apache.james.webadmin.routes.CassandraMappingsRoutes;
 import org.apache.james.webadmin.routes.CassandraMigrationRoutes;
@@ -49,7 +49,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag(BasicFeature.TAG)
-class RabbitMQUnauthorizedEndpointsTest extends UnauthorizedEndpointsTest {
+class RabbitMQUnauthorizedEndpointsTest implements UnauthorizedEndpointsContract {
 
     @RegisterExtension
     static RabbitMQJmapExtension rabbitMQJmapExtension = new RabbitMQJmapExtension(RabbitMQJmapExtension.JamesLifeCyclePolicy.COMMON_TO_ALL_TESTS);
