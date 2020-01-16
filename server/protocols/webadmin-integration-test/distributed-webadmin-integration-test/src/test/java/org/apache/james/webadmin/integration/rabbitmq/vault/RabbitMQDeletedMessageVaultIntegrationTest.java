@@ -23,6 +23,7 @@ import org.apache.james.CassandraExtension;
 import org.apache.james.CassandraRabbitMQJamesServerMain;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.GuiceJamesServer;
+import org.apache.james.IMAPMessageReaderExtension;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
@@ -30,10 +31,10 @@ import org.apache.james.modules.RabbitMQExtension;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.vault.TestDeleteMessageVaultPreDeletionHookModule;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
-import org.apache.james.webadmin.integration.vault.DeletedMessageVaultIntegrationTest;
+import org.apache.james.webadmin.integration.vault.DeletedMessageVaultIntegrationContract;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class RabbitMQDeletedMessageVaultIntegrationTest extends DeletedMessageVaultIntegrationTest {
+class RabbitMQDeletedMessageVaultIntegrationTest implements DeletedMessageVaultIntegrationContract {
 
     private static final DockerElasticSearchExtension ES_EXTENSION = new DockerElasticSearchExtension();
 
@@ -44,15 +45,17 @@ class RabbitMQDeletedMessageVaultIntegrationTest extends DeletedMessageVaultInte
         .extension(new AwsS3BlobStoreExtension())
         .extension(new RabbitMQExtension())
         .extension(new ClockExtension())
+        .extension(new IMAPMessageReaderExtension())
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(CassandraRabbitMQJamesServerMain.MODULES)
             .overrideWith(TestJMAPServerModule.limitToTenMessages())
             .overrideWith(new TestDeleteMessageVaultPreDeletionHookModule())
             .overrideWith(new WebadminIntegrationTestModule()))
+        .resolveParam(TestSystem.class, TestSystem::new)
         .build();
 
     @Override
-    protected void awaitSearchUpToDate() {
+    public void awaitSearchUpToDate() {
         ES_EXTENSION.await();
     }
 }

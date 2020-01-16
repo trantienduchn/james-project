@@ -20,28 +20,31 @@
 package org.apache.james.webadmin.integration.memory.vault;
 
 import org.apache.james.GuiceJamesServer;
+import org.apache.james.IMAPMessageReaderExtension;
 import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.MemoryJamesServerMain;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.vault.TestDeleteMessageVaultPreDeletionHookModule;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
-import org.apache.james.webadmin.integration.vault.DeletedMessageVaultIntegrationTest;
+import org.apache.james.webadmin.integration.vault.DeletedMessageVaultIntegrationContract;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class MemoryDeletedMessageVaultIntegrationTest extends DeletedMessageVaultIntegrationTest {
+class MemoryDeletedMessageVaultIntegrationTest implements DeletedMessageVaultIntegrationContract {
 
     @RegisterExtension
     static JamesServerExtension jamesServerExtension = new JamesServerBuilder()
         .extension(new ClockExtension())
+        .extension(new IMAPMessageReaderExtension())
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
             .overrideWith(TestJMAPServerModule.limitToTenMessages())
             .overrideWith(new TestDeleteMessageVaultPreDeletionHookModule())
             .overrideWith(new WebadminIntegrationTestModule()))
+        .resolveParam(TestSystem.class, TestSystem::new)
         .build();
 
     @Override
-    protected void awaitSearchUpToDate() {
+    public void awaitSearchUpToDate() {
     }
 }
