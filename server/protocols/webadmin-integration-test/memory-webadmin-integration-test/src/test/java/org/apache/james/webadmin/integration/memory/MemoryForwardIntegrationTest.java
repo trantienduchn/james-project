@@ -24,11 +24,11 @@ import org.apache.james.JamesServerBuilder;
 import org.apache.james.JamesServerExtension;
 import org.apache.james.MemoryJamesServerMain;
 import org.apache.james.modules.TestJMAPServerModule;
-import org.apache.james.webadmin.integration.ForwardIntegrationTest;
+import org.apache.james.webadmin.integration.ForwardIntegrationContract;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class MemoryForwardIntegrationTest extends ForwardIntegrationTest {
+class MemoryForwardIntegrationTest implements ForwardIntegrationContract {
 
     @RegisterExtension
     static JamesServerExtension jamesServerExtension = new JamesServerBuilder()
@@ -36,5 +36,6 @@ class MemoryForwardIntegrationTest extends ForwardIntegrationTest {
             .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
             .overrideWith(TestJMAPServerModule.limitToTenMessages())
             .overrideWith(new WebadminIntegrationTestModule()))
+        .resolveParam(TestSystem.class, TestSystem::new)
         .build();
 }

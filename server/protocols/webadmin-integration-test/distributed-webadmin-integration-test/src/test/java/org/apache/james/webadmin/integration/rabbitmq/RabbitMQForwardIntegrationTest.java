@@ -28,11 +28,11 @@ import org.apache.james.JamesServerExtension;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
 import org.apache.james.modules.RabbitMQExtension;
 import org.apache.james.modules.TestJMAPServerModule;
-import org.apache.james.webadmin.integration.ForwardIntegrationTest;
+import org.apache.james.webadmin.integration.ForwardIntegrationContract;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class RabbitMQForwardIntegrationTest extends ForwardIntegrationTest {
+class RabbitMQForwardIntegrationTest implements ForwardIntegrationContract {
 
     @RegisterExtension
     static JamesServerExtension testExtension = new JamesServerBuilder()
@@ -44,5 +44,6 @@ class RabbitMQForwardIntegrationTest extends ForwardIntegrationTest {
             .combineWith(CassandraRabbitMQJamesServerMain.MODULES)
             .overrideWith(TestJMAPServerModule.limitToTenMessages())
             .overrideWith(new WebadminIntegrationTestModule()))
+        .resolveParam(TestSystem.class, TestSystem::new)
         .build();
 }
