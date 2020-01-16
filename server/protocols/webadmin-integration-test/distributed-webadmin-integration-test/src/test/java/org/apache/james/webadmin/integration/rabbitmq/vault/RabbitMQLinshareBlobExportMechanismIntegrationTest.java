@@ -31,15 +31,16 @@ import org.apache.james.backends.rabbitmq.DockerRabbitMQSingleton;
 import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.AwsS3BlobStoreExtension;
+import org.apache.james.modules.LinshareGuiceExtension;
 import org.apache.james.modules.RabbitMQExtension;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.TestRabbitMQModule;
 import org.apache.james.modules.vault.TestDeleteMessageVaultPreDeletionHookModule;
 import org.apache.james.webadmin.integration.WebadminIntegrationTestModule;
-import org.apache.james.webadmin.integration.vault.LinshareBlobExportMechanismIntegrationTest;
+import org.apache.james.webadmin.integration.vault.LinshareBlobExportMechanismIntegrationContract;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-class RabbitMQLinshareBlobExportMechanismIntegrationTest extends LinshareBlobExportMechanismIntegrationTest {
+class RabbitMQLinshareBlobExportMechanismIntegrationTest implements LinshareBlobExportMechanismIntegrationContract {
 
     @RegisterExtension
     static JamesServerExtension testExtension = new JamesServerBuilder()
@@ -47,7 +48,7 @@ class RabbitMQLinshareBlobExportMechanismIntegrationTest extends LinshareBlobExp
         .extension(new CassandraExtension())
         .extension(new RabbitMQExtension())
         .extension(new AwsS3BlobStoreExtension())
-        .extension(LinshareBlobExportMechanismIntegrationTest.linshareGuiceExtension)
+        .extension(new LinshareGuiceExtension())
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(CassandraRabbitMQJamesServerMain.MODULES)
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
@@ -55,5 +56,6 @@ class RabbitMQLinshareBlobExportMechanismIntegrationTest extends LinshareBlobExp
             .overrideWith(new TestRabbitMQModule(DockerRabbitMQSingleton.SINGLETON))
             .overrideWith(new WebadminIntegrationTestModule())
             .overrideWith(new TestDeleteMessageVaultPreDeletionHookModule()))
+        .resolveParam(TestSystem.class, TestSystem::new)
         .build();
 }

@@ -24,6 +24,8 @@ import org.apache.james.linshare.LinshareConfiguration;
 import org.apache.james.linshare.LinshareExtension;
 import org.apache.james.linshare.LinshareFixture;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
 
 import com.google.inject.Module;
 import com.google.inject.util.Modules;
@@ -63,6 +65,16 @@ public class LinshareGuiceExtension implements GuiceModuleTestExtension {
     }
 
     public LinshareExtension getLinshareJunitExtension() {
+        return linshareExtension;
+    }
+
+    @Override
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+        return parameterContext.getParameter().getType() == LinshareExtension.class;
+    }
+
+    @Override
+    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         return linshareExtension;
     }
 }
