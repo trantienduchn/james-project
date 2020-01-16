@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.apache.james.JamesParametersResolver.TestParametersRegistration;
 import org.apache.james.server.core.configuration.Configuration;
@@ -46,7 +47,7 @@ public class JamesServerBuilder {
         GuiceJamesServer buildServer(Configuration configuration);
     }
 
-    private final ImmutableList.Builder<GuiceModuleTestExtension> extensions;
+    private final ImmutableList.Builder<RegistrableExtension> extensions;
     private final TemporaryFolderRegistrableExtension folderRegistrableExtension;
     private final ImmutableList.Builder<Module> overrideModules;
     private final ImmutableMap.Builder<Class<?>, Function<GuiceJamesServer, ?>> paramsRegistrationBuilder;
@@ -63,12 +64,12 @@ public class JamesServerBuilder {
         paramsRegistrationBuilder = new ImmutableMap.Builder<>();
     }
 
-    public JamesServerBuilder extensions(GuiceModuleTestExtension... extensions) {
+    public JamesServerBuilder extensions(RegistrableExtension... extensions) {
         this.extensions.add(extensions);
         return this;
     }
 
-    public JamesServerBuilder extension(GuiceModuleTestExtension extension) {
+    public JamesServerBuilder extension(RegistrableExtension extension) {
         return this.extensions(extension);
     }
 
@@ -100,7 +101,7 @@ public class JamesServerBuilder {
     public JamesServerExtension build() {
         Preconditions.checkNotNull(server);
         ConfigurationProvider configuration = this.configuration.orElse(defaultConfigurationProvider());
-        JamesServerExtension.AwaitCondition awaitCondition = () -> extensions.build().forEach(GuiceModuleTestExtension::await);
+        JamesServerExtension.AwaitCondition awaitCondition = () -> guiceExtensions().forEach(GuiceModuleTestExtension::await);
 
         return new JamesServerExtension(buildAggregateJunitExtension(), file -> overrideServerWithExtensionsModules(file, configuration),
             awaitCondition, autoStart.orElse(DEFAULT_AUTO_START),
@@ -116,7 +117,7 @@ public class JamesServerBuilder {
     }
 
     private AggregateJunitExtension buildAggregateJunitExtension() {
-        ImmutableList<GuiceModuleTestExtension> extensions = this.extensions.build();
+        ImmutableList<RegistrableExtension> extensions = this.extensions.build();
         return new AggregateJunitExtension(
             ImmutableList.<RegistrableExtension>builder()
                 .addAll(extensions)
@@ -125,8 +126,7 @@ public class JamesServerBuilder {
     }
 
     private GuiceJamesServer overrideServerWithExtensionsModules(File file, ConfigurationProvider configurationProvider) {
-        ImmutableList<Module> modules = extensions.build()
-            .stream()
+        ImmutableList<Module> modules = guiceExtensions()
             .map(GuiceModuleTestExtension::getModule)
             .collect(Guavate.toImmutableList());
 
@@ -135,6 +135,13 @@ public class JamesServerBuilder {
             .overrideWith(modules)
             .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton()))
             .overrideWith(overrideModules.build());
+    }
+
+    private Stream<GuiceModuleTestExtension> guiceExtensions() {
+        return extensions.build()
+            .stream()
+            .filter(extension -> extension instanceof GuiceModuleTestExtension)
+            .map(extension -> (GuiceModuleTestExtension) extension);
     }
 
 }
