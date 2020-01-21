@@ -19,6 +19,11 @@
 
 package org.apache.james;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import org.apache.james.util.Host;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -27,6 +32,12 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import com.google.inject.Module;
 
 public class CassandraExtension implements GuiceModuleTestExtension {
+
+    @Target(ElementType.PARAMETER)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface CassandraHost {
+    }
+
     private final DockerCassandraRule cassandra;
 
     public CassandraExtension() {
@@ -62,7 +73,8 @@ public class CassandraExtension implements GuiceModuleTestExtension {
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return parameterContext.getParameter().getType() == Host.class;
+        return parameterContext.getParameter().getType() == Host.class
+            && parameterContext.getParameter().isAnnotationPresent(CassandraHost.class);
     }
 
     @Override

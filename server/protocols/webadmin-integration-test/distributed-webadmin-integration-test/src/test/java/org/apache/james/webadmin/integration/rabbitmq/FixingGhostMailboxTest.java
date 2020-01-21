@@ -43,6 +43,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.james.CassandraExtension;
+import org.apache.james.CassandraExtension.CassandraHost;
 import org.apache.james.CassandraRabbitMQJamesServerMain;
 import org.apache.james.DockerElasticSearchExtension;
 import org.apache.james.GuiceJamesServer;
@@ -129,7 +130,7 @@ class FixingGhostMailboxTest {
     private RequestSpecification webadminSpecification;
 
     @BeforeEach
-    void setup(GuiceJamesServer server, Host cassandraHost) throws Throwable {
+    void setup(GuiceJamesServer server, @CassandraHost Host cassandraHost) throws Throwable {
         WebAdminGuiceProbe webAdminProbe = server.getProbe(WebAdminGuiceProbe.class);
         mailboxProbe = server.getProbe(MailboxProbeImpl.class);
         aclProbe = server.getProbe(ACLProbeImpl.class);
