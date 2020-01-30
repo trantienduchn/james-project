@@ -61,7 +61,7 @@ class Converter7BitTest {
         @Nested
         class WhenTextContent {
             @Test
-            void convertTo7BitShouldKeepMessageContentUnTouch() throws Exception {
+            void convertTo7BitShouldKeepMessageContentUnTouched() throws Exception {
                 MimeMessage mimeMessage = MimeMessageUtil.mimeMessageFromString(
                         fileContent("eml/text-only-7bit.eml"));
                 testee.convertTo7Bit(mimeMessage);
@@ -78,7 +78,7 @@ class Converter7BitTest {
         @Nested
         class WhenMultipart {
             @Test
-            void convertTo7BitShouldKeepMessageTextContentUnTouch() throws Exception {
+            void convertTo7BitShouldKeepMessageTextContentUnTouched() throws Exception {
                 MimeMessage mimeMessage = MimeMessageUtil.mimeMessageFromString(
                         fileContent("eml/multipart-7bit.eml"));
 
@@ -94,7 +94,7 @@ class Converter7BitTest {
             }
 
             @Test
-            void convertTo7BitShouldKeepMessageAttachmentsContentUnTouch() throws Exception {
+            void convertTo7BitShouldKeepMessageAttachmentsContentUnTouched() throws Exception {
                 MimeMessage mimeMessage = MimeMessageUtil.mimeMessageFromString(
                         fileContent("eml/multipart-7bit.eml"));
 
@@ -176,7 +176,7 @@ class Converter7BitTest {
             }
 
             @Test
-            void convertTo7BitShouldKeepAttachmentPartUnTouchWhenBase64Encoding() throws Exception {
+            void convertTo7BitShouldKeepAttachmentPartUnTouchedWhenBase64Encoding() throws Exception {
                 MimeMessage mimeMessage = MimeMessageUtil.mimeMessageFromString(
                         fileContent("eml/multipart-8bit.eml"));
 
