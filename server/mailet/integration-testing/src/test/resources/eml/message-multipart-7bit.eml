@@ -30,7 +30,7 @@ This is a multi-part message in MIME format.
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: quoted-printable
 
-A 8bit encoded body with =E2=82=ACuro symbol.
+A quoted-printable encoded body with =E2=82=ACuro symbol.
 
 
 
