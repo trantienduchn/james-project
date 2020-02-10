@@ -59,7 +59,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -130,9 +129,13 @@ class RemoteDeliveryDKIMIntegrationTest {
     class WhenEnable8BitMime {
         @Disabled("JAMES-3016 assertion failed:" +
             "org.apache.james.jdkim.exceptions.PermFailException: Computed bodyhash is different from the expected one")
-        @Test
-        void remoteDeliveryShouldNotBreakDKIMSignWhen7BitTextMessage(SMTPMessageSender messageSender, DockerMockSmtp dockerMockSmtp) throws Exception {
-
+        @CsvSource({
+            "a-mail-with-7bit-encoding, eml/message-text-only-7bit.eml",
+            "a-mail-with-8bit-encoding, eml/message-text-only-8bit.eml",
+        })
+        @ParameterizedTest
+        void remoteDeliveryShouldNotBreakDKIMSignWhenTextMessage(String mailName, String emlPath,
+                                                                 SMTPMessageSender messageSender, DockerMockSmtp dockerMockSmtp) throws Exception {
             InMemoryDNSService inMemoryDNSService = new InMemoryDNSService()
                 .registerMxRecord(JAMES_ANOTHER_DOMAIN, dockerMockSmtp.getIPAddress());
 
@@ -150,11 +153,11 @@ class RemoteDeliveryDKIMIntegrationTest {
             dataProbe.addUser(FROM, PASSWORD);
 
             FakeMail mail = FakeMail.builder()
-                .name("a-mail-with-7bit-encoding")
+                .name(mailName)
                 .sender(new MailAddress(FROM))
                 .recipient(new MailAddress(RECIPIENT))
                 .mimeMessage(MimeMessageUtil.mimeMessageFromStream(
-                    ClassLoader.getSystemResourceAsStream("eml/message-text-only-7bit.eml")))
+                    ClassLoader.getSystemResourceAsStream(emlPath)))
                 .build();
             messageSender.connect(LOCALHOST_IP, jamesServer.getProbe(SmtpGuiceProbe.class).getSmtpPort())
                 .sendMessage(mail);
@@ -167,13 +170,11 @@ class RemoteDeliveryDKIMIntegrationTest {
 
         @CsvSource({
             "a-mail-with-7bit-base64-encoding, eml/message-multipart-7bit.eml",
-            "a-mail-with-8bit-encoding, eml/message-text-only-8bit.eml",
             "a-mail-with-8bit-base64-encoding, eml/message-multipart-8bit.eml"
         })
         @ParameterizedTest
         void remoteDeliveryShouldNotBreakDKIMSign(String mailName, String emlPath,
                                                   SMTPMessageSender messageSender, DockerMockSmtp dockerMockSmtp) throws Exception {
-
             InMemoryDNSService inMemoryDNSService = new InMemoryDNSService()
                 .registerMxRecord(JAMES_ANOTHER_DOMAIN, dockerMockSmtp.getIPAddress());
 
