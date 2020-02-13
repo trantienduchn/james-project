@@ -471,7 +471,7 @@ class CassandraMailboxMapperTest {
             }));
         }
 
-        @Disabled("JAMES-3056 mailbox name is not updated to INBOX_RENAMED).isEqualTo(" +
+        @Disabled("JAMES-3056 mailbox name is not updated to INBOX_RENAMED, " +
             "findMailboxWithPathLike() returns a list with two same mailboxes")
         @Test
         void renameAfterRenameFailOnRetrieveMailboxShouldRenameTheMailbox() throws Exception {
