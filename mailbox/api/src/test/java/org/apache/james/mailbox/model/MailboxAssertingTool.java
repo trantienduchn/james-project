@@ -19,6 +19,8 @@
 
 package org.apache.james.mailbox.model;
 
+import java.util.Objects;
+
 import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.api.SoftAssertions;
 
@@ -34,32 +36,25 @@ public class MailboxAssertingTool {
 
         public MailboxAssert isEqualTo(Mailbox expected) {
             isNotNull();
-            if (!equals(actual.getMailboxId(), expected.getMailboxId())) {
+            if (!Objects.equals(actual.getMailboxId(), expected.getMailboxId())) {
                 failWithMessage(mailboxIdFailMessage(expected, actual));
             }
-            if (!equals(actual.getNamespace(), expected.getNamespace())) {
+            if (!Objects.equals(actual.getNamespace(), expected.getNamespace())) {
                 failWithMessage(namespaceFailMessage(expected, actual));
             }
-            if (!equals(actual.getUser(), expected.getUser())) {
+            if (!Objects.equals(actual.getUser(), expected.getUser())) {
                 failWithMessage(userFailMessage(expected, actual));
             }
-            if (!equals(actual.getName(), expected.getName())) {
+            if (!Objects.equals(actual.getName(), expected.getName())) {
                 failWithMessage(nameFailMessage(expected, actual));
             }
-            if (!equals(actual.getACL(), expected.getACL())) {
+            if (!Objects.equals(actual.getACL(), expected.getACL())) {
                 failWithMessage(aclFailMessage(expected, actual));
             }
             if (actual.getUidValidity() != expected.getUidValidity()) {
                 failWithMessage(uidValidityFailMessage(expected, actual));
             }
             return this;
-        }
-
-        private boolean equals(Object object1, Object object2) {
-            if (object1 == null && object2 == null) {
-                return true;
-            }
-            return (object1 != null) && object1.equals(object2);
         }
     }
 
