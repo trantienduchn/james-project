@@ -20,7 +20,8 @@ advanced users.
  - [Mailbox Event Bus](#mailbox-event-bus)
  - [Mail Processing](#mail-processing)
  - [ElasticSearch Indexing](#elasticsearch-indexing)
-
+ - [Solving cassandra inconsistencies](#solving-cassandra-inconsistencies) 
+ 
 ## Overall architecture
 
 Guice distributed James server intends to provide a horizontally scalable email server.
@@ -260,3 +261,68 @@ by setting the parameter `elasticsearch.index.mailbox.name` to the name of your 
 re-creates index upon restart
 
 _Note_: keep in mind that reindexing can be a very long operation depending on the volume of mails you have stored.
+
+## Solving cassandra inconsistencies
+
+By choosing the cassandra, it means denormalization is the common modeling pattern to be using. 
+You may see some data is duplicated among tables. Especially, with tables having close relationships. 
+Some operations require multiple table writes, if there is any failure upon in the middle of an operation. 
+It could bring an inconsistent state to the data. The consequence could be dirty reads, unexpected failing writes.
+
+Because of the lack of transactions, it's hard to prevent these kind of issues. We had developed some features to 
+fix some existing cassandra inconsistency issues that had been reported to James. 
+
+There are typical type inconsistencies:
+ - [RRT (RecipientRewriteTable) mapping sources](#rrt-recipientrewritetable-mapping-sources)
+ - [Jmap message fast view projections](#jmap-message-fast-view-projections)
+ - [Mailboxes](#mailboxes)
+
+### RRT (RecipientRewriteTable) mapping sources
+
+`rrt` and `mappings_sources` tables store information about address mappings. 
+While `rrt` is the source of truth and `mappings_sources` is the projection table containing all 
+mapping sources.
+
+#### How to detect the inconsistencies
+
+// TODO
+
+#### How to solve
+
+Execute the Cassandra mapping `SolveInconsistencies` task described in [webadmin documentation](https://james.apache.org/server/manage-webadmin.html#Operations_on_mappings_sources) 
+
+### Jmap message fast view projections
+
+When you read a Jmap message, some calculated properties are expected to be fast to retrieve, like `preview`, `hasAttachment`. 
+James does it by pre-calculating and storing them into a message projection table(`message_fast_view_projection`). 
+Consequently the following fetches are optimized by reading directly from the projection table instead of calculating it again. 
+The underlying data is immutable so there's no inconsistency risk. 
+
+#### How to detect the inconsistencies
+
+You can take a look at the `MessageFastViewProjection` health check at [webadmin documentation](https://github.com/apache/james-project/blob/master/src/site/markdown/server/manage-webadmin.md#check-all-components). 
+
+#### How to solve
+ 
+There are some latencies between a source update and its projections updates.
+Incoherency problems arise when reads are performed in this time-window.
+We piggyback the projection update on missed Jmap read in order to decrease the outdated time window for a given entry. 
+You should be concerned if the health check still returns `degraded` for a while, 
+there's a possible thing you can do is looking at James logs for more clues. 
+
+### Mailboxes
+
+`mailboxPath` and `mailbox` tables share common fields like `mailboxId` and mailbox `name`. 
+A successful operation of creating/renaming/delete mailboxes has to succeed at updating `mailboxPath` and `mailbox` table. 
+Any failure on creating/updating/delete records in `mailboxPath` or `mailbox` can produce inconsistencies.
+
+#### How to detect the inconsistencies
+
+If you found the suspicious `MailboxNotFoundException` in your logs. 
+Currently, there's no dedicated tool for that, we recommend scheduling 
+the SolveInconsistencies task below for the mailbox object on a regular basis, 
+avoiding peak traffic in order to address both inconsistencies diagnostic and fixes.
+
+#### How to solve
+
+Under development: Task for solving mailbox inconsistencies
