@@ -285,7 +285,9 @@ mapping sources.
 
 #### How to detect the inconsistencies
 
-// TODO
+Right now there's no tool for detecting that, we're proposing a development plan on that.  
+By the mean time, the recommendation is to execute the `SolveInconsistencies` task below 
+in a regular basis. 
 
 #### How to solve
 
@@ -296,19 +298,19 @@ Execute the Cassandra mapping `SolveInconsistencies` task described in [webadmin
 When you read a Jmap message, some calculated properties are expected to be fast to retrieve, like `preview`, `hasAttachment`. 
 James does it by pre-calculating and storing them into a message projection table(`message_fast_view_projection`). 
 Consequently the following fetches are optimized by reading directly from the projection table instead of calculating it again. 
-The underlying data is immutable so there's no inconsistency risk. 
+The underlying data is immutable so there's no inconsistency risk if there're not updated projections. 
+But still you can face to a performance issue, how bad is it depends on how many of not updated projections.
 
-#### How to detect the inconsistencies
+#### How to detect the not updated projections
 
 You can take a look at the `MessageFastViewProjection` health check at [webadmin documentation](https://github.com/apache/james-project/blob/master/src/site/markdown/server/manage-webadmin.md#check-all-components). 
+It provides to you a check bases on the ratio of missed projection reads.  
 
 #### How to solve
  
-There are some latencies between a source update and its projections updates.
-Incoherency problems arise when reads are performed in this time-window.
-We piggyback the projection update on missed Jmap read in order to decrease the outdated time window for a given entry. 
-You should be concerned if the health check still returns `degraded` for a while, 
-there's a possible thing you can do is looking at James logs for more clues. 
+Since the MessageFastViewProjection is self healing. You should be concerned only if 
+the health check still returns `degraded` for a while, there's a possible thing you 
+can do is looking at James logs for more clues. 
 
 ### Mailboxes
 
