@@ -104,8 +104,8 @@ Supported health checks include:
  Those properties are computed in advance from messages and persisted in order to archive a better performance. 
  There are some latencies between a source update and its projections updates. 
  Incoherency problems arise when reads are performed in this time-window. 
- We piggyback the projection update on missed JMAP read in order to decrease the outdated time window for a given entry.  
- The heath is determined by the ratio of missed projection reads. (lower than 10% causes `degraded`)
+ We piggyback the projection update on missed JMAP read in order to decrease the outdated time window for a given entry. 
+ The health is determined by the ratio of missed projection reads. (lower than 10% causes `degraded`)
 
  - **RabbitMQ backend**: RabbitMQ messaging. Included in Distributed Guice based products.
 

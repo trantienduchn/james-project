@@ -264,7 +264,7 @@ _Note_: keep in mind that reindexing can be a very long operation depending on t
 
 ## Solving cassandra inconsistencies
 
-By choosing the cassandra, it means denormalization is the common modeling pattern to be using. 
+By choosing Cassandra, it means denormalization is the common modeling pattern to be using. 
 You may see some data is duplicated among tables. Especially, with tables having close relationships. 
 Some operations require multiple table writes, if there is any failure upon in the middle of an operation. 
 It could bring an inconsistent state to the data. The consequence could be dirty reads, unexpected failing writes.
@@ -299,16 +299,16 @@ When you read a Jmap message, some calculated properties are expected to be fast
 James does it by pre-calculating and storing them into a message projection table(`message_fast_view_projection`). 
 Consequently the following fetches are optimized by reading directly from the projection table instead of calculating it again. 
 The underlying data is immutable so there's no inconsistency risk if there're not updated projections. 
-But still you can face to a performance issue, how bad is it depends on how many of not updated projections.
+But still you can face a performance issue, how bad it is depends on the number of not updated projections.
 
 #### How to detect the not updated projections
 
 You can take a look at the `MessageFastViewProjection` health check at [webadmin documentation](https://github.com/apache/james-project/blob/master/src/site/markdown/server/manage-webadmin.md#check-all-components). 
-It provides to you a check bases on the ratio of missed projection reads.  
+It provides you with a check bases on the ratio of missed projection reads.  
 
 #### How to solve
  
-Since the MessageFastViewProjection is self healing. You should be concerned only if 
+Since the MessageFastViewProjection is self healing, you should be concerned only if 
 the health check still returns `degraded` for a while, there's a possible thing you 
 can do is looking at James logs for more clues. 
 
