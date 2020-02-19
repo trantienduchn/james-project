@@ -296,10 +296,8 @@ Execute the Cassandra mapping `SolveInconsistencies` task described in [webadmin
 ### Jmap message fast view projections
 
 When you read a Jmap message, some calculated properties are expected to be fast to retrieve, like `preview`, `hasAttachment`. 
-James achieves it by pre-calculating and storing them into a message projection table(`message_fast_view_projection`). 
-Consequently the following fetches are optimized by reading directly from the projection table instead of calculating it again. 
-The underlying data is immutable so there's no inconsistency risk if the projections is outdated. 
-But still you can face a performance issue, how bad it is depends on how much the projection is lagging behind.
+James achieves it by pre-calculating and storing them into a caching table (`message_fast_view_projection`). 
+Missing caches are populated on message reads and will temporary decrease the performance.
 
 #### How to detect the outdated projections
 
