@@ -27,7 +27,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 import org.apache.james.blob.api.BlobId;
 import org.apache.james.blob.api.HashBlobId;
@@ -74,7 +73,7 @@ class LinshareBlobExportMechanismTest {
         testee.blobId(blobId)
             .with(new MailAddress(USER_2.getUsername()))
             .explanation(EXPLANATION)
-            .filePrefix(Optional.of(filePrefix))
+            .filePrefix(filePrefix)
             .fileExtension(FILE_TEXT_EXTENSION)
             .export();
 
@@ -122,7 +121,7 @@ class LinshareBlobExportMechanismTest {
         testee.blobId(blobId)
             .with(new MailAddress(USER_2.getUsername()))
             .explanation(EXPLANATION)
-            .filePrefix(Optional.of(filePrefix))
+            .filePrefix(filePrefix)
             .fileExtension(FILE_TEXT_EXTENSION)
             .export();
 
