@@ -264,15 +264,15 @@ _Note_: keep in mind that reindexing can be a very long operation depending on t
 
 ## Solving cassandra inconsistencies
 
-By choosing Cassandra, it means denormalization is the common modeling pattern to be using. 
-You may see some data is duplicated among tables. Especially, with tables having close relationships. 
-Some operations require multiple table writes, if there is any failure upon in the middle of an operation. 
-It could bring an inconsistent state to the data. The consequence could be dirty reads, unexpected failing writes.
+Cassandra backend uses data duplication to workaround Cassandra query limitations. 
+However, Cassandra is not doing transaction when writing in several tables, 
+this can lead to consistency issues for a given piece of data. 
+The consequence could be data that is in transient state (that should never appear outside of the system).
 
 Because of the lack of transactions, it's hard to prevent these kind of issues. We had developed some features to 
 fix some existing cassandra inconsistency issues that had been reported to James. 
 
-There are typical type inconsistencies:
+Here is the list of known inconsistencies:
  - [RRT (RecipientRewriteTable) mapping sources](#Rrt_RecipientRewriteTable_mapping_sources)
  - [Jmap message fast view projections](#Jmap_message_fast_view_projections)
  - [Mailboxes](#Mailboxes)
@@ -280,12 +280,12 @@ There are typical type inconsistencies:
 ### RRT (RecipientRewriteTable) mapping sources
 
 `rrt` and `mappings_sources` tables store information about address mappings. 
-While `rrt` is the source of truth and `mappings_sources` is the projection table containing all 
+The source of truth is `rrt` and `mappings_sources` is the projection table containing all 
 mapping sources.
 
 #### How to detect the inconsistencies
 
-Right now there's no tool for detecting that, we're proposing a development plan on that.  
+Right now there's no tool for detecting that, we're proposing a [development plan](https://issues.apache.org/jira/browse/JAMES-3069). 
 By the mean time, the recommendation is to execute the `SolveInconsistencies` task below 
 in a regular basis. 
 
@@ -296,15 +296,15 @@ Execute the Cassandra mapping `SolveInconsistencies` task described in [webadmin
 ### Jmap message fast view projections
 
 When you read a Jmap message, some calculated properties are expected to be fast to retrieve, like `preview`, `hasAttachment`. 
-James does it by pre-calculating and storing them into a message projection table(`message_fast_view_projection`). 
+James achieves it by pre-calculating and storing them into a message projection table(`message_fast_view_projection`). 
 Consequently the following fetches are optimized by reading directly from the projection table instead of calculating it again. 
-The underlying data is immutable so there's no inconsistency risk if there're not updated projections. 
-But still you can face a performance issue, how bad it is depends on the number of not updated projections.
+The underlying data is immutable so there's no inconsistency risk if the projections is outdated. 
+But still you can face a performance issue, how bad it is depends on how much the projection is lagging behind.
 
-#### How to detect the not updated projections
+#### How to detect the outdated projections
 
-You can take a look at the `MessageFastViewProjection` health check at [webadmin documentation](https://github.com/apache/james-project/blob/master/src/site/markdown/server/manage-webadmin.md#check-all-components). 
-It provides you with a check bases on the ratio of missed projection reads.  
+You can watch the `MessageFastViewProjection` health check at [webadmin documentation](manage-webadmin.html#Check_all_components). 
+It provides a check based on the ratio of missed projection reads.  
 
 #### How to solve
  
