@@ -61,8 +61,6 @@ class ResilientClusterProviderTest {
                 .isTrue();
         }
 
-        @Disabled("JAMES-3061 com.datastax.driver.core.exceptions.UnauthorizedException: " +
-            "User james_testing has no CREATE permission on <all keyspaces> or any of its parents")
         @Test
         void initializationShouldNotThrownWhenKeyspaceAlreadyExisted() {
             cassandraCluster.provisionResources();
@@ -71,8 +69,6 @@ class ResilientClusterProviderTest {
                 .doesNotThrowAnyException();
         }
 
-        @Disabled("JAMES-3061 com.datastax.driver.core.exceptions.UnauthorizedException: " +
-            "User james_testing has no CREATE permission on <all keyspaces> or any of its parents")
         @Test
         void initializationShouldNotImpactToKeyspaceExistentWhenAlreadyExisted() {
             cassandraCluster.provisionResources();
@@ -85,15 +81,7 @@ class ResilientClusterProviderTest {
 
         private boolean keyspaceExist(String keyspaceName) {
             try (Session cassandraSession = testingResourceManagementCluster.newSession()) {
-                long numberOfKeyspaces = cassandraSession
-                    .execute("SELECT COUNT(*) FROM system_schema.keyspaces where keyspace_name = '" + keyspaceName +"'")
-                    .one()
-                    .getLong("count");
-                if (numberOfKeyspaces > 1 || numberOfKeyspaces < 0) {
-                    throw new IllegalStateException("unexpected keyspace('" + keyspaceName + "') count being " + numberOfKeyspaces);
-                }
-
-                return numberOfKeyspaces == 1;
+                return KeyspaceFactory.keyspaceExist(cassandraSession, keyspaceName);
             }
         }
 

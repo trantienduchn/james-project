@@ -124,7 +124,7 @@ public final class CassandraCluster implements AutoCloseable {
 
     public void createTestingUser() {
         try (Session session = privilegedCluster.newSession()) {
-            session.execute("CREATE ROLE "+ CASSANDRA_TESTING_USER + " WITH PASSWORD = '" + CASSANDRA_TESTING_PASSWORD + "' AND LOGIN = true");
+            session.execute("CREATE ROLE IF NOT EXISTS "+ CASSANDRA_TESTING_USER + " WITH PASSWORD = '" + CASSANDRA_TESTING_PASSWORD + "' AND LOGIN = true");
         }
     }
 

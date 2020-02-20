@@ -23,6 +23,7 @@ import org.apache.james.backends.cassandra.init.configuration.ClusterConfigurati
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
+import com.google.common.annotations.VisibleForTesting;
 
 public class KeyspaceFactory {
     public static void createKeyspace(ClusterConfiguration clusterConfiguration, Cluster cluster) {
@@ -33,10 +34,25 @@ public class KeyspaceFactory {
 
     private static void doCreateKeyspace(ClusterConfiguration clusterConfiguration, Cluster cluster) {
         try (Session session = cluster.connect()) {
-            session.execute("CREATE KEYSPACE IF NOT EXISTS " + clusterConfiguration.getKeyspace()
-                + " WITH replication = {'class':'SimpleStrategy', 'replication_factor':" + clusterConfiguration.getReplicationFactor() + "}"
-                + " AND durable_writes = " + clusterConfiguration.isDurableWrites()
-                + ";");
+            if (!keyspaceExist(session, clusterConfiguration.getKeyspace())) {
+                session.execute("CREATE KEYSPACE " + clusterConfiguration.getKeyspace()
+                    + " WITH replication = {'class':'SimpleStrategy', 'replication_factor':" + clusterConfiguration.getReplicationFactor() + "}"
+                    + " AND durable_writes = " + clusterConfiguration.isDurableWrites()
+                    + ";");
+            }
         }
+    }
+
+    @VisibleForTesting
+    public static boolean keyspaceExist(Session session, String keyspaceName) {
+        long numberOfKeyspaces = session
+            .execute("SELECT COUNT(*) FROM system_schema.keyspaces where keyspace_name = '" + keyspaceName + "'")
+            .one()
+            .getLong("count");
+        if (numberOfKeyspaces > 1 || numberOfKeyspaces < 0) {
+            throw new IllegalStateException("unexpected keyspace('" + keyspaceName + "') count being " + numberOfKeyspaces);
+        }
+
+        return numberOfKeyspaces == 1;
     }
 }
