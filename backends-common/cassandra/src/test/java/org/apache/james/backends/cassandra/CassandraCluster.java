@@ -34,6 +34,30 @@ import com.datastax.driver.core.Session;
 
 public final class CassandraCluster implements AutoCloseable {
 
+    public static ClusterConfiguration configurationForTestingUser(Host host) {
+        return ClusterConfiguration.builder()
+            .host(host)
+            .keyspace(KEYSPACE)
+            .createKeyspace()
+            .disableDurableWrites()
+            .username(CASSANDRA_TESTING_USER)
+            .password(CASSANDRA_TESTING_PASSWORD)
+            .maxRetry(2)
+            .build();
+    }
+
+    public static ClusterConfiguration configurationForSuperUser(Host host) {
+        return ClusterConfiguration.builder()
+            .host(host)
+            .keyspace(KEYSPACE)
+            .createKeyspace()
+            .disableDurableWrites()
+            .username(CASSANDRA_SUPER_USER)
+            .password(CASSANDRA_SUPER_USER_PASSWORD)
+            .maxRetry(2)
+            .build();
+    }
+
     private static final String CASSANDRA_SUPER_USER = "cassandra";
     private static final String CASSANDRA_SUPER_USER_PASSWORD = "cassandra";
 
@@ -45,14 +69,23 @@ public final class CassandraCluster implements AutoCloseable {
     private static Optional<Exception> startStackTrace = Optional.empty();
     private final CassandraModule module;
     private final Host host;
+
     private Session session;
     private CassandraTypesProvider typesProvider;
     private Cluster privilegedCluster;
     private Cluster nonPrivilegedCluster;
 
     public static CassandraCluster create(CassandraModule module, Host host) {
+        return create(module, host, true);
+    }
+
+    public static CassandraCluster noRsourcesProvisioned(CassandraModule module, Host host) {
+        return create(module, host, false);
+    }
+
+    static CassandraCluster create(CassandraModule module, Host host, boolean provisionResources) {
         assertClusterNotRunning();
-        CassandraCluster cassandraCluster = new CassandraCluster(module, host);
+        CassandraCluster cassandraCluster = new CassandraCluster(module, host, provisionResources);
         startStackTrace = Optional.of(new Exception("initial connection call trace"));
         return cassandraCluster;
     }
@@ -63,13 +96,24 @@ public final class CassandraCluster implements AutoCloseable {
       });
     }
 
-    private CassandraCluster(CassandraModule module, Host host) throws RuntimeException {
+    private CassandraCluster(CassandraModule module, Host host, boolean provisionResources) throws RuntimeException {
         this.module = module;
         this.host = host;
-        try {
-            prepareCassandraResources();
 
-            ClusterConfiguration testingConfig = configurationForTestingUser();
+        privilegedCluster = ClusterFactory.create(configurationForSuperUser(host));
+        if (provisionResources) {
+            provisionResources();
+        }
+    }
+
+    public void provisionResources() {
+        try {
+            KeyspaceFactory.createKeyspace(configurationForSuperUser(host), privilegedCluster);
+
+            createTestingUser();
+            grantPermissionTestingUser();
+
+            ClusterConfiguration testingConfig = configurationForTestingUser(host);
             nonPrivilegedCluster = ClusterFactory.create(testingConfig);
             session = new SessionWithInitializedTablesFactory(testingConfig, nonPrivilegedCluster, module).get();
             typesProvider = new CassandraTypesProvider(module, session);
@@ -78,38 +122,14 @@ public final class CassandraCluster implements AutoCloseable {
         }
     }
 
-    private void prepareCassandraResources() {
-        ClusterConfiguration superUserConfig = configurationForSuperUser();
-        privilegedCluster = ClusterFactory.create(superUserConfig);
-        KeyspaceFactory.createKeyspace(superUserConfig, privilegedCluster);
-        createNonPrivilegedUser();
-    }
-
-    private ClusterConfiguration configurationForSuperUser() {
-        return ClusterConfiguration.builder()
-            .host(host)
-            .keyspace(KEYSPACE)
-            .createKeyspace()
-            .disableDurableWrites()
-            .username(CASSANDRA_SUPER_USER)
-            .password(CASSANDRA_SUPER_USER_PASSWORD)
-            .build();
-    }
-
-    public ClusterConfiguration configurationForTestingUser() {
-        return ClusterConfiguration.builder()
-            .host(host)
-            .keyspace(KEYSPACE)
-            .createKeyspace()
-            .disableDurableWrites()
-            .username(CASSANDRA_TESTING_USER)
-            .password(CASSANDRA_TESTING_PASSWORD)
-            .build();
-    }
-
-    private void createNonPrivilegedUser() {
+    public void createTestingUser() {
         try (Session session = privilegedCluster.newSession()) {
             session.execute("CREATE ROLE "+ CASSANDRA_TESTING_USER + " WITH PASSWORD = '" + CASSANDRA_TESTING_PASSWORD + "' AND LOGIN = true");
+        }
+    }
+
+    private void grantPermissionTestingUser() {
+        try (Session session = privilegedCluster.newSession()) {
             session.execute("GRANT CREATE ON KEYSPACE " + KEYSPACE + " TO " + CASSANDRA_TESTING_USER);
             session.execute("GRANT SELECT ON KEYSPACE "+ KEYSPACE + " TO " + CASSANDRA_TESTING_USER);
             session.execute("GRANT MODIFY ON KEYSPACE "+ KEYSPACE + " TO " + CASSANDRA_TESTING_USER);
