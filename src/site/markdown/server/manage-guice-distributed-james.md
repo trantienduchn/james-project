@@ -267,7 +267,7 @@ _Note_: keep in mind that reindexing can be a very long operation depending on t
 Cassandra backend uses data duplication to workaround Cassandra query limitations. 
 However, Cassandra is not doing transaction when writing in several tables, 
 this can lead to consistency issues for a given piece of data. 
-The consequence could be data that is in transient state (that should never appear outside of the system).
+The consequence could be that the data is in a transient state (that should never appear outside of the system).
 
 Because of the lack of transactions, it's hard to prevent these kind of issues. We had developed some features to 
 fix some existing cassandra inconsistency issues that had been reported to James. 
