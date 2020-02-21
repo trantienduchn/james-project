@@ -30,6 +30,7 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
 public class CassandraClusterExtension implements BeforeAllCallback, BeforeEachCallback, AfterAllCallback, AfterEachCallback, ParameterResolver {
+
     private final DockerCassandraExtension cassandraExtension;
     private final CassandraModule cassandraModule;
     private CassandraCluster cassandraCluster;

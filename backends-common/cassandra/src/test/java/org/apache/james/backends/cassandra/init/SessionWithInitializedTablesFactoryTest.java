@@ -20,16 +20,16 @@
 package org.apache.james.backends.cassandra.init;
 
 import static com.datastax.driver.core.DataType.text;
-import static org.apache.james.backends.cassandra.CassandraCluster.KEYSPACE;
 import static org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager.MAX_VERSION;
 import static org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager.MIN_VERSION;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.function.Supplier;
 
+import org.apache.james.backends.cassandra.CassandraTestingResources;
+import org.apache.james.backends.cassandra.CassandraTestingResources.SchemaProvisionStep;
 import org.apache.james.backends.cassandra.DockerCassandraExtension;
 import org.apache.james.backends.cassandra.components.CassandraModule;
-import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionDAO;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionManager;
 import org.apache.james.backends.cassandra.versions.CassandraSchemaVersionModule;
@@ -39,8 +39,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 
-import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
@@ -120,18 +120,13 @@ class SessionWithInitializedTablesFactoryTest {
     }
 
     private static Supplier<Session> createSession(DockerCassandraExtension.DockerCassandra cassandraServer) {
-        ClusterConfiguration clusterConfiguration = ClusterConfiguration.builder()
-            .host(cassandraServer.getHost())
-            .keyspace(KEYSPACE)
-            .createKeyspace()
-            .replicationFactor(1)
-            .disableDurableWrites()
-            .build();
-        Cluster cluster = ClusterFactory.create(clusterConfiguration);
-        KeyspaceFactory.createKeyspace(clusterConfiguration, cluster);
+        CassandraTestingResources testingResources = new CassandraTestingResources(CassandraModule.builder().build(), cassandraServer.getHost());
+
+        testingResources.provision(ImmutableList.of(SchemaProvisionStep.CREATE_KEYSPACE));
+
         return () -> new SessionWithInitializedTablesFactory(
-                clusterConfiguration,
-                cluster,
+                testingResources.getNonPrivilegeConfiguration(),
+                testingResources.getNonPrivilegedCluster(),
                 MODULE)
             .get();
     }
