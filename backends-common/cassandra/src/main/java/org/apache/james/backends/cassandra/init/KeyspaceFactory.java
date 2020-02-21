@@ -19,6 +19,9 @@
 
 package org.apache.james.backends.cassandra.init;
 
+import static com.datastax.driver.core.querybuilder.QueryBuilder.eq;
+import static com.datastax.driver.core.querybuilder.QueryBuilder.select;
+
 import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
 
 import com.datastax.driver.core.Cluster;
@@ -34,7 +37,7 @@ public class KeyspaceFactory {
 
     private static void doCreateKeyspace(ClusterConfiguration clusterConfiguration, Cluster cluster) {
         try (Session session = cluster.connect()) {
-            if (!keyspaceExist(session, clusterConfiguration.getKeyspace())) {
+            if (!keyspaceExist(cluster, clusterConfiguration.getKeyspace())) {
                 session.execute("CREATE KEYSPACE " + clusterConfiguration.getKeyspace()
                     + " WITH replication = {'class':'SimpleStrategy', 'replication_factor':" + clusterConfiguration.getReplicationFactor() + "}"
                     + " AND durable_writes = " + clusterConfiguration.isDurableWrites()
@@ -44,15 +47,20 @@ public class KeyspaceFactory {
     }
 
     @VisibleForTesting
-    public static boolean keyspaceExist(Session session, String keyspaceName) {
-        long numberOfKeyspaces = session
-            .execute("SELECT COUNT(*) FROM system_schema.keyspaces where keyspace_name = '" + keyspaceName + "'")
-            .one()
-            .getLong("count");
-        if (numberOfKeyspaces > 1 || numberOfKeyspaces < 0) {
-            throw new IllegalStateException("unexpected keyspace('" + keyspaceName + "') count being " + numberOfKeyspaces);
-        }
+    static boolean keyspaceExist(Cluster cluster, String keyspaceName) {
+        try (Session session = cluster.connect("system_schema")) {
+            long numberOfKeyspaces = session.execute(select()
+                    .countAll()
+                    .from("keyspaces")
+                    .where(eq("keyspace_name", keyspaceName)))
+                .one()
+                .getLong("count");
 
-        return numberOfKeyspaces == 1;
+            if (numberOfKeyspaces > 1 || numberOfKeyspaces < 0) {
+                throw new IllegalStateException("unexpected keyspace('" + keyspaceName + "') count being " + numberOfKeyspaces);
+            }
+
+            return numberOfKeyspaces == 1;
+        }
     }
 }

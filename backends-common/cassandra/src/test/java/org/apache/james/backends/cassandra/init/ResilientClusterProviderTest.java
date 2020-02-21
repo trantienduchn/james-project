@@ -73,14 +73,10 @@ class ResilientClusterProviderTest {
             assertThat(keyspaceExist(CassandraCluster.KEYSPACE))
                 .isTrue();
         }
-
-
     }
 
     private boolean keyspaceExist(String keyspaceName) {
-        try (Session cassandraSession = testingResources.getPrivilegedCluster().newSession()) {
-            return KeyspaceFactory.keyspaceExist(cassandraSession, keyspaceName);
-        }
+        return KeyspaceFactory.keyspaceExist(testingResources.getPrivilegedCluster(), keyspaceName);
     }
 
     private void dropKeyspace(String keyspaceName) {
