@@ -76,10 +76,6 @@ public final class CassandraCluster implements AutoCloseable {
         testingResources.clearTables();
     }
 
-    public void closeCluster() {
-        testingResources.closeConnections();
-    }
-
     public Host getHost() {
         return host;
     }

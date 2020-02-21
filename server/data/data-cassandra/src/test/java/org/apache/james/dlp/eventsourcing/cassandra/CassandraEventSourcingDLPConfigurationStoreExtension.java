@@ -59,7 +59,7 @@ public class CassandraEventSourcingDLPConfigurationStoreExtension implements Bef
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
-        cassandra.closeCluster();
+        cassandra.close();
         dockerCassandraExtension.afterAll(context);
     }
 
