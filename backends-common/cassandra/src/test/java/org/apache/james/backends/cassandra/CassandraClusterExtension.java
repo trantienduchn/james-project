@@ -76,12 +76,21 @@ public class CassandraClusterExtension implements BeforeAllCallback, BeforeEachC
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return (parameterContext.getParameter().getType() == CassandraCluster.class);
+        Class<?> paramType = parameterContext.getParameter().getType();
+        return paramType.isAssignableFrom(CassandraCluster.class)
+            || paramType.isAssignableFrom(DockerCassandra.class);
     }
 
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
-        return cassandraCluster;
+        Class<?> paramType = parameterContext.getParameter().getType();
+        if (paramType.isAssignableFrom(CassandraCluster.class)) {
+            return cassandraCluster;
+        } else if (paramType.isAssignableFrom(DockerCassandra.class)) {
+            return DockerCassandraSingleton.singleton;
+        } else {
+            throw new IllegalArgumentException("Unsupported parameter type " + paramType.getName());
+        }
     }
 
     public CassandraCluster getCassandraCluster() {
