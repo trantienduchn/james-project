@@ -19,6 +19,8 @@
 
 package org.apache.james.backends.cassandra;
 
+import org.apache.james.backends.cassandra.components.CassandraModule;
+
 public class DockerCassandraSingleton {
     @FunctionalInterface
     interface BeforeHook {
@@ -38,6 +40,9 @@ public class DockerCassandraSingleton {
 
     static {
         singleton.start();
+        // provision cassandra testing user and create keyspace ahead by default user
+        // because the testing user has no permission to do it
+        CassandraCluster.create(CassandraModule.NO_MODULE, DockerCassandraSingleton.singleton.getHost());
     }
 
     public static void incrementTestsPlayed() {
