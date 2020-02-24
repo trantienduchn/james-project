@@ -49,23 +49,27 @@ public class CassandraTestingResources implements AutoCloseable {
         }
     }
 
-    public static ClusterConfiguration configurationForNonPrivilegedUser(Host host) {
-        return configurationBuilder(host)
-            .username(CASSANDRA_TESTING_USER)
-            .password(CASSANDRA_TESTING_PASSWORD)
+    public static ClusterConfiguration configurationForNonPrivilegedUser(Host... hosts) {
+        return configurationBuilderForNonPrivilegedUser(hosts)
             .build();
     }
 
-    public static ClusterConfiguration configurationForSuperUser(Host host) {
-        return configurationBuilder(host)
+    public static ClusterConfiguration.Builder configurationBuilderForNonPrivilegedUser(Host... hosts) {
+        return configurationBuilder(hosts)
+            .username(CASSANDRA_TESTING_USER)
+            .password(CASSANDRA_TESTING_PASSWORD);
+    }
+
+    public static ClusterConfiguration configurationForSuperUser(Host... hosts) {
+        return configurationBuilder(hosts)
             .username(CASSANDRA_SUPER_USER)
             .password(CASSANDRA_SUPER_USER_PASSWORD)
             .build();
     }
 
-    private static ClusterConfiguration.Builder configurationBuilder(Host host) {
+    private static ClusterConfiguration.Builder configurationBuilder(Host... hosts) {
         return ClusterConfiguration.builder()
-            .host(host)
+            .hosts(hosts)
             .keyspace(KEYSPACE)
             .createKeyspace()
             .disableDurableWrites()
@@ -75,8 +79,8 @@ public class CassandraTestingResources implements AutoCloseable {
 
     private static final String CASSANDRA_SUPER_USER = "cassandra";
     private static final String CASSANDRA_SUPER_USER_PASSWORD = "cassandra";
-    private static final String CASSANDRA_TESTING_USER = "james_testing";
-    private static final String CASSANDRA_TESTING_PASSWORD = "james_testing_password";
+    public static final String CASSANDRA_TESTING_USER = "james_testing";
+    public static final String CASSANDRA_TESTING_PASSWORD = "james_testing_password";
 
     private final CassandraModule module;
     private final Host host;
