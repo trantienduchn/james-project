@@ -326,16 +326,15 @@ avoiding peak traffic in order to address both inconsistencies diagnostic and fi
 
 #### How to solve
 
-Under development: Task for solving mailbox inconsistencies
+Under development: Task for solving mailbox inconsistencies ([JAMES-3058](https://issues.apache.org/jira/browse/JAMES-3058)).
 
 ## Setting Cassandra user permissions
 
-With a Cassandra server that serves multiple applications including James, the keyspaces need isolation, 
-that also means, by the credential provided for a James server, 
-you cannot use it to access or modify other keyspaces. 
+When a Cassandra cluster is serving more than a James cluster, the keyspaces need isolation. 
+It can be achieved by configuring James server with credentials preventing access or modification of other keyspaces.
 
 We recommend you to not use the initial admin user of Cassandra and provide 
-a different one with a minimized permissions for each application. 
+a different one with a subset of permissions for each application. 
 
 ### Prerequisites
 
@@ -353,30 +352,30 @@ echo -e "\nauthorizer: org.apache.cassandra.auth.CassandraAuthorizer" >> /etc/ca
 
 #### Create a role
 
-Visit [cassandra documentation](http://cassandra.apache.org/doc/latest/cql/security.html) section `CREATE ROLE` for more information
+Have a look [cassandra documentation](http://cassandra.apache.org/doc/3.11.3/cql/security.html) section `CREATE ROLE` for more information
 
 E.g.
 ```
-CREATE ROLE linagora WITH PASSWORD = 'linagora' AND LOGIN = true;
+CREATE ROLE james_one WITH PASSWORD = 'james_one' AND LOGIN = true;
 ```
 #### Create a keyspace
 
-Visit [cassandra documentation](http://cassandra.apache.org/doc/latest/cql/ddl.html) section `CREATE KEYSPACE` for more information
+Have a look [cassandra documentation](http://cassandra.apache.org/doc/3.11.3/cql/ddl.html) section `CREATE KEYSPACE` for more information
 
 #### Grant permissions on created keyspace to the role
 
 The role to be used by James needs to have full rights on the keyspace 
-that James is using. Assuming the keyspace name is `linagora_keyspace` 
-and the role be `linagora`.
+that James is using. Assuming the keyspace name is `james_one_keyspace` 
+and the role be `james_one`.
 
 ```
-GRANT CREATE ON KEYSPACE linagora_keyspace TO linagora; // Permission to create tables on the appointed keyspace
-GRANT SELECT ON	KEYSPACE linagora_keyspace TO linagora; // Permission to select from tables on the appointed keyspace
-GRANT MODIFY ON	KEYSPACE linagora_keyspace TO linagora; // Permission to update data in tables on the appointed keyspace
+GRANT CREATE ON KEYSPACE james_one_keyspace TO james_one; // Permission to create tables on the appointed keyspace
+GRANT SELECT ON	KEYSPACE james_one_keyspace TO james_one; // Permission to select from tables on the appointed keyspace
+GRANT MODIFY ON	KEYSPACE james_one_keyspace TO james_one; // Permission to update data in tables on the appointed keyspace
 ```
 
 **Warning**: The granted role doesn't have the right to create keyspaces, 
-thus, if you haven't created the keyspace, James server fails to start 
+thus, if you haven't created the keyspace, James server will fail to start 
 is expected.  
 
 **Tips**
@@ -384,7 +383,7 @@ is expected.
 Since all of Cassandra roles used by different James are supposed to 
 have a same set of permissions, you can reduce the works by creating a 
 base role set like `typical_james_role` with all of necessary permissions. 
-After that, with each James, just create a new role and grant the `typical_james_role` 
+After that, with each James, create a new role and grant the `typical_james_role` 
 to the newly created one. Note that, once a base role set is updated ( 
 granting or revoking rights) all granted roles are automatically updated.  
 
@@ -401,12 +400,12 @@ GRANT typical_james_role TO james2;
 
 We want a specific role that cannot describe or query the information of other 
 keyspaces or tables used by another application. 
-Unfortunately, by default, Cassandra allows every role created to have right to 
+By default, Cassandra allows every role created to have right to 
 describe any keyspace and table. There's no configuration that can make 
-effect on that topic. By that, you have to accept that your data models 
+effect on that topic. Consequently, you have to accept that your data models 
 are still being exposed to anyone having credentials to Cassandra. 
 
-For more information, visit [cassandra documentation](http://cassandra.apache.org/doc/latest/cql/security.html) section `REVOKE PERMISSION`. 
+For more information, have a look [cassandra documentation](http://cassandra.apache.org/doc/3.11.3/cql/security.html) section `REVOKE PERMISSION`. 
 
 Except for the case above, the permissions are not auto available for 
 a specific role unless they are grated by `GRANT` command. Therefore, 
