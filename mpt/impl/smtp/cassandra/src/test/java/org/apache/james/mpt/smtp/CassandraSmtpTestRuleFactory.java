@@ -21,7 +21,7 @@ package org.apache.james.mpt.smtp;
 import org.apache.commons.configuration2.BaseHierarchicalConfiguration;
 import org.apache.james.CassandraJamesServerMain;
 import org.apache.james.GuiceJamesServer;
-import org.apache.james.backends.cassandra.CassandraTestingResources;
+import org.apache.james.backends.cassandra.DockerCassandra;
 import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
 import org.apache.james.dnsservice.api.DNSService;
 import org.apache.james.modules.protocols.SmtpGuiceProbe.SmtpServerConnectedType;
@@ -53,7 +53,7 @@ public final class CassandraSmtpTestRuleFactory {
                     .toInstance(BaseHierarchicalConfiguration::new))
             .overrideWith(
                 binder -> binder.bind(ClusterConfiguration.class).toInstance(
-                    CassandraTestingResources.configurationBuilderForNonPrivilegedUser(cassandraHost)
+                    DockerCassandra.configurationBuilder(cassandraHost)
                         .build()),
                 binder -> binder.bind(DNSService.class).toInstance(dnsService));
     }

@@ -19,10 +19,6 @@
 
 package org.apache.james.backends.cassandra;
 
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.james.backends.cassandra.components.CassandraModule;
-
 public class DockerCassandraSingleton {
     @FunctionalInterface
     interface BeforeHook {
@@ -39,10 +35,9 @@ public class DockerCassandraSingleton {
     private static int testsPlayedCount = 0;
 
     public static final DockerCassandra singleton = new DockerCassandra();
-    private static final AtomicReference<CassandraCluster> cassandraCluster = new AtomicReference<>();
 
     static {
-        startCassandra();
+        singleton.start();
     }
 
     public static void incrementTestsPlayed() {
@@ -66,20 +61,7 @@ public class DockerCassandraSingleton {
 
     private static void restart() {
         singleton.stop();
-        startCassandra();
-    }
-
-    private static void startCassandra() {
         singleton.start();
-        cassandraCluster.getAndUpdate(oldConnection -> {
-            if (oldConnection != null) {
-                oldConnection.close();
-            }
-
-            // provision cassandra testing user and create keyspace ahead by default user
-            // because the testing user has no permission to do it
-            return CassandraCluster.create(CassandraModule.NO_MODULE, DockerCassandraSingleton.singleton.getHost());
-        });
     }
 
     // Cleanup will be performed by test container resource reaper

@@ -47,7 +47,7 @@ public class KeyspaceFactory {
     }
 
     @VisibleForTesting
-    static boolean keyspaceExist(Cluster cluster, String keyspaceName) {
+    public static boolean keyspaceExist(Cluster cluster, String keyspaceName) {
         try (Session session = cluster.connect("system_schema")) {
             long numberOfKeyspaces = session.execute(select()
                     .countAll()

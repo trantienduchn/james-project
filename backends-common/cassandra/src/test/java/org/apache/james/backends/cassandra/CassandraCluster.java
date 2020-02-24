@@ -20,11 +20,15 @@ package org.apache.james.backends.cassandra;
 
 import java.util.Optional;
 
-import org.apache.james.backends.cassandra.CassandraTestingResources.SchemaProvisionStep;
 import org.apache.james.backends.cassandra.components.CassandraModule;
+import org.apache.james.backends.cassandra.init.CassandraTableManager;
 import org.apache.james.backends.cassandra.init.CassandraTypesProvider;
+import org.apache.james.backends.cassandra.init.ClusterFactory;
+import org.apache.james.backends.cassandra.init.SessionWithInitializedTablesFactory;
+import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
 import org.apache.james.util.Host;
 
+import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 
 public final class CassandraCluster implements AutoCloseable {
@@ -44,39 +48,49 @@ public final class CassandraCluster implements AutoCloseable {
 
     private static Optional<Exception> startStackTrace = Optional.empty();
 
-    public static final String KEYSPACE = "testing";
-
-    private CassandraTestingResources testingResources;
-    private final Host host;
+    private final CassandraModule module;
+    private final Cluster nonPrivilegedCluster;
+    private final Session nonPrivilegedSession;
+    private final CassandraTypesProvider typesProvider;
 
     private CassandraCluster(CassandraModule module, Host host) throws RuntimeException {
-        this.host = host;
-        this.testingResources = new CassandraTestingResources(module, host);
+        this.module = module;
 
-        this.testingResources.provision(SchemaProvisionStep.all());
+        ClusterConfiguration configuration = DockerCassandra.configurationBuilder(host)
+            .build();
+
+        this.nonPrivilegedCluster = ClusterFactory.create(configuration);
+        this.nonPrivilegedSession = new SessionWithInitializedTablesFactory(configuration,
+            nonPrivilegedCluster, module).get();
+        this.typesProvider = new CassandraTypesProvider(module, nonPrivilegedSession);
     }
 
     public Session getConf() {
-        return testingResources.nonPrivilegedSession;
+        return nonPrivilegedSession;
     }
 
     public CassandraTypesProvider getTypesProvider() {
-        return testingResources.typesProvider;
+        return typesProvider;
     }
 
     @Override
     public void close() {
-        if (!testingResources.isClosed()) {
-            testingResources.close();
-            startStackTrace = Optional.empty();
+        if (!nonPrivilegedCluster.isClosed()) {
+            clearTables();
+            closeCluster();
         }
     }
 
-    public void clearTables() {
-        testingResources.clearTables();
+    void closeCluster() {
+        nonPrivilegedCluster.closeAsync().force();
+        startStackTrace = Optional.empty();
     }
 
-    public Host getHost() {
-        return host;
+    void clearTables() {
+        new CassandraTableManager(module, nonPrivilegedSession).clearAllTables();
+    }
+
+    public Cluster getNonPrivilegedCluster() {
+        return nonPrivilegedCluster;
     }
 }

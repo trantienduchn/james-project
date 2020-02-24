@@ -27,7 +27,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 
-import org.apache.james.backends.cassandra.CassandraTestingResources;
+import org.apache.james.backends.cassandra.DockerCassandra;
 import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.modules.protocols.ImapGuiceProbe;
@@ -89,7 +89,7 @@ class CassandraNodeConfTest {
         @RegisterExtension
         JamesServerExtension testExtension = extensionBuilder()
             .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
-                .toInstance(CassandraTestingResources.configurationBuilderForNonPrivilegedUser(
+                .toInstance(DockerCassandra.configurationBuilder(
                         Host.from(unreachableNode, 9042),
                         cassandra.getHost())
                     .build()))
@@ -108,7 +108,7 @@ class CassandraNodeConfTest {
         @RegisterExtension
         JamesServerExtension testExtension =  extensionBuilder()
             .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
-                .toInstance(CassandraTestingResources.configurationBuilderForNonPrivilegedUser(
+                .toInstance(DockerCassandra.configurationBuilder(
                         Host.from(getDockerHostIp(), cassandra.getMappedPort(CASSANDRA_PORT)))
                     .build()))
             .build();

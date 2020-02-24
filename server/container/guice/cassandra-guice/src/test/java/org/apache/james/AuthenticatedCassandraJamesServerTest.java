@@ -23,7 +23,7 @@ import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_CASSANDRA_MO
 import static org.apache.james.JamesServerContract.DOMAIN_LIST_CONFIGURATION_MODULE;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import org.apache.james.backends.cassandra.CassandraTestingResources;
+import org.apache.james.backends.cassandra.DockerCassandra;
 import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
 import org.apache.james.mailbox.extractor.TextExtractor;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
@@ -35,8 +35,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import com.google.inject.CreationException;
 
 class AuthenticatedCassandraJamesServerTest {
-    private static final String CASSANDRA_USER = CassandraTestingResources.CASSANDRA_TESTING_USER;
-    private static final String VALID_PASSWORD = CassandraTestingResources.CASSANDRA_TESTING_PASSWORD;
+    private static final String CASSANDRA_USER = DockerCassandra.CASSANDRA_TESTING_USER;
+    private static final String VALID_PASSWORD = DockerCassandra.CASSANDRA_TESTING_PASSWORD;
     private static final String INVALID_PASSWORD = "bad";
 
     private final CassandraExtension cassandraExtension = new CassandraExtension();
@@ -53,8 +53,7 @@ class AuthenticatedCassandraJamesServerTest {
                 .overrideWith(TestJMAPServerModule.limitToTenMessages())
                 .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
             .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
-                .toInstance(CassandraTestingResources
-                    .configurationBuilderForNonPrivilegedUser(cassandraExtension.getCassandra().getHost())
+                .toInstance(DockerCassandra.configurationBuilder(cassandraExtension.getCassandra().getHost())
                     .username(CASSANDRA_USER)
                     .password(VALID_PASSWORD)
                     .build()))
@@ -74,8 +73,7 @@ class AuthenticatedCassandraJamesServerTest {
                 .overrideWith(TestJMAPServerModule.limitToTenMessages())
                 .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
             .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
-                .toInstance(CassandraTestingResources
-                    .configurationBuilderForNonPrivilegedUser(cassandraExtension.getCassandra().getHost())
+                .toInstance(DockerCassandra.configurationBuilder(cassandraExtension.getCassandra().getHost())
                     .username(CASSANDRA_USER)
                     .password(VALID_PASSWORD)
                     .useSsl()
@@ -103,8 +101,7 @@ class AuthenticatedCassandraJamesServerTest {
                 .overrideWith(TestJMAPServerModule.limitToTenMessages())
                 .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
             .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
-                .toInstance(CassandraTestingResources
-                    .configurationBuilderForNonPrivilegedUser(cassandraExtension.getCassandra().getHost())
+                .toInstance(DockerCassandra.configurationBuilder(cassandraExtension.getCassandra().getHost())
                     .username(CASSANDRA_USER)
                     .password(INVALID_PASSWORD)
                     .maxRetry(1)
