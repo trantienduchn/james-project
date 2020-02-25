@@ -23,6 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.james.backends.cassandra.CassandraClusterExtension;
 import org.apache.james.backends.cassandra.DockerCassandra;
 import org.apache.james.backends.cassandra.components.CassandraModule;
@@ -31,6 +33,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
+import com.github.fge.lambdas.Throwing;
+
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 class ResilientClusterProviderTest {
 
@@ -72,7 +81,7 @@ class ResilientClusterProviderTest {
         }
 
         @Test
-        void initializationShouldNotThrownWhenKeyspaceAlreadyExisted(DockerCassandra dockerCassandra) {
+        void initializationShouldNotThrowWhenKeyspaceAlreadyExisted(DockerCassandra dockerCassandra) {
             ClusterConfiguration configuration = dockerCassandra.configurationBuilder()
                 .keyspace(KEYSPACE)
                 .createKeyspace()
@@ -85,7 +94,7 @@ class ResilientClusterProviderTest {
         }
 
         @Test
-        void initializationShouldNotImpactToKeyspaceExistentWhenAlreadyExisted(DockerCassandra dockerCassandra) {
+        void initializationShouldNotImpactKeyspaceExistenceWhenItAlreadyExisted(DockerCassandra dockerCassandra) {
             ClusterConfiguration configuration = dockerCassandra.configurationBuilder()
                 .keyspace(KEYSPACE)
                 .createKeyspace()
@@ -116,7 +125,7 @@ class ResilientClusterProviderTest {
         }
 
         @Test
-        void initializationShouldNotThrownWhenKeyspaceAlreadyExisted(DockerCassandra dockerCassandra) {
+        void initializationShouldNotThrowWhenKeyspaceAlreadyExisted(DockerCassandra dockerCassandra) {
             ClusterConfiguration configuration = dockerCassandra.configurationBuilder()
                 .keyspace(KEYSPACE)
                 .build();
@@ -128,7 +137,7 @@ class ResilientClusterProviderTest {
         }
 
         @Test
-        void initializationShouldNotImpactToKeyspaceExistentWhenAlreadyExisted(DockerCassandra dockerCassandra) {
+        void initializationShouldNotImpactKeyspaceExistenceWhenItAlreadyExisted(DockerCassandra dockerCassandra) {
             ClusterConfiguration configuration = dockerCassandra.configurationBuilder()
                 .keyspace(KEYSPACE)
                 .build();
@@ -140,6 +149,33 @@ class ResilientClusterProviderTest {
             assertThat(dockerCassandra.administrator()
                     .keyspaceExist(KEYSPACE))
                 .isTrue();
+        }
+    }
+
+    @Test
+    void getShouldNotProvideUnContactableCluster(DockerCassandra dockerCassandra) {
+        dockerCassandra.administrator()
+            .initializeKeyspace(KEYSPACE);
+        Mono.fromRunnable(Throwing.runnable(() -> {
+                dockerCassandra.pause();
+                TimeUnit.SECONDS.sleep(10);
+                dockerCassandra.unpause();
+            }))
+            .subscribeOn(Schedulers.elastic())
+            .subscribe();
+
+        ResilientClusterProvider testee = new ResilientClusterProvider(dockerCassandra.configurationBuilder()
+            .keyspace(KEYSPACE)
+            .build());
+
+        assertThatClusterIsContactable(testee.get());
+    }
+
+    void assertThatClusterIsContactable(Cluster cluster) {
+        try (Session session = cluster.newSession()) {
+            session.execute("SELECT NOW() FROM system.local");
+        } catch (Exception e) {
+            throw new AssertionError("expecting cluster can be connected but actually not", e);
         }
     }
 }

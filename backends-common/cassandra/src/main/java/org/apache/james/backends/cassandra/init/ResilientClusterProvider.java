@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 
@@ -42,6 +43,7 @@ import reactor.core.scheduler.Schedulers;
 @Singleton
 public class ResilientClusterProvider implements Provider<Cluster> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ResilientClusterProvider.class);
+    private static final String CONNECTION_TESTING_QUERY = "SELECT NOW() FROM system.local";
 
     private final Cluster cluster;
 
@@ -65,12 +67,19 @@ public class ResilientClusterProvider implements Provider<Cluster> {
             Cluster cluster = ClusterFactory.create(configuration);
             try {
                 KeyspaceFactory.createKeyspace(configuration, cluster);
+                ensureContactable(cluster);
                 return cluster;
             } catch (Exception e) {
                 cluster.close();
                 throw e;
             }
         };
+    }
+
+    private void ensureContactable(Cluster cluster) {
+        try (Session session = cluster.newSession()) {
+            session.execute(CONNECTION_TESTING_QUERY);
+        }
     }
 
     @Override
