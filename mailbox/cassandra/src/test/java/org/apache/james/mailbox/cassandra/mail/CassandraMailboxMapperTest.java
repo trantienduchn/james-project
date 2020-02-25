@@ -346,6 +346,7 @@ class CassandraMailboxMapperTest {
             }));
         }
 
+        @Disabled("Unstable test")
         @Test
         void renameThenFailToDeleteMailboxPathShouldBeConsistentWhenFindByInbox(CassandraCluster cassandra) throws Exception {
             Mailbox inbox = testee.create(inboxPath, UID_VALIDITY);
