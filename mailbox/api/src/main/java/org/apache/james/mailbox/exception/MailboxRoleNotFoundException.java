@@ -21,7 +21,7 @@ package org.apache.james.mailbox.exception;
 
 import org.apache.james.mailbox.Role;
 
-public class MailboxRoleNotFoundException extends RuntimeException {
+public class MailboxRoleNotFoundException extends MailboxException {
 
     private final Role role;
 
