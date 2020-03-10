@@ -19,6 +19,7 @@
 package org.apache.james.jmap.draft.send;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -120,8 +121,8 @@ public class PostDequeueDecoratorTest {
         
         testee.done(true);
     }
-    
-    @Test(expected = MailboxRoleNotFoundException.class)
+
+    @Test
     public void doneShouldThrowWhenSentDoesNotExist() throws Exception {
         MailboxSession mailboxSession = mailboxManager.createSystemSession(USERNAME);
         mailboxManager.createMailbox(OUTBOX_MAILBOX_PATH, mailboxSession);
@@ -130,7 +131,9 @@ public class PostDequeueDecoratorTest {
         mail.setAttribute(messageIdAttribute(messageId.getMessageId().serialize()));
         mail.setAttribute(USERNAME_ATTRIBUTE);
 
-        testee.done(true);
+        assertThatThrownBy(() -> testee.done(true))
+            .isInstanceOf(MailQueue.MailQueueException.class)
+            .hasCauseInstanceOf(MailboxRoleNotFoundException.class);
     }
     
     @Test

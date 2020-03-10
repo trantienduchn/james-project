@@ -23,6 +23,7 @@ import static io.restassured.RestAssured.when;
 import static org.apache.james.MyRoute.SHABANG;
 import static org.hamcrest.CoreMatchers.is;
 
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.utils.WebAdminGuiceProbe;
 import org.apache.james.webadmin.RandomPortSupplier;
@@ -39,6 +40,7 @@ class WebAdminRoutesExtensionTest {
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
             .overrideWith(TestJMAPServerModule.limitToTenMessages())
+            .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
             .overrideWith(binder -> binder.bind(WebAdminConfiguration.class)
                 .toInstance(WebAdminConfiguration.builder()
                     .additionalRoute(MyRoute.class.getCanonicalName())

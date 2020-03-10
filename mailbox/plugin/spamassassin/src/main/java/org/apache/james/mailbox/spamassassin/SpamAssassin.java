@@ -29,33 +29,55 @@ import org.apache.james.spamassassin.SpamAssassinInvoker;
 import org.apache.james.util.Host;
 
 import com.github.fge.lambdas.Throwing;
+import com.google.inject.ImplementedBy;
 
-public class SpamAssassin {
+@ImplementedBy(SpamAssassin.SpamAssassinImpl.class)
+public interface SpamAssassin {
 
-    private final MetricFactory metricFactory;
-    private final SpamAssassinConfiguration spamAssassinConfiguration;
+    void learnSpam(List<InputStream> messages, Username username);
 
-    @Inject
-    public SpamAssassin(MetricFactory metricFactory, SpamAssassinConfiguration spamAssassinConfiguration) {
-        this.metricFactory = metricFactory;
-        this.spamAssassinConfiguration = spamAssassinConfiguration;
-    }
+    void learnHam(List<InputStream> messages, Username username);
 
-    public void learnSpam(List<InputStream> messages, Username username) {
-        if (spamAssassinConfiguration.isEnable()) {
-            Host host = spamAssassinConfiguration.getHost().get();
-            SpamAssassinInvoker invoker = new SpamAssassinInvoker(metricFactory, host.getHostName(), host.getPort());
-            messages
-                .forEach(Throwing.consumer(message -> invoker.learnAsSpam(message, username)));
+    SpamAssassin NOOP_SPAM_ASSASSIN = new SpamAssassin() {
+        @Override
+        public void learnSpam(List<InputStream> messages, Username username) {
+            // Do nothing
         }
-    }
 
-    public void learnHam(List<InputStream> messages, Username username) {
-        if (spamAssassinConfiguration.isEnable()) {
-            Host host = spamAssassinConfiguration.getHost().get();
-            SpamAssassinInvoker invoker = new SpamAssassinInvoker(metricFactory, host.getHostName(), host.getPort());
-            messages
-                .forEach(Throwing.consumer(message -> invoker.learnAsHam(message, username)));
+        @Override
+        public void learnHam(List<InputStream> messages, Username username) {
+            // Do nothing
+        }
+    };
+
+    class SpamAssassinImpl implements SpamAssassin {
+        private final MetricFactory metricFactory;
+        private final SpamAssassinConfiguration spamAssassinConfiguration;
+
+        @Inject
+        public SpamAssassinImpl(MetricFactory metricFactory, SpamAssassinConfiguration spamAssassinConfiguration) {
+            this.metricFactory = metricFactory;
+            this.spamAssassinConfiguration = spamAssassinConfiguration;
+        }
+
+        @Override
+        public void learnSpam(List<InputStream> messages, Username username) {
+            if (spamAssassinConfiguration.isEnable()) {
+                Host host = spamAssassinConfiguration.getHost().get();
+                SpamAssassinInvoker invoker = new SpamAssassinInvoker(metricFactory, host.getHostName(), host.getPort());
+                messages
+                    .forEach(Throwing.consumer(message -> invoker.learnAsSpam(message, username)));
+            }
+        }
+
+        @Override
+        public void learnHam(List<InputStream> messages, Username username) {
+            if (spamAssassinConfiguration.isEnable()) {
+                Host host = spamAssassinConfiguration.getHost().get();
+                SpamAssassinInvoker invoker = new SpamAssassinInvoker(metricFactory, host.getHostName(), host.getPort());
+                messages
+                    .forEach(Throwing.consumer(message -> invoker.learnAsHam(message, username)));
+            }
         }
     }
 }

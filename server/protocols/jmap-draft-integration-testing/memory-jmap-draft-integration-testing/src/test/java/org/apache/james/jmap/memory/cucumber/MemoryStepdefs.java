@@ -27,6 +27,7 @@ import org.apache.james.jmap.draft.methods.integration.cucumber.ImapStepdefs;
 import org.apache.james.jmap.draft.methods.integration.cucumber.MainStepdefs;
 import org.apache.james.mailbox.inmemory.InMemoryMessageId;
 import org.apache.james.mailbox.model.MessageId;
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.server.core.configuration.Configuration;
 import org.junit.rules.TemporaryFolder;
@@ -60,9 +61,10 @@ public class MemoryStepdefs {
 
         mainStepdefs.messageIdFactory = new InMemoryMessageId.Factory();
         mainStepdefs.jmapServer = GuiceJamesServer.forConfiguration(configuration)
-                .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
-                .overrideWith(TestJMAPServerModule.maximumMessages(LIMIT_TO_3_MESSAGES),
-                        (binder) -> binder.bind(MessageId.Factory.class).toInstance(mainStepdefs.messageIdFactory));
+            .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
+            .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
+            .overrideWith(TestJMAPServerModule.maximumMessages(LIMIT_TO_3_MESSAGES),
+                (binder) -> binder.bind(MessageId.Factory.class).toInstance(mainStepdefs.messageIdFactory));
         mainStepdefs.init();
     }
 

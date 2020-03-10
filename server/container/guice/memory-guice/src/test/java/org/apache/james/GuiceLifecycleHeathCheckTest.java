@@ -29,6 +29,7 @@ import java.util.concurrent.CountDownLatch;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.utils.WebAdminGuiceProbe;
 import org.apache.james.webadmin.WebAdminConfiguration;
@@ -51,6 +52,7 @@ class GuiceLifecycleHeathCheckTest {
             .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
                 .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
                 .overrideWith(TestJMAPServerModule.limitToTenMessages())
+                .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
                 .overrideWith(binder -> binder.bind(WebAdminConfiguration.class)
                     .toInstance(WebAdminConfiguration.TEST_CONFIGURATION)));
     }

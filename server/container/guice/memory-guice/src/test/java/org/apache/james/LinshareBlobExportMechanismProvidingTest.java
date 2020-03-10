@@ -21,6 +21,7 @@ package org.apache.james;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.modules.LinshareGuiceExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -32,7 +33,8 @@ class LinshareBlobExportMechanismProvidingTest {
     static JamesServerExtension jamesServerExtension = new JamesServerBuilder()
         .extension(linshareGuiceExtension)
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
-            .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE))
+            .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
+            .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN)))
         .build();
 
     @Test

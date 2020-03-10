@@ -35,6 +35,7 @@ import org.apache.james.jmap.draft.methods.integration.cucumber.ImapStepdefs;
 import org.apache.james.jmap.draft.methods.integration.cucumber.MainStepdefs;
 import org.apache.james.mailbox.cassandra.ids.CassandraMessageId;
 import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.mailbox.store.extractor.DefaultTextExtractor;
 import org.apache.james.modules.TestDockerESMetricReporterModule;
 import org.apache.james.modules.TestJMAPServerModule;
@@ -82,6 +83,7 @@ public class CassandraStepdefs {
             .overrideWith(new TestDockerESMetricReporterModule(elasticSearch.getDockerEs().getHttpHost()))
             .overrideWith(elasticSearch.getModule())
             .overrideWith(cassandraServer.getModule())
+            .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(DefaultTextExtractor.class))
             .overrideWith((binder) -> binder.bind(PersistenceAdapter.class).to(MemoryPersistenceAdapter.class))
             .overrideWith(binder -> Multibinder.newSetBinder(binder, CleanupTasksPerformer.CleanupTask.class).addBinding().to(CassandraTruncateTableTask.class))

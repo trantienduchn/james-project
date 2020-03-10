@@ -23,6 +23,7 @@ import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_CASSANDRA_MO
 
 import org.apache.james.jmap.draft.JmapJamesServerContract;
 import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -35,6 +36,7 @@ class CassandraJmapJamesServerTest implements JmapJamesServerContract {
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
+            .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
             .overrideWith(TestJMAPServerModule.limitToTenMessages())
             .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
         .build();
