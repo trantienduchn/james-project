@@ -23,6 +23,7 @@ import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_CASSANDRA_MO
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.ConfigurationProbe;
 import org.apache.james.modules.TestJMAPServerModule;
@@ -36,6 +37,7 @@ class CassandraJamesServerTest implements JamesServerContract {
         .extension(new CassandraExtension())
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
+            .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
             .overrideWith(TestJMAPServerModule.limitToTenMessages())
             .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))

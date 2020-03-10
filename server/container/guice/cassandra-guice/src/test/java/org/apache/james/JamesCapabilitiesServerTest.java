@@ -30,6 +30,7 @@ import java.util.EnumSet;
 import org.apache.james.jmap.draft.JMAPModule;
 import org.apache.james.mailbox.MailboxManager;
 import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,7 @@ class JamesCapabilitiesServerTest {
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
+            .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
             .overrideWith(TestJMAPServerModule.limitToTenMessages())
             .overrideWith(binder -> binder.bind(MailboxManager.class).toInstance(mailboxManager)))
         .disableAutoStart()

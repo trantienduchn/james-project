@@ -25,6 +25,7 @@ import static org.awaitility.Duration.FIVE_HUNDRED_MILLISECONDS;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.mailrepository.api.MailRepositoryUrl;
 import org.apache.james.modules.TestJMAPServerModule;
@@ -55,6 +56,7 @@ class CassandraMailRepositoryIntegrationTest {
         .extension(new CassandraExtension())
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
+            .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
             .overrideWith(TestJMAPServerModule.limitToTenMessages()))
         .build();

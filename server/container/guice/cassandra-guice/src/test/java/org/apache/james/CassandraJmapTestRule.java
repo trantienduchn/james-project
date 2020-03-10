@@ -24,6 +24,7 @@ import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_CASSANDRA_MO
 import java.io.IOException;
 
 import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.TestDockerESMetricReporterModule;
 import org.apache.james.modules.TestJMAPServerModule;
@@ -70,6 +71,7 @@ public class CassandraJmapTestRule implements TestRule {
             .overrideWith(TestJMAPServerModule.limitToTenMessages())
             .overrideWith(new TestDockerESMetricReporterModule(dockerElasticSearchRule.getDockerEs().getHttpHost()))
             .overrideWith(guiceModuleTestRule.getModule())
+            .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
             .overrideWith((binder -> binder.bind(CleanupTasksPerformer.class).asEagerSingleton()))
             .overrideWith(binder -> binder.bind(WebAdminConfiguration.class).toInstance(WebAdminConfiguration.TEST_CONFIGURATION))
             .overrideWith(additionals);

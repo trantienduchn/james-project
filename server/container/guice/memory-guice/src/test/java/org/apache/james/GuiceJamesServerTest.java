@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.james.lifecycle.api.Startable;
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.apache.james.utils.InitializationOperation;
 import org.junit.jupiter.api.Nested;
@@ -21,6 +22,7 @@ class GuiceJamesServerTest {
         return new JamesServerBuilder()
             .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
                 .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
+                .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
                 .overrideWith(TestJMAPServerModule.limitToTenMessages()))
             .disableAutoStart();
     }

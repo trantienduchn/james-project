@@ -38,6 +38,7 @@ import org.apache.james.core.Username;
 import org.apache.james.jmap.AccessToken;
 import org.apache.james.jmap.draft.JmapGuiceProbe;
 import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.TestDockerESMetricReporterModule;
 import org.apache.james.modules.TestJMAPServerModule;
@@ -69,6 +70,7 @@ class ESReporterTest {
         .extension(new CassandraExtension())
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
+            .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
             .overrideWith(TestJMAPServerModule.limitToTenMessages())
             .overrideWith(new TestDockerESMetricReporterModule(elasticSearchExtension.getDockerES().getHttpHost())))

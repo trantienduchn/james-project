@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.apache.james.backends.cassandra.DockerCassandra;
 import org.apache.james.backends.cassandra.init.configuration.ClusterConfiguration;
 import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.junit.jupiter.api.Nested;
@@ -50,6 +51,7 @@ class AuthenticatedCassandraJamesServerTest {
             .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
                 .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
                 .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
+                .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
                 .overrideWith(TestJMAPServerModule.limitToTenMessages())
                 .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
             .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
@@ -70,6 +72,7 @@ class AuthenticatedCassandraJamesServerTest {
             .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
                 .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
                 .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
+                .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
                 .overrideWith(TestJMAPServerModule.limitToTenMessages())
                 .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
             .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)
@@ -98,6 +101,7 @@ class AuthenticatedCassandraJamesServerTest {
             .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
                 .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
                 .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
+                .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
                 .overrideWith(TestJMAPServerModule.limitToTenMessages())
                 .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
             .overrideServerModule(binder -> binder.bind(ClusterConfiguration.class)

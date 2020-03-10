@@ -21,6 +21,7 @@ package org.apache.james;
 
 import static org.apache.james.CassandraJamesServerMain.ALL_BUT_JMX_CASSANDRA_MODULE;
 
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -33,6 +34,7 @@ class CassandraWithTikaTest implements JamesServerContract {
             .extension(new DockerElasticSearchExtension())
             .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
                 .combineWith(ALL_BUT_JMX_CASSANDRA_MODULE)
+                .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
                 .overrideWith(TestJMAPServerModule.limitToTenMessages())
                 .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
             .build();

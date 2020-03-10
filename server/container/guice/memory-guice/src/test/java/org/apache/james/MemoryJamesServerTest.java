@@ -20,6 +20,7 @@
 package org.apache.james;
 
 import org.apache.james.mailbox.extractor.TextExtractor;
+import org.apache.james.mailbox.spamassassin.SpamAssassin;
 import org.apache.james.mailbox.store.search.PDFTextExtractor;
 import org.apache.james.modules.TestJMAPServerModule;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -30,6 +31,7 @@ class MemoryJamesServerTest implements JamesServerContract {
         .server(configuration -> GuiceJamesServer.forConfiguration(configuration)
             .combineWith(MemoryJamesServerMain.IN_MEMORY_SERVER_AGGREGATE_MODULE)
             .overrideWith(TestJMAPServerModule.limitToTenMessages())
+            .overrideWith(binder -> binder.bind(SpamAssassin.class).toInstance(SpamAssassin.NOOP_SPAM_ASSASSIN))
             .overrideWith(binder -> binder.bind(TextExtractor.class).to(PDFTextExtractor.class))
             .overrideWith(DOMAIN_LIST_CONFIGURATION_MODULE))
         .build();
