@@ -117,7 +117,7 @@ public class SpamAssassinInvoker {
              PrintWriter writer = new PrintWriter(bufferedOutputStream);
              BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-            LOGGER.debug("Sending email {} for spam check", message.getMessageID());
+            LOGGER.error("Sending email {} for spam check", message.getMessageID());
 
             writer.write("CHECK SPAMC/1.2");
             writer.write(CRLF);
@@ -142,7 +142,7 @@ public class SpamAssassinInvoker {
                 .findFirst()
                 .orElse(SpamAssassinResult.empty());
 
-            LOGGER.debug("spam check result: {}", spamAssassinResult);
+            LOGGER.error("spam check result: {}", spamAssassinResult);
             return spamAssassinResult;
         } catch (UnknownHostException e) {
             throw new MessagingException("Error communicating with spamd. Unknown host: " + spamdHost);
@@ -176,7 +176,7 @@ public class SpamAssassinInvoker {
         try {
             return Boolean.parseBoolean(string);
         } catch (Exception e) {
-            LOGGER.warn("Fail parsing spamassassin answer: " + string);
+            LOGGER.error("Fail parsing spamassassin answer: " + string);
             return false;
         }
     }
@@ -224,7 +224,7 @@ public class SpamAssassinInvoker {
              PrintWriter writer = new PrintWriter(bufferedOutputStream);
              BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-            LOGGER.debug("Report mail as {}", messageClass);
+            LOGGER.error("Report mail as {}", messageClass);
 
             byte[] byteArray = IOUtils.toByteArray(message);
             writer.write("TELL SPAMC/1.2");
@@ -246,9 +246,9 @@ public class SpamAssassinInvoker {
 
             boolean hasBeenSet = in.lines().anyMatch(this::hasBeenSet);
             if (hasBeenSet) {
-                LOGGER.debug("Reported mail as {} succeeded", messageClass);
+                LOGGER.error("Reported mail as {} succeeded", messageClass);
             } else {
-                LOGGER.debug("Reported mail as {} failed", messageClass);
+                LOGGER.error("Reported mail as {} failed", messageClass);
             }
             return hasBeenSet;
         } catch (UnknownHostException e) {
