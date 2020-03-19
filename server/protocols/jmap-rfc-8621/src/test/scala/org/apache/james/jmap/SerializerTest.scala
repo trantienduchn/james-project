@@ -21,6 +21,7 @@ package org.apache.james.jmap
 
 import java.net.{URI, URL}
 
+import eu.timepit.refined.auto._
 import org.apache.james.core.Username
 import org.apache.james.jmap.SerializerTest.{SESSION, readResource}
 import org.apache.james.jmap.model._

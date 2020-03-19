@@ -22,14 +22,13 @@ package org.apache.james.jmap
 import java.net.URL
 
 import org.apache.james.core.Username
-import org.apache.james.jmap.model.{Account, CapabilityIdentifier, CoreCapabilityProperties, Id, MailCapabilityProperties, Session, UnsignedInt}
-import play.api.libs.json.{JsNumber, JsObject, JsString, Json, Writes}
-import org.apache.james.jmap.model._
+import org.apache.james.jmap.model.{Account, CapabilityIdentifier, CoreCapabilityProperties, Id, MailCapabilityProperties, Session, UnsignedInt, _}
+import play.api.libs.json._
 
 class Serializer {
   implicit val unsignedIntWrites: Writes[UnsignedInt] = unsignedInt => JsNumber(unsignedInt.value)
   implicit val usernameWrites: Writes[Username] = username => JsString(username.asString)
-  implicit val idWrites: Writes[Id] = id => JsString(id.value)
+  implicit val idWrites: Writes[Id] = id => JsString(id.asString())
   implicit val urlWrites: Writes[URL] = url => JsString(url.toString)
   implicit val stateWrites: Writes[State] = state => JsString(state.value)
   implicit val capabilityIdentifierWrites: Writes[CapabilityIdentifier] = identifier => JsString(identifier.value.toString)
@@ -62,7 +61,7 @@ class Serializer {
 
   implicit def idMapWrite[Any](implicit vr: Writes[Any]): Writes[Map[Id, Any]] =
     (m: Map[Id, Any]) => {
-      JsObject(m.map { case (k, v) => (k.value, vr.writes(v)) }.toSeq)
+      JsObject(m.map { case (k, v) => (k.asString(), vr.writes(v)) }.toSeq)
     }
 
   def serialize(session: Session): String = {

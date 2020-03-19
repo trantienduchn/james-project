@@ -19,15 +19,27 @@
 
 package org.apache.james.jmap.model
 
-object Id {
-  def apply(value: String): Id = {
-    require(Option(value).isDefined, "value cannot be null")
-    require(!value.isEmpty, "value cannot be empty")
-    require(value.length <= 255, "value length cannot exceed 255 characters")
-    require(value.matches("^[a-zA-Z0-9-_]*$"), "value should contains only 'URL and Filename Safe' base64 alphabet characters, " +
-      "see Section 5 of [@!RFC4648]")
-    new Id(value)
-  }
+import eu.timepit.refined.api.{Refined, Validate}
+import eu.timepit.refined.boolean.And
+import eu.timepit.refined.string.MatchesRegex
+import org.apache.james.jmap.model.Id.IdConstraints
+
+final case class NonNull()
+
+object NonNull {
+  implicit def matchesNonNull[Any]: Validate.Plain[Any, NonNull] =
+    Validate.fromPredicate(
+      value => value != null,
+      _ => "value cannot be null",
+      NonNull())
 }
 
-final case class Id private(value: String)
+object Id {
+  type IdConstraints = NonNull And MatchesRegex["^[a-zA-Z0-9-_]{1,255}$"]
+}
+
+final case class Id private(value: String Refined IdConstraints) {
+  def asString(): String = {
+    value.value
+  }
+}

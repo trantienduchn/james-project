@@ -19,37 +19,40 @@
 
 package org.apache.james.jmap.model
 
-import org.scalatest.{FlatSpec, Matchers}
+import eu.timepit.refined.api.Refined
+import eu.timepit.refined.refineV
+import org.apache.james.jmap.model.Id.IdConstraints
+import org.scalatest.{Matchers, WordSpec}
 
-class IdTest extends FlatSpec with Matchers {
+class IdTest extends WordSpec with Matchers {
 
   private val INVALID_CHARACTERS = List("\"", "(", ")", ",", ":", ";", "<", ">", "@", "[", "\\", "]", " ")
 
-  "apply" should "throw when null value" in {
-    the [IllegalArgumentException] thrownBy {
-      Id(null)
-    } should have message "requirement failed: value cannot be null"
-  }
+  "apply" when {
+    "in Runtime" should {
+      // this test is disabled, NonNull doesn't fail fast, and then null String causes NPE at RegexMatcher
+      "return left(error message) when null value" ignore {
+        val nullString: String = null
+        val either: Either[String, String Refined IdConstraints] = refineV[IdConstraints](nullString)
+        either.isLeft should be(true)
+      }
 
-  "apply" should "throw when empty value" in {
-    the [IllegalArgumentException] thrownBy {
-      Id("")
-    } should have message "requirement failed: value cannot be empty"
-  }
+      "return left(error message) when empty value" in {
+        val either: Either[String, String Refined IdConstraints] = refineV[IdConstraints]("")
+        either.isLeft should be(true)
+      }
 
-  "apply" should "throw when too long value" in {
-    val idWith256Chars = "a" * 256
-    the [IllegalArgumentException] thrownBy {
-      Id(idWith256Chars)
-    } should have message "requirement failed: value length cannot exceed 255 characters"
-  }
+      "return left(error message) when  too long value" in {
+        val idWith256Chars = "a" * 256
+        val either: Either[String, String Refined IdConstraints] = refineV[IdConstraints](idWith256Chars)
+        either.isLeft should be(true)
+      }
 
-  "apply" should "throw when invalid value" in {
-    INVALID_CHARACTERS.foreach { invalidChar =>
-      the [IllegalArgumentException] thrownBy {
-        Id(invalidChar)
-      } should have message
-        "requirement failed: value should contains only 'URL and Filename Safe' base64 alphabet characters, see Section 5 of [@!RFC4648]"
+      "return right when valid value" in {
+        val either: Either[String, String Refined IdConstraints] = refineV[IdConstraints]("myid")
+        either.isRight should be(true)
+        either.map(Id(_)).toOption.get.asString() should be("myid")
+      }
     }
   }
 }

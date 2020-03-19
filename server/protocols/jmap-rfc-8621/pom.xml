@@ -48,6 +48,16 @@
             <version>4.0.3</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>eu.timepit</groupId>
+            <artifactId>refined-scalaz_2.13</artifactId>
+            <version>0.9.13</version>
+        </dependency>
+        <dependency>
+            <groupId>eu.timepit</groupId>
+            <artifactId>refined-scalacheck_2.13</artifactId>
+            <version>0.9.13</version>
+        </dependency>
     </dependencies>
 
     <build>
