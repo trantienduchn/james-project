@@ -26,15 +26,12 @@ import org.scalatest.{Matchers, WordSpec}
 
 class IdTest extends WordSpec with Matchers {
 
-  private val INVALID_CHARACTERS = List("\"", "(", ")", ",", ":", ";", "<", ">", "@", "[", "\\", "]", " ")
-
   "apply" when {
     "in Runtime" should {
-      // this test is disabled, NonNull doesn't fail fast, and then null String causes NPE at RegexMatcher
-      "return left(error message) when null value" ignore {
-        val nullString: String = null
-        val either: Either[String, String Refined IdConstraints] = refineV[IdConstraints](nullString)
-        either.isLeft should be(true)
+      "throws when null" in {
+        assertThrows[NullPointerException] {
+          val either: Either[String, String Refined IdConstraints] = refineV[IdConstraints](null)
+        }
       }
 
       "return left(error message) when empty value" in {
