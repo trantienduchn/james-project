@@ -24,7 +24,7 @@ import java.net.URI
 import org.apache.james.jmap.model.CapabilityIdentifier.{JMAP_CORE, JMAP_MAIL}
 
 final case class CapabilityIdentifier(value: URI) {
-  def asString(): String = value.toString
+  val asString: String = value.toString
 }
 
 object CapabilityIdentifier {
