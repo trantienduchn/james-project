@@ -48,15 +48,6 @@ object CoreCapabilityProperties {
             maxCallsInRequest: UnsignedInt, maxObjectsInGet: UnsignedInt,
             maxObjectsInSet: UnsignedInt, collationAlgorithms: List[String]): CoreCapabilityProperties = {
 
-    require(Option(maxSizeUpload).isDefined, "maxSizeUpload cannot be null")
-    require(Option(maxConcurrentUpload).isDefined, "maxConcurrentUpload cannot be null")
-    require(Option(maxSizeRequest).isDefined, "maxSizeRequest cannot be null")
-    require(Option(maxConcurrentRequests).isDefined, "maxConcurrentRequests cannot be null")
-    require(Option(maxCallsInRequest).isDefined, "maxCallsInRequest cannot be null")
-    require(Option(maxObjectsInGet).isDefined, "maxObjectsInGet cannot be null")
-    require(Option(maxObjectsInSet).isDefined, "maxObjectsInSet cannot be null")
-    require(Option(collationAlgorithms).isDefined, "collationAlgorithms cannot be null")
-
     new CoreCapabilityProperties(maxSizeUpload, maxConcurrentUpload, maxSizeRequest, maxConcurrentRequests, maxCallsInRequest,
       maxObjectsInGet, maxObjectsInSet, collationAlgorithms)
   }
@@ -75,9 +66,6 @@ object MailCapabilityProperties {
   def apply(maxMailboxesPerEmail: Option[UnsignedInt], maxMailboxDepth: Option[UnsignedInt],
             maxSizeMailboxName: UnsignedInt, maxSizeAttachmentsPerEmail: UnsignedInt,
             emailQuerySortOptions: List[String], mayCreateTopLevelMailbox: Boolean): MailCapabilityProperties = {
-    require(Option(maxSizeMailboxName).isDefined, "maxSizeMailboxName cannot be null")
-    require(Option(maxSizeAttachmentsPerEmail).isDefined, "maxSizeAttachmentsPerEmail cannot be null")
-    require(Option(emailQuerySortOptions).isDefined, "emailQuerySortOptions cannot be null")
 
     new MailCapabilityProperties(maxMailboxesPerEmail, maxMailboxDepth, maxSizeMailboxName, maxSizeAttachmentsPerEmail,
       emailQuerySortOptions, mayCreateTopLevelMailbox)
