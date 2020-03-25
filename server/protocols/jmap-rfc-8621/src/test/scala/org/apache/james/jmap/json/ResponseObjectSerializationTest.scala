@@ -26,7 +26,7 @@ import org.apache.james.jmap.model.{Invocation, ResponseObject}
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
 
-class ResponseObjectTest extends PlaySpec {
+class ResponseObjectSerializationTest extends PlaySpec {
 //
 //  "Deserialize SessionState" must {
 //    "succeed with 1 value" in {
@@ -113,7 +113,7 @@ class ResponseObjectTest extends PlaySpec {
       val methodCallId: MethodCallId = MethodCallId("c1")
       val invocation: Invocation = Invocation(methodName, argument, methodCallId)
 
-      val requestObject: ResponseObject = model.ResponseObject(
+      val responseObject: ResponseObject = model.ResponseObject(
         sessionState = "75128aab4b1b",
         methodResponses = Seq(invocation))
 
@@ -130,7 +130,7 @@ class ResponseObjectTest extends PlaySpec {
           |}
           |""".stripMargin))
 
-      Json.toJson(requestObject) must be(Json.parse(expectedJson))
+      Json.parse(new Serializer().serialize(responseObject)) must be(Json.parse(expectedJson))
     }
   }
 }
