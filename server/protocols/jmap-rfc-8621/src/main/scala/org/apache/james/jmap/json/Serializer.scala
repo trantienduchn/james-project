@@ -28,7 +28,7 @@ import org.apache.james.jmap.model
 import org.apache.james.jmap.model.CreatedIds.{ClientId, ServerId}
 import org.apache.james.jmap.model.Id.Id
 import org.apache.james.jmap.model.Invocation.{Arguments, MethodCallId, MethodName}
-import org.apache.james.jmap.model.ResponseObject.SessionState
+import org.apache.james.jmap.model.State.State
 import org.apache.james.jmap.model.{Account, CapabilityIdentifier, CoreCapabilityProperties, Invocation, MailCapabilityProperties, Session, _}
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
@@ -97,7 +97,7 @@ object Serializer {
   }
 
   // ResponseObject
-  implicit val sessionStateFormat = Json.valueFormat[SessionState]
+  implicit val stateFormat = Json.valueFormat[State]
   implicit val responseObjectFormat = Json.format[ResponseObject]
 
   def deserializeResponseObject(input: String): JsResult[ResponseObject] = {
