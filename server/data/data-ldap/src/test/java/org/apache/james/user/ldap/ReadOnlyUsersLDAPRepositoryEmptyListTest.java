@@ -21,7 +21,7 @@ package org.apache.james.user.ldap;
 
 import static org.apache.james.user.ldap.DockerLdapSingleton.ADMIN_PASSWORD;
 import static org.apache.james.user.ldap.DockerLdapSingleton.DOMAIN;
-import static org.apache.james.user.ldap.DockerLdapSingleton.JAMES_USER;
+import static org.apache.james.user.ldap.ReadOnlyUsersLDAPRepositoryTest.ldapRepositoryConfiguration;
 import static org.apache.james.user.ldap.ReadOnlyUsersLDAPRepositoryTest.ldapRepositoryConfigurationWithVirtualHosting;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -29,9 +29,11 @@ import static org.mockito.Mockito.mock;
 import org.apache.commons.configuration2.HierarchicalConfiguration;
 import org.apache.commons.configuration2.tree.ImmutableNode;
 import org.apache.james.domainlist.api.DomainList;
+import org.apache.james.user.api.UsersRepositoryException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.ImmutableList;
@@ -55,18 +57,59 @@ class ReadOnlyUsersLDAPRepositoryEmptyListTest {
         ldapContainer.stop();
     }
 
-    @BeforeEach
-    void setUp() throws Exception {
-        domainList = mock(DomainList.class);
-        HierarchicalConfiguration<ImmutableNode> config = ldapRepositoryConfigurationWithVirtualHosting(ldapContainer);
-        config.setProperty("[@userBase]", "ou=empty,dc=james,dc=org");
-        ldapRepository = startUsersRepository(config);
+    @Nested
+    class WhenDisableVirtualHosting {
+
+        @BeforeEach
+        void setUp() throws Exception {
+            domainList = mock(DomainList.class);
+            HierarchicalConfiguration<ImmutableNode> config = ldapRepositoryConfiguration(ldapContainer);
+            config.setProperty("[@userBase]", "ou=empty,dc=james,dc=org");
+            ldapRepository = startUsersRepository(config);
+        }
+
+        @Test
+        void listShouldReturnEmptyWhenNoEntity() throws Exception {
+            assertThat(ImmutableList.copyOf(ldapRepository.list()))
+                .isEmpty();
+        }
+
+        @Test
+        void countUsersShouldReturnZeroWhenEmptyRepository() throws UsersRepositoryException {
+            //Given
+            int expected = 0;
+            //When
+            int actual = ldapRepository.countUsers();
+            //Then
+            assertThat(actual).isEqualTo(expected);
+        }
     }
 
-    @Test
-    void listShouldReturnEmptyWhenNoEntity() throws Exception {
-        assertThat(ImmutableList.copyOf(ldapRepository.list()))
-            .isEmpty();
+    @Nested
+    class SupportVirtualHosting {
+        @BeforeEach
+        void setUp() throws Exception {
+            domainList = mock(DomainList.class);
+            HierarchicalConfiguration<ImmutableNode> config = ldapRepositoryConfigurationWithVirtualHosting(ldapContainer);
+            config.setProperty("[@userBase]", "ou=empty,dc=james,dc=org");
+            ldapRepository = startUsersRepository(config);
+        }
+
+        @Test
+        void listShouldReturnEmptyWhenNoEntity() throws Exception {
+            assertThat(ImmutableList.copyOf(ldapRepository.list()))
+                .isEmpty();
+        }
+
+        @Test
+        void countUsersShouldReturnZeroWhenEmptyRepository() throws UsersRepositoryException {
+            //Given
+            int expected = 0;
+            //When
+            int actual = ldapRepository.countUsers();
+            //Then
+            assertThat(actual).isEqualTo(expected);
+        }
     }
 
     private ReadOnlyUsersLDAPRepository startUsersRepository(HierarchicalConfiguration<ImmutableNode> ldapRepositoryConfiguration) throws Exception {
