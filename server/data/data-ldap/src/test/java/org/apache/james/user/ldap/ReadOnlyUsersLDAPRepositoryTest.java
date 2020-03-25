@@ -193,13 +193,15 @@ class ReadOnlyUsersLDAPRepositoryTest {
             assertThat(testee().isAdministrator(testSystem.getAdmin())).isTrue();
         }
 
-        @Disabled("JAMES-3088 Users are provisioned by default from Dockerfile, cannot setup this test case")
+        @Disabled("JAMES-3088 Users are provisioned by default from Dockerfile, cannot setup this test case," +
+            "See @link{ReadOnlyUsersLDAPRepositoryEmptyListTest}")
         @Override
         @Test
         public void listShouldReturnEmptyIteratorWhenEmptyRepository(TestSystem testSystem) {
         }
 
-        @Disabled("JAMES-3088 Users are provisioned by default from Dockerfile, cannot setup this test case")
+        @Disabled("JAMES-3088 Users are provisioned by default from Dockerfile, cannot setup this test case," +
+            "See @link{ReadOnlyUsersLDAPRepositoryEmptyListTest}")
         @Override
         @Test
         public void countUsersShouldReturnZeroWhenEmptyRepository() {
