@@ -36,7 +36,7 @@ import org.apache.james.jmap.{Endpoint, JMAPRoute, JMAPRoutes}
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import reactor.core.publisher.Mono
-import reactor.core.scala.publisher.SMono
+import reactor.core.scala.publisher.{SFlux, SMono}
 import reactor.core.scheduler.Schedulers
 import reactor.netty.http.server.{HttpServerRequest, HttpServerResponse}
 
@@ -61,6 +61,7 @@ class JMAPAPIRoutes extends JMAPRoutes {
       .onErrorResume(throwable => SMono.fromPublisher(handleInternalError(httpServerResponse, throwable)))
       .subscribeOn(Schedulers.elastic)
       .asJava()
+      .`then`()
 
   private def requestAsJsonStream(httpServerRequest: HttpServerRequest): SMono[RequestObject] = {
     SMono.fromPublisher(httpServerRequest
@@ -76,18 +77,23 @@ class JMAPAPIRoutes extends JMAPRoutes {
       case JsError(errors) => SMono.raiseError(new RuntimeException(errors.toString()))
     }
 
-  private def process(requestObject: RequestObject, httpServerResponse: HttpServerResponse): SMono[Void] =
-    SMono.fromPublisher(
-      Mono.just(requestObject.methodCalls.flatMap(this.processMethodWithMatchName))
-        .flatMap((invocations: Seq[Invocation]) => httpServerResponse.status(OK)
+  private def process(requestObject: RequestObject, httpServerResponse: HttpServerResponse) =
+    requestObject
+      .methodCalls
+      .map(this.processMethodWithMatchName)
+      .foldLeft(SFlux.just[Invocation]()) { (flux: SFlux[Invocation], mono: SMono[Invocation]) => flux.mergeWith(mono) }
+      .collectSeq()
+      .flatMap((invocations: Seq[Invocation]) =>
+        SMono.fromCallable(() => httpServerResponse.status(OK)
           .header(CONTENT_TYPE, JSON_CONTENT_TYPE)
           .sendString(SMono.just(new Serializer().serialize(ResponseObject(ResponseObject.SESSION_STATE, invocations)).toString()))
           .`then`()
-        ))
+        )
+      )
 
-  private def processMethodWithMatchName(invocation: Invocation): LazyList[Invocation] = invocation.methodName match {
-    case coreEcho.methodName => coreEcho.process(invocation)
-    case _ => LazyList[Invocation](new Invocation(
+  private def processMethodWithMatchName(invocation: Invocation): SMono[Invocation] = invocation.methodName match {
+    case coreEcho.methodName => SMono.fromPublisher(coreEcho.process(invocation))
+    case _ => SMono.just(new Invocation(
       MethodName("error"),
       Arguments(Json.obj("type" -> "Not implemented")),
       invocation.methodCallId))

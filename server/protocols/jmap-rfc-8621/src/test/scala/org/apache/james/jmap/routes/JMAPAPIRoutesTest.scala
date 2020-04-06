@@ -39,13 +39,12 @@ import org.scalatest.matchers.should.Matchers
 
 class JMAPAPIRoutesTest extends AnyFlatSpec with BeforeAndAfter with Matchers {
 
-  var jmapServer: JMAPServer = _
   private val TEST_CONFIGURATION: JMAPConfiguration = JMAPConfiguration.builder().enable().randomPort().build()
   private val ACCEPT_JMAP_VERSION_HEADER = "application/json; jmapVersion="
   private val ACCEPT_DRAFT_VERSION_HEADER = ACCEPT_JMAP_VERSION_HEADER + Version.DRAFT.getVersion
   private val ACCEPT_RFC8621_VERSION_HEADER = ACCEPT_JMAP_VERSION_HEADER + Version.RFC8621.getVersion
 
-  val JMAP_API_ROUTE: JMAPAPIRoutes = new JMAPAPIRoutes()
+  private val JMAP_API_ROUTE: JMAPAPIRoutes = new JMAPAPIRoutes()
   private val handler: ImmutableSet[JMAPRoutesHandler] = ImmutableSet.of(new JMAPRoutesHandler(Version.RFC8621, JMAP_API_ROUTE))
 
   private val REQUEST_OBJECT: String =
@@ -56,6 +55,8 @@ class JMAPAPIRoutesTest extends AnyFlatSpec with BeforeAndAfter with Matchers {
 
   private val RESPONSE_OBJECT: String = new Serializer().serialize(responseObject1).toString()
   private val RESPONSE_OBJECT_WITH_UNSUPPORTED_METHOD: String = new Serializer().serialize(responseObjectWithUnsupportedMethod).toString()
+
+  var jmapServer: JMAPServer = _
 
   before {
     jmapServer = new JMAPServer(TEST_CONFIGURATION, handler)
@@ -88,6 +89,7 @@ class JMAPAPIRoutesTest extends AnyFlatSpec with BeforeAndAfter with Matchers {
     RestAssured
       .`given`()
         .header(ACCEPT.toString, ACCEPT_RFC8621_VERSION_HEADER)
+        .body()
       .when()
         .post
       .then
