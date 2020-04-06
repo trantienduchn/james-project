@@ -48,13 +48,10 @@ public class Endpoint {
             && uriPathTemplate.matches(request.uri());
     }
 
-<<<<<<< ba190a540a115dfd4fb80c108709a1f54e8f78e2
     UriPathTemplate getUriPathTemplate() {
         return uriPathTemplate;
     }
 
-=======
->>>>>>> [No Review] JAMES-3092 Instauring the Y structure with jmap-draft
     @Override
     public final boolean equals(Object o) {
         if (o instanceof Endpoint) {
