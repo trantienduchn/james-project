@@ -33,6 +33,7 @@ import org.apache.james.jmap.method.CoreEcho
 import org.apache.james.jmap.model.Invocation.{Arguments, MethodName}
 import org.apache.james.jmap.model.{Invocation, RequestObject, ResponseObject}
 import org.apache.james.jmap.{Endpoint, JMAPRoute, JMAPRoutes}
+import org.reactivestreams.Publisher
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.{JsError, JsSuccess, Json}
 import reactor.core.publisher.Mono
@@ -58,7 +59,7 @@ class JMAPAPIRoutes extends JMAPRoutes {
   private def post(httpServerRequest: HttpServerRequest, httpServerResponse: HttpServerResponse): Mono[Void] =
     this.requestAsJsonStream(httpServerRequest)
       .flatMap(requestObject => this.process(requestObject, httpServerResponse))
-      .onErrorResume(throwable => SMono.fromPublisher(handleInternalError(httpServerResponse, throwable)))
+      .onErrorResume(throwable => SMono.fromPublisher(handleInternalError(httpServerResponse, throwable)).`then`())
       .subscribeOn(Schedulers.elastic)
       .asJava()
       .`then`()
@@ -90,6 +91,7 @@ class JMAPAPIRoutes extends JMAPRoutes {
           .`then`()
         )
       )
+    .`then`()
 
   private def processMethodWithMatchName(invocation: Invocation): SMono[Invocation] = invocation.methodName match {
     case coreEcho.methodName => SMono.fromPublisher(coreEcho.process(invocation))
