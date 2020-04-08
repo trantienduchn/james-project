@@ -28,7 +28,9 @@ import static org.apache.james.backends.rabbitmq.Constants.NO_ARGUMENTS;
 import static org.apache.james.mailbox.events.EventBusConcurrentTestContract.newCountingListener;
 import static org.apache.james.mailbox.events.EventBusTestFixture.ALL_GROUPS;
 import static org.apache.james.mailbox.events.EventBusTestFixture.EVENT;
+import static org.apache.james.mailbox.events.EventBusTestFixture.EVENT_2;
 import static org.apache.james.mailbox.events.EventBusTestFixture.GROUP_A;
+import static org.apache.james.mailbox.events.EventBusTestFixture.GROUP_B;
 import static org.apache.james.mailbox.events.EventBusTestFixture.KEY_1;
 import static org.apache.james.mailbox.events.EventBusTestFixture.NO_KEYS;
 import static org.apache.james.mailbox.events.EventBusTestFixture.newAsyncListener;
@@ -51,6 +53,7 @@ import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import org.apache.james.backends.rabbitmq.RabbitMQExtension;
 import org.apache.james.backends.rabbitmq.RabbitMQExtension.DockerRestartPolicy;
@@ -60,6 +63,7 @@ import org.apache.james.backends.rabbitmq.ReceiverProvider;
 import org.apache.james.event.json.EventSerializer;
 import org.apache.james.mailbox.events.EventBusTestFixture.GroupA;
 import org.apache.james.mailbox.events.EventBusTestFixture.MailboxListenerCountingSuccessfulExecution;
+import org.apache.james.mailbox.events.EventDispatcher.DispatchingFailureGroup;
 import org.apache.james.mailbox.model.TestId;
 import org.apache.james.mailbox.model.TestMessageId;
 import org.apache.james.mailbox.store.quota.DefaultUserQuotaRootResolver;
@@ -76,6 +80,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.mockito.stubbing.Answer;
 
 import com.google.common.collect.ImmutableSet;
+
 import reactor.core.publisher.Mono;
 import reactor.rabbitmq.BindingSpecification;
 import reactor.rabbitmq.ExchangeSpecification;
@@ -714,6 +719,159 @@ class RabbitMQEventBusTest implements GroupContract.SingleEventBusGroupContract,
             }
         }
 
+    }
+
+    @Nested
+    class ErrorDispatchingTest {
+
+        @AfterEach
+        void tearDown() {
+            rabbitMQExtension.getRabbitMQ().unpause();
+        }
+
+        @Test
+        void dispatchShouldNotSendToGroupListenerWhenError() {
+            EventCollector eventCollector = eventCollector();
+            eventBus().register(eventCollector, GROUP_A);
+
+            rabbitMQExtension.getRabbitMQ().pause();
+
+            doQuietly(() -> eventBus().dispatch(EVENT, NO_KEYS).block());
+
+            assertThat(eventCollector.getEvents()).isEmpty();
+        }
+
+        @Test
+        void dispatchShouldPersistEventWhenDispatchingNoKeyGetError() {
+            EventCollector eventCollector = eventCollector();
+            eventBus().register(eventCollector, GROUP_A);
+
+            rabbitMQExtension.getRabbitMQ().pause();
+
+            doQuietly(() -> eventBus().dispatch(EVENT, NO_KEYS).block());
+
+            assertThat(dispatchingFailureEvents()).containsOnly(EVENT);
+        }
+
+        @Test
+        void dispatchShouldPersistEventWhenDispatchingWithKeysGetError() {
+            EventCollector eventCollector = eventCollector();
+            eventBus().register(eventCollector, GROUP_A);
+            eventBus().register(eventCollector, KEY_1);
+
+            rabbitMQExtension.getRabbitMQ().pause();
+
+            doQuietly(() -> eventBus().dispatch(EVENT, NO_KEYS).block());
+
+            assertThat(dispatchingFailureEvents()).containsOnly(EVENT);
+        }
+
+        @Test
+        void dispatchShouldPersistOnlyOneEventWhenDispatchingMultiGroupsGetError() {
+            EventCollector eventCollector = eventCollector();
+            eventBus().register(eventCollector, GROUP_A);
+            eventBus().register(eventCollector, GROUP_B);
+
+            rabbitMQExtension.getRabbitMQ().pause();
+
+            doQuietly(() -> eventBus().dispatch(EVENT, NO_KEYS).block());
+
+            assertThat(dispatchingFailureEvents()).containsOnly(EVENT);
+        }
+
+        @Test
+        void dispatchShouldPersistEventsWhenDispatchingGroupsGetErrorMultipleTimes() {
+            EventCollector eventCollector = eventCollector();
+            eventBus().register(eventCollector, GROUP_A);
+
+            rabbitMQExtension.getRabbitMQ().pause();
+            doQuietly(() -> eventBus().dispatch(EVENT, NO_KEYS).block());
+            doQuietly(() -> eventBus().dispatch(EVENT_2, NO_KEYS).block());
+
+            assertThat(dispatchingFailureEvents()).containsExactly(EVENT, EVENT_2);
+        }
+
+        @Test
+        void dispatchShouldPersistEventsWhenDispatchingTheSameEventGetErrorMultipleTimes() {
+            EventCollector eventCollector = eventCollector();
+            eventBus().register(eventCollector, GROUP_A);
+
+            rabbitMQExtension.getRabbitMQ().pause();
+            doQuietly(() -> eventBus().dispatch(EVENT, NO_KEYS).block());
+            doQuietly(() -> eventBus().dispatch(EVENT, NO_KEYS).block());
+
+            assertThat(dispatchingFailureEvents()).containsExactly(EVENT, EVENT);
+        }
+
+        @Test
+        void reDeliverShouldDeliverToAllGroupsWhenDispatchingFailure() {
+            EventCollector eventCollector = eventCollector();
+            eventBus().register(eventCollector, GROUP_A);
+
+            EventCollector eventCollector2 = eventCollector();
+            eventBus().register(eventCollector2, GROUP_B);
+
+            rabbitMQExtension.getRabbitMQ().pause();
+            doQuietly(() -> eventBus().dispatch(EVENT, NO_KEYS).block());
+            rabbitMQExtension.getRabbitMQ().unpause();
+            dispatchingFailureEvents()
+                .forEach(event -> eventBus().reDeliver(DispatchingFailureGroup.INSTANCE, event).block());
+
+            getSpeedProfile().shortWaitCondition()
+                .untilAsserted(() -> assertThat(eventCollector.getEvents())
+                    .hasSameElementsAs(eventCollector2.getEvents())
+                    .containsExactly(EVENT));
+        }
+
+        @Test
+        void reDeliverShouldAddEventInDeadLetterWhenGettingError() {
+            EventCollector eventCollector = eventCollector();
+            eventBus().register(eventCollector, GROUP_A);
+
+            rabbitMQExtension.getRabbitMQ().pause();
+            doQuietly(() -> eventBus().dispatch(EVENT, NO_KEYS).block());
+            getSpeedProfile().longWaitCondition()
+                .until(() -> deadLetter().containEvents().block());
+
+            doQuietly(() -> eventBus().reDeliver(DispatchingFailureGroup.INSTANCE, EVENT).block());
+            rabbitMQExtension.getRabbitMQ().unpause();
+
+            getSpeedProfile().shortWaitCondition()
+                .untilAsserted(() -> assertThat(dispatchingFailureEvents())
+                    .containsExactly(EVENT, EVENT));
+        }
+
+        @Test
+        void reDeliverShouldNotStoreEventInAnotherGroupWhenGettingError() {
+            EventCollector eventCollector = eventCollector();
+            eventBus().register(eventCollector, GROUP_A);
+
+            rabbitMQExtension.getRabbitMQ().pause();
+            doQuietly(() -> eventBus().dispatch(EVENT, NO_KEYS).block());
+            getSpeedProfile().longWaitCondition()
+                .until(() -> deadLetter().containEvents().block());
+
+            doQuietly(() -> eventBus().reDeliver(DispatchingFailureGroup.INSTANCE, EVENT).block());
+            rabbitMQExtension.getRabbitMQ().unpause();
+
+            getSpeedProfile().shortWaitCondition()
+                .untilAsserted(() -> assertThat(deadLetter().groupsWithFailedEvents().toStream())
+                    .hasOnlyElementsOfType(DispatchingFailureGroup.class));
+        }
+
+        private Stream<Event> dispatchingFailureEvents() {
+            return deadLetter().failedIds(DispatchingFailureGroup.INSTANCE)
+                .flatMap(insertionId -> deadLetter().failedEvent(DispatchingFailureGroup.INSTANCE, insertionId))
+                .toStream();
+        }
+
+        private void doQuietly(Runnable runnable) {
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                // ignore
+            }
+        }
     }
 
     private void assertThatListenerReceiveOneEvent(MailboxListener listener) {
