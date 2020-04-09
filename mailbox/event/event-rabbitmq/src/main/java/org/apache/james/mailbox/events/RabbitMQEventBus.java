@@ -31,11 +31,13 @@ import org.apache.james.metrics.api.MetricFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 
 import reactor.core.publisher.Mono;
 import reactor.rabbitmq.Sender;
 
 public class RabbitMQEventBus implements EventBus, Startable {
+    private static final Set<RegistrationKey> NO_KEY = ImmutableSet.of();
     private static final String NOT_RUNNING_ERROR_MESSAGE = "Event Bus is not running";
     static final String MAILBOX_EVENT = "mailboxEvent";
     static final String MAILBOX_EVENT_EXCHANGE_NAME = MAILBOX_EVENT + "-exchange";
@@ -143,6 +145,9 @@ public class RabbitMQEventBus implements EventBus, Startable {
     public Mono<Void> reDeliver(Group group, Event event) {
         Preconditions.checkState(isRunning, NOT_RUNNING_ERROR_MESSAGE);
         if (!event.isNoop()) {
+            if (group instanceof EventDispatcher.DispatchingFailureGroup) {
+                return eventDispatcher.dispatch(event, NO_KEY);
+            }
             return groupRegistrationHandler.retrieveGroupRegistration(group).reDeliver(event);
         }
         return Mono.empty();
