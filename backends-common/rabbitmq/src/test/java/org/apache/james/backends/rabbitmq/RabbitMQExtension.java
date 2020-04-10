@@ -115,7 +115,7 @@ public class RabbitMQExtension implements BeforeAllCallback, BeforeEachCallback,
 
         RabbitMQConnectionFactory connectionFactory = createRabbitConnectionFactory();
         connectionPool = new SimpleConnectionPool(connectionFactory);
-        channelPool = new ReactorRabbitMQChannelPool(connectionPool.getResilientConnection(), 5);
+        channelPool = new ReactorRabbitMQChannelPool(connectionPool.getResilientConnection(), 5, 1, 1);
         channelPool.start();
     }
 

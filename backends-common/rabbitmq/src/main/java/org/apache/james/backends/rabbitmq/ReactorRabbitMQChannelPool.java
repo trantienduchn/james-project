@@ -62,13 +62,15 @@ public class ReactorRabbitMQChannelPool implements ChannelPool, Startable {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(ChannelFactory.class);
 
-        private static final int MAX_RETRIES = 5;
+        static final int MAX_RETRIES = 5;
         private static final Duration RETRY_FIRST_BACK_OFF = Duration.ofMillis(100);
 
         private final Mono<Connection> connectionMono;
+        private final int maxChannelCreationRetries;
 
-        ChannelFactory(Mono<Connection> connectionMono) {
+        ChannelFactory(Mono<Connection> connectionMono, int maxChannelCreationRetries) {
             this.connectionMono = connectionMono;
+            this.maxChannelCreationRetries = maxChannelCreationRetries;
         }
 
         @Override
@@ -82,7 +84,7 @@ public class ReactorRabbitMQChannelPool implements ChannelPool, Startable {
             return Mono.fromCallable(connection::openChannel)
                 .map(maybeChannel ->
                     maybeChannel.orElseThrow(() -> new RuntimeException("RabbitMQ reached to maximum opened channels, cannot get more channels")))
-                .retryBackoff(MAX_RETRIES, RETRY_FIRST_BACK_OFF, FOREVER, Schedulers.elastic())
+                .retryBackoff(maxChannelCreationRetries, RETRY_FIRST_BACK_OFF, FOREVER, Schedulers.elastic())
                 .doOnError(throwable -> LOGGER.error("error when creating new channel", throwable));
         }
 
@@ -110,6 +112,7 @@ public class ReactorRabbitMQChannelPool implements ChannelPool, Startable {
     private final Mono<Connection> connectionMono;
     private final GenericObjectPool<Channel> pool;
     private final ConcurrentSkipListSet<Channel> borrowedChannels;
+    private final int maxBorrowRetries;
     private Sender sender;
 
     public ReactorRabbitMQChannelPool(SimpleConnectionPool simpleConnectionPool) {
@@ -117,13 +120,18 @@ public class ReactorRabbitMQChannelPool implements ChannelPool, Startable {
     }
 
     public ReactorRabbitMQChannelPool(Mono<Connection> connectionMono, int poolSize) {
+        this(connectionMono, poolSize, MAX_BORROW_RETRIES, ChannelFactory.MAX_RETRIES);
+    }
+
+    public ReactorRabbitMQChannelPool(Mono<Connection> connectionMono, int poolSize, int maxBorrowRetries, int maxChannelCreationRetries) {
         this.connectionMono = connectionMono;
-        ChannelFactory channelFactory = new ChannelFactory(connectionMono);
+        ChannelFactory channelFactory = new ChannelFactory(connectionMono, maxChannelCreationRetries);
 
         GenericObjectPoolConfig<Channel> config = new GenericObjectPoolConfig<>();
         config.setMaxTotal(poolSize);
         this.pool = new GenericObjectPool<>(channelFactory, config);
         this.borrowedChannels = new ConcurrentSkipListSet<>(Comparator.comparingInt(System::identityHashCode));
+        this.maxBorrowRetries = maxBorrowRetries;
     }
 
     public void start() {
@@ -156,7 +164,7 @@ public class ReactorRabbitMQChannelPool implements ChannelPool, Startable {
     private Channel tryBorrowFromPool() {
         return Mono.fromCallable(this::borrowFromPool)
             .doOnError(throwable -> LOGGER.warn("Cannot borrow channel", throwable))
-            .retryBackoff(MAX_BORROW_RETRIES, MIN_BORROW_DELAY, FOREVER, Schedulers.elastic())
+            .retryBackoff(maxBorrowRetries, MIN_BORROW_DELAY, FOREVER, Schedulers.elastic())
             .onErrorMap(this::propagateException)
             .subscribeOn(Schedulers.elastic())
             .block();

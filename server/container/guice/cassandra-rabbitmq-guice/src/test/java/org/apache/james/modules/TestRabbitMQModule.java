@@ -30,6 +30,9 @@ import javax.inject.Singleton;
 import org.apache.james.CleanupTasksPerformer;
 import org.apache.james.backends.rabbitmq.DockerRabbitMQ;
 import org.apache.james.backends.rabbitmq.RabbitMQConfiguration;
+import org.apache.james.backends.rabbitmq.RabbitMQConnectionFactory;
+import org.apache.james.backends.rabbitmq.ReactorRabbitMQChannelPool;
+import org.apache.james.backends.rabbitmq.SimpleConnectionPool;
 import org.apache.james.queue.rabbitmq.RabbitMQMailQueueManagement;
 import org.apache.james.queue.rabbitmq.view.RabbitMQMailQueueConfiguration;
 import org.apache.james.queue.rabbitmq.view.cassandra.configuration.CassandraMailQueueViewConfiguration;
@@ -58,6 +61,13 @@ public class TestRabbitMQModule extends AbstractModule {
         Multibinder.newSetBinder(binder(), CleanupTasksPerformer.CleanupTask.class)
             .addBinding()
             .to(QueueCleanUp.class);
+
+        try {
+            bind(RabbitMQConnectionFactory.class)
+                .toInstance(rabbitMQ.createRabbitConnectionFactory());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
     }
 
     @Provides
@@ -68,6 +78,14 @@ public class TestRabbitMQModule extends AbstractModule {
             .managementUri(rabbitMQ.managementUri())
             .managementCredentials(DEFAULT_MANAGEMENT_CREDENTIAL)
             .build();
+    }
+
+    @Provides
+    @Singleton
+    private ReactorRabbitMQChannelPool provideReactorRabbitMQChannelPool(SimpleConnectionPool simpleConnectionPool) {
+        ReactorRabbitMQChannelPool channelPool = new ReactorRabbitMQChannelPool(simpleConnectionPool.getResilientConnection(), 5, 1, 1);
+        channelPool.start();
+        return channelPool;
     }
 
     @Provides
