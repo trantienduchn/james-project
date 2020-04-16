@@ -145,6 +145,15 @@ public class RabbitMQEventBus implements EventBus, Startable {
     public Mono<Void> reDeliver(Group group, Event event) {
         Preconditions.checkState(isRunning, NOT_RUNNING_ERROR_MESSAGE);
         if (!event.isNoop()) {
+            /*
+            if the eventBus.dispatch() gets error while dispatching an event (rabbitMQ network outage maybe),
+            which means all the group consumers will not be receiving that event.
+
+            We store the that event in the dead letter and expecting in the future, it will be dispatched
+            again not only for a specific consumer but all.
+
+            That's why it is special, and we need to check event type before processing further.
+            */
             if (group instanceof EventDispatcher.DispatchingFailureGroup) {
                 return eventDispatcher.dispatch(event, NO_KEY);
             }
